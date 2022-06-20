@@ -1,0 +1,232 @@
+         TITLE 'P D S  --  PDS LCS                           03/28/06'  00000329
+*********************************************************************** 00000400
+***      LCS SUBCOMMAND   THE HARTFORD GROUP MOD                    *** 00000542
+*********************************************************************** 00000600
+*                                                                       00000700
+         SPACE 1                                                        00000824
+LCS      CSECT                                                THG MAR06 00000927
+         USING *,R8                                                     00001000
+         LA    R1,L530             ASSUME A NON-PARTITIONED DATA SET    00001100
+         TM    DSORG,DS1DSGPO      CORRECT?                             00001200
+         BZ    MSGNEW              YES, BRANCH                          00001300
+         SPACE 1                                                        00001500
+         TM    FLAGSCC,RECFMU      LOAD MODULE LIBRARY?                 00001600
+         BO    LCS0020             YES, BRANCH                          00001700
+         SPACE 1                                                        00001800
+         MVC   INSERT#1(72),SPFSTAT3                                    00002000
+         MVI   MTLEN,72                                                 00002100
+         TM    FLAGSHH,FHEAD       HEADER WRITTEN YET?                  00002200
+         BO    LCS0000             YES, BRANCH                          00002300
+         M$MSG L230$1                                                   00002500
+         OI    FLAGSHH,FHEAD       NOW IT HAS BEEN WRITTEN              00002600
+         SPACE 1                                                        00003700
+*                                                                       00003815
+*        SOURCE MODULE PROCESSING                                       00003915
+*                                                                       00004015
+LCS0000  MVC   MSGTEXT1(136),MSGBL132  CLEAR THE MESSAGE AREA           00004100
+         MVC   INSERT#1+1(8),DIRNAME                                    00004236
+         TM    DIRFLAG,X'80'           ALIAS MEMBER?                    00004300
+         BNO   *+10                    NO, BRANCH                       00004400
+         MVC   INSERT#1+1+8(2),=C'-A'  YES, ADD A FLAG                  00004536
+         LA    R2,DIRUSER          LOAD START OF USER AREA (FOR SSI)    00004600
+         TM    DIRFLAG,X'0F'       SPF STATISTICS PRESENT?              00004700
+         BNO   LCS0010             NO, BRANCH                           00004800
+         TM    DIRSPFCR,X'FE'      0C OF 0CYYDDDF ZEROS?                00004900
+         BNZ   LCS0010             NO, BRANCH                           00005000
+         TM    DIRSPFCD,X'FE'      0C OF OTHER 0CYYDDDF ZERO?           00005100
+         BNZ   LCS0010             NO, BRANCH                           00005200
+         SPACE 1                                                        00005600
+         LA    R2,INSERT#1-7           POSITION FOR HEADER              00005737
+         SR    R1,R1                                                    00005800
+         IC    R1,DIRSPFR              REVISION NUMBER                  00005919
+         CVD   R1,DOUBLE                                                00006000
+         MVC   21(4,R2),=X'40212020'                                    00006100
+         ED    21(4,R2),DOUBLE+6                                        00006200
+         MVI   22(R2),C'.'                                              00006300
+         IC    R1,DIRSPFV              VERSION NUMBER                   00006413
+         CVD   R1,DOUBLE                                                00006500
+         MVC   18(4,R2),=X'40212020'                                    00006600
+         ED    18(4,R2),DOUBLE+6                                        00006700
+         LA    R1,DIRSPFCR+1           POINT TO YYDDDF                  00006800
+         LA    R15,FULLWORD+1                                           00006900
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY FORMAT         00007026
+         MVC   FULLWORD(1),FULLWORD+3  CONVERT TO YYMMDD                00007100
+         MVC   26(L'DATEMASK,R2),DATEMASK                               00007200
+         ED    26(L'DATEMASK,R2),FULLWORD                               00007300
+         OI    27(R2),X'F0'            UNSUPPRESS ZERO (Y2K)            00007421
+         LA    R1,DIRSPFCD+1           POINT TO YYDDDF                  00007600
+         LA    R15,FULLWORD+1                                           00007700
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY FORMAT         00007826
+         MVC   FULLWORD(1),FULLWORD+3  CONVERT TO YYMMDD                00007900
+         MVC   36(L'DATEMASK,R2),DATEMASK                               00008000
+         ED    36(L'DATEMASK,R2),FULLWORD                               00008100
+         OI    37(R2),X'F0'            UNSUPPRESS ZERO (Y2K)            00008221
+         MVC   45(6,R2),=X'4021207A2020'                                00008300
+         ED    45(6,R2),DIRSPFCT       TIME OF LAST CHANGE              00008400
+         LH    R1,DIRSPFSI             CURRENT SIZE                     00008521
+         CVD   R1,DOUBLE                                                00008600
+         MVC   51(6,R2),=X'402020202120'                                00008700
+         ED    51(6,R2),DOUBLE+5                                        00008800
+         SPACE 1                                                        00008900
+         SR    R1,R1                   CLEAR R1               DRK MAY10 00009041
+         ICM   R1,B'0011',DIRSPFIN     INITIAL SIZE           DRK MAY10 00009141
+*        LH    R1,DIRSPFIN             INITIAL SIZE                     00009241
+         CVD   R1,DOUBLE                                                00009300
+         MVC   57(6,R2),=X'402020202120'                                00009400
+         ED    57(6,R2),DOUBLE+5                                        00009500
+         SR    R1,R1                   CLEAR R1               DRK MAY10 00009641
+         ICM   R1,B'0011',DIRSPFMD     MODIFIED LINES         DRK MAY10 00009741
+*        LH    R1,DIRSPFMD             MODIFIED LINES                   00009841
+         CVD   R1,DOUBLE                                                00009900
+         MVC   63(6,R2),=X'402020202120'                                00010000
+         ED    63(6,R2),DOUBLE+5                                        00010100
+         MVC   71(8,R2),DIRSPFID       USERID                           00010220
+         B     LCS0015                 NO SSI FOR SPF-SAVED MEMBERS     00010331
+         SPACE 1                                                        00010400
+LCS0010  DS    0H                                                       00010534
+         CLC   ZERO,0(R2)              ZERO?                            00010600
+         BE    LCS0015                 YES, NO SSI                      00010731
+         CLC   =F'-1',0(R2)            FFFFFFFF?                        00010800
+         BE    LCS0015                 YES, NO SSI                      00010931
+         SPACE 1                                                        00011000
+         MVC   INSERT#1+8+5(4),=C'SSI:'                                 00011138
+         UNPK  INSERT#1+8+5+5(9),0(5,R2)                                00011238
+         TR    INSERT#1+8+5+5(8),TRTABLE                                00011338
+         MVI   INSERT#1+8+5+5+8,X'40'                                   00011438
+LCS0015  DS    0H                                                       00011531
+         MVI   MTLEN,72                                                 00011631
+         M$MSG L230$1                                                   00011731
+         B     NEWCMD                                                   00011831
+         SPACE 3                                                        00011900
+*                                                                       00012015
+*        LOAD MODULE PROCESSING                                         00012115
+*                                                                       00012215
+LCS0020  OC    #ZAPOPT(4),#ZAPOPT      ANY ZAP, USER, TRAN OR LKED?     00012300
+         BNZ   *+10                    YES, BRANCH                      00012400
+         OC    #ZAPOPT(4),=X'01010101' NO, DEFAULT TO DO THEM ALL       00012500
+         SPACE 1                                                        00012600
+         L     R15,=A(READESD)     FORMAT THE ESD DATA                  00012700
+         BASR  R14,R15             ANY ESD DATA?                        00012826
+         NOP   0(,R0)              NO, CONTINUE ANYWAY                  00012900
+         SPACE 2                                                        00013000
+         L     R15,=A(READIDR)     FORMAT THE IDR DATA                  00013100
+         BASR  R14,R15             IS IDR DATA AVAILABLE?               00013226
+         B     NOLCS               NO, MESSAGE AND QUIT                 00013300
+         B     LCS0USR$            YES, CONTINUE                        00013400
+         SPACE 1                                                        00013500
+NOLCS    SR    R6,R6                                                    00013600
+         B     LCS0USR2                                                 00013700
+         SPACE 3                                                        00013800
+LCS0HDR  TM    FLAGSHH,FDELAYM          ANY HEADER MESSAGE?             00013900
+         BNO   LCS0HDR2                 NO, BRANCH                      00014000
+         M$ERRST MSGBLANK               OUTPUT A BLANK LINE             00014100
+         M$ERRST DELAYMSG               OUTPUT THE HEADER LINE          00014200
+         NI    FLAGSHH,FF-FDELAYM       TURN OFF THE HEADER LINE        00014300
+LCS0HDR2 TM    FLAGSCC,F1IDR       FIRST IDR RECORD?                    00014400
+         BZR   R4                  NO, RETURN                           00014500
+         NI    FLAGSCC,FF-F1IDR                                         00014600
+         LTR   R1,R6               ANY SECOND HEADER?                   00014700
+         BZR   R4                  NO, RETURN                           00014800
+         M$ERRST (R1)              INDIVIDUAL HISTORY TITLE             00014900
+         BR    R4                                                       00015000
+         EJECT                                                          00015100
+*                                                                       00015200
+*        FORMAT THE USER-SUPPLIED IDR DATA RECORDS                      00015300
+*        FROM THE PANVALET LIBRARY CONTROL SYSTEM (LCS)                 00015443
+*                                                                       00015520
+         SPACE                                                          00015620
+         USING IDRENTRY,R3                                              00015720
+         USING ESDENTRY,R2                                              00015820
+LCS0USR$ LA    R3,#IDRPTR                                               00015920
+         OI    FLAGSCC,F1IDR                                            00016020
+         SPACE                                                          00016120
+LCS0USR  ICM   R3,B'1111',IDRLINK  END OF IDR CHAIN?                    00016220
+         BZ    LCS0USR2            YES, BRANCH                          00016320
+         CLI   IDRTYPE,IDRUSER     USER IDR DATA RECORD?                00016420
+         BNE   LCS0USR             NO, BRANCH                           00016520
+         SPACE                                                          00016620
+         LA    R2,#ESDPTR          ADDRESS OF ESD CHAIN                 00016720
+         SPACE                                                          00016820
+LCS0USR1 ICM   R2,B'1111',ESDLINK  END OF ESD CHAIN?                    00016920
+         BZ    LCS0USR             YES, BRANCH                          00017020
+         SPACE                                                          00017120
+         CLI   ESDTYPE,CODESD      CSECT ENTRY?                         00017220
+         BNE   LCS0USR1            NO, BRANCH                           00017320
+         CLC   ESDID,IDRESDID      WANTED ESD RECORD?                   00017420
+         BNE   LCS0USR1            NO, BRANCH                           00017520
+         CLC   ESDNAME,HIGDUMMY    IS IT THE DUMMY CSECT?               00017625
+         BNE   LCS0USR1            NO, BRANCH                           00017720
+         CLC   IDRDATA+0(7),LCSCNTL     IS IT AN LCS RECORD?            00017825
+         BNE   LCS0USR1            NO, BRANCH                           00017920
+         SPACE 1                                                        00018020
+         LA    R6,MSGLCS0U                                              00018120
+         BAS   R4,LCS0HDR                                               00018226
+         M$ERRST MSGBLANK                                               00018320
+         OI    FLAGSCC,F1IDR                                            00018420
+         LA    R6,MSGC1U                                                00018520
+         BAS   R4,LCS0HDR                                               00018626
+         OI    FLAGSCC,F1IDR                                            00018720
+         LA    R6,MSGC2U                                                00018820
+         BAS   R4,LCS0HDR                                               00018926
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE MESSAGE AREA           00019020
+         MVC   MSGTEXT1+46(13),IDRDATA+27                               00019120
+         LA    R4,MSGTEXT1+46  ADDRESS OF LIBRARY                       00019220
+LCSSCAN  CLI   0(R4),X'40'    IS IT A SPACE                             00019320
+         BE    LCSSCANE       YES THEN END SCAN MOVE IN PANVALET        00019420
+         LA    R4,1(R4)       INCREMENT                                 00019520
+         B     LCSSCAN        CONTINUE SCAN                             00019620
+LCSSCANE MVC   0(9,R4),PANVALET                                         00019725
+         MVC   MSGTEXT1+8(8),IDRDATA+18                                 00019820
+         MVC   PACK+6(1),=X'0F'        MOVE IN SIGN BIT                 00019920
+         MVC   PACK+0(1),IDRDATA+26    MOVE IN VERSION                  00020020
+         UNPK  UNPACK,PACK             UNPACK VERSION                   00020120
+         TR    UNPACK,TRTABLE          TRANSLATE TO HEX                 00020220
+         MVC   MSGTEXT1+19(2),UNPACK   MOVE IN VERSION                  00020320
+         XC    PACK,PACK               CLEAR PACK AREA                  00020420
+         XC    UNPACK,UNPACK           CLEAR UNPACK AREA                00020520
+         MVC   PACK+6(1),=X'0F'        MOVE IN SIGN BIT                 00020620
+         MVC   PACK+0(6),IDRDATA+12    MOVE IN DATE TIME                00020720
+         UNPK  UNPACK,PACK             UNPACK DATE TIME                 00020820
+         TR    UNPACK,TRTABLE          TRANSLATE TO HEX                 00020920
+         MVC   MSGTEXT1+25(2),UNPACK+0 MOVE IN MONTH                    00021020
+         MVC   MSGTEXT1+27(1),=C'/'                                     00021120
+         MVC   MSGTEXT1+28(2),UNPACK+2 MOVE IN DAY                      00021220
+         MVC   MSGTEXT1+30(1),=C'/'                                     00021320
+         MVC   MSGTEXT1+31(2),UNPACK+4 MOVE IN YEAR                     00021420
+         MVC   MSGTEXT1+35(2),UNPACK+6 MOVE IN TIME                     00021520
+         MVC   MSGTEXT1+37(1),=C':'                                     00021620
+         MVC   MSGTEXT1+38(2),UNPACK+8 MOVE IN TIME                     00021720
+         MVC   MSGTEXT1+40(1),=C':'                                     00021820
+         MVC   MSGTEXT1+41(2),UNPACK+10 MOVE IN TIME                    00021920
+         LA    R1,80                    MAX LENGTH OF 80                00022020
+         SLL   R1,16                                                    00022120
+         ST    R1,MSGTEXT1                                              00022220
+         M$ERRST MSGTEXT1                                               00022320
+         M$ERRST MSGBLANK                                               00022420
+         B     NEWCMD                                                   00022520
+LCS0USR2 MVC   MSGTEXT1(136),MSGBL132  CLEAR THE MESSAGE AREA           00022620
+         LA    R1,80                   MAX LENGTH OF 80                 00022720
+         SLL   R1,16                                                    00022820
+         ST    R1,MSGTEXT1                                              00022920
+         MVC   MSGTEXT1+4(8),DIRNAME                                    00023020
+         MVC   MSGTEXT1+13(50),MSGNLCS                                  00023120
+         M$ERRST MSGTEXT1                                               00023220
+         B     NEWCMD                  GO FOR NEW COMMAND               00023320
+         DROP  R2,R3                                                    00023420
+         EJECT                                                          00023520
+         SPACE 2                                                        00023620
+         PRINT NOGEN                                                    00023720
+LCSCNTL  DC    CL7'LCSCNTL'                                             00023825
+PANVALET DC    CL9'.PANVALET'                                           00023925
+HIGDUMMY DC    CL8'HIGDUMMY'                                            00024025
+         SPACE 2                                                        00024125
+SPFSTAT3 DC    CL72'MEMBER      VER.MOD  CREATED   LAST MODIFIED  SIZE X00024220
+                INIT   MOD   ID'                                        00024320
+MSGNLCS  DC    CL50'HAS NO LIBRARY CONTROL INFORMATION'                 00024420
+MSGLCS0U M$TX  'LCS-DISPLAY -'                                          00024520
+MSGC1U   M$TX '     MEMBER  VERSION   DATE      TIME        PANVALET LIX00024620
+               BRARY'                                                   00024720
+MSGC2U   M$TX '    --------   --    --------  --------   --------------X00025000
+               --------'                                                00030000
+         PRINT GEN                                                      00031030
+         SPACE 2                                                        00040016

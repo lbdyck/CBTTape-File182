@@ -1,0 +1,89 @@
+         TITLE 'DIALOG CLEANUP    '                            SS OCT88 00010001
+*                                       *                      SS OCT88 00020001
+*       CLEAN UP DIALOG TABLES          *                      SS OCT88 00030001
+*                                       *                      SS OCT88 00040001
+ISPCLNUP DS    0H                       *                      SS OCT88 00050001
+         USING ISPCLNUP,R4              *                      SS OCT88 00060001
+         BAS   R2,ISPCTLSM        FORCE DISPLAY REFRESH        SS AUG86 00070001
+*  FORCE LOG OUT IF AT LOG              *                      SS JAN90 00070101
+         LA    R1,2               STATUS FUNCTION              SS JAN90 00071001
+         LNR   R1,R1                    *                      SS JAN90 00072001
+         BAS   R2,ISPSTKI                                      SS JAN90 00073001
+ISPCLN1  DS    0H                       *                      SS AUG86 00080001
+         CLI   SPFFUNST+1,C'I'    MEMLIST ACTIVE               SS AUG86 00090001
+         BE    ISPCLN2            YES, SKIP  IT                SS AUG86 00100001
+         LH    R1,SPFFUNLP+1*2    LAST PANEL INDEX             SS AUG86 00110001
+         LNR   R1,R1              REQUEST SWAP                 SS AUG86 00120001
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS AUG86 00130001
+         BAS   R2,ISPTBEND        CLEANUP TABLE                SS AUG86 00140001
+ISPCLN2  DS    0H                       *                      SS AUG86 00141001
+         CLI   SPFFUNST+2,C'I'    LISTA ACTIVE                 SS AUG86 00150001
+         BE    ISPCLN3            YES, SKIP  IT                SS AUG86 00160001
+         LH    R1,SPFFUNLP+2*2    LAST PANEL INDEX             SS AUG86 00170001
+         LNR   R1,R1              REQUEST SWAP                 SS AUG86 00180001
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS AUG86 00190001
+         BAS   R2,ISPTBEND        CLEANUP TABLE                SS AUG86 00200001
+ISPCLN3  DS    0H                       *                      SS AUG86 00201001
+         CLI   SPFFUNST+3,C'I'    LISTV ACTIVE                 SS AUG86 00210001
+         BE    ISPCLN5            YES, SKIP IT                 SS OCT88 00220001
+         LH    R1,SPFFUNLP+3*2    LAST PANEL INDEX             SS AUG86 00230001
+         LNR   R1,R1              REQUEST SWAP                 SS AUG86 00240001
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS AUG86 00250001
+         BAS   R2,ISPTBEND        CLEANUP TABLE                SS AUG86 00260001
+ISPCLN5  DS    0H                       *                      SS AUG86 00261001
+         CLI   SPFFUNST+5,C'I'    LISTC ACTIVE                 SS OCT88 00270001
+         BE    ISPCLN6            YES, SKIP IT                 SS OCT88 00280001
+         LH    R1,SPFFUNLP+5*2    LAST PANEL INDEX             SS OCT88 00290001
+         LNR   R1,R1              REQUEST SWAP                 SS OCT88 00300001
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS OCT88 00310001
+         BAS   R2,ISPTBEND        CLEANUP TABLE                SS OCT88 00320001
+ISPCLN6  DS    0H                       *                     DRK SEP06 00321001
+         CLI   SPFFUNST+6,C'I'    TCT ACTIVE                  DRK SEP06 00322001
+         BE    ISPCLN7            YES, SKIP IT                DRK SEP06 00323001
+         LH    R1,SPFFUNLP+6*2    LAST PANEL INDEX            DRK SEP06 00324001
+         LNR   R1,R1              REQUEST SWAP                DRK SEP06 00325001
+         BAS   R2,ISPSTKI         SWAP PANEL                  DRK SEP06 00326001
+         BAS   R2,ISPTBEND        CLEANUP TABLE               DRK SEP06 00327001
+ISPCLN7  DS    0H                       *                     DRK SEP06 00328001
+         CLI   SPFFUNST+7,C'I'    CAX ACTIVE                  DRK SEP06 00329001
+         BE    ISPCLNX            YES, SKIP IT                DRK SEP06 00329101
+         LH    R1,SPFFUNLP+7*2    LAST PANEL INDEX            DRK SEP06 00329201
+         LNR   R1,R1              REQUEST SWAP                DRK SEP06 00329301
+         BAS   R2,ISPSTKI         SWAP PANEL                  DRK SEP06 00329401
+         BAS   R2,ISPTBEND        CLEANUP TABLE               DRK SEP06 00329501
+ISPCLNX  DS    0H                       *                      SS OCT88 00330001
+         L     R2,SPFLOGHA        GET LOG TABLE HOME           SS OCT88 00340001
+         MVC   SPFTSVB,7(R2)      SAVE CURRENT TABLE NAME      SS JAN90 00350001
+         LA    R1,10              COUNT OF LOG TBLE ENTRIES    SS OCT88 00360001
+         STH   R1,SPFTSVH         SAVE COUNT                   SS OCT88 00370001
+         B     ISPCLNU2           CLOSE FIRST                  SS OCT88 00380001
+ISPCLNU1 STH   R1,SPFTSVH         SAVE COUNT                   SS OCT88 00390001
+         CLC   SPFTSVB,7(R2)      SAME AS FIRST TABLE          SS OCT88 00400001
+         BE    ISPCLNU3           YES, SKIP IT, ALREADY DONE   SS OCT88 00410001
+         TM    SPFTFLG1-SPFTBL(R2),SPFTACT  IS IT ACTIVE       SS OCT88 00420001
+         BZ    ISPCLNU3           NO, SKIP IT                  SS OCT88 00430001
+ISPCLNU2 DS    0H                       *                      SS OCT88 00440001
+         LA    R14,TBEND          END TABLE                    SS OCT88 00450001
+         LR    R15,R2             TABLE NAME                   SS OCT88 00460001
+         STM   R14,R15,PARMLIST                                SS OCT88 00470001
+         OI    PARMLIST+04,X'80'                               SS OCT88 00480001
+         BAS   R14,ISPSXEQ                                     SS OCT88 00490001
+         LTR   R15,R15                                         SS OCT88 00500001
+         BNZ   ISPERR                                          SS OCT88 00510001
+ISPCLNU3 DS    0H                       *                      SS OCT88 00520001
+         LA    R2,160(,R2)        NEXT LOG ENTRY               SS OCT88 00530001
+         LH    R1,SPFTSVH         GET  COUNT                   SS OCT88 00540001
+         BCT   R1,ISPCLNU1        GO THROUGH ALL 10            SS OCT88 00550001
+         SPACE 1                                                        00560001
+         NI    SPFLAG0,0                                       SS SEP84 00570001
+         NI    SPFLAG2,0                                       SS SEP84 00580001
+         NI    SPFLAG3,0                                       SS SEP84 00590001
+         XC    SPFVFLGS,SPFVFLGS  CLEAR ODD VARIABLE FLAGS     SS NOV85 00600001
+         LA    R14,VRESET         DELETE ALL DIALOG VARIABLES  SS JUL84 00610001
+         ST    R14,PARMLIST                                    SS JUL84 00620001
+         OI    PARMLIST+00,X'80'                               SS JUL84 00630001
+         BAS   R14,ISPSXEQ                                     SS OCT88 00640001
+         LTR   R15,R15                                         SS JUL84 00650001
+         BNZ   ISPERR                                          SS JUL84 00660001
+         BR    R3                 RETURN                       SS OCT88 00670001
+         DROP  R4                       *                      SS AUG86 00680000

@@ -1,0 +1,1629 @@
+         TITLE 'P D S  --  PDS COPY                          09/28/88'  00010000
+*********************************************************************** 00020000
+***      COPY SUBCOMMAND       ADDED BY BRUCE LELAND -- AUG., 1985  *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050000
+         SPACE 1                                                        00060000
+COPY     CSECT                                                          00070016
+         USING *,R8,R6                                                  00080000
+         LA    R6,2048                                                  00090000
+         LA    R6,2048(R6,R8)        SECOND BASE                        00100000
+         SPACE 1                                                        00110000
+         CLI   #CMXFLAG,0            LIST OPTION SET?                   00120000
+         BNE   *+8                   YES, BRANCH                        00130000
+         MVI   #CMXFLAG,&COPYLST     NO, USE THE DEFAULT                00140000
+         CLI   #COPEXST,4            EXCLUDE?                           00150000
+         BNE   *+8                   NO, BRANCH                         00160000
+         MVI   #COPTO#,0             YES, CLEAR REPLACE LENGTH          00170000
+         TM    DSORG,DS1DSGPO        PARTITIONED INPUT?                 00180000
+         BO    COP2100               YES, BRANCH                        00190000
+         OI    #COPALI,#COPSEQ       NO, MUST USE IEBGENER              00200000
+         B     COP2130               YES, BRANCH              DRK FEB01 00210005
+         SPACE 2                                                        00220000
+COP2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      00230000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       00240000
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      00250000
+         BO    COP2200               YES, BRANCH                        00260000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00270000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00280000
+         BO    COP2110               YES, BRANCH                        00290000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00300000
+         BO    COP2200               YES, BRANCH                        00310000
+COP2110  TM    #COPALI,#COPASS2      ASSOCIATES TOO?                    00320000
+         BO    COP2200               YES, BRANCH                        00330000
+         SPACE 1                                                        00340000
+COP2120  DS    0H                                             DRK FEB01 00350001
+         TM    #COPALI,#COPASS2+2    ALIAS/NOALIAS SPECIFIED? DRK FEB01 00360003
+         BM    COP2130               YES                      DRK FEB01 00370003
+         CLC   #COPTON(8),=XL8'00'   TO(PNAME) SPECIFIED?     DRK FEB01 00380003
+         BNE   COP2130               YES                      DRK FEB01 00390003
+         TM    FLAGSCC,RECFMU        LOAD LIBRARY?            DRK FEB01 00400006
+         BNO   COP2130               NO, BRANCH               DRK FEB01 00410006
+         OI    #COPALI,&COPYALI      USE THE DEFAULT          DRK FEB01 00420006
+         TM    #COPALI,#COPASS2      ASSOCIATES TOO?          DRK FEB01 00430002
+         BO    COP2200               YES                      DRK FEB01 00440002
+COP2130  DS    0H                                             DRK FEB01 00450003
+         OI    #COPALI,#COPONE       ONLY A SINGLE MEMBER/DATA SET      00460001
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           00470000
+         MVC   0(8,R4),DIRNAME                                          00480000
+         ST    R4,#MEMPTR                                               00490000
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             00500000
+         B     COP2900                                                  00510000
+         SPACE 3                                                        00520000
+COP2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        00530000
+         TM    #COPALI,#COPASS2+2    ALIAS/NOALIAS SPECIFIED? DRK FEB01 00540003
+         BM    *+8                   YES                      DRK FEB01 00550003
+         OI    #COPALI,&COPYALI      NO, USE THE DEFAULT      DRK FEB01 00560003
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         00570000
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    00580000
+         LA    R5,256/2              256 MEMBERS INITIALLY              00590000
+         SPACE 1                                                        00600000
+COP2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            00610000
+         LR    R3,R5                                                    00620000
+         LR    R0,R5                                                    00630000
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              00640000
+         ICM   R0,B'1000',SUBPOOLT                                      00650000
+         GETMAIN R,LV=(0)                                               00660000
+         LR    R4,R1                 NEW TABLE ADDRESS                  00670000
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              00680000
+         BNZ   COP2220               YES, BRANCH                        00690000
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             00700000
+         B     COP2500                                                  00710000
+         SPACE 1                                                        00720000
+COP2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   00730000
+         LR    R14,R4                NEW TABLE START ADDRESS            00740000
+         LR    R15,R5                                                   00750000
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           00760000
+         LR    R2,R15                START OF NEW PART                  00770000
+         LR    R1,R15                                                   00780000
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             00790000
+         L     R1,#MEMPTR                                               00800000
+         LR    R0,R2                 LENGTH TO FREE                     00810000
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    00820000
+         FREEMAIN R,LV=(0),A=(1)                                        00830000
+         ST    R4,#MEMPTR            START OF NEW TABLE                 00840000
+         AR    R4,R2                 WHERE TO ADD MEMBERS               00850000
+         SPACE 3                                                        00860000
+COP2300  TM    #COPALI,#COPASSP      ASSOCIATES PHASE?                  00870000
+         BO    COP2320               YES, BRANCH                        00880000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00890000
+         BO    COP2320               YES, BRANCH                        00900000
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              00910000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00920000
+         BNO   COP2500               NO, BRANCH                         00930000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00940000
+         BO    COP2605               YES, BRANCH                        00950000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00960000
+         BNO   COP2605               NO, BRANCH                         00970000
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               00980000
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   00990000
+         BNO   COP2605               NO, END OF LIST                    01000000
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              01010000
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       01020000
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               01030000
+         ST    R1,PMEMCURR                                              01040000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         01050000
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  01060000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              01070000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      01080000
+         BO    COP2319               YES, BRANCH                        01090000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               01100000
+         MVC   DIRNAME,MEMBER1         FIRST PART OF DSNAME2            01110000
+         SPACE 2                                                        01120000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           01130000
+         B     *+4(R15)                PROCESS RETURN CODE              01140000
+         B     COP2315                   00 - SUCCESSFUL                01150000
+         B     COP2310                   04 - MEMBER NOT FOUND          01160000
+         B     IOERROR                   08 - I/O ERROR                 01170000
+         SPACE 1                                                        01180000
+COP2310  MVC   INSERT#1(8),DIRNAME                                      01190000
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           01200000
+         B     COP2300                                                  01210000
+         SPACE 1                                                        01220000
+COP2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  01230000
+         B     COP2500                                                  01240000
+         SPACE 1                                                        01250000
+COP2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               01260000
+         SPACE 1                                                        01270000
+COP2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           01280000
+         B     COP2600               END OF MEMBERS -- BRANCH           01290000
+         SPACE 1                                                        01300000
+         TM    #COPALI,#COPASSP      ASSOCIATES PHASE?                  01310000
+         BO    COP2400               YES, BRANCH                        01320000
+         SPACE 1                                                        01330000
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 01340000
+         B     COP2600                 00 - SIMULATE DIRECTORY END      01350000
+         B     COP2300                 04 - MEMBER FAILED FILTERING     01360000
+         B     COP2500                 08 - MEMBER PASSED FILTERING     01370000
+         SPACE 3                                                        01380000
+COP2400  L     R1,#MEMPTR            START OF MEMBER LIST               01390000
+         B     COP2410+4             SKIP FIRST ADD                     01400000
+COP2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   01410000
+         CR    R1,R4                 END OF TABLE?                      01420000
+         BNL   COP2300               YES, IGNORE THIS ENTRY             01430000
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      01440000
+         BNE   COP2410               NO, BRANCH                         01450000
+         SPACE 3                                                        01460000
+COP2500  L     R1,#MEMPTR            START OF MEMBER LIST               01470000
+         B     COP2510+4             SKIP FIRST ADD                     01480000
+COP2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   01490000
+         CR    R1,R4                 END OF TABLE?                      01500000
+         BNL   COP2580               YES, ADD THIS ENTRY                01510000
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       01520000
+         BE    COP2300               YES, IGNORE THIS ENTRY             01530000
+         B     COP2510               NO, CONTINUE SEARCHING             01540000
+         SPACE 2                                                        01550000
+COP2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   01560000
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               01570000
+         S     R3,=F'1'              ANY MORE FIT?                      01580000
+         BNP   COP2210               NO, BRANCH                         01590000
+         B     COP2300               YES, GET NEXT MEMBER               01600000
+         SPACE 3                                                        01610000
+COP2600  TM    #COPALI,#COPASSP      ASSOCIATED MEMBERS?                01620000
+         BO    COP2605               YES, BRANCH                        01630000
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         01640000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      01650000
+         BO    COP2605               YES, BRANCH                        01660000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       01670000
+         BO    COP2300               YES, BRANCH                        01680000
+         SPACE 1                                                        01690000
+COP2605  TM    #COPALI,#COPASSP      ASSOCIATES PHASE STARTED?          01700000
+         BO    COP2700               YES, BRANCH                        01710000
+         TM    #COPALI,#COPASS2      ASSOCIATE MEMBERS TOO?             01720000
+         BNO   COP2700               NO, BRANCH                         01730000
+         OI    #COPALI,#COPASSP      YES, ASSOCIATES PHASE STARTED      01740000
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   01750000
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    01760000
+         B     COP2300               DO ANY ASSOCIATED MEMBERS          01770000
+         SPACE 3                                                        01780000
+COP2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   01790000
+         SPACE 3                                                        01800000
+COP2900  DS    0H                                                       01810000
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           01820000
+         LA    R1,FIRST4K                                               01830000
+         CLC   MSGDS2(2),=C'* '               PREVIOUS DSNAME DESIRED?  01840000
+         BNE   COP3100                        NO, BRANCH                01850000
+         CLI   PMSGDS2-FIRST4K(R1),0          ANY PREVIOUS DSNAME?      01860000
+         BNE   COP3000                        YES, BRANCH               01870000
+         M$MSG L973                           NO, ERROR                 01880000
+         B     NEWCMD                                                   01890000
+COP3000  MVC   MSGDS2(64),PMSGDS2-FIRST4K(R1) GET PREVIOUS DSNAME       01900000
+         MVI   MTLEN,54                                                 01910000
+         MVC   INSERT#1(54),MSGDS2            CURRENT DSNAME            01920000
+         M$MSG L273$1                                                   01930000
+         MVI   MTLEN,8                                                  01940000
+COP3100  LA    R1,FIRST4K                                               01950000
+         MVC   PMSGDS2-FIRST4K(64,R1),MSGDS2  SAVE CURRENT DSNAME       01960000
+         SPACE 2                                                        01970000
+         MVC   #CMXDDT1,DDNAME       SYSUT1 DDNAME                      01980000
+*  ALLOCATE COPY //SYSIN FILE                                           01990000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02000000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02010000
+         USING S99RBP,R1                                                02020000
+         SPACE 1                                                        02030000
+         LA    R4,M99RB                                                 02040000
+         USING S99RB,R4                                                 02050000
+         ST    R4,S99RBPTR                                              02060000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02070000
+         SPACE 1                                                        02080000
+         LA    R5,M99TUPL                                               02090000
+         USING S99TUPL,R5                                               02100000
+         MVI   S99RBLN,20                 LENGTH 20                     02110000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02120000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02130000
+         SPACE 1                                                        02140000
+         MVC   #CMXSYS3(14),COPDDNAM      REQUEST DDNAME FEEDBACK       02150000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02160000
+         USING S99TUNIT,R3                                              02170000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02180000
+         MVC   S99TUPTR+4(40),COPSYSIN    ADD OTHER LIST ELEMENTS       02190000
+         SPACE 1                                                        02200000
+         DYNALLOC                                                       02210000
+         MVC   #CMXDDIN(8),#CMXSYS3+6     MOVE IN THE DDNAME            02220000
+         SPACE 2                                                        02230000
+         DROP  R1,R3,R4,R5                                              02240000
+         LTR   R15,R15                    SUCCESSFUL?                   02250000
+         BNZ   COPERROR                   NO, BRANCH                    02260000
+         SPACE 3                                                        02270000
+*  ALLOCATE COPY //SYSPRINT DATA SET                                    02280000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02290000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02300000
+         USING S99RBP,R1                                                02310000
+         SPACE 1                                                        02320000
+         LA    R4,M99RB                                                 02330000
+         USING S99RB,R4                                                 02340000
+         ST    R4,S99RBPTR                                              02350000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02360000
+         SPACE 1                                                        02370000
+         LA    R5,M99TUPL                                               02380000
+         USING S99TUPL,R5                                               02390000
+         MVI   S99RBLN,20                 LENGTH 20                     02400000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02410000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02420000
+         SPACE 1                                                        02430000
+         MVC   #CMXSYS3(14),COPDDNAM      REQUEST DDNAME FEEDBACK       02440000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02450000
+         USING S99TUNIT,R3                                              02460000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02470000
+         MVC   S99TUPTR+4(4),COPDUMMA     ASSUME DUMMY TEXT IS DESIRED  02480000
+         CLI   #CMXFLAG,3                 NOLIST?                       02490000
+         BNE   *+8                        NO, BRANCH                    02500000
+         LA    R5,4(,R5)                  YES, USE THE DUMMY TEXT       02510000
+         MVC   S99TUPTR+4(40),COPSYSPR    ADD OTHER LIST ELEMENTS       02520000
+         MVC   MSGTEXT2(9+9),COPPRTFI     ADD PRIMARY, SECONDARY        02530000
+         LA    R0,MSGTEXT2                START OF PRIMARY AMOUNT       02540000
+         ST    R0,S99TUPTR+4              CHANGE ADDRESS POINTER        02550000
+         LA    R0,MSGTEXT2+9              START OF SECONDARY AMOUNT     02560000
+         ST    R0,S99TUPTR+4+4            CHANGE ADDRESS POINTER        02570000
+         L     R15,TOTUSEDX               NUMBER OF USED MEMBER BLOCKS  02580000
+         MH    R15,=H'21'                 MAXIMUM MEMBERS               02590000
+         AR    R15,R15                    MAXIMUM MEMBERS*2             02600000
+         SR    R14,R14                                                  02610000
+         D     R14,=F'50'                 50 MEMBERS/PAGE               02620000
+         SRL   R15,4                      DIVIDED BY 16                 02630000
+         LA    R15,2(,R15)                ADD 2                         02640000
+         STCM  R15,B'0111',MSGTEXT2+6     UPDATE IN PRIMARY SPACE       02650000
+         STCM  R15,B'0111',MSGTEXT2+9+6   UPDATE IN SECONDARY SPACE     02660000
+         SPACE 1                                                        02670000
+         DYNALLOC                                                       02680000
+         SPACE 2                                                        02690000
+         MVC   #CMXDDPR(8),#CMXSYS3+6     MOVE IN THE DDNAME            02700000
+         DROP  R1,R3,R4,R5                                              02710000
+         LTR   R15,R15                    SUCCESSFUL?                   02720000
+         BNZ   COPERROR                   NO, BRANCH                    02730000
+         SPACE 2                                                        02740000
+*  ALLOCATE COPY //SYSUT3 DATA SET                                      02750000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02760000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02770000
+         USING S99RBP,R1                                                02780000
+         SPACE 1                                                        02790000
+         LA    R4,M99RB                                                 02800000
+         USING S99RB,R4                                                 02810000
+         ST    R4,S99RBPTR                                              02820000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02830000
+         SPACE 1                                                        02840000
+         LA    R5,M99TUPL                                               02850000
+         USING S99TUPL,R5                                               02860000
+         MVI   S99RBLN,20                 LENGTH 20                     02870000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02880000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02890000
+         SPACE 1                                                        02900000
+         MVC   #CMXSYS3(14),COPDDNAM      REQUEST DDNAME FEEDBACK       02910000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02920000
+         USING S99TUNIT,R3                                              02930000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02940000
+         MVC   S99TUPTR+4(24),COPSYSUT    ADD OTHER LIST ELEMENTS       02950000
+         MVC   MSGTEXT2(9+9),COPPRTFI     ADD PRIMARY, SECONDARY        02960000
+         LA    R0,MSGTEXT2                START OF PRIMARY AMOUNT       02970000
+         ST    R0,S99TUPTR+4              CHANGE ADDRESS POINTER        02980000
+         LA    R0,MSGTEXT2+9              START OF SECONDARY AMOUNT     02990000
+         ST    R0,S99TUPTR+4+4            CHANGE ADDRESS POINTER        03000000
+         L     R15,TOTUSEDX               NUMBER OF USED MEMBER BLOCKS  03010000
+         MH    R15,=H'21'                 MAXIMUM MEMBERS               03020000
+         MH    R15,=H'105'                                              03030000
+         SR    R14,R14                                                  03040000
+         D     R14,=F'100'                TOTAL SPACE IN BLOCKS         03050000
+         SRL   R15,4                      DIVIDED BY 16                 03060000
+         LA    R15,2(,R15)                ADD 2                         03070000
+         STCM  R15,B'0111',MSGTEXT2+6     UPDATE IN PRIMARY SPACE       03080000
+         STCM  R15,B'0111',MSGTEXT2+9+6   UPDATE IN SECONDARY SPACE     03090000
+         SPACE 1                                                        03100000
+         DYNALLOC                                                       03110000
+         SPACE 2                                                        03120000
+         MVC   #CMXDDT3(8),#CMXSYS3+6     MOVE IN THE DDNAME            03130000
+         DROP  R1,R3,R4,R5                                              03140000
+         LTR   R15,R15                    SUCCESSFUL?                   03150000
+         BNZ   COPERROR                   NO, BRANCH                    03160000
+         SPACE 2                                                        03170000
+*  ALLOCATE COPY //SYSUT4 DATA SET                                      03180000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           03190000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            03200000
+         USING S99RBP,R1                                                03210000
+         SPACE 1                                                        03220000
+         LA    R4,M99RB                                                 03230000
+         USING S99RB,R4                                                 03240000
+         ST    R4,S99RBPTR                                              03250000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              03260000
+         SPACE 1                                                        03270000
+         LA    R5,M99TUPL                                               03280000
+         USING S99TUPL,R5                                               03290000
+         MVI   S99RBLN,20                 LENGTH 20                     03300000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      03310000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        03320000
+         SPACE 1                                                        03330000
+         MVC   #CMXSYS3(14),COPDDNAM      REQUEST DDNAME FEEDBACK       03340000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            03350000
+         USING S99TUNIT,R3                                              03360000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     03370000
+         MVC   S99TUPTR+4(28),COPSYSU4    ADD OTHER LIST ELEMENTS       03380000
+         MVC   MSGTEXT2(9+9),COPPRTFI     ADD PRIMARY, SECONDARY        03390000
+         LA    R0,MSGTEXT2                START OF PRIMARY AMOUNT       03400000
+         ST    R0,S99TUPTR+4+4            CHANGE ADDRESS POINTER        03410000
+         LA    R0,MSGTEXT2+9              START OF SECONDARY AMOUNT     03420000
+         ST    R0,S99TUPTR+4+4+4          CHANGE ADDRESS POINTER        03430000
+         MVI   MSGTEXT2+9+6+2,30          SECONDARY IS 30 TRACKS        03440000
+         LA    R0,COPTRK                                                03450000
+         ST    R0,S99TUPTR+4+12           CHANGE BLK(8) TO TRACK ALLOC. 03460000
+         SPACE 1                                                        03470000
+         DYNALLOC                                                       03480000
+         SPACE 2                                                        03490000
+         MVC   #CMXDDT4(8),#CMXSYS3+6     MOVE IN THE DDNAME            03500000
+         DROP  R1,R3,R4,R5                                              03510000
+         LTR   R15,R15                    SUCCESSFUL?                   03520000
+         BNZ   COPERROR                   NO, BRANCH                    03530000
+         SPACE 2                                                        03540000
+*  ALLOCATE COPY //SYSUT2 DATA SET                                      03550000
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             03560000
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              03570000
+         USING S99RBP,R1                                                03580000
+         SPACE 1                                                        03590000
+         LA    R4,M99RB                                                 03600000
+         USING S99RB,R4                                                 03610000
+         ST    R4,S99RBPTR                                              03620000
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                03630000
+         SPACE 1                                                        03640000
+         LA    R5,M99TUPL                                               03650000
+         USING S99TUPL,R5                                               03660000
+         MVI   S99RBLN,20               LENGTH 20                       03670000
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        03680000
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          03690000
+         LA    R3,WORKTBL                        START OF TEXT          03700000
+         OI    S99FLG11,S99NOCNV                 DO NOT CONVERT ALLOC   03710000
+         SPACE 1                                                        03720000
+         MVC   0(L'COPDDNAM,R3),COPDDNAM         SPECIFY DDNAME TEXT    03730000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     03740000
+         LA    R3,L'COPDDNAM(,R3)                START OF NEXT TEXT     03750000
+         SPACE 1                                                        03760000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   03770000
+         MVC   0(L'COPDSORG,R3),COPDSORG         SPECIFY DSORG TEXT     03780000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     03790000
+         LA    R3,L'COPDSORG(,R3)                START OF NEXT TEXT     03800000
+         SPACE 1                                                        03810000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   03820000
+         MVC   0(L'COPDSNAM,R3),COPDSNAM         SPECIFY DSNAME TEXT    03830000
+         LA    R2,5(,R3)                         WHERE TO STORE OUTPUT  03840000
+         MVC   6(44,R3),BLANK128                 CLEAR DSNAME AREA      03850000
+         LA    R1,MSGDS2                                                03860000
+         LA    R0,44                                                    03870000
+         CLI   0(R1),C''''                       QUOTED?                03880000
+         BE    COP4510                           YES, BRANCH            03890000
+         SPACE 1                                                        03900000
+         SR    R14,R14                                                  03910000
+         L     R15,ADDRUPT                       START OF THE UPT       03920000
+* 8-CHAR PREFIX                                               DRK JUL17 03930059
+         TM    FLAGSZZ,TSO#8                     8-CHAR ID/PREFIX?    " 03940059
+         BNO   COP7PRE                           NO                   " 03950059
+COP8PRE  DS    0H                                YES                  " 03960059
+         ICM   R14,B'0001',UPTPRF8L-UPT(R15)     PREFIX LENGTH ZERO?  " 03970059
+         BZ    COP4510+4                         YES, BRANCH          " 03980059
+         MVC   6(8,R3),UPTPREF8-UPT(R15)         DSNAME PREFIX        " 03990059
+         B     COPCONT                                                " 04000059
+COP7PRE  DS    0H                                                     " 04010059
+         ICM   R14,B'0001',UPTPREFL-UPT(R15)     PREFIX LENGTH ZERO?  " 04020059
+         BZ    COP4510+4                         YES, BRANCH          " 04030059
+         MVC   6(7,R3),UPTPREFX-UPT(R15)         DSNAME PREFIX        " 04040059
+COPCONT  DS    0H                                             DRK JUL17 04050059
+         AR    R2,R14                            POSITION FOR PERIOD    04060000
+         SR    R0,R14                                                   04070000
+         MVI   1(R2),C'.'                                               04080000
+         BCTR  R0,0                                                     04090000
+         BCTR  R1,0                                                     04100000
+         LA    R2,1(,R2)                                                04110000
+         SPACE 1                                                        04120000
+COP4510  LA    R1,1(,R1)                         NEXT INPUT BYTE        04130000
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       04140000
+         CLI   0(R1),C''''                       END OF DSNAME?         04150000
+         BE    COP5000                           YES, BRANCH            04160000
+         CLI   0(R1),C'('                        PARENTHESIS?           04170000
+         BE    COP4520                           YES, BRANCH            04180000
+         CLI   0(R1),X'40'                       BLANK?                 04190000
+         BE    COP5000                           YES, BRANCH            04200000
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  04210000
+         BCT   R0,COP4510                                               04220000
+         B     COP5000                                                  04230000
+         SPACE 1                                                        04240000
+COP4520  MVC   DOUBLE(8),BLANK128                (MEMBER OR DDNAME)     04250000
+         LA    R0,8                                                     04260000
+         LA    R2,DOUBLE-1                                              04270000
+         SPACE 1                                                        04280000
+COP4530  LA    R1,1(,R1)                         NEXT INPUT BYTE        04290000
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       04300000
+         CLI   0(R1),C''''                       END OF DSNAME?         04310000
+         BE    COP4540                           YES, BRANCH            04320000
+         CLI   0(R1),C')'                        PARENTHESIS?           04330000
+         BE    COP4540                           YES, BRANCH            04340000
+         CLI   0(R1),X'40'                       BLANK?                 04350000
+         BE    COP4540                           YES, BRANCH            04360000
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  04370000
+         BCT   R0,COP4530                                               04380000
+         SPACE 1                                                        04390000
+COP4540  CLC   MSGDS2(5),COPLFIL5                FILE(?                 04400000
+         BE    COP4580                           YES, BRANCH            04410000
+         CLC   MSGDS2(4),COPLFIL4                FIL(?                  04420000
+         BE    COP4580                           YES, BRANCH            04430000
+         CLC   MSGDS2(3),COPLFIL3                FI(?                   04440000
+         BE    COP4580                           YES, BRANCH            04450000
+         CLC   MSGDS2(2),COPLFIL2                F(?                    04460000
+         BE    COP4580                           YES, BRANCH            04470000
+         SPACE 1                                                        04480000
+         CLI   DOUBLE,X'40'                      MEMBER NAME?           04490000
+         BE    COP4560                           NO, BRANCH             04500000
+         SR    R15,R15                                                  04510000
+         ICM   R15,B'0001',#COPTO#               ANY CURRENT RENAME?    04520000
+         BNZ   COP4560                           YES, IGNORE THIS       04530000
+         MVC   #COPTON(8),DOUBLE                 RENAME STRING          04540000
+         SR    R15,R15                                                  04550000
+         LA    R1,DOUBLE                                                04560000
+         MVI   DOUBLE+8,X'40'                    STOP THE SCAN          04570000
+         SPACE 1                                                        04580000
+COP4550  LA    R15,1(,R15)                       LENGTH COUNT           04590000
+         LA    R1,1(,R1)                         CHARACTER POINTER      04600000
+         CLI   0(R1),X'40'                       BLANK?                 04610000
+         BNE   COP4550                           NO, BRANCH             04620000
+         STC   R15,#COPTO#                       SAVE LENGTH COUNT      04630000
+         SPACE 1                                                        04640000
+COP4560  TM    #COPALI,#COPSEQ                   SEQUENTIAL INPUT?      04650000
+         BNO   COP5000                           NO, BRANCH             04660000
+         OI    #COPALI,#COPSEQ+#COPMEMB          MUST USE IEBGENER      04670000
+         LA    R1,M99RBPTR                       RESET R1               04680000
+         MVC   MSGDS2(44),6(R3)                  RESET THE DSNAME       04690000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04700000
+         LA    R3,L'COPDSNAM+44(,R3)             START OF NEXT TEXT     04710000
+         SPACE 1                                                        04720000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04730000
+         MVC   0(L'COPMEMBE,R3),COPMEMBE         SPECIFY MEMBER TEXT    04740000
+         MVC   6(8,R3),#COPTON                   GET THE MEMBER NAME    04750000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04760000
+         LA    R3,L'COPMEMBE(,R3)                START OF NEXT TEXT     04770000
+         B     COP5005                                                  04780000
+         SPACE 2                                                        04790000
+COP4580  MVC   #CMXDDT2(8),DOUBLE                DDNAME ALLOCATION      04800000
+* GET DSN FROM DDNAME + CAT NUMBER      *                      SS JUL88 04810000
+         L     R1,PSATOLD-PSA(,R0)       ACT TCB               SS JUL88 04820025
+         L     R1,TCBJSCB-TCBRBP(R1)     JSCB                  SS JUL88 04830000
+         L     R1,JSCDSABQ-IEZJSCB(R1)   DSAB QUE              SS JUL88 04840000
+         L     R15,12(,R1)               FIRST DSAB            SS JUL88 04850000
+         USING DSAB,R15                                        SS JUL88 04860000
+COP4582  DS    0H                       *                      SS JUL88 04870000
+         LTR   R15,R15                  END OF THE LINE        SS JUL88 04880000
+         BZ    COP5090                  NO DDNAME              SS JUL88 04890000
+         L     R1,DSABTIOT                                     SS JUL88 04900000
+         CLC   4(8,R1),#CMXDDT2         THIS DDNAME            SS JUL88 04910000
+         BE    COP4584                  YES                    SS JUL88 04920000
+         L     R15,DSABFCHN             NEXT DSAB              SS JUL88 04930000
+         B     COP4582                  CONTINUE SEARCH        SS JUL88 04940000
+COP4584  DS    0H                       *                      SS JUL88 04950000
+         LR    R14,R15                  SAVE DSAB ADDR         SS JUL88 04960000
+         L     R15,DSABFCHN             NEXT ENTRY             SS JUL88 04970000
+         LTR   R15,R15                  ANY ENTRY              SS JUL88 04980000
+         BZ    COP5090                  NO DDNAME              SS JUL88 04990000
+         L     R1,DSABTIOT                                     SS JUL88 05000000
+         CLC   4(8,R1),BLANKS           CONCATENATED           SS JUL88 05010000
+         BNE   COP5090                  NO                     SS JUL88 05020000
+         LR    R15,R14                  START WITH FIRST       SS JUL88 05030000
+         SR    R0,R0                    ZERO COUNTER           SS JUL88 05040000
+COP4590  DS    0H                       *                      SS JUL88 05050000
+         A     R0,=F'1'                 ADD ONE                SS JUL88 05060000
+         C     R0,#COPCONC              IS THIS THE NUMBER     SS JUL88 05070000
+         BNL   COP4594                  YES                   ABL AUG88 05080000
+         LR    R14,R15                  SAVE PREV              SS JUL88 05090000
+         L     R15,DSABFCHN             NEXT ENTRY             SS JUL88 05100000
+         LTR   R15,R15                  ANY ENTRY              SS JUL88 05110000
+         BZ    COP4592                  USE LAST ENTRY         SS JUL88 05120000
+         L     R1,DSABTIOT                                     SS JUL88 05130000
+         CLC   4(8,R1),BLANKS           CONCATENATED           SS JUL88 05140000
+         BE    COP4590                  YES, CONTINUE SEARCH   SS JUL88 05150000
+COP4592  DS    0H                       *                      SS JUL88 05160000
+         LR    R15,R14                  GET LAST ENTRY         SS JUL88 05170000
+COP4594  DS    0H                       *                      SS JUL88 05180000
+         L     R1,DSABTIOT                                     SS JUL88 05190000
+         USING TIOENTRY,R1                                     SS JUL88 05200000
+         SR    R14,R14                  *                      SS JUL88 05210000
+         ICM   R14,7,TIOEFSRT           UCB ADDRESS            SS JUL88 05220000
+         MVC   #COPVOL(6),UCBVOLI(R14)  VOL SER                SS JUL88 05230000
+         AIF   ('&MVSLEV' GE 'MVS220').MVS22C                  SS JUL88 05240000
+         ICM   R1,7,TIOEJFCB                                   SS JUL88 05250000
+         LA    R1,16(,R1)        OVER HEADER                   SS JUL88 05260000
+         MVC   6(44,R3),0(R1)           MOVE DSN               SS JUL88 05270000
+         AGO   .MVS22CX                                        SS JUL88 05280000
+.MVS22C  ANOP                                                  SS JUL88 05290000
+         L     R1,CVTPTR(,R0)           *                      SS JUL88 05300000
+         TM    CVTDCB-CVT(R1),CVTMVSE   REALLY XA              SS JUL88 05310013
+         BZ    *+4+4+4+2                NO, SKIP  BSM          SS JUL88 05320000
+         LA    R1,*+4+4+2               POINT AFTER BSM        SS JUL88 05330000
+         O     R1,=X'80000000'          31 BIT MODE            SS JUL88 05340000
+         BSM   0,R1                     SET MODE               SS JUL88 05350000
+         L     R1,DSABSIOT              POINT TO SIOT          SS JUL88 05360000
+         L     R1,SJFCBPTR-SIOT(R1)     JFCB ADDR              SS JUL88 05370000
+         MVC   6(44,R3),0(R1)           MOVE DSN               SS JUL88 05380000
+         L     R1,CVTPTR(,R0)           *                      SS JUL88 05390000
+         TM    CVTDCB-CVT(R1),CVTMVSE   REALLY XA              SS JUL88 05400013
+         BZ    *+4+4+2                  NO, SKIP  BSM          SS JUL88 05410000
+         LA    R1,*+4+2                 POINT AFTER BSM        SS JUL88 05420000
+         BSM   0,R1                     SET MODE 24            SS JUL88 05430000
+.MVS22CX ANOP                                                  SS JUL88 05440000
+         DROP  R15                      *                      SS JUL88 05450000
+         SPACE 2                                                        05460000
+COP5000  LA    R1,M99RBPTR                       RESET R1               05470000
+         MVC   MSGDS2(44),6(R3)                  RESET THE DSNAME       05480000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     05490000
+         LA    R3,L'COPDSNAM+44(,R3)             START OF NEXT TEXT     05500000
+         SPACE 1                                                        05510000
+COP5005  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   05520000
+         MVC   0(L'COPALLOC,R3),COPALLOC         SPECIFY DISP TEXT      05530000
+         CLI   #CMXSHR,0                         ANY SHR/OLD/NEW?       05540000
+         BNE   *+8                               YES, BRANCH            05550000
+         MVI   #CMXSHR,&COPYSHR                  NO, USE DEFAULT        05560000
+         CLI   #CMXSHR,2                         SHR?                   05570000
+         BNE   *+8                               NO, BRANCH             05580000
+         MVI   6(R3),COPOSHR                     SPECIFY DISPOSITION    05590000
+         CLI   #CMXSHR,3                         NEW?                   05600000
+         BNE   *+8                               NO, BRANCH             05610000
+         MVI   6(R3),COPONEW                     SPECIFY DISPOSITION    05620000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     05630000
+         LA    R3,L'COPALLOC(,R3)                START OF NEXT TEXT     05640000
+         SPACE 1                                                        05650000
+         CLI   #COPVOL,0                         ANY VOLUME SERIAL?     05660000
+         BE    COP5010                           NO, BRANCH             05670000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   05680000
+         MVC   0(L'COPVOLSR,R3),COPVOLSR         VOLUME TEXT            05690000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     05700000
+         MVC   6(6,R3),#COPVOL                   VOLUME SERIAL          05710000
+         LA    R3,L'COPVOLSR(,R3)                START OF NEXT TEXT     05720000
+         SPACE 1                                                        05730000
+         AIF ('&PUNIT' EQ ' ').NOUNIT1                                  05740000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   05750000
+         MVC   0(L'COPUNIT+8,R3),COPUNITP        ADD UNIT=SYSALLDA      05760000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     05770000
+         LA    R3,L'COPUNIT+8(,R3)               START OF NEXT TEXT     05780000
+         SPACE 1                                                        05790000
+.NOUNIT1 ANOP                                                           05800000
+COP5010  CLI   #CMXSHR,3                         NEW?                   05810000
+         BL    COP5050                           NO, BRANCH             05820000
+         SPACE 1                                                        05830000
+         TM    #COPALI,#COPMEMB                  MEMBER OUTPUT?         05840000
+         BO    COP5011                           YES, BRANCH            05850000
+         TM    #COPALI,#COPSEQ                   SEQUENTIAL INPUT?      05860000
+         BO    COP5014                           YES, BRANCH            05870020
+COP5011  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   05880000
+         MVC   0(L'COPDIR,R3),COPDIR             SPECIFY DIRECTORY BLKS 05890000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     05900000
+         ICM   R0,B'1111',#COPDIR#               ANY DIR(NUM) SPECIFIED 05910015
+         BNZ   COP5012                           YES, BRANCH            05920000
+         ICM   R0,B'1111',TOTALLOX               NO, ANY CURRENT COUNT? 05930000
+         BNZ   COP5012                           YES, BRANCH            05940000
+         LA    R0,20                             NO, JUST USE 20        05950000
+COP5012  STCM  R0,B'0111',6(R3)                  UPDATE DIR COUNT       05960000
+         LA    R3,L'COPDIR(,R3)                  START OF NEXT TEXT     05970000
+         SPACE 1                                              DRK MAR07 05980020
+         CLC   #COPTYPE(8),=CL8'PDS'             DSNTYPE(PDS)?          05990022
+         BE    COP5014                           YES                    06000022
+         CLC   #COPTYPE(8),=CL8'LIBRARY'         DSNTYPE(LIBRARY)?      06010022
+         BE    COP5013                           YES                    06020022
+         TM    DS1SMSFG,DS1PDSE                  PDSE INPUT DATASET?    06030020
+         BNO   COP5014                           NO                     06040022
+COP5013  DS    0H                                                       06050022
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   06060020
+         MVC   0(L'COP2PDSE,R3),COP2PDSE         SPECIFY PDSE TYPE      06070021
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     06080020
+         LA    R3,L'COP2PDSE(,R3)                START OF NEXT TEXT     06090021
+         SPACE 1                                                        06100062
+         AIF   ('&MVSLEV' LT 'MVS721').NOMAXG                 DRK SEP18 06110070
+         ICM   R0,B'1111',#COPMAXG               ANY MAXGENS SPECIFIED? 06120068
+         BZ    COP5014                           NO           DRK MAY18 06130060
+         SPACE 1                                              DRK MAY21 06140073
+         CLI   #CMXSHR,3                         NEW?                 " 06150073
+         BNE   COP5014                           NO, SKIP             " 06160073
+         C     R0,=F'2000000000'                 >2G?         DRK MAY18 06190073
+         BNH   COP5013A                          NO                   " 06200067
+         M$MSG L983                              YES, ERROR           " 06210067
+         B     NEWCMD                                                 " 06220067
+COP5013A DS    0H                                                       06230064
+         L     R15,CVTPTR(,R0)        LOAD CVT POINTER        DRK MAY18 06240067
+         L     R15,CVTDFA-CVT(,R15)   DATA FACILITIES AREA    DRK MAY18 06250067
+         L     R15,DFAMAXGN-DFA(,R15) PDSE MAX GENERATIONS ALLOWED    " 06260067
+         CR    R0,R15                 MAXGENS > SMS LIMIT?    DRK MAY18 06270068
+         BNH   COP5013B               NO                      DRK MAY18 06280067
+         M$MSG L984                   YES, ERROR              DRK MAY18 06290067
+         B     NEWCMD                                                 " 06300067
+COP5013B DS    0H                                                       06310067
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   06320060
+         MVC   0(L'COPMAXG,R3),COPMAXG           SPECIFY MAXGENS        06330068
+         MVC   6(4,R3),#COPMAXG                  MAXGENS      DRK MAY18 06340068
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     06350060
+         LA    R3,L'COPMAXG(,R3)                 START OF NEXT TEXT     06360060
+         SPACE 1                                                        06370062
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   06380062
+         MVC   0(L'COPVER2,R3),COPVER2           SPECIFY PDSE V2        06390062
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     06400062
+         LA    R3,L'COPVER2(,R3)                 START OF NEXT TEXT     06410063
+         SPACE 1                                                        06420060
+.NOMAXG  ANOP                                                 DRK SEP18 06430070
+COP5014  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   06440020
+         MVC   0(L'COPTRK,R3),COPTRK             SPECIFY TRACK ALLOC    06450000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     06460000
+         TM    DS1SCALO,X'C0'                    CYLINDER ALLOCATION?   06470000
+         BNO   *+8                               NO, BRANCH             06480000
+         MVI   1(R3),X'08'                       YES, CONVERT TO CYL    06490000
+         SR    R0,R0                                                    06500000
+         ICM   R0,B'0011',#COPSPAC               ANY PRIMARY SPACE?     06510000
+         BZ    COP5018                           NO, BRANCH             06520000
+         CLI   #COPTRCY,0                        TRK/CYL REQUESTED?     06530000
+         BH    COP5018                           YES, BRANCH            06540000
+         MVI   #COPTRCY,1                        NO, DEFAULT TO TRK     06550000
+COP5018  CLI   #COPTRCY,1                        TRACK?                 06560000
+         BNE   *+8                               NO, BRANCH             06570000
+         MVI   1(R3),X'07'                       YES, CONVERT TO TRK    06580000
+         CLI   #COPTRCY,2                        CYLINDER?              06590000
+         BNE   *+8                               NO, BRANCH             06600000
+         MVI   1(R3),X'08'                       YES, CONVERT TO CYL    06610000
+         LA    R3,L'COPTRK(,R3)                  START OF NEXT TEXT     06620000
+         SPACE 2                                                        06630000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   06640000
+         MVC   0(L'COPFIRST,R3),COPFIRST         SPECIFY PRIMARY        06650000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     06660000
+         SR    R14,R14                                                  06670000
+         ICM   R14,B'0011',#COPSPAC              ANY PRIMARY SPACE?     06680000
+         BNZ   COP5020                           YES, BRANCH            06690000
+         L     R14,DSNTOTAL                      TOTAL TRACKS ALLOC     06700000
+         LTR   R14,R14                           ZERO?        DRK MAR16 06710043
+         BNZ   *+4+4                             NO                   " 06720043
+         L     R14,=F'100'                       YES, NO PDS200I YET  " 06730043
+         SPACE 1                                                        06740043
+         TM    DS1SCALO,X'C0'                    CYLINDER ALLOCATION?   06750000
+         BNO   COP5020                           NO, BRANCH             06760000
+         LH    R0,DEVTTRKS                       TRACKS PER CYLINDER?   06770000
+         LR    R15,R0                                                   06780000
+         BCTR  R15,0                                                    06790000
+         AR    R15,R14                                                  06800000
+         SR    R14,R14                                                  06810000
+         DR    R14,R0                                                   06820000
+         LR    R14,R15                           CONVERTED TO CEIL(CYL) 06830000
+COP5020  STCM  R14,B'0111',6(R3)                 UPDATE FIRST QUANTITY  06840000
+         LA    R3,L'COPFIRST(,R3)                START OF NEXT TEXT     06850000
+         SPACE 2                                                        06860000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   06870000
+         MVC   0(L'COPSECON,R3),COPSECON         SPECIFY SECONDARY      06880000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     06890000
+         SR    R14,R14                                                  06900000
+         ICM   R14,B'0011',#COPSPAC              ANY PRIMARY SPACE?     06910000
+         BZ    COP5026                           NO, BRANCH             06920000
+         ICM   R14,B'0011',#COPSPAC+2            SECONDARY SPACE?       06930000
+         B     COP5030                                                  06940000
+         SPACE 1                                                        06950000
+COP5026  ICM   R14,B'0111',DS1SCALO+1            ANY SECONDARY?         06960000
+         BZ    COP5030                           NO, BRANCH             06970000
+         TM    DS1SCALO,X'80'                    TRK OR CYL ALLOC?      06980000
+         BO    COP5030                           YES, BRANCH            06990000
+         LH    R14,BLKSI                         BLOCKSIZE              07000000
+         ICM   R14,B'1000',=X'01'                R=1, K=0, D=BLKSIZE    07010000
+         PUSH  ACONTROL                                       DRK MAY08 07020027
+         ACONTROL FLAG(NOPAGE0)                               DRK MAY08 07030026
+         TRKCALC FUNCTN=TRKCAP,TYPE=BYTEUCB+1,RKDD=(14),              XX07040000
+               REGSAVE=YES,MF=(E,PARMLIST)                              07050000
+         POP   ACONTROL                                       DRK MAY08 07060026
+         SR    R14,R14                                                  07070000
+         ICM   R14,B'0111',DS1SCALO+1            SECONDARY SIZE         07080000
+         LR    R15,R0                                                   07090000
+         AR    R15,R14                                                  07100000
+         SR    R14,R14                                                  07110000
+         DR    R14,R0                                                   07120000
+         LR    R14,R15                           CONVERTED TO CEIL(TRK) 07130000
+COP5030  STCM  R14,B'0111',6(R3)                 UPDATE OTHER QUANTITY  07140000
+         LA    R3,L'COPSECON(,R3)                START OF NEXT TEXT     07150000
+         SPACE 2                                                        07160000
+COP5050  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07170000
+         MVC   0(L'COPNORM,R3),COPNORM           DISP=(,CATLG)          07180000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07190000
+         CLI   #CMXSHR,3                         NEW?                   07200000
+         BE    *+8                               YES, BRANCH            07210000
+         MVI   6(R3),X'08'                       NO, USE DISP=(,KEEP)   07220000
+         LA    R3,L'COPNORM(,R3)                 START OF NEXT TEXT     07230000
+         SPACE 1                                                        07240000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07250000
+         MVC   0(L'COPANORM,R3),COPANORM         DISP=(,,DELETE)        07260000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07270000
+         CLI   #CMXSHR,3                         NEW?                   07280000
+         BE    *+8                               YES, BRANCH            07290000
+         MVI   6(R3),X'08'                       NO, USE DISP=(,,KEEP)  07300000
+         SPACE 1                                                        07310000
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       07320000
+         DYNALLOC                                                       07330000
+         SPACE 2                                                        07340000
+         DROP  R1,R4,R5                                                 07350000
+         MVC   #CMXDDT2,WORKTBL+6            SAVE DDNAME                07360000
+         LTR   R15,R15                       SUCCESSFUL?                07370000
+         BNZ   COPERROR                      NO, BRANCH                 07380000
+         SPACE 2                                                        07390000
+         CLI   WORKTBL+14+6,DS1DSGPO         PARTITIONED?               07400000
+         BE    COP5079                       YES, BRANCH                07410000
+         TM    #COPALI,#COPSEQ               SEQUENTIAL INPUT?          07420000
+         BO    COP5080                       YES, BRANCH                07430000
+         TM    #COPALI,#COPONE               SINGLE MEMBER?             07440000
+         BNO   COP5078                       NO, BRANCH                 07450000
+         OI    #COPALI,#COPSEQ               SEQUENTIAL INPUT NOW       07460000
+         SPACE 2                                                        07470000
+*  ALLOCATE COPY //SYSUT1 DATA SET TO A SPECIFIC MEMBER                 07480000
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             07490000
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              07500000
+         USING S99RBP,R1                                                07510000
+         SPACE 1                                                        07520000
+         LA    R4,M99RB                                                 07530000
+         USING S99RB,R4                                                 07540000
+         ST    R4,S99RBPTR                                              07550000
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                07560000
+         SPACE 1                                                        07570000
+         LA    R5,M99TUPL                                               07580000
+         USING S99TUPL,R5                                               07590000
+         MVI   S99RBLN,20               LENGTH 20                       07600000
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        07610000
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          07620000
+         LA    R3,WORKTBL                        START OF TEXT          07630000
+         SPACE 1                                                        07640000
+         MVC   0(L'COPDDNAM,R3),COPDDNAM         SPECIFY DDNAME TEXT    07650000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07660000
+         LA    R3,L'COPDDNAM(,R3)                START OF NEXT TEXT     07670000
+         SPACE 1                                                        07680000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07690000
+         MVC   0(L'COPDSNAM,R3),COPDSNAM         SPECIFY DSNAME TEXT    07700000
+         LA    R2,5(,R3)                         WHERE TO STORE OUTPUT  07710000
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    07720000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07730000
+         LA    R3,L'COPDSNAM+44(,R3)             START OF NEXT TEXT     07740000
+         SPACE 1                                                        07750000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07760000
+         MVC   0(L'COPMEMBE,R3),COPMEMBE         SPECIFY MEMBER TEXT    07770000
+         MVC   6(8,R3),MEMNAME                   GET THE MEMBER NAME    07780000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07790000
+         LA    R3,L'COPMEMBE(,R3)                START OF NEXT TEXT     07800000
+         SPACE 1                                                        07810000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07820000
+         MVC   0(L'COPALLOC,R3),COPALLOC         SPECIFY DISP TEXT      07830000
+         MVI   6(R3),COPOSHR                     SPECIFY DISPOSITION    07840000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07850000
+         LA    R3,L'COPALLOC(,R3)                START OF NEXT TEXT     07860000
+         SPACE 1                                                        07870000
+         CLI   VOLUME,X'41'                      ANY VOLUME SERIAL?     07880000
+         BL    COP5060                           NO, BRANCH             07890000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07900000
+         MVC   0(L'COPVOLSR,R3),COPVOLSR         VOLUME TEXT            07910000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07920000
+         MVC   6(6,R3),VOLUME                    VOLUME SERIAL          07930000
+         LA    R3,L'COPVOLSR(,R3)                START OF NEXT TEXT     07940000
+         SPACE 1                                                        07950000
+         AIF ('&PUNIT' EQ ' ').NOUNIT2                                  07960000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   07970000
+         MVC   0(L'COPUNIT+8,R3),COPUNITP        ADD UNIT=SYSALLDA      07980000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     07990000
+         LA    R3,L'COPUNIT+8(,R3)               START OF NEXT TEXT     08000000
+         SPACE 1                                                        08010000
+.NOUNIT2 ANOP                                                           08020000
+COP5060  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   08030000
+         MVC   0(L'COPNORM,R3),COPNORM           DISP=(,CATLG)          08040000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     08050000
+         MVI   6(R3),X'08'                       USE DISP=(,KEEP)       08060000
+         LA    R3,L'COPNORM(,R3)                 START OF NEXT TEXT     08070000
+         SPACE 1                                                        08080000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   08090000
+         MVC   0(L'COPANORM,R3),COPANORM         DISP=(,,DELETE)        08100000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     08110000
+         MVI   6(R3),X'08'                       USE DISP=(,,KEEP)      08120000
+         SPACE 1                                                        08130000
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       08140000
+         DYNALLOC                                                       08150000
+         SPACE 2                                                        08160000
+         DROP  R1,R4,R5                                                 08170000
+         MVC   #CMXDDT1,WORKTBL+6            SAVE DDNAME                08180000
+         LTR   R15,R15                       SUCCESSFUL?                08190000
+         BNZ   COPERROR                      NO, BRANCH                 08200000
+         B     COP5080                                                  08210000
+         SPACE 1                                                        08220000
+COP5078  M$MSG L532                          NO, MULTIPLE MEMBER UNLOAD 08230000
+         B     COP5080                       DO NOT OPEN FOR BLDL       08240000
+         SPACE 2                                                        08250000
+COP5079  TM    DSORG,DS1DSGPO                PARTITIONED INPUT?         08260000
+         BO    COP5090                       YES, BRANCH                08270000
+         TM    #COPALI,#COPMEMB              SINGLE MEMBER OUTPUT?      08280000
+         BO    COP5080                       YES, BRANCH                08290000
+         M$MSG L982                          NO, PARTITIONED BUT NO MEM 08300000
+         B     COP7525                                                  08310000
+         SPACE 2                                                        08320000
+*** OPEN THE OUTPUT DATA SET TO GET THE UCB ADDRESS IF DISP=SHR         08330000
+COP5080  OI    #COPALI,#COPSOME              SOME OUTPUT MEMBERS        08340000
+         CLI   #CMXSHR,2                     DISP=SHR?                  08350000
+         BNE   COP6000                       NO, BRANCH                 08360000
+         MVC   BAMDCB(LCOPDCB),COPDCBPO      CONSTRUCT A DCB            08370000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDT2  ADD DDNAME           08380000
+         MVI   DCBDSORG-IHADCB+BAMDCB,DS1DSGPS     DSORG=PS             08390000
+         MVI   OPENLIST,X'80'                                           08400000
+         OPEN  (BAMDCB,(OUTPUT)),MF=(E,OPENLIST)                        08410000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'  OPEN OK?                   08420000
+         BO    COP5084                       YES, BRANCH                08430000
+         MVC   INSERT#1(8),COPYDCB           NO, ERROR                  08440000
+         M$MSG L780$1                                                   08450000
+         B     COP7525                                                  08460000
+         SPACE 2                                                        08470000
+COP5084  L     R1,DCBDEBAD-IHADCB+BAMDCB     DEB ADDRESS                08480000
+         L     R1,DEBUCBAD(,R1)              UCB ADDRESS                08490000
+         ST    R1,#SUBHOLD+48                UPDATE FOR THIS SUBCOMMAND 08500000
+         MVI   OPENLIST,X'80'                                           08510000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 08520000
+         B     COP6000                                                  08530000
+         SPACE 2                                                        08540000
+*** OPEN THE OUTPUT DATA SET TO CHECK FOR MEMBER PRESENCE               08550000
+COP5090  MVC   BAMDCB(LCOPDCB),COPDCBPO      CONSTRUCT A DCB            08560000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDT2  ADD DDNAME           08570000
+         MVI   OPENLIST,X'80'                                           08580000
+         OPEN  (BAMDCB,(OUTPUT)),MF=(E,OPENLIST)                        08590000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'  OPEN OK?                   08600000
+         BO    COP5500                       YES, BRANCH                08610000
+         MVC   INSERT#1(8),COPYDCB           NO, ERROR                  08620000
+         M$MSG L780$1                                                   08630000
+         B     COP7525                                                  08640000
+         SPACE 2                                                        08650000
+COP5500  L     R1,DCBDEBAD-IHADCB+BAMDCB     OUTPUT DEB ADDRESS         08660000
+         L     R1,DEBUCBAD(,R1)              UCB ADDRESS                08670000
+         ST    R1,#SUBHOLD+48                UPDATE FOR THIS SUBCOMMAND 08680000
+         LH    R1,DCBBLKSI-IHADCB+BAMDCB     OUTPUT BLKSIZE             08690000
+         STH   R1,#REPRBLK                   SAVE FOR LATER             08700000
+         L     R3,#MEMPTR                                               08710000
+         L     R4,#MEMLAST                   LAST VALUE                 08720000
+         SH    R3,=H'16'                                                08730000
+         CLI   #COPTO#,0                     ANY REPLACE VALUE?         08740000
+         BE    COP5510                       NO, BRANCH                 08750000
+         TM    #COPALI,#COPONE               SINGLE MEMBER - NO ALIAS?  08760000
+         BNO   COP5510                       NO, BRANCH                 08770000
+         MVI   #COPTO#,8                     YES, SET LENGTH TO 8       08780000
+         SPACE 1                                                        08790000
+COP5510  LA    R3,16(,R3)                    NEXT ELEMENT               08800000
+         CR    R3,R4                         DONE?                      08810000
+         BNL   COP5560                       YES, BRANCH                08820000
+         CLI   #COPEXST,2                    NOBLDL OR EXCLUDE?         08830000
+         BH    COP5522                       YES, IGNORE BLDL           08840000
+         CLI   #COPEXST,0                    ANY EXIST/NOEXIST?         08850000
+         BH    COP5511                       YES, BRANCH                08860000
+         CLI   #COPREP,1                     REPLACE?                   08870000
+         BNE   COP5511                       NO, BRANCH                 08880000
+         OI    #COPALI,#COPSOME              SOME OUTPUT                08890000
+         B     COP5510                                                  08900000
+         SPACE 1                                                        08910000
+COP5511  MVC   DIRNAME(8),0(R3)                                         08920000
+         SR    R1,R1                                                    08930000
+         ICM   R1,B'0001',#COPTO#            NUMBER OF BYTES            08940000
+         BZ    COP5512                       NONE, BRANCH               08950000
+         BCTR  R1,0                                                     08960000
+         MVC   DIRNAME(*-*),#COPTON          <<EXECUTED>>               08970000
+         EX    R1,*-6                        UPDATE NAME                08980000
+         SPACE 1                                                        08990000
+COP5512  BLDL  BAMDCB,BLDLLIST                                          09000000
+         B     *+4(R15)                      PROCESS RETURN CODE        09010000
+         B     COP5520                        00 - ALREADY THERE        09020000
+         B     COP5540                        04 - NOT FOUND            09030000
+         B     IOERROR                        08 - I/O ERROR            09040000
+         SPACE 1                                                        09050000
+COP5520  CLI   #COPEXST,1                    ANY EXIST/NOEXIST?         09060000
+         BL    COP5524                       NONE, ---BRANCH            09070000
+         BE    COP5522                       EXIST, --BRANCH            09080000
+         MVI   0(R3),0                       NOEXIST, NULLIFY ENTRY     09090000
+         B     COP5510                                                  09100000
+         SPACE 1                                                        09110000
+COP5522  OI    #COPALI,#COPSOME              SOME OUTPUT                09120000
+         B     COP5510                                                  09130000
+         SPACE 1                                                        09140000
+COP5524  OI    #COPALI,#COPSOME              SOME OUTPUT                09150000
+         MVC   INSERT#1(8),DIRNAME                                      09160000
+         M$MSG L852$1                                                   09170000
+         B     COP5510                                                  09180000
+         SPACE 2                                                        09190000
+COP5540  CLI   #COPEXST,1                    ANY EXIST/NOEXIST?         09200000
+         BL    COP5544                       NONE, ---BRANCH            09210000
+         BE    COP5542                       EXIST, --BRANCH            09220000
+         OI    #COPALI,#COPSOME              NOEXIST, SOME OUTPUT       09230000
+         B     COP5510                                                  09240000
+         SPACE 1                                                        09250000
+COP5542  MVI   0(R3),0                       NULLIFY ENTRY              09260000
+         B     COP5510                                                  09270000
+         SPACE 1                                                        09280000
+COP5544  OI    #COPALI,#COPSOME              SOME OUTPUT                09290000
+         B     COP5510                                                  09300000
+         SPACE 3                                                        09310000
+COP5560  MVI   OPENLIST,X'80'                                           09320000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 09330000
+         LA    R1,L245                       NO MATCHING MEMBERS FOUND  09340000
+         TM    #COPALI,#COPSOME              ANY OUTPUT?                09350000
+         BNO   MSGNEW                        NO, BRANCH                 09360000
+         B     COP6000                                                  09370000
+         SPACE 2                                                        09380000
+COPERROR ST    R15,DAIRRC                 SAVE RETURN CODE              09390000
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       09400000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        09410000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        09420000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    09430000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           09440000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   09450000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 09460000
+         SPACE 1                                                        09470000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               09480000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        09490000
+         BZ    COP7525                    NO, BRANCH                    09500000
+         SPACE 1                                                        09510000
+         CVD   R15,DOUBLE                                               09520000
+         MVI   MTLEN,4                                                  09530000
+         MVC   INSERT#1(4),=X'40202120'                                 09540000
+         ED    INSERT#1(4),DOUBLE+6                                     09550000
+         MVI   INSERT#1,C'='                                            09560000
+         M$MSG L835$1                                                   09570000
+         B     COP7525                                                  09580000
+         SPACE 3                                                        09590000
+COP6000  DS    0H                                                       09600000
+* OPEN SYSIN DATA SET                                                   09610000
+         MVC   BAMDCB(COPDL),COPDCB           GET MODEL DCB             09620000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDIN                       09630000
+         MVI   OPENLIST,X'80'                                           09640000
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               09650000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         09660000
+         BO    COP6010                         YES, BRANCH              09670000
+         M$MSG L865                            NO STATUS AVAILABLE      09680000
+         B     COP7525                         EXIT                     09690000
+         SPACE 3                                                        09700000
+*  OUTPUT SYSIN RECORDS                                                 09710000
+         SPACE 1                                                        09720000
+COP6010  TM    #COPALI,#COPSEQ             SEQUENTIAL PROCESSING?       09730000
+         BO    COP6590                     YES, BRANCH                  09740000
+         SPACE 1                                                        09750000
+         L     R3,#MEMPTR            FIRST MEMBER POINTER               09760000
+         L     R4,#MEMLAST           LAST MEMBER POINTER                09770000
+         B     COP6040+4             SKIP FIRST ADD                     09780000
+COP6040  LA    R3,16(,R3)            NEXT MEMBER POSITION               09790000
+         CR    R3,R4                 END OF MEMBER TABLE?               09800000
+         BNL   COP6070               YES, NOT FOUND                     09810000
+         SR    R15,R15                                                  09820000
+         ICM   R15,B'0001',#COPTO#   ANY RENAME?                        09830000
+         BZ    COP6070               NO, BRANCH                         09840000
+         BCTR  R15,0                 MACHINE LENGTH OF COMPARE          09850000
+         LR    R1,R3                 NEXT MEMBER POSITION               09860000
+COP6050  LA    R1,16(,R1)            NEXT MEMBER POSITION               09870000
+         CR    R1,R4                 END OF MEMBER TABLE?               09880000
+         BNL   COP6040               YES, NO MATCH                      09890000
+         MVC   DOUBLE(8),0(R3)       FIRST MEMBER NAME                  09900000
+         XC    DOUBLE(8),0(R1)       VERSUS SECOND MEMBER NAME          09910000
+         XC    DOUBLE(*-*),DOUBLE    <<EXECUTED>>                       09920000
+         EX    R15,*-6               CLEAR THE FRONT FEW CHARACTERS     09930000
+         OC    DOUBLE(8),DOUBLE      EXACT MATCH AFTER FIRST PART?      09940000
+         BNZ   COP6050               NO, LOOP                           09950000
+         SPACE 1                                                        09960000
+         MVC   INSERT#1(8),0(R3)     MEMBER NAME                        09970000
+         MVC   INSERT#1(*-*),#COPTON <<EXECUTED>>                       09980000
+         EX    R15,*-6               SET THE FRONT FEW CHARACTERS       09990000
+         M$MSG L885$1                ERROR MESSAGE                      10000000
+         OI    #COPALI,#COPDUP       MARK FOR LATER                     10010000
+         B     COP6040               NO, LOOP                           10020000
+         SPACE 1                                                        10030000
+COP6070  MVC   MSGTEXT1(136),MSGBL132      CLEAR THE MESSAGE AREA       10040000
+         MVC   MSGTEXT1+4(11),COPDSN1M     " COPY    O="                10050000
+         MVC   MSGTEXT1+4+11(8),#CMXDDT2                                10060000
+         LA    R1,MSGTEXT1+4+11                                         10070000
+         SPACE 1                                                        10080000
+         LA    R1,1(,R1) NEXT CHARACTER                                 10090000
+         CLI   0(R1),X'40'                 BLANK?                       10100000
+         BNE   *-8                         NO, LOOP                     10110000
+         SPACE 1                                                        10120000
+         CLI   #CMXFLAG,1                  SUMMARY LIST REQUESTED?      10130000
+         BH    COP6100                     NO, BRANCH                   10140000
+         MVC   0(8,R1),COPLISTN            ADD ",LIST=NO"               10150000
+         LA    R1,8(,R1)                   EIGHT CHARACTERS             10160000
+         SPACE 1                                                        10170000
+COP6100  DS    0H                                                       10180012
+         CLI   #COPGENS,1                  COPY MBR GENS?     DRK MAY21 10190071
+         BNE   COP6120                     NO, BRANCH         DRK MAY21 10200071
+         MVC   MSGTEXT1+4(8),COPCOPGR      " CP     "         DRK MAY21 10210072
+         MVC   0(9,R1),COPGENAL            ADD ",GENS=ALL"    DRK MAY21 10220071
+         LA    R1,9(,R1)                   NINE CHARACTERS    DRK MAY21 10230071
+         SPACE 1                                                        10240071
+COP6120  DS    0H                                                       10250071
+         AIF ('&COPYMOD' EQ 'NO').NOCOPYM                               10260000
+         TM    FLAGSCC,RECFMU              LOAD LIBRARY?                10270000
+         BNO   COP6300                     NO, BRANCH                   10280000
+         OC    #REPRBLK(2),#REPRBLK        ANY BLKSIZE?                 10290000
+         BZ    COP6300                     NO, MUST BE SEQUENTIAL       10300000
+         OC    #REPRBLK+2(2),#REPRBLK+2    ANY MAXBLK PARAMETER?        10310000
+         BNZ   COP6150                     YES, BRANCH                  10320000
+         CLC   BLKSI(2),#REPRBLK           INPUT BLKSIZE<=OUTPUT?       10330000
+         BNH   COP6300                     YES, BRANCH                  10340000
+         LH    R15,#REPRBLK                COPY OUTPUT BLKSIZE          10350000
+         STH   R15,#REPRBLK+2              TO MAXBLK FIELD              10360000
+         SPACE 1                                                        10370000
+COP6150  MVC   MSGTEXT1+4(8),COPCOPMO      CHANGE COPY TO COPYMOD       10380000
+         MVC   0(8,R1),COPMAXBL            ",MAXBLK="                   10390000
+         LH    R15,#REPRBLK+2              OUTPUT MAXBLK OR BLKSIZE     10400000
+         CVD   R15,DOUBLE                                               10410000
+         UNPK  DOUBLE(5),DOUBLE+5(3)       CONVERT TO DISPLAY           10420000
+         OI    DOUBLE+4,X'F0'              MAKE LAST DIGIT PRINTABLE    10430000
+         MVC   0+8(5,R1),DOUBLE            MOVE TO MESSAGE              10440000
+         LA    R1,8+5(,R1)                 UPDATE LENGTH                10450000
+.NOCOPYM ANOP                                                           10460000
+         SPACE 1                                                        10470000
+COP6300  MVC   0(3,R1),COPDSN2M            ",I="                        10480000
+         MVC   3(8,R1),#CMXDDT1                                         10490000
+         CLI   #COPREP,1                   REPLACE?                     10500000
+         BNE   COP6310                     NO, BRANCH                   10510000
+         MVC   3(2,R1),COPDSNLP            "(("                         10520000
+         MVC   3+2(8,R1),#CMXDDT1                                       10530000
+         SPACE 1                                                        10540000
+         LA    R1,1(,R1) NEXT CHARACTER                                 10550000
+         CLI   0(R1),X'40'                 BLANK?                       10560000
+         BNE   *-8                         NO, LOOP                     10570000
+         SPACE 1                                                        10580000
+         MVC   0(4,R1),COPDSNRP            ",R))"                       10590000
+COP6310  PUT   BAMDCB,MSGTEXT1+4           OUTPUT COPY STATEMENT        10600000
+         SPACE 1                                                        10610000
+         L     R3,#MEMPTR            FIRST MEMBER POINTER               10620000
+         L     R4,#MEMLAST           LAST MEMBER POINTER                10630000
+         CLI   #COPNCAL,2            NOCALL?                            10640000
+         BNE   COP6513               NO, BRANCH                         10650000
+         M$ERRST MSGTEXT1            YES, OUTPUT FIRST LINE             10660000
+         SPACE 1                                                        10670000
+COP6513  TM    FLAGSHH,FMEMALLM                  ALL MEMBERS?           10680000
+         BZ    COP6520                           NO, BRANCH             10690000
+         CLI   #COPEXST,4                        EXCLUDE?               10700000
+         BE    COP6520                           YES, BRANCH            10710000
+         CLI   #COPEXST,2                        EXIST?                 10720000
+         BE    COP6520                           YES, BRANCH            10730000
+         CLI   #COPEXST,1                        NOEXIST?               10740000
+         BE    COP6520                           YES, BRANCH            10750000
+         CLI   #COPTO#,0                         ANY REP NAME?          10760000
+         BNE   COP6520                           YES, BRANCH            10770000
+***COPY  B     COP6590                           NO INDIVIDUAL COPY     10780000
+**                                                                      10790000
+COP6520  LA    R1,MSGTEXT1+4+5-1                 START OF MEMBER NAMES  10800000
+         LA    R0,MSGTEXT1+4+60                  END OF MEMBER NAMES    10810000
+         MVC   MSGTEXT1(136),MSGBL132                                   10820000
+         MVC   MSGTEXT1+4(5),COPMEM1M            " S M="                10830000
+         CLI   #COPEXST,4                        EXCLUDE?               10840000
+         BNE   *+8                               NO, BRANCH             10850000
+         MVI   MSGTEXT1+4+1,C'E'                 YES, CHANGE TO " E M=" 10860000
+         SR    R15,R15                                                  10870000
+         ICM   R15,B'0001',#COPTO#               ANY REP NAME?          10880000
+         BZ    COP6530                           NO, BRANCH             10890000
+         LA    R1,MSGTEXT1+4+5                   START OF MEMBER NAMES  10900000
+         LA    R0,MSGTEXT1+4+47                  47 INSTEAD OF 60       10910000
+         SPACE 1                                                        10920000
+COP6530  CR    R3,R4                                                    10930000
+         BNL   COP6580                                                  10940000
+         CLI   0(R3),0                           NULLIFIED ENTRY?       10950000
+         BNE   COP6532                           NO, BRANCH             10960000
+         LA    R3,16(,R3)                        YES, GET NEXT ENTRY    10970000
+         B     COP6530                                                  10980000
+         SPACE 1                                                        10990000
+COP6532  SR    R15,R15                                                  11000000
+         ICM   R15,B'0001',#COPTO#               ANY REP NAME?          11010000
+         BZ    COP6540                           NO, BRANCH             11020000
+         SPACE 1                                                        11030000
+         BCTR  R15,0                             MACHINE LENGTH         11040000
+         MVI   MSGTEXT1+4+5,C'('                 BEGINNING (            11050000
+         CLC   0(*-*,R3),#COPTON                 <<EXECUTED>>           11060000
+         EX    R15,*-6                           SAME PREFIX?           11070000
+         BE    COP6540                           YES, BRANCH            11080000
+         SPACE 1                                                        11090000
+COP6535  MVI   1(R1),C'('                        BEGINNING ((           11100000
+         MVC   2(8,R1),0(R3)                     INPUT MEMBER NAME      11110000
+         LA    R14,3+8(,R1)                                             11120000
+         SPACE 1                                                        11130000
+         CLI   0(R14),X'40'                      BLANK?                 11140000
+         BNE   *+8                               NO, BRANCH             11150000
+         BCT   R14,*-8                                                  11160000
+         SPACE 1                                                        11170000
+         MVI   1(R14),C','                       ADD A COMMA            11180000
+         LA    R1,2(,R14)                                               11190000
+         MVC   0(8,R1),0(R3)                     INPUT MEMBER NAME      11200000
+         MVC   0(*-*,R1),#COPTON                 <<EXECUTED>>           11210000
+         EX    R15,*-6                           OUTPUT MEMBER NAME     11220000
+         LA    R14,8(,R1)                                               11230000
+         SPACE 1                                                        11240000
+         CLI   0(R14),X'40'                      BLANK?                 11250000
+         BNE   *+8                               NO, BRANCH             11260000
+         BCT   R14,*-8                                                  11270000
+         SPACE 1                                                        11280000
+         MVI   1(R14),C')'                       FINAL )                11290000
+         LA    R14,1(,R14)                                              11300000
+         B     COP6560                                                  11310000
+         SPACE 2                                                        11320000
+COP6540  MVC   1(8,R1),0(R3)                     ADD THE MEMBER NAME    11330000
+         LA    R14,1+8(,R1)                                             11340000
+         SPACE 1                                                        11350000
+         CLI   0(R14),X'40'                      BLANK?                 11360000
+         BNE   *+8                               NO, BRANCH             11370000
+         BCT   R14,*-8                                                  11380000
+         SPACE 1                                                        11390000
+COP6560  MVI   1(R14),C','                       ADD A COMMA            11400000
+         LA    R1,1(,R14)                                               11410000
+         LA    R3,16(,R3)                        NEXT MEMBER ENTRY      11420000
+         CR    R1,R0                             END OF CARD?           11430000
+         BNH   COP6530                           NO, BRANCH             11440000
+         SPACE 2                                                        11450000
+         MVI   0(R1),X'40'                       CLEAR THE LAST COMMA   11460000
+         SR    R15,R15                                                  11470000
+         ICM   R15,B'0001',#COPTO#               ANY REP NAME?          11480000
+         BZ    *+8                               NO, BRANCH             11490000
+         MVI   0(R1),C')'                        YES, FINAL ))          11500000
+         PUT   BAMDCB,MSGTEXT1+4                 OUTPUT SELECT STMT     11510000
+         CLI   #COPNCAL,2                        NOCALL?                11520000
+         BNE   COP6570                           NO, BRANCH             11530000
+         SPACE 1                                                        11540000
+         M$ERRST MSGTEXT1                        YES, OUTPUT FIRST LINE 11550000
+COP6570  MVC   MSGTEXT1(136),MSGBL132                                   11560000
+         B     COP6520                                                  11570000
+         SPACE 2                                                        11580000
+COP6580  CLI   MSGTEXT1+4+5,X'40'                ANY TEXT TO OUTPUT?    11590000
+         BE    COP6590                           NO, BRANCH             11600000
+         MVI   0(R1),X'40'                       CLEAR THE LAST COMMA   11610000
+         SR    R15,R15                                                  11620000
+         ICM   R15,B'0001',#COPTO#               ANY REP NAME?          11630000
+         BZ    *+8                               NO, BRANCH             11640000
+         MVI   0(R1),C')'                        YES, FINAL ))          11650000
+         SPACE 1                                                        11660000
+         PUT   BAMDCB,MSGTEXT1+4                 OUTPUT SELECT STMT     11670000
+         CLI   #COPNCAL,2                        NOCALL?                11680000
+         BNE   COP6590                           NO, BRANCH             11690000
+         M$ERRST MSGTEXT1                        YES, OUTPUT FIRST LINE 11700000
+         SPACE 2                                                        11710000
+COP6590  MVI   OPENLIST,X'80'                                           11720000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   11730000
+         LA    R1,BAMDCB                                                11740000
+         FREEPOOL (1)                                                   11750000
+         TM    #COPALI,#COPDUP            ANY COLLISIONS?               11760000
+         BO    COP7525                    YES, BRANCH                   11770000
+         SPACE 2                                                        11780000
+         CLI   #CMXSHR,3                NEW?                  DRK APR16 11790048
+         BE    COP6600                  YES, NO LOCATE        DRK APR16 11800048
+*        CLC   #CMXDDT2(8),=XL8'00'     DDNAME ALLOCATION?    DRK AUG16 11810057
+*        BNE   COP6600                  YES, NO LOCATE        DRK AUG16 11820057
+         CLC   MSGDS2(5),COPLFIL5       FILE(?                DRK DEC16 11830058
+         BE    COP6600                  YES, NO LOCATE        DRK DEC16 11840058
+         CLC   MSGDS2(4),COPLFIL4       FIL(?                 DRK DEC16 11850058
+         BE    COP6600                  YES, NO LOCATE        DRK DEC16 11860058
+         CLC   MSGDS2(3),COPLFIL3       FI(?                  DRK DEC16 11870058
+         BE    COP6600                  YES, NO LOCATE        DRK DEC16 11880058
+         CLC   MSGDS2(2),COPLFIL2       F(?                   DRK DEC16 11890058
+         BE    COP6600                  YES, NO LOCATE        DRK DEC16 11900058
+*  LOCATE OUTPUT DSNAME                                       DRK APR16 11910048
+         MVC   WORKTMP(44),MSGDS2       COPY DSNAME           DRK APR16 11920048
+         L     R14,LOCATEC                                    DRK APR16 11930051
+         LA    R15,WORKTMP              ACTUAL DSNAME         DRK APR16 11940048
+         SR    R0,R0                    NO CVOL VALUE         DRK APR16 11950048
+         LA    R1,MSGTEXT1              LOCATE WORK AREA      DRK APR16 11960048
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAM    DRK APR16 11970048
+         LOCATE PARMLIST                                      DRK APR16 11980048
+         LTR   15,15                    SUCCESSFUL LOCATE?    DRK APR16 11990048
+         BNZ   COPNODSN                 NO, ERROR             DRK APR16 12000049
+         CLI   #COPVOL,0                ANY VOLUME?           DRK APR16 12010050
+         BNE   COP6600                  YES                   DRK APR16 12020049
+         MVC   #COPVOL(6),MSGTEXT1+6    NO, USE LOCATE VOLSER DRK APR16 12030049
+         B     COP6600                                        DRK APR16 12040049
+         SPACE 1                                              DRK APR16 12050049
+COPNODSN MVI   MTLEN,44                 LENGTH OF INSERT      DRK APR16 12060049
+         MVC   INSERT#1(44),WORKTMP     DSNAME                DRK APR16 12070049
+         M$MSG L844$1                                         DRK APR16 12080049
+         B     NEWCMD                                         DRK APR16 12090049
+COP6600  DS    0H                                             DRK APR16 12100049
+         CLC   DSNAME(44),MSGDS2     SAME DSNAME?                       12110000
+         BNE   COP6620               NO, BRANCH                         12120000
+         CLI   #COPVOL,0             ANY VOLUME                         12130056
+         BE    COP6610               NO, BRANCH                         12140056
+         CLC   #COPVOL(6),VOLALLOC   SAME VOLUME?                       12150000
+         BNE   COP6620               NO, BRANCH                         12160000
+COP6610  M$MSG L900                  SAME DATA SET MESSAGE              12170000
+         B     COP7525                                                  12180000
+         SPACE 2                                                        12190000
+COP6620  CLI   #COPNCAL,2                 NOCALL?                       12200000
+         BE    COP7530                    YES, BRANCH                   12210000
+         M$MSG L484                       COPY IN PROGRESS MESSAGE      12220000
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          12230000
+         SPACE 1                                                        12240000
+         XC    WORKTBL,WORKTBL            CLEAR THE TEMPORARY TABLE     12250000
+         STAX  COPYNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X12260000
+               OBUF=(PDS484W,PDS484WL),MF=(E,WORKTBL)                   12270000
+         TM    #COPALI,#COPSEQ             SEQUENTIAL COPY?             12280000
+         BNO   *+10                        NO, BRANCH                   12290000
+         MVC   ##SUBCAL(8),COPGENER        YES, USE IEBGENER            12300000
+         LA    R1,=F'0'                   NO FIRST PARAMETER            12310000
+         ST    R1,#CMXLIST                                              12320000
+         LA    R1,#CMXDDNA                SECOND PARAMETER              12330000
+         ST    R1,#CMXLIST+4                                            12340000
+         OI    #CMXLIST+4,X'80'           MARK END OF LIST              12350000
+         XC    #CMXDDNA(34),#CMXDDNA      CLEAR FIRST PORTION OF LIST   12360000
+         MVI   #CMXDDNA+1,80              LENGTH OF DDNAME LIST         12370000
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 12380000
+         LA    R14,#SUBHOLD+28            POINT TO FLAGS                12390000
+         LA    R15,COPCOPY                POINT TO CALLED PROGRAM       12400000
+         LA    R0,#SUBHOLD+28+4           POINT TO PROGRAM NAME LENGTH  12410000
+         LA    R1,#SUBHOLD+28+8           POINT TO RETURN CODE          12420000
+         LA    R2,#SUBHOLD+28+12          POINT TO REASON CODE          12430000
+         LA    R3,#SUBHOLD+28+16          POINT TO ABEND CODE           12440000
+         LA    R4,#CMXLIST                POINT TO PARAMETER LIST       12450000
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     12460000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  12470000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    12480000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      12490000
+         SPACE 2                                                        12500000
+         L     R2,RECOVER                                               12510000
+         LA    R1,COP7080                  RECOVERY ADDRESS             12520000
+         ST    R1,RECOVER                                               12530000
+         STM   R2,R8,#SUBHOLD+88           SAVE REGISTERS               12540000
+         SPACE 1                                                        12550000
+         CLI   #CMXSHR,2                   SHR?                         12560000
+         BNE   COP7020                     NO, BRANCH                   12570000
+         SPACE 1                                                        12580000
+         CLI   RESERVET,C'R'               ALREADY RESERVED?            12590000
+         BH    COP7020                     YES, BRANCH                  12600000
+         MVI   RESERVET,C'S'               MARK AS OUTPUT RESERVED      12610000
+         SPACE 2                                                        12620000
+         MVC   PARMLIST(4),COPRESV         LIST FORM OF RESERVE         12630000
+         RESERVE (COPEDIT,MSGDS2,E,44,SYSTEMS),RET=HAVE,              XX12640000
+               UCB=#SUBHOLD+48,MF=(E,PARMLIST)                          12650000
+         SPACE 1                                                        12660000
+         TM    FLAGSCC,RECFMU              LOAD LIBRARY?                12670000
+         BNO   COP7020                     NO, RETURN                   12680000
+         TM    DS1SMSFG,DS1PDSE            PDSE DATASET?      DRK AUG02 12690011
+         BO    COP7020                     YES, DON'T RESERVE DRK AUG02 12700011
+         SPACE 1                                                        12710000
+         L     R1,#SUBHOLD+48              UCB ADDRESS                  12720000
+         TM    UCBTYP+1(R1),UCBRR          SHARED DEVICE?               12730000
+         BNO   COP7000                     NO, BRANCH                   12740000
+         MVC   PARMLIST(4),COPRESV         LIST FORM OF RESERVE         12750000
+         RESERVE (COPIEWLP,MSGDS2,E,44,SYSTEMS),RET=HAVE,             XX12760000
+               UCB=#SUBHOLD+48,MF=(E,PARMLIST)                          12770000
+         B     COP7020                                                  12780000
+         SPACE 1                                                        12790000
+COP7000  MVC   PARMLIST(4),COPHAVE         LIST FORM OF RESERVE         12800000
+         ENQ   (COPIEWLP,MSGDS2,E,44,SYSTEM),RET=HAVE,MF=(E,PARMLIST)   12810000
+COP7020  DS    0H                                                       12820000
+         SPACE 3                                                        12830000
+COPYRZAP LA    R0,3239  **TO BE ZAPPED    PASSWORD                      12840000
+         SVC   247      **TO BE ZAPPED    GET AUTHORIZED                12850010
+         ORG   *-2      -- NOTE --        OVERLAY THE SVC CALL          12860000
+         NOPR  0        **TO BE ZAPPED    OVERLAY THE SVC CALL          12870000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 12880000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            12890000
+         CLC   ##SUBCAL(8),COPEFTSR       INVOKE IKJEFTSR?              12900000
+         BNE   COPYNLNK                   NO, BRANCH                    12910000
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   12920000
+         SPACE 2                                                        12930000
+COPYNLNK BAS   R2,ATTACH                  SPFCOPY/IEBCOPY/$PDSFAST      12940000
+COPYLINK SR    R0,R0                      UNAUTHORIZATION CODE          12950000
+         SVC   247      **TO BE ZAPPED    GET UNAUTHORIZED              12960010
+         ORG   *-2      -- NOTE --        OVERLAY THE SVC CALL          12970000
+         NOPR  0        **TO BE ZAPPED    OVERLAY THE SVC CALL          12980000
+         SPACE 3                                                        12990000
+COP7080  LM    R2,R8,#SUBHOLD+88                                        13000000
+         ST    R2,RECOVER                  RESET RECOVERY ADDRESS       13010000
+         CLI   RESERVET,C'S'               RESERVED?                    13020000
+         BNE   COP7520                     NO, BRANCH                   13030000
+         MVI   RESERVET,0                  NO LONGER RESERVED           13040000
+         SPACE 2                                                        13050000
+         MVC   PARMLIST(4),COPSYSS         LIST FORM, DEQ "SYSTEMS"     13060000
+         DEQ   (COPEDIT,MSGDS2,44,SYSTEMS),RET=HAVE,                   X13070000
+               UCB=#SUBHOLD+48,MF=(E,PARMLIST)                          13080000
+         SPACE 2                                                        13090000
+         TM    FLAGSCC,RECFMU              LOAD LIBRARY?                13100000
+         BNO   COP7520                     NO, RETURN                   13110000
+         SPACE 1                                                        13120000
+         L     R1,#SUBHOLD+48              UCB ADDRESS                  13130000
+         TM    UCBTYP+1(R1),UCBRR          SHARED DEVICE?               13140000
+         BNO   COP7500                     NO, BRANCH                   13150000
+         MVC   PARMLIST(4),COPSYSS         LIST FORM, DEQ "SYSTEMS"     13160000
+         DEQ   (COPIEWLP,MSGDS2,44,SYSTEMS),RET=HAVE,                  X13170000
+               UCB=#SUBHOLD+48,MF=(E,PARMLIST)                          13180000
+         B     COP7520                                                  13190000
+         SPACE 1                                                        13200000
+COP7500  MVC   PARMLIST(4),COPSYS          LIST FORM, DEQ "SYSTEM"      13210000
+         DEQ   (COPIEWLP,MSGDS2,44,SYSTEM),RET=HAVE,MF=(E,PARMLIST)     13220000
+COP7520  B     COP7530                                                  13230000
+         SPACE 1                                                        13240000
+COP7525  MVI   #COPNCAL,2                 NO CALL                       13250000
+COP7530  STAX  ,                                                        13260000
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        13270000
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       13280000
+         SPACE 1                                                        13290000
+         LA    R1,#CMXDDIN                SYSIN DDNAME                  13300000
+         BAS   R2,COP8580                 FREE THIS DATA SET            13310000
+         SPACE 1                                                        13320000
+         LA    R1,#CMXDDT3                SYSUT3 DDNAME                 13330000
+         BAS   R2,COP8580                 FREE THIS DATA SET            13340000
+         SPACE 1                                                        13350000
+         LA    R1,#CMXDDT4                SYSUT4 DDNAME                 13360000
+         BAS   R2,COP8580                 FREE THIS DATA SET            13370000
+         SPACE 1                                                        13380000
+         MVC   DOUBLE(8),#CMXDDT2         COPY DDNAME                   13390000
+         CLC   DOUBLE(3),=CL8'SYS00000'   TEMPORARY TYPE DDNAME?        13400000
+         BNE   COP7540                    NO, BRANCH                    13410000
+         NC    DOUBLE(8),=CL8'SYS00000'   MASK WITH "SYS00000"          13420000
+         CLC   DOUBLE(8),=CL8'SYS00000'   TEMPORARY TYPE DDNAME?        13430000
+         BNE   COP7540                    NO, BRANCH                    13440000
+         LA    R1,#CMXDDT2                SYSUT2 DDNAME                 13450000
+         BAS   R2,COP8580                 FREE THIS DATA SET            13460000
+         SPACE 1                                                        13470000
+COP7540  CLC   DDNAME(8),#CMXDDT1         EXPLICIT FREE NEEDED?         13480000
+         BE    COP7550                    NO, BRANCH                    13490000
+         LA    R1,#CMXDDT1                SYSUT1 DDNAME                 13500000
+         BAS   R2,COP8580                 FREE THIS DATA SET            13510000
+         SPACE 1                                                        13520000
+COP7550  CLI   #COPNCAL,2                 NOCALL?                       13530000
+         BE    COP8550                    YES, BRANCH                   13540000
+         CLC   ##SUBCAL(8),COPEFTSR       INVOKE IKJEFTSR?              13550000
+         BNE   COP7570                    NO, BRANCH                    13560000
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      13570000
+         CLI   SUBSECB+3,8                RC:8                DRK FEB13 13580046
+         BL    COP7570                    LOW, VALID COPY               13590000
+         BE    *+12                       EQUAL, ATTENTION              13600000
+         CLI   SUBSECB+3,X'FF'            RETURN CODE = FF?  (-1)       13610036
+         BNE   COP7570                    NO, BRANCH                    13620036
+         M$MSG L980                       ATTENTION WITH IKJEFTSR       13630000
+         B     COP8000                    READ SYSPRINT       DRK FEB13 13640036
+         SPACE 1                            FOR ABEND CODE    DRK FEB13 13650037
+COP7570  CLI   SUBSECB+3,8                RETURN CODE >  8?   DRK FEB13 13660046
+         BH    COP7580                    YES, BRANCH                   13670000
+         CLI   #CMXFLAG,3                 NOLIST REQUESTED?             13680000
+         BNE   COP8000                    NO, BRANCH                    13690000
+COP7580  MVI   MTLEN+4,4                                      DRK FEB13 13700033
+         SR    R15,R15                                                  13710000
+         ICM   R15,B'0001',SUBSECB+3                                    13720000
+         CVD   R15,DOUBLE                                               13730000
+         MVC   INSERT#1(8),##SUBCOM                                     13740000
+         MVC   INSERT#2(4),=X'40202120'                       DRK FEB13 13750034
+         ED    INSERT#2(4),DOUBLE+6                           DRK FEB13 13760034
+         MVI   INSERT#2,C'='                                  DRK FEB13 13770035
+         M$MSG L171$2                                                   13780046
+         B     COP8550                                                  13790037
+*        NOP   COP8550                      FOR DEBUGGING     DRK FEB13 13800037
+         SPACE 3                                                        13810000
+COP8000  MVC   BAMDCB(COPDL),COPDCB         GET MODEL DCB               13820000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDPR                       13830000
+         MVI   OPENLIST,X'80'                                           13840000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               13850000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            13860000
+         BO    COP8010                      YES, BRANCH                 13870000
+         M$MSG L865                         NO STATUS AVAILABLE         13880000
+         B     COP8550                      EXIT                        13890000
+         SPACE 3                                                        13900000
+*  PROCESS SYSPRINT RECORDS                                             13910000
+         SPACE 1                                                        13920000
+COP8010  GET   BAMDCB                     GET LIST RECORD               13930000
+         CLI   2(R1),X'40'                HEADER LINE?        DRK FEB01 13940004
+         BNE   COP8040                    NO, BRANCH                    13950000
+         CLI   22(R1),X'40'               HEADER LINE?                  13960000
+         BE    COP8010                    YES, IGNORE                   13970000
+COP8040  CLI   #CMXFLAG,2                 FULL LIST REQUESTED?          13980000
+         BE    COP8080                    YES, OUTPUT                   13990000
+         LA    R3,COPEXCL-6               START OF EXCLUSION TABLE -6   14000000
+COP8060  LA    R3,6(,R3)                  NEXT MESSAGE ID               14010000
+         CLC   1(6,R1),0(R3)              MESSAGE ID TO BE EXCLUDED?    14020000
+         BE    COP8010                    YES, IGNORE                   14030000
+         CLI   0(R3),FF                   END OF TABLE?                 14040000
+         BNE   COP8060                    NO, LOOP                      14050000
+         SPACE 3                                                        14060000
+COP8080  MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        14070000
+*        CLC   1(6,R1),COPIEB14           UNUSED TRACKS MESSAGE?        14080000
+*        BNE   *+8                        NO, BRANCH                    14090000
+*        MVI   MSGTEXT1+1,64              YES, TRUNCATE THE MESSAGE     14100000
+         CLC   1(27,R1),IEBGENS           IEBGENER START?     DRK APR16 14110054
+         BNE   COP8080A                   NO                  DRK APR16 14120054
+         MVC   MSGTEXT1+4(8),IEBGEN0      YES, ADD IEBG00I    DRK APR16 14130054
+         MVC   MSGTEXT1+4+8(112),1(R1)                        DRK APR16 14140054
+         B     COP8090                                        DRK APR16 14150054
+COP8080A DS    0H                                                       14160054
+         CLC   1(27,R1),IEBGENE           IEBGENER END?       DRK APR16 14170054
+         BNE   COP8080B                   NO                  DRK APR16 14180054
+         MVC   MSGTEXT1+4(8),IEBGEN9      YES, ADD IEBG99I    DRK APR16 14190054
+         MVC   MSGTEXT1+4+8(112),1(R1)                        DRK APR16 14200054
+         B     COP8090                                        DRK APR16 14210054
+COP8080B DS    0H                                                       14220054
+         MVC   MSGTEXT1+4(120),1(R1)      ADD THE IEBCOPY MESSAGE       14230000
+         CLC   MSGTEXT1+4+1(10),BLANK128  FIRST 10 BLANKS?              14240000
+         BNE   *+10                       NO, BRANCH                    14250000
+         MVC   MSGTEXT1+4(110),11(R1)     SHIFT THE IEBCOPY MESSAGE     14260000
+COP8090  DS    0H                                                       14270052
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            14280000
+         B     COP8010                                                  14290000
+         SPACE 3                                                        14300000
+COPEXCL  DC    C'IEB154'           IEB154I MEMBERNAME HAS BEEN SUCCESSF 14310000
+         DC    C'IEB155'           IEB155I MEMBERNAME HAS BEEN SUCCESSF 14320000
+         DC    C'IEB167'           IEB167I FOLLOWING MEMBER(S) COPIED F 14330000
+         DC    C'IEB161'           IEB161I COMPRESS TO BE DONE USING IN 14340000
+         DC    C'PDSFAS'           PDSFAST   ... HEADER LINE            14350000
+         DC    C'PDF00 '           PDF00  START EXECUTION               14360000
+         DC    C'PDF06 '           PDF06   INPUT DATASET:  ...          14370000
+         DC    C'PDF09 '           PDF09  MEMBER ........ - MOVED ...   14380000
+         DC    X'FF'                                                    14390000
+         SPACE 2                                                        14400000
+*** THE FOLLOWING MESSAGES ARE ALSO CANDIDATES FOR SUPPRESSION:         14410000
+COPIEB14 DC    C'IEB144'           IEB144I THERE ARE XXXXXXX UNUSED TRA 14420000
+***      DC    C'IEB147'           IEB147I END OF JOB X WAS HIGHEST RET 14430000
+***      DC    C'IEB149'           IEB149I THERE ARE XXXXXXX UNUSED DIR 14440000
+         DC    X'FF'                                                    14450000
+IEBGENS  DC    CL27'DATA SET UTILITY - GENERATE'                        14460052
+IEBGENE  DC    CL27'PROCESSING ENDED AT EOD'                            14470052
+IEBGEN0  DC    CL8'IEBG00I'                                             14480053
+IEBGEN9  DC    CL8'IEBG99I'                                             14490053
+         SPACE 2                                                        14500000
+COP8500  DS    0H                                                       14510000
+         MVI   OPENLIST,X'80'                                           14520000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE.      14530000
+         LA    R1,BAMDCB                                                14540000
+         FREEPOOL (1)                                                   14550000
+         SPACE 2                                                        14560000
+COP8550  M$ERRST MSGBLANK                                               14570000
+         LA    R1,#CMXDDPR                SYSPRINT DDNAME               14580000
+         BAS   R2,COP8580                 FREE THIS DATA SET            14590000
+         B     NEWSTAX                                                  14600000
+         SPACE 1                                                        14610000
+COP8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         14620000
+         BLR   R2                         NO, RETURN                    14630000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                14640000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           14650000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            14660000
+         USING S99RBP,R1                                                14670000
+         SPACE 1                                                        14680000
+         LA    R4,M99RB                                                 14690000
+         USING S99RB,R4                                                 14700000
+         ST    R4,S99RBPTR                                              14710000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              14720000
+         SPACE 1                                                        14730000
+         LA    R5,M99TUPL                                               14740000
+         USING S99TUPL,R5                                               14750000
+         MVI   S99RBLN,20                 LENGTH 20                     14760000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    14770000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         14780000
+         SPACE 1                                                        14790000
+         LA    R3,#CMXSYS3                TEXT POINTER                  14800000
+         USING S99TUNIT,R3                                              14810000
+         MVC   S99TUKEY(6),COPFDDNA       ADD TEXT KEYS                 14820000
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            14830000
+         LA    R0,COPUNALC                UNALLOC EVEN IF "PERM"        14840000
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          14850000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     14860000
+         SPACE 1                                                        14870000
+         DYNALLOC                                                       14880000
+         BR    R2                                                       14890000
+         SPACE 1                                                        14900000
+         DROP  R1,R3,R4,R5                                              14910000
+         SPACE 2                                                        14920000
+         B     RESTART0                                                 14930000
+         SPACE 2                                                        14940000
+         USING IHADCB,R1                                                14950000
+*** DCB OPEN EXIT                                                       14960000
+***8980  CLC   DCBDSORG(2),=F'0'             ANY DSORG?                 14970000
+***      BNE   *+8                           YES, BRANCH                14980000
+***      OI    DCBDSORG,DS1DSGPO             NO, USE DSORG=PO           14990000
+COP8980  CLI   DCBRECFM,0                    ANY RECFM?                 15000000
+         BNE   *+10                          YES, BRANCH                15010000
+         MVC   DCBRECFM(1),DCBRECFM-IHADCB+INDCB                        15020000
+         CLC   DCBLRECL(2),=F'0'             ANY LRECL?                 15030000
+         BNE   *+10                          YES, BRANCH                15040000
+         MVC   DCBLRECL(2),LRECL             NO, USE INPUT DEFAULT      15050000
+         CLC   DCBBLKSI(2),=F'0'             ANY BLKSIZE?               15060000
+         BNE   *+10                          YES, BRANCH                15070000
+         MVC   DCBBLKSI(2),BLKSI             NO, USE INPUT DEFAULT      15080000
+         BR    R14                                                      15090000
+         DROP  R1                                                       15100000
+         SPACE 2                                                        15110000
+COPYNULL BR    R14                                                      15120000
+         SPACE 2                                                        15130000
+*  COPY CONSTANTS                                                       15140000
+         PRINT NOGEN                                                    15150000
+COPDCB   DCB   DSORG=PS,DDNAME=COP,MACRF=(GL,PM),EODAD=COP8500          15160000
+COPDL    EQU   *-COPDCB                                                 15170000
+         SPACE 2                                                        15180000
+COPDCBPO DCB   DSORG=PO,DEVD=DA,DDNAME=X,MACRF=(R,W),EXLST=COP8990      15190000
+LCOPDCB  EQU   *-COPDCBPO                                               15200000
+COP8990  DC    0F'0',X'85',AL3(COP8980)      OPEN EXIT ONLY             15210000
+         PRINT GEN                                                      15220000
+         SPACE 2                                                        15230000
+L983     DC    C'983'                                         DRK MAY18 15240067
+L984     DC    C'984'                                         DRK MAY18 15250067
+COPLFIL5 DC    C'FILE('                                                 15260000
+COPLFIL4 DC    C'FIL('                                                  15270000
+COPLFIL3 DC    C'FI('                                                   15280000
+COPLFIL2 DC    C'F('                                                    15290000
+COPYDCB  DC    CL8'COPYDCB'                                             15300000
+COPMEMBR DC    X'0003000100084040404040404040'     MEMBER NAME          15310014
+COPDSNAM DC    X'00020001002C'                     DSNAME               15320000
+COPALLOC DC    X'00040001000101'                   DISP=(_)             15330000
+COPNORM  DC    X'00050001000102'                   DISP=(,CATLG)        15340000
+COPANORM DC    X'00060001000104'                   DISP=(,,DELETE)      15350000
+COPTRK   DC    X'00070000'                         SPACE=(TRK,          15360000
+COPFIRST DC    X'000A00010003000001'               SPACE=(,1            15370039
+COPSECON DC    X'000B00010003000004'               SPACE=(,,4           15380039
+COPDIR   DC    X'000C00010003000005'               SPACE=(,,,5)         15390000
+*COP2PDS DC    X'80120001000140'                   DSNTYPE=PDS          15400021
+COP2PDSE DC    X'80120001000180'                   DSNTYPE=LIBRARY      15410021
+COPVER2  DC    X'802C0001000102'                   PDSE VERSION 2       15420062
+COPMAXG  DC    X'802D0001000400000000'             MAXGENS              15430068
+COPOOLD  EQU   X'01'                                                    15440000
+COPONEW  EQU   X'04'                                                    15450000
+COPOSHR  EQU   X'08'                                                    15460000
+         SPACE 1                                                        15470000
+COPEFTSR DC    CL8'IKJEFTSR'                                            15480000
+COPCOPY  DC    CL8'IEBCOPY'                                             15490000
+COPDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          15500000
+COPMEMBE DC    X'0003000100084040404040404040'   MEMBER NAME            15510000
+COPFDDNA DC    X'000100010008'                   FOR FREE DDNAME        15520000
+COPDSORG DC    X'0057000100024040'               RETURN DSORG           15530000
+COPDUMMY DC    X'00240000'                       DUMMY DATA SET         15540000
+COPNEW   DC    X'00040001000104'                 DISP=(NEW)             15550000
+COPDEL   DC    X'00050001000104'                 DISP=(,DELETE)         15560000
+COPCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        15570000
+COPPERM  DC    X'00520000'                       PERMANENT ALLOCATION   15580000
+COPUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   15590000
+COPVOLSR DC    X'001000010006404040404040'       VOL=SER=               15600000
+         SPACE 2                                                        15610000
+COPPRTFI DC    X'000A00010003',AL3(005)          SPACE=(,NNN)           15620000
+COPPRTSE DC    X'000B00010003',AL3(005)          SPACE=(,(,NNN))        15630000
+COPPRTIN DC    X'000900010003',AL3(6171)         SPACE=(6171)           15640000
+COPSINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           15650000
+COPUT3IN DC    X'000900010003',AL3(80)           SPACE=(80)             15660000
+COPUNIT  DC    X'001500010008',CL8'&TUNIT'       UNIT=SYSDA    SS JUL87 15670000
+COPUNITP DC    X'001500010008',CL8'&PUNIT'       UNIT=SYSALLDA BL MAY88 15680000
+         SPACE 1                                                        15690000
+COPPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          15700000
+COPPRTLR DC    X'004200010002',AL2(121)          DCB=LRECL=121          15710000
+COPPRTBL DC    X'003000010002',AL2(6171)         DCB=BLKSIZE=6171       15720000
+         SPACE 2                                                        15730000
+COPSINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           15740000
+COPSINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           15750000
+COPSINBL DC    X'003000010002',AL2(3120)         DCB=BLKSIZE=3120       15760000
+         SPACE 2                                                        15770000
+COPDUMMA DC    A(COPDUMMY)                                              15780000
+COPSYSIN DC    A(COPPRTFI,COPPRTSE,COPSINSP)                            15790000
+         DC    A(COPSINRE,COPSINLR,COPSINBL)                            15800000
+         DC    A(COPNEW,COPDEL,COPCDEL),X'80',AL3(COPPERM)              15810000
+COPSYSU4 DC    A(COPUNIT)                                               15820000
+COPSYSUT DC    A(COPPRTFI,COPPRTSE,COPUT3IN)                            15830000
+         DC    A(COPNEW,COPDEL),X'80',AL3(COPCDEL)                      15840000
+COPSYSPR DC    A(COPPRTFI,COPPRTSE,COPPRTIN)                            15850000
+         DC    A(COPPRTRE,COPPRTLR,COPPRTBL)                            15860000
+         DC    A(COPNEW,COPDEL,COPCDEL),X'80',AL3(COPPERM)              15870000
+COPGENER DC    CL8'IEBGENER'                                            15880000
+COPDSN1M DC    C' COPY    O='                                           15890000
+COPCOPMO DC    C' COPYMOD'                                              15900000
+COPCOPGR DC    C' CP     '     COPYGROUP                      DRK MAY21 15910072
+COPGENAL DC    C',GENS=ALL'    COPY MEMBER GENERATIONS        DRK MAY21 15920072
+COPDSN2M DC    C',I='                                                   15930000
+COPLISTN DC    C',LIST=NO'                                              15940000
+COPMAXBL DC    C',MAXBLK='                                              15950000
+COPMEM1M DC    C' S M='                                                 15960000
+COPDSNLP DC    C'(('                                                    15970000
+COPDSNRP DC    C',R))'                                                  15980000
+         SPACE 2                                                        15990000
+PDS484W  DC    C'PDS484W COPY SHOULD NOT BE INTERRUPTED'                16000000
+PDS484WL EQU   *-PDS484W                                                16010000
+         SPACE 2                                                        16020000
+COPHAVE  ENQ   (*-*,*-*,E,*-*,SYSTEM),RET=HAVE,MF=L                     16030000
+         ORG   COPHAVE+4                                                16040000
+         SPACE 7                                                        16050000
+COPRESV  RESERVE (*-*,*-*,E,*-*,SYSTEMS),RET=HAVE,UCB=0,MF=L            16060000
+         ORG   COPRESV+4                                                16070000
+         SPACE 3                                                        16080000
+COPSYSS  DEQ   (*-*,*-*,*-*,SYSTEMS),RET=HAVE,UCB=0,MF=L                16090000
+         ORG   COPSYSS+4                                                16100000
+         SPACE 3                                                        16110000
+COPEDIT  DC    CL8'SPFEDIT'               FOR SPF MEMBER ENQ TEST       16120000
+COPIEWLP DC    CL8'SYSIEWLP'              FOR LINKAGE-EDITOR RESERVE    16130000
+COPSYS   DEQ   (*-*,*-*,*-*,SYSTEM),RET=HAVE,MF=L                       16140000
+         ORG   COPSYS+4                                                 16150000
+         SPACE 2                                                        16160000
+LOCATEC  CAMLST NAME,0,,0                                     DRK APR16 16170048
+         ORG   LOCATEC+4                                      DRK APR16 16180048
+#COPASSP EQU   X'80'            COPY: ASSOCIATES PHASE                  16190000
+#COPSEQ  EQU   X'40'            COPY: USE IEBGENER FOR THE COPY         16200000
+#COPMEMB EQU   X'20'            COPY: DSNAME(MEMBER) FORM WAS ENTERED   16210000
+#COPONE  EQU   X'10'            COPY: A SINGLE MEMBER                   16220000
+#COPSOME EQU   X'08'            COPY: SOME MEMBERS EXIST/NOEXIST        16230000
+#COPDUP  EQU   X'04'            COPY: A COLLISION WAS FOUND             16240000
+#COPASS2 EQU   X'01'            COPY: COPY ASSOCIATES TOO               16250000
+DEBNMEXT EQU   16           OFFSET IN DEB FOR NUMBER OF EXTENTS         16260000
+DEBUCBAD EQU   32           OFFSET IN DEB FOR UCB ADDRESS               16270000
+UCBTYP   EQU   16           OFFSET IN UCB FOR UNIT TYPE WORD            16280000
+UCBRR    EQU   X'20'        UCB IS ON A SHARED DASD DEVICE              16290000
+UCBVOLI  EQU   28           OFFSET IN UCB FOR DISK VOLUME NAME          16300000
+         DROP  R6                                             DRK OCT98 16310000

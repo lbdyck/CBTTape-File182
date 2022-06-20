@@ -1,0 +1,699 @@
+         TITLE 'P D S  --  PDS REPRO                         09/28/88'  00010000
+*********************************************************************** 00020000
+***      REPRO SUBCOMMAND      ADDED BY BRUCE LELAND -- SEPT, 1985  *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050000
+         SPACE 1                                                        00060000
+REPRO    CSECT                                                          00070018
+         USING *,R8                                                     00080000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK AUG05 00090002
+         BNO   REPROC                   NO, CONTINUE          DRK AUG05 00100002
+         TM    FLAGSCC,RECFMU           RECFM=U?              DRK AUG05 00110002
+         BNO   REPROC                   NO, CONTINUE          DRK AUG05 00120002
+         MVI   MTLEN,5                  LENGTH OF INSERT      DRK SEP05 00120114
+         MVC   INSERT#1(5),=C'REPRO'    INSERT COMMAND NAME   DRK SEP05 00121014
+         M$MSG L996$1                   NOT SUPPORTED MSG     DRK SEP05 00130014
+         M$ERRST MSGBLANK               ONE BLANK LINE        DRK SEP05 00130117
+         B     NEWCMD                   NOBBLED               DRK AUG05 00131016
+         SPACE 1                                                        00140015
+REPROC   DS    0H                                             DRK AUG05 00170002
+         LA    R1,L530               ASSUME A NON-PARTITIONED DATA SET  00190000
+         TM    DSORG,DS1DSGPO        CORRECT?                           00200000
+         BZ    MSGNEW                YES, BRANCH                        00210000
+         SPACE 2                                                        00220000
+         MVC   #REPRMAX+2(2),BLKSI   BUFFER SIZE                        00230000
+         CLC   #REPRBLK(4),ZERO      ANY MAXBLK(SIZE)?                  00240000
+         BE    REPR040               NO, BRANCH                         00250000
+         LH    R1,LRECL              MINIMUM RECORD LENGTH              00260000
+         TM    FLAGSCC,RECFMV        RECFM=V?                           00270000
+         BNO   *+8                   NO, BRANCH                         00280000
+         LA    R1,4(,R1)             YES, ADD 4 FOR COUNT               00290000
+         C     R1,#REPRBLK           LRECL:MAXBLK                       00300000
+         BNH   REPR020                 LOW OR EQUAL, BRANCH             00310000
+         ST    R1,#REPRBLK             USE THE LRECL VALUE              00320000
+         M$MSG L443                    MAXBLK HAS BEEN RAISED TO LRECL  00330000
+         SPACE 1                                                        00340000
+REPR020  CLC   #REPRMAX(4),#REPRBLK  BLKSIZE:MAXBLK                     00350000
+         BNL   REPR030                 LOW OR EQUAL, BRANCH             00360000
+         M$MSG L444                    MAXBLK EXCEEDS BLKSIZE           00370001
+REPR030  MVC   #REPRMAX(4),#REPRBLK  USE MAXBLK(SIZE)                   00380000
+         SPACE 1                                                        00390000
+REPR040  MVI   SUBPOOLT,21           SUBPOOL NUMBER                     00400000
+         L     R0,#REPRMAX           BUFFER SIZE                        00410000
+         ICM   R0,B'1000',SUBPOOLT   ADD SUBPOOL NUMBER                 00420000
+         GETMAIN R,LV=(0)            GET TEMPORARY STORAGE              00430000
+         ST    R1,#REPRBUF           POINT TO BUFFER WORK AREA          00440000
+         SPACE 1                                                        00450000
+         OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        00460000
+         LA    R3,#MEMPTR            CURRENT MEMBER POINTER             00470000
+         MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      00480000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       00490000
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      00500000
+         BO    REPR090               YES, BRANCH                        00510000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00520000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00530000
+         BO    REPR050               YES, BRANCH                        00540000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00550000
+         BO    REPR090               YES, BRANCH                        00560000
+REPR050  OI    #COPALI,#COPONE       ONLY A SINGLE MEMBER               00570000
+         SPACE 1                                                        00580000
+REPR090  NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         00590000
+         B     REPR300               PROCESS                            00600000
+         SPACE 3                                                        00610000
+REPR100  TM    #COPALI,#COPASSP      ASSOCIATES PHASE?                  00620000
+         BO    REPR120               YES, BRANCH                        00630000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00640000
+         BO    REPR120               YES, BRANCH                        00650000
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              00660000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00670000
+         BNO   REPR300               NO, BRANCH                         00680000
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               00690000
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   00700000
+         BNO   REPR405               NO, END OF LIST                    00710000
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              00720000
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       00730000
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               00740000
+         ST    R1,PMEMCURR                                              00750000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         00760000
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  00770000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              00780000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00790000
+         BO    REPR119               YES, BRANCH                        00800000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00810000
+         MVC   DIRNAME,MEMBER1         FIRST PART OF DSNAME2            00820000
+         SPACE 2                                                        00830000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           00840000
+         B     *+4(R15)                PROCESS RETURN CODE              00850000
+         B     REPR115                   00 - SUCCESSFUL                00860000
+         B     REPR110                   04 - MEMBER NOT FOUND          00870000
+         B     IOERROR                   08 - I/O ERROR                 00880000
+         SPACE 1                                                        00890000
+REPR110  MVC   INSERT#1(8),DIRNAME                                      00900000
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           00910000
+         B     REPR100                                                  00920000
+         SPACE 1                                                        00930000
+REPR115  MVC   DIRFLAG(DIREND-DIRFLAG),DIRFLAG+2  DELETE ADDED BYTES    00940000
+         MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  00950000
+         B     REPR300                                                  00960000
+         SPACE 1                                                        00970000
+REPR119  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               00980000
+         SPACE 1                                                        00990000
+REPR120  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           01000000
+         B     REPR400               END OF MEMBERS -- BRANCH           01010000
+         SPACE 1                                                        01020000
+         L     R14,DIRPTRS           START OF DIRECTORY ENTRY           01030000
+         MVC   DIRNAME(DIREND-DIRNAME),0(R14)                           01040000
+         TM    #COPALI,#COPASSP      ASSOCIATES PHASE?                  01050000
+         BO    REPR200               YES, BRANCH                        01060000
+         SPACE 1                                                        01070000
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 01080000
+         B     REPR400                 00 - SIMULATE DIRECTORY END      01090000
+         B     REPR100                 04 - MEMBER FAILED FILTERING     01100000
+         B     REPR300                 08 - MEMBER PASSED FILTERING     01110000
+         SPACE 3                                                        01120000
+REPR200  LA    R1,#MEMPTR            START OF MEMBER LIST               01130000
+REPR210  ICM   R1,B'0111',1(R1)      LAST TABLE ENTRY?                  01140000
+         BZ    REPR100               YES, IGNORE THIS ENTRY             01150000
+         CLC   12(3,R1),DIRTTR       MATCHING TTR?                      01160000
+         BNE   REPR210               NO, BRANCH                         01170000
+         SPACE 3                                                        01180000
+REPR300  LA    R1,#MEMPTR            START OF MEMBER LIST               01190000
+REPR310  ICM   R1,B'0111',1(R1)      LAST TABLE ENTRY?                  01200000
+         BZ    REPR340               YES, ADD THIS ENTRY                01210000
+         CLC   4(8,R1),DIRNAME       FIND MYSELF?                       01220000
+         BE    REPR100               YES, IGNORE THIS ENTRY             01230000
+         B     REPR310               NO, CONTINUE SEARCHING             01240000
+         SPACE 3                                                        01250000
+REPR340  SR    R15,R15                                                  01260000
+         ICM   R15,B'0001',#COPTO#   ANY RENAME?                        01270000
+         BZ    REPR380               NO, BRANCH                         01280000
+         BCTR  R15,0                 MACHINE LENGTH OF COMPARE          01290000
+         LA    R1,#MEMPTR            START OF MEMBER LIST               01300000
+         TM    #COPALI,#COPONE       SINGLE MEMBER?                     01310000
+         BNO   REPR350               NO, BRANCH                         01320000
+         TM    #COPALI,#COPASS2      ALIAS KEYWORD?                     01330000
+         BO    REPR350               YES, BRANCH                        01340000
+         MVI   #COPTO#,8             SET LENGTH TO 8                    01350000
+         LA    R15,7                 SET LENGTH TO 8                    01360000
+         SPACE 1                                                        01370000
+REPR350  ICM   R1,B'0111',1(R1)      ANY MORE MEMBERS?                  01380000
+         BZ    REPR380               NO, BRANCH                         01390000
+         MVC   DOUBLE(8),DIRNAME     FIRST MEMBER NAME                  01400000
+         XC    DOUBLE(8),4(R1)       VERSUS SECOND MEMBER NAME          01410000
+         XC    DOUBLE(*-*),DOUBLE    <<EXECUTED>>                       01420000
+         EX    R15,*-6               CLEAR THE FRONT FEW CHARACTERS     01430000
+         OC    DOUBLE(8),DOUBLE      EXACT MATCH AFTER FIRST PART?      01440000
+         BNZ   REPR350               NO, LOOP                           01450000
+         SPACE 1                                                        01460000
+         MVC   INSERT#1(8),4(R1)     MEMBER NAME                        01470000
+         MVC   INSERT#1(*-*),#COPTON <<EXECUTED>>                       01480000
+         EX    R15,*-6               MOVE THE FIRST FEW CHARACTERS      01490000
+         M$MSG L885$1                ERROR MESSAGE                      01500000
+         OI    #COPALI,#COPDUP       MARK FOR LATER                     01510000
+         SPACE 2                                                        01520000
+REPR380  MVI   SUBPOOLT,21           TEMPORARY SUBPOOL                  01530000
+         LA    R0,DIREND-DIRLINK+8   PTR, DIR ENTRY, OLD NAME  GP AUG05 01540003
+         ICM   R0,B'1000',SUBPOOLT   ADD SUBPOOL NUMBER                 01550000
+         GETMAIN R,LV=(0)                                               01560000
+         XC    0(DIREND-DIRLINK,R1),0(R1)                               01570000
+         ST    R1,0(,R3)             CHAIN TO PREVIOUS ENTRY            01580000
+         LR    R3,R1                 SAVE CURRENT POINTER               01590000
+         MVC   4(DIREND-DIRNAME,R3),DIRNAME                             01600000
+         MVC   4+DIREND-DIRNAME(8,R3),DIRNAME  OLD/FROM NAME   GP AUG05 01610003
+         MVC   INSERT#1(8),DIRNAME   WHO TO MOVE                        01620000
+         MVC   INSERT#2(8),=CL8'MOVED'                                  01630000
+         SR    R1,R1                                                    01640000
+         ICM   R1,B'0001',#COPTO#         ANY RENAME OPERAND?           01650000
+         BZ    REPR390                    NO, BRANCH                    01660000
+         BCTR  R1,0                       MACHINE LENGTH                01670000
+         MVC   INSERT#2(8),=CL8'COPIED'   "COPIED  "                    01680000
+         MVC   INSERT#2+7(3),=C'TO '      "TO "                         01690000
+         MVC   INSERT#2+7+3(8),DIRNAME    MEMBER NAME                   01700000
+         MVC   INSERT#2+7+3(*-*),#COPTON  <<EXECUTED>>                  01710000
+         EX    R1,*-6                     MOVE IN PARTIAL NAME          01720000
+         TR    INSERT#2+7+3(8),TRLINE     MAKE PRINTABLE                01730000
+         MVI   MTLEN+4,18                                               01740000
+REPR390  M$MSG L050$2                                                   01750000
+         MVI   MTLEN+4,8                                                01760000
+         TM    #COPALI,#COPONE       A SINGLE MEMBER?                   01770000
+         BNO   REPR100               NO, BRANCH                         01780000
+         SPACE 3                                                        01790000
+REPR400  TM    #COPALI,#COPASSP      ASSOCIATED MEMBERS?                01800000
+         BO    REPR405               YES, BRANCH                        01810000
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         01820000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      01830000
+         BO    REPR405               YES, BRANCH                        01840000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       01850000
+         BO    REPR100               YES, BRANCH                        01860000
+         SPACE 1                                                        01870000
+REPR405  TM    #COPALI,#COPASSP      ASSOCIATES PHASE STARTED?          01880000
+         BO    REPR500               YES, BRANCH                        01890000
+         TM    #COPALI,#COPASS2      ASSOCIATE MEMBERS TOO?             01900000
+         BNO   REPR500               NO, BRANCH                         01910000
+         OI    #COPALI,#COPASSP      YES, ASSOCIATES PHASE STARTED      01920000
+         NI    #COPALI,FF-#COPONE    WANT ALL ASSOCIATED MEMBERS        01930000
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   01940000
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    01950000
+         B     REPR100               DO ANY ASSOCIATED MEMBERS          01960000
+         SPACE 3                                                        01970000
+REPR500  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   01980000
+REPR600  ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           01990000
+         TM    #COPALI,#COPDUP       ANY COLLISIONS?                    02000000
+         BO    NEWCMD                YES, BRANCH                        02010000
+         SPACE 4                                                        02020000
+         LA    R3,#MEMPTR              BASE FOR THE MEMBER LIST         02030000
+         USING DIRLINK,R3                                               02040000
+REPR740  LR    R4,R3                   SAVE LAST MEMBER ENTRY           02050000
+         ICM   R3,B'0111',DIRLINK+1    LAST TABLE ENTRY?                02060000
+         BZ    REPR770                 YES, BRANCH                      02070000
+         SR    R1,R1                                                    02080000
+         ICM   R1,B'0001',#COPTO#      ANY RENAME OPERAND?              02090000
+         BZ    REPR760                 NO, BRANCH                       02100000
+         BCTR  R1,0                    ACTUAL STRING COUNT              02110000
+         MVC   DIRNAME(*-*),#COPTON    <<EXECUTED>>                     02120000
+         EX    R1,*-6                  MOVE IN PARTIAL NAME             02130000
+         SPACE 1                                                        02140000
+         CLI   #COPREP,1               REPLACE?                         02150000
+         BE    REPR760                 YES, BRANCH                      02160000
+         SPACE 1                                                        02170000
+         LA    R2,BLDLLIST-WORKAREA(R7)  IN WORKING STORAGE ADDRESS     02180000
+         MVC   4(8,R2),DIRNAME         MOVE FOR BLDL                    02190000
+         BLDL  INDCB,0(R2)                                              02200000
+         B     *+4(R15)                PROCESS RETURN CODE              02210000
+         B     REPR750                   00 - ALREADY THERE             02220000
+         B     REPR760                   04 - NOT FOUND                 02230000
+         B     IOERROR                   08 - I/O ERROR                 02240000
+         SPACE 1                                                        02250000
+REPR750  MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      02260000
+         M$MSG L852$1                  MEMBER IS ALREADY PRESENT        02270000
+         OI    #MEMPTR,X'80'           MARK FOR LATER                   02280000
+         SPACE 1                                                        02290000
+REPR760  MVC   DSNMEMQ(8),DIRNAME      MEMBER NAME                      02300000
+         BAS   R2,ENQMTEST             MEMBER IN USE?                   02310000
+         OI    #MEMPTR,X'40'           YES, MARK FOR LATER              02320000
+         B     REPR740                 REPEAT FOR ALL MEMBERS           02330000
+         SPACE 2                                                        02340000
+REPR770  TM    SPFLAG2,SPFLNCD         LINE COMMAND?                    02350000
+         BNO   REPR775                 NO, BRANCH                       02360000
+         MVC   SPFSAVM2,MEMNAME        DEFAULT OUTPUT MEMBER NAME       02370000
+         CLI   #COPTON,X'40'           ANY COPY TO NAME?                02380000
+         BNH   REPR776                 NO, BRANCH                       02390000
+         TM    #MEMPTR,X'80'           ANY FOUND ALREADY?               02400000
+         BO    NEWCMD                  YES, BRANCH                      02410000
+         MVC   SPFSAVM2,#COPTON        ACTUAL OUTPUT MEMBER NAME        02420000
+         B     REPR776                 NO, BRANCH                       02430000
+REPR775  M$ERRST MSGBLANK              ONE SPACING LINE                 02440000
+         TM    #MEMPTR,X'80'           ANY FOUND ALREADY?               02450000
+         BO    NEWCMD                  YES, BRANCH                      02460000
+         LA    R1,PDS396A              REPRO PROMPT MESSAGE             02470000
+         BAS   R2,YESNO                PROMPT FOR YES OR NO             02480000
+         B     NEWCMD                  NO, QUIT                         02490000
+         SPACE 2                                                        02500000
+REPR776  DS    0H                                                       02510000
+         USING DIRLINK,R3                                               02520000
+         LA    R3,#MEMPTR                                               02530000
+         XC    #FIXTTRO,#FIXTTRO       CLEAR HIGHEST TTR                02540000
+         SPACE 1                                                        02550000
+REPR780  ICM   R3,B'0111',DIRLINK+1    NEXT MEMBER ENTRY                02560000
+         BZ    REPR782                 END OF LIST, BRANCH              02570000
+         CLC   #FIXTTRO(3),DIRTTR      SAVE:CURRENT                     02580000
+         BH    REPR780                   HIGHER, BRANCH                 02590000
+         MVC   #FIXTTRO(3),DIRTTR      SAVE NEW HIGHEST TTR             02600000
+         B     REPR780                 LOOP FOR ALL ENTRIES             02610000
+         SPACE 1                                                        02620000
+         DROP  R3                                                       02630000
+REPR782  CLC   #FIXTTRO(3),DS1LSTAR    BEYOND END OF DATA MARKER?       02640000
+         BL    REPR790                 NO, BRANCH                       02650000
+*** PAST DS1LSTAR -- PERHAPS WE NEED TO REOPEN THE DATA SET             02660000
+         OI    FLAGSJJ,FNOREAD         CALL EXCP FOR OPEN ONLY          02670000
+         MVC   STARTTR(3),DS1LSTAR     FIRST DISK ADDRESS TO READ       02680000
+         L     R15,=V(EXCP)                                             02690000
+         BASR  R14,R15                                                  02700000
+         NI    FLAGSJJ,FF-FNOREAD      EXCP CALL IS COMPLETED           02710000
+         SPACE 2                                                        02720000
+REPR790  SR    R1,R1                                                    02730000
+         ICM   R1,B'0001',#COPTO#      ANY RENAME OPERAND?              02740000
+         BZ    REPR794                 NO, BRANCH                       02750000
+         TM    SPFLAG2,SPFLNCD         LINE COMMAND?                    02760000
+         BO    REPR794                 YES, BRANCH                      02770000
+         BCTR  R1,0                    MACHINE LENGTH                   02780000
+         USING DIRLINK,R3                                               02790000
+         LR    R3,R4                   LAST MEMBER NAME                 02800000
+         SPACE 1                                                        02810000
+         STCM  R1,B'0011',MEMBERD+1    LENGTH                           02820000
+         MVC   MEMBERD+1+2(8),DIRNAME  MEMBER NAME                      02830000
+         MVI   MEMBERD,FMEMBER1        SINGLE MEMBER                    02840000
+         TM    #COPALI,#COPONE         SINGLE MEMBER?                   02850000
+         BO    REPR792                 YES, BRANCH                      02860000
+         STCM  R1,B'0011',MEMBERD+1+2+8+8                               02870000
+         MVC   MEMBERD+1+2+8(8),DIRNAME  MEMBER NAME                    02880000
+         MVI   MEMBERD,FMEMBER1+FMEMBER2+FMEMRANG+FMEM#MEM              02890000
+REPR792  NI    PMEMMIN,FF-X'80'        TURN OFF MEMBER LIST             02900000
+         BAS   R14,DEFGROUP            DEFINE NEW MEMBER GROUP          02910000
+REPR794  BAS   R6,RESERVE              RESERVE/ENQUEUE AS REQUIRED      02920022
+         SPACE 1                                                        02930000
+         MVI   SUBPOOLT,21             MARK TEMPORARY STORAGE OBTAINED  02940000
+         LA    R0,1024*3               STORAGE FOR THREE NOTELISTS      02950000
+         ICM   R0,B'1000',SUBPOOLT     SUBPOOL                          02960000
+         GETMAIN R,LV=(0)                                               02970000
+         ST    R1,#NOTEPTR             POINTER TO NOTELIST WORK AREA    02980000
+         BAS   R2,SHUTSTW2             CLOSE AND FREE THE STOW DCB      02990000
+         SPACE 1                                                        03000000
+         MVI   OPENLIST,X'80'                                           03010000
+         OPEN  (STOWDCB,OUTPUT),MF=(E,OPENLIST)  OPEN IT FOR OUTPUT     03020000
+         SPACE 1                                                        03030000
+         TM    DCBOFLGS-IHADCB+STOWDCB,DCBOFOPN  STOW DCB OPEN?         03040000
+         LA    R1,L831                           NO OPEN ERROR MSG      03050000
+         BNO   MSGNEW                            NO, QUIT               03060000
+         LA    R3,#MEMPTR                                               03070000
+         SPACE 1                                                        03080000
+REPR812  ICM   R3,B'0111',DIRLINK+1    NEXT MEMBER ENTRY                03090000
+         BZ    REPR820                 END OF LIST, BRANCH              03100000
+         MVI   DIRLINK,X'80'           ASSUME THE MEMBER IS TO BE MOVED 03110000
+         TM    DIRFLAG,DIRALIAS        ALIAS ENTRY?                     03120000
+         BNO   REPR818                 NO, BRANCH                       03130000
+         LA    R2,#MEMPTR                                               03140000
+         SPACE 1                                                        03150000
+REPR814  ICM   R2,B'0111',1(R2)              MORE IN THE LIST?          03160000
+         BZ    REPR818                       NO, THIS ITEM WILL MOVE    03170000
+         CR    R2,R3                         SAME ITEM?                 03180000
+         BE    REPR814                       YES, TRY AGAIN             03190000
+         CLC   DIRTTR(3),DIRTTR-DIRLINK(R2)  SAME TTR?                  03200000
+         BNE   REPR814                       NO, BRANCH                 03210000
+         TM    DIRLINK-DIRLINK(R2),X'80'     OTHER ITEM TO BE MOVED?    03220000
+         BO    REPR816                       YES, TRUE ALIAS            03230000
+         TM    DIRFLAG-DIRLINK(R2),DIRALIAS  OTHER ITEM AN ALIAS?       03240000
+         BO    REPR814                       YES, BRANCH                03250000
+         SPACE 1                                                        03260000
+REPR816  MVI   DIRLINK,0                     DO NOT MOVE THIS ENTRY     03270000
+REPR818  TM    DIRFLAG,DIR1TTR+DIR2TTR       ANY USER TTR'S?            03280000
+         BZ    REPR812                       NO, BRANCH                 03290000
+         SPACE 1                                                        03300000
+         OI    DIRLINK,X'01'                 AT LEAST ONE TTR           03310000
+         TM    DIRFLAG,DIR2TTR               TWO OR MORE TTR'S?         03320000
+         BNO   *+8                           NO, BRANCH                 03330000
+         OI    DIRLINK,X'02'                 AT LEAST TWO TTR'S         03340000
+         TM    DIRFLAG,DIR1TTR+DIR2TTR       THREE TTR'S?               03350000
+         BNO   *+8                           NO, BRANCH                 03360000
+         OI    DIRLINK,X'04'                 THREE TTR'S                03370000
+         B     REPR812                                                  03380000
+         SPACE 3                                                        03390000
+REPR820  LA    R3,#MEMPTR                                               03400000
+REPR822  ICM   R3,B'0111',DIRLINK+1    ANY MORE MEMBERS IN THE LIST?    03410000
+         BZ    REPR980                 NO, BRANCH                       03420000
+         MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      03430000
+         MVC   INSERT#2(8),=CL8'MOVED'                                  03440000
+         CLI   #COPTO#,0                 ANY RENAME OPERAND?            03450000
+         BE    *+10                      NO, BRANCH                     03460000
+         MVC   INSERT#2(8),=CL8'CREATED' YES, CREATED INSTEAD           03470000
+         M$MSG L051$2                                                   03480000
+         TM    DIRLINK,X'80'           MEMBER TO BE MOVED?              03490000
+         BNO   REPR822                 NO, BRANCH                       03500000
+         LA    R2,DIRSTART             FIRST USER TTR                   03510000
+         L     R4,#NOTEPTR             START OF NOTELIST STORAGE        03520000
+         LA    R5,X'10'+X'01'          MASK BITS FOR TESTING            03530000
+         LA    R6,3                    LOOP CONTROL                     03540000
+         SPACE 1                                                        03550000
+*  INPUT THE OVERLAY NOTELIST TABLE                                     03560000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     03570000
+REPR824  EX    R5,*-4                  ANOTHER TTR?                     03580000
+         BZ    REPR830                 NO, BRANCH                       03590000
+         CLI   3(R2),0                 NOTELIST COUNT?                  03600000
+         BZ    REPR826                 NO, BRANCH                       03610000
+         OI    DIRLINK,*-*             <<EXECUTED>>                     03620000
+         EX    R5,*-4                  MARK FOR NOTELIST PROCESSING     03630000
+         MVC   STARTTR(3),0(R2)        NOTELIST TTR ADDRESS             03640000
+         L     R15,=V(EXCP)            INPUT IT                         03650000
+         BASR  R14,R15                                                  03660000
+         LA    R1,L751                 ASSUME AN INPUT PROBLEM          03670000
+         LTR   R15,R15                 CORRECT?                         03680000
+         BP    MSGNEW                  YES, BRANCH                      03690000
+         LR    R14,R0                  INPUT ADDRESS                    03700000
+         SR    R15,R15                                                  03710000
+         IC    R15,3(,R2)              NUMBER OF NOTELIST ENTRIES       03720000
+         SLL   R15,2                   SIZE OF NOTELIST AREA            03730000
+         LR    R0,R4                   START OF THIS NOTELIST AREA      03740000
+         LR    R1,R15                  SAVE AREA MOVE LENGTH            03750000
+         MVCL  R0,R14                  SAVE THE NOTELIST DATA           03760000
+         SPACE 1                                                        03770000
+REPR826  LA    R2,4(,R2)               NEXT POTENTIAL USER TTR          03780000
+         LA    R4,1024(,R4)            NEXT POTENTIAL NOTELIST AREA     03790000
+         SLL   R5,1                    NEXT MASK BITS                   03800000
+         BCT   R6,REPR824                                               03810000
+         SPACE 3                                                        03820000
+*  READ EACH RECORD OF THE MEMBER                                       03830000
+REPR830  MVC   STARTTR(3),DIRTTR       FIRST TTR OF THE MEMBER          03840000
+         MVC   DIRNAME-WORKAREA(8,R7),DIREND    NAME FOR PAM   GP AUG05 03850003
+         MVC   #FINDTTR(3),DIRTTR      SAVE THE FIRST TTR FOR LATER     03860000
+         XC    #REPRLEN(4),#REPRLEN    RESET THE COUNT FIELD            03870000
+         TM    FLAGSCC,RECFMF          RECFM=F?                         03880000
+         BO    REPR870                 YES, BRANCH                      03890000
+         MVI   #REPRLEN+3,4            SET LENGTH FOR RECFM=V           03900000
+         TM    FLAGSCC,RECFMV          RECFM=V?                         03910000
+         BO    REPR870                 YES, BRANCH                      03920000
+         SPACE 2                                                        03930000
+REPR832  L     R15,=V(EXCP)                                             03940000
+         BASR  R14,R15                                                  03950000
+         B     *+4(R15)                PROCESS RETURN CODE              03960000
+         B     REPR834                   00 - GOOD READ                 03970000
+         B     REPR960                   04 - END OF MEMBER             03980000
+         B     REPR960                   08 - END OF DATA SET           03990000
+         B     NEWCMD                    12 - I/O ERROR                 04000000
+         SPACE 1                                                        04010000
+REPR834  STM   R2,R12,28(R13)          CONVERT CCHHR TO TTR             04020000
+         LA    R2,CURMBB                                                04030000
+         L     R1,INDCB+(DCBDEBAD-IHADCB)                               04040000
+         L     R15,ADDRRLTV                                             04050000
+         LR    R3,R13                                                   04060000
+         BASR  R14,R15                                                  04070000
+         LR    R13,R3                                                   04080000
+         LM    R2,R12,28(R13)                                           04090000
+         ST    R0,#FIXTTRI             SAVE CURRENT INPUT TTR           04100000
+         TM    DIRLINK,X'77'           ANY PENDING TTR UPDATES?         04110000
+         BZ    REPR844                 NO, BRANCH                       04120000
+         LA    R2,DIRSTART             FIRST USER TTR                   04130000
+         L     R4,#NOTEPTR             START OF NOTELIST STORAGE        04140000
+         LA    R5,X'10'                MASK                             04150000
+         LA    R6,3                    LOOP CONTROL                     04160000
+         SPACE 1                                                        04170000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     04180000
+REPR836  EX    R5,*-4                  ANY NOTELIST FOR THIS ENTRY?     04190000
+         BZ    REPR838                 NO, BRANCH                       04200000
+         CLM   R0,B'1110',0(R2)        IS THIS THE NOTELIST ENTRY?      04210000
+         BE    REPR840                 YES, BRANCH                      04220000
+REPR838  LA    R2,4(,R2)               NEXT USER TTR                    04230000
+         LA    R4,1024(,R4)            NEXT NOTELIST ENTRY              04240000
+         SLL   R5,1                    NEXT MASK                        04250000
+         BCT   R6,REPR836                                               04260000
+         B     REPR844                 NOT THIS RECORD, BRANCH          04270000
+         SPACE 2                                                        04280000
+REPR840  SR    R0,R0                                                    04290000
+         IC    R0,3(R2)                NUMBER OF NOTELIST ENTRIES       04300000
+         LA    R1,L750                 ERROR MESSAGE FOR A PROBLEM      04310000
+         XI    DIRLINK,*-*             <<EXECUTED>>                     04320000
+         EX    R5,*-4                  TURN OFF THIS NOTELIST ENTRY     04330000
+         L     R5,EXCPBUFF             OUTPUT START ADDRESS             04340000
+REPR842  TM    3(R4),X'80'             NOTELIST TTR PREVIOUSLY UPDATED? 04350000
+         BNO   MSGNEW                  NO, ERROR                        04360000
+         MVC   0(3,R5),0(R4)           REPLACE THE BUFFER TTR           04370000
+         LA    R4,4(,R4)               NEXT STORAGE ADDRESS             04380000
+         LA    R5,4(,R5)               NEXT BUFFER ADDRESS              04390000
+         BCT   R0,REPR842              MOVE AND CHECK ALL ENTRIES       04400000
+         SPACE 3                                                        04410000
+REPR844  L     R2,EXCPBUFF             START OF OUTPUT                  04420000
+         CLI   0(R2),X'80'             IDR RECORD?                      04430000
+         BNE   REPR846                 NO, BRANCH                       04440000
+         TM    2(R2),X'01'             ZAP IDR?                         04450000
+         BNO   REPR846                 NO, BRANCH                       04460000
+         OI    #REPRLEN,X'80'          MARK ZAP IDR INPUT               04470000
+         CLI   #REPADD,1               ADD AN IDR RECORD?               04480000
+         BNE   REPR846                 NO, BRANCH                       04490000
+         OI    3(R2),X'40'             MARK ZAP IDR RECORD AS CONTINUED 04500000
+         SPACE 1                                                        04510000
+REPR846  TM    #REPRLEN,X'80'          ANY ZAP IDR?                     04520000
+         BNO   REPR850                 NO, BRANCH                       04530000
+         TM    #REPRLEN,X'40'          ZAP IDR ALREADY ADDED?           04540000
+         BO    REPR850                 YES, BRANCH                      04550000
+         CLI   0(R2),X'80'             IDR RECORD?                      04560000
+         BNE   REPR848                 NO, BRANCH                       04570000
+         TM    2(R2),X'01'             ZAP IDR?                         04580000
+         BO    REPR850                 YES, BRANCH                      04590000
+REPR848  CLI   #REPADD,1               ADD AN IDR RECORD?               04600000
+         BNE   REPR850                 NO, BRANCH                       04610000
+         OI    #REPRLEN,X'40'          IDR RECORD ADDED                 04620000
+         XC    MSGTEXT1(256),MSGTEXT1  CLEAR THE RECORD TO ADD          04630000
+         MVI   MSGTEXT1+0,X'80'        IDR RECORD                       04640000
+         MVI   MSGTEXT1+1,X'FA'        IDR RECORD LENGTH                04650000
+         MVI   MSGTEXT1+2,X'01'        IDR RECORD FOR ZAP INFORMATION   04660000
+         LA    R0,251                  RECORD LENGTH                    04670000
+         STH   R0,STOWDCB+DCBBLKSI-IHADCB  UPDATE IN THE DCB            04680000
+         LA    R2,MSGTEXT1             START OF DATA                    04690000
+         WRITE FIXPDSD,SF,STOWDCB,(2),'S',MF=E                          04700000
+         CHECK FIXPDSD                                                  04710000
+         M$MSG L276                    ZAP IDR ADDED          DRK NOV06 04711020
+         SPACE 3                                                        04720000
+*  OUTPUT EACH RECORD AND CHANGE TTR POINTERS AS NECESSARY              04730000
+REPR850  L     R0,LS                   RECORD LENGTH                    04740000
+         STH   R0,STOWDCB+DCBBLKSI-IHADCB  UPDATE IN THE DCB            04750000
+         L     R2,EXCPBUFF             START OF DATA                    04760000
+         WRITE FIXPDSD,SF,STOWDCB,(2),'S',MF=E                          04770000
+         CHECK FIXPDSD                                                  04780000
+         NOTE  STOWDCB                 OUTPUT TTR                       04790000
+         ST    R1,#FIXTTRO                                              04800000
+         SPACE 1                                                        04810000
+         CLC   DIRTTR(3),#FINDTTR      FIRST MEMBER RECORD?             04820000
+         BNE   *+10                    NO, BRANCH                       04830000
+         MVC   DIRTTR(3),#FIXTTRO      YES, UPDATE THE TTR              04840000
+         SPACE 1                                                        04850000
+         TM    DIRLINK,X'77'           ANY PENDING TTR UPDATES?         04860000
+         BZ    REPR832                 NO, BRANCH                       04870000
+         LA    R2,DIRSTART             FIRST USER TTR                   04880000
+         L     R4,#NOTEPTR             START OF NOTELIST                04890000
+         LA    R5,X'10'                NOTELIST MASK                    04900000
+         LA    R6,3                    LOOP CONTROL                     04910000
+         LA    R14,X'01'               TTR MASK                         04920000
+         SPACE 1                                                        04930000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     04940000
+REPR852  EX    R14,*-4                 TTR IN THIS POSITION?            04950000
+         BNO   REPR854                 NO, BRANCH                       04960000
+         CLC   #FIXTTRI(3),0(R2)       THIS INPUT TTR?                  04970000
+         BNE   REPR854                 NO, BRANCH                       04980000
+         STCM  R1,B'1110',0(R2)        YES, UPDATE THE TTR              04990000
+         XI    DIRLINK,*-*             <<EXECUTED>>                     05000000
+         EX    R14,*-4                 TURN OFF THE TTR INDICATOR       05010000
+         SPACE 1                                                        05020000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     05030000
+REPR854  EX    R5,*-4                  NOTELIST FOR THIS ENTRY?         05040000
+         BNO   REPR858                 NO, BRANCH                       05050000
+         LR    R15,R4                  START OF NOTELIST                05060000
+         SR    R0,R0                                                    05070000
+         IC    R0,3(R2)                NUMBER OF NOTELIST ENTRIES       05080000
+REPR856  CLC   0(3,R15),#FIXTTRI       THIS TTR?                        05090000
+         BNE   *+12                    NO, BRANCH                       05100000
+         STCM  R1,B'1110',0(R15)       YES, UPDATE THE TTR              05110000
+         OI    3(R15),X'80'                 AND MARK AS UPDATED         05120000
+         LA    R15,4(,R15)             NEXT NOTELIST ENTRY              05130000
+         BCT   R0,REPR856                                               05140000
+REPR858  LA    R2,4(,R2)               NEXT USER TTR                    05150000
+         LA    R4,1024(,R4)            NEXT NOTELIST STORAGE            05160000
+         SLL   R5,1                    NEXT NOTELIST BIT MASK           05170000
+         SLL   R14,1                   NEXT TTR BIT MASK                05180000
+         BCT   R6,REPR852                                               05190000
+         B     REPR832                MOVE ALL MEMBERS                  05200000
+         SPACE 3                                                        05210000
+*  REBLOCK FOR REPRO                                                    05220000
+REPR870  L     R15,=V(EXCP)            NEXT USER TTR                    05230000
+         BASR  R14,R15                                                  05240000
+         B     *+4(R15)                PROCESS RETURN CODE              05250000
+         B     REPR872                   00 - GOOD READ                 05260000
+         B     REPR918                   04 - END OF MEMBER             05270000
+         B     REPR918                   08 - END OF DATA SET           05280000
+         B     NEWCMD                    12 - I/O ERROR                 05290000
+         SPACE 1                                                        05300000
+REPR872  L     R5,LS                   CURRENT LENGTH                   05310000
+         LR    R6,R0                   START OF RECORD                  05320000
+         AR    R5,R6                   END OF RECORD                    05330000
+         BCTR  R5,0                    END OF RECORD -1                 05340000
+         LA    R2,REPR890              WHERE-TO-GO FOR FB               05350000
+         TM    FLAGSCC,RECFMF          RECFM=F?                         05360000
+         LH    R4,LRECL                                                 05370000
+         BOR   R2                      YES, BRANCH                      05380000
+         AH    R6,=H'4'                SKIP FIRST VB COUNT              05390000
+         LA    R2,REPR874              WHERE-TO-GO FOR VB               05400000
+         SPACE 1                                                        05410000
+REPR874  SR    R4,R4                                                    05420000
+         ICM   R4,B'0011',0(R6)        LRECL FOR VB                     05430000
+         B     REPR890                 PROCESS THIS RECORD              05440000
+         SPACE 1                                                        05450000
+REPR880  BXLE  R6,R4,0(R2)             GET NEXT LRECL                   05460000
+         B     REPR870                 GET NEXT RECORD                  05470000
+         SPACE 1                                                        05480000
+REPR890  STM   R3,R6,#LFSAVE4                                           05490000
+         L     R6,#REPRBUF             START OF BUFFER                  05500000
+         L     R5,#REPRLEN             LENGTH OF BUFFER                 05510000
+         AR    R5,R6                   END OF BUFFER                    05520000
+         SPACE 1                                                        05530000
+         LR    R1,R5                                                    05540000
+         AR    R1,R4                   TEST ADDITION                    05550000
+         SPACE 1                                                        05560000
+         L     R0,#REPRMAX             MAXIMUM BLKSIZE                  05570000
+         A     R0,#REPRBUF             MAXIMUM ADDRESS                  05580000
+         CR    R1,R0                   FIT IN THIS BLOCK?               05590000
+         BH    REPR920                 NO, BRANCH                       05600000
+         SPACE 2                                                        05610000
+REPR910  L     R0,#LFSAVE4+12          CURRENT RECORD                   05620000
+         LR    R1,R4                   CURRENT LRECL                    05630000
+         LR    R4,R5                   CURRENT OUTPUT START             05640000
+         LR    R5,R1                   CURRENT LRECL                    05650000
+         MVCL  R4,R0                   MOVE THE CURRENT RECORD          05660000
+         LM    R3,R6,#LFSAVE4          RESET REGISTERS                  05670000
+         L     R0,#REPRLEN                                              05680000
+         AR    R0,R4                   ADD CURRENT LENGTH               05690000
+         ST    R0,#REPRLEN             NEW LENGTH                       05700000
+         B     REPR880                                                  05710000
+         SPACE 2                                                        05720000
+REPR918  OI    #REPRLEN,X'80'          MARK END OF MEMBER               05730000
+         LH    R0,#REPRLEN+2           LENGTH                           05740000
+         LTR   R0,R0                   ANY DATA?                        05750000
+         BZ    REPR960                 NO, BRANCH                       05760000
+         CH    R0,=H'4'                FOUR?                            05770000
+         BH    REPR920                 NO, BRANCH                       05780000
+         TM    FLAGSCC,RECFMV          RECFM=V?                         05790000
+         BO    REPR960                 YES, BRANCH                      05800000
+         SPACE 1                                                        05810000
+REPR920  LH    R0,#REPRLEN+2           LENGTH                           05820000
+         STH   R0,STOWDCB+DCBBLKSI-IHADCB  UPDATE IN THE DCB            05830000
+         L     R4,#REPRBUF             START OF DATA                    05840000
+         TM    FLAGSCC,RECFMV          RECFM=V?                         05850000
+         BNO   *+8                     NO, BRANCH                       05860000
+         STH   R0,0(,R4)               UPDATE THE LENGTH FIELD          05870000
+         WRITE FIXPDSD,SF,STOWDCB,(4),'S',MF=E                          05880000
+         CHECK FIXPDSD                                                  05890000
+         NOTE  STOWDCB                 OUTPUT TTR                       05900000
+         ST    R1,#FIXTTRO                                              05910000
+         SPACE 1                                                        05920000
+         CLC   DIRTTR(3),#FINDTTR      FIRST MEMBER RECORD?             05930000
+         BNE   *+10                    NO, BRANCH                       05940000
+         MVC   DIRTTR(3),#FIXTTRO      YES, UPDATE THE TTR              05950000
+         SPACE 1                                                        05960000
+         LM    R3,R6,#LFSAVE4          RESET REGISTERS                  05970000
+         TM    #REPRLEN,X'80'          END OF MEMBER?                   05980000
+         BO    REPR960                 YES, BRANCH                      05990000
+         MVC   #REPRLEN(4),ZERO        CLEAR THE LENGTH FIELD           06000000
+         TM    FLAGSCC,RECFMF          RECFM=F?                         06010000
+         BO    REPR890                 YES, BRANCH                      06020000
+         MVI   #REPRLEN+3,4            SET INPUT FOR COUNT FIELD        06030000
+         B     REPR890                                                  06040000
+         SPACE 3                                                        06050000
+*  VERIFY THAT THE MEMBER WAS CORRECTLY PROCESSED                       06060000
+REPR960  LA    R1,L871                 ASSUME A TTR WAS NOT UPDATED     06070000
+         TM    DIRLINK,X'77'           CORRECT?                         06080000
+         BNZ   MSGNEW                  YES, BRANCH                      06090000
+         SPACE 1                                                        06100000
+         CLC   DIRTTR(3),#FINDTTR      A NULL MEMBER?                   06110000
+         BNE   REPR962                 NO, BRANCH                       06120000
+         TM    DS1SMSFG-WORKAREA(R7),DS1PDSE PDSE DATASET?     GP AUG05 06130006
+         BO    REPR962                 YES, LEAVE RELAD ALONE  GP AUG05 06140003
+         SPACE 1                                                        06150000
+* UPDATE TTR BY TWO AND STOW AGAIN FOR NULL MEMBERS                     06160000
+         STOW  STOWDCB,DIRNAME,D                                        06170000
+         SPACE 1                                                        06180000
+         ICM   R1,B'0111',#FIXTTRO                 HIGHEST OUTPUT TTR   06190000
+         LA    R1,2(,R1)                                                06200000
+         STCM  R1,B'0111',DCBRELAD-IHADCB+STOWDCB  HIGHEST OUTPUT TTR+2 06210000
+         STOW  STOWDCB,DIRNAME,A                                        06220000
+         LA    R1,L832                                                  06230000
+         LTR   R15,R15                                                  06240000
+         BP    EXIT8M                                                   06250000
+         SPACE 1                                                        06260000
+         SR    R1,R1                               YES, CHANGE THE TTR  06270000
+         ICM   R1,B'0111',DCBRELAD-IHADCB+STOWDCB  TTR OF LAST EOF      06280000
+         S     R1,=F'1'                            TTR OF NULL DATA     06290000
+         STCM  R1,B'0111',DIRTTR                   TTR OF NULL DATA     06300000
+         STCM  R1,B'0111',#FIXTTRO                 HIGHEST OUTPUT TTR   06310000
+         SPACE 2                                                        06320000
+REPR962  TM    DIRFLAG,DIRALIAS        ALIAS (WITH NO MAIN)?            06330000
+         BNO   REPR970                 NO, BRANCH                       06340000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   06350000
+         XI    DIRFLAG,DIRALIAS        TEMPORARILY TURN OFF ALIAS BIT   06360000
+         STOW  STOWDCB,DIRNAME,R       REPLACE THIS MEMBER ENTRY        06370000
+         OI    DIRFLAG,DIRALIAS        RESET THE ALIAS BIT              06380000
+         SPACE 1                                                        06390000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 06390108
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 06391008
+         B     *+4(R15)                PROCESS RETURN CODE              06400000
+         B     REPR970                   00 - REPLACED                  06410000
+         EX    0,*                       04 - SHOULD NOT OCCUR          06420000
+         B     REPR970                   08 - NOT PRESENT               06430000
+         B     FULLDIR                   12 - DIRECTORY FULL            06440000
+*        B     IOERROR                   16 - I/O ERROR                 06450008
+         SPACE 3                                                        06460000
+*  UPDATE THIS MEMBER AND ALL OF ITS ALIASES                            06470000
+REPR970  LA    R2,#MEMPTR                                               06480000
+         LR    R4,R3                                                    06490000
+         SPACE 1                                                        06500000
+REPR972  TM    DS1SMSFG-WORKAREA(R7),DS1PDSE PDSE DATASET?     GP AUG05 06511006
+         BO    REPR973                 YES, LEAVE RELAD ALONE  GP AUG05 06520003
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR-DIRLINK(R4)  TTR       06530003
+REPR973  EQU   *                                               GP AUG05 06540003
+         STOW  STOWDCB,4(R4),R         REPLACE THIS MEMBER ENTRY        06550000
+         SPACE 1                                                        06560000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 06560108
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 06561008
+         B     *+4(R15)                PROCESS RETURN CODE              06570000
+         B     REPR974                   00 - REPLACED                  06580000
+         EX    0,*                       04 - SHOULD NOT OCCUR          06590000
+         B     REPR974                   08 - NOT PRESENT               06600000
+         B     FULLDIR                   12 - DIRECTORY FULL            06610000
+*        B     IOERROR                   16 - I/O ERROR                 06620008
+         SPACE 1                                                        06630000
+REPR974  ICM   R2,B'0111',1(R2)               NEXT MEMBER ENTRY         06640000
+         BZ    REPR822                        END OF LIST, BRANCH       06650000
+         CLC   #FINDTTR(3),DIRTTR-DIRLINK(R2) THIS TTR TOO?             06660000
+         BNE   REPR974                        NO, BRANCH                06670000
+         CR    R2,R3                          SAME ENTRY?               06680000
+         BE    REPR974                        YES, BRANCH               06690000
+         LR    R4,R2                                                    06700000
+         NI    DIRLINK-DIRLINK(R2),FF-X'80'   DO NOT MOVE THIS MEMBER   06710000
+         MVC   DIRTTR-DIRLINK(3,R2),DIRTTR    NEW PRIMARY TTR           06720000
+         LA    R14,DIRSTART-DIRLINK(,R2)      FIRST ALIAS USER TTR      06730000
+         LA    R15,DIRSTART                   FIRST MOVED USER TTR      06740000
+         LA    R5,X'01'                       MASK BIT                  06750000
+         LA    R6,3                           LOOP CONTROL              06760000
+         SPACE 1                                                        06770000
+         TM    DIRLINK-DIRLINK(R2),*-*        <<EXECUTED>>              06780000
+REPR976  EX    R5,*-4                         A TTR AT THIS ENTRY?      06790000
+         BNO   REPR972                        NO, BRANCH                06800000
+         MVC   0(3,R14),0(R15)                YES, UPDATE THE TTR ENTRY 06810000
+         LA    R14,4(,R14)                    NEXT ALIAS TTR            06820000
+         LA    R15,4(,R15)                    NEXT MOVED TTR            06830000
+         SLL   R5,1                           NEXT MASK BIT             06840000
+         BCT   R6,REPR976                                               06850000
+         B     REPR972                                                  06860000
+         DROP  R3                                                       06870000
+         SPACE 3                                                        06880000
+REPR980  BAS   R2,CLOSEIT                        CLOSE INPUT DATA SET   06890000
+         LA    R0,RESTART0                       ABEND RECOVERY ADDRESS 06900000
+         ST    R0,RECOVER                                               06910000
+         BAS   R2,DEALLDCB             FREE THE DATA SET                06920000
+         B     RESTART0                REALLOCATE AND START OVER        06930000

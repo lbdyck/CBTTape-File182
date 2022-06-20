@@ -1,0 +1,973 @@
+         TITLE 'ISPF - OUTPUT LV 1 SUBROUTINE'                          05958000
+***  EXTRACT THE CURRENT ISPMODE/MEMLIST TABLE                ABL JUN85 05959000
+ISPDISPT DS    0H                                             ABL JUN85 05960000
+         USING *,R4                                                     05961000
+         MVC   SPFMSGID(8),ISPBLK8   TURN OFF MESSAGES                  05962000
+         MVC   SPFCURSR(8),ISPBLK8   TURN OFF CURSOR NAME               05963000
+         NI    HFLAGSDD,FF-X'02'     NO OPEN YET                        05964000
+ISPD020  OI    ##ADRPA#,$A+$D        IGNORE ATTENTION NOW               05965000
+         NI    HFLAGSDD,FF-X'01'     NO ATTRIBUTES                      05966000
+         BAS   R2,REFCHECK           CONDITIONAL REFRESH      ABL JAN87 05967000
+         LA    R14,ISPDISP           DISPLAY TABLE                      05968000
+         LA    R15,ISPDEXN           PANEL NAME                         05969000
+         LA    R0,ISPBLK8            NO MSG                    SS NOV86 05970000
+         CLC   SPFMSGID(4),ISPPDSM   ANY MSG                            05971000
+         BNE   ISPD030                                                  05972000
+         LA    R0,SPFMSGID                                              05973000
+*  ALWAYS SPECIFY PANEL ID              *                      SS DEC87 05974000
+*        CLC   SPFPANPR(8),0(R15)    SAME PANEL AS LAST TIME?           05975000
+*        BNE   ISPD030               NO, BRANCH                         05976000
+*        LA    R15,ISPBLK8           YES, NULLIFY PANEL NAME   SS NOV86 05977000
+ISPD030  MVC   SPFPANPR(8),ISPDEXN   SAVE LAST PANEL NAME               05978000
+         LA    R1,SPFCURSR           DEFAULT CURSOR POSITIONING         05979000
+         STM   R14,R1,PARMLIST                                          05980000
+         OI    PARMLIST+12,X'80'                                        05981000
+         LA    R1,PARMLIST                                              05982000
+         L     R15,ISPLINK                                              05983000
+         BASR  R14,R15                                                  05984000
+         MVC   SPFMSGID(8),ISPBLK8   TURN OFF MESSAGES                  05985000
+         MVC   SPFCURSR(8),ISPBLK8   TURN OFF CURSOR NAME               05986000
+         LTR   R15,R15               PF3/PF4 HIT?                       05987000
+         BNZ   ISPD900               YES, BRANCH                        05988000
+         SPACE 2                                                        05989000
+         LA    R14,ISPDDSNL          SET OUT LOCATION                   05990000
+         LA    R15,44                SET LENGTH                         05991000
+         LA    R0,SPFDDSN            SET OUTPUT VARIABLE NAME           05992000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  05993000
+         SPACE 1                                                        05994000
+         LA    R14,ISPDMEML          SET OUT LOCATION                   05995000
+         LA    R15,8                 SET LENGTH                         05996000
+         LA    R0,SPFDMEM            SET OUTPUT VARIABLE NAME           05997000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  05998000
+         SPACE 1                                                        05999000
+         LA    R14,ISPDDESL          SET OUT LOCATION                   06000000
+         LA    R15,8                 SET LENGTH                         06001000
+         LA    R0,SPFDDEST           SET OUTPUT VARIABLE NAME           06002000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  06003000
+         SPACE 1                                                        06004000
+         LA    R14,ISPDFORL          SET OUT LOCATION                   06005000
+         LA    R15,4                 SET LENGTH                         06006000
+         LA    R0,SPFDFORM           SET OUTPUT VARIABLE NAME           06007000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  06008000
+         SPACE 1                                                        06009000
+         LA    R14,ISPDDISL          SET OUT LOCATION                   06010000
+         LA    R15,1                 SET LENGTH                         06011000
+         LA    R0,SPFDDISP           SET OUTPUT VARIABLE NAME           06012000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  06013000
+         SPACE 1                                                        06014000
+         LA    R14,ISPDSYSP          SET OUT LOCATION                   06015000
+         LA    R15,1                 SET LENGTH                         06016000
+         LA    R0,SPFDSOUT           SET OUTPUT VARIABLE NAME           06017000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  06018000
+         SPACE 1                                                        06019000
+         LA    R14,ISPDNUM           SET OUT LOCATION                   06020000
+         LA    R15,2                 SET LENGTH                         06021000
+         LA    R0,SPFDNUM            SET OUTPUT VARIABLE NAME           06022000
+         BAS   R2,ISPDVCOP           COPY INTO STORAGE                  06023000
+         SPACE 3                                                        06024000
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              06025000
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             06026000
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              06027000
+         USING S99RBP,R1                                                06028000
+         SPACE 1                                                        06029000
+         LA    R14,M99RB                                                06030000
+         USING S99RB,R14                                                06031000
+         ST    R14,S99RBPTR                                             06032000
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                06033000
+         SPACE 1                                                        06034000
+         LA    R15,M99TUPL                                              06035000
+         USING S99TUPL,R15                                              06036000
+         MVI   S99RBLN,20               LENGTH 20                       06037000
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        06038000
+         ST    R15,S99TXTPP             POINT TO TEXT POINTERS          06039000
+         LA    R2,WORKTBL                        START OF TEXT          06040000
+         SPACE 1                                                        06041000
+         MVC   0(L'ISPDDDNA,R2),ISPDDDNA         SPECIFY DDNAME TEXT    06042000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06043000
+         LA    R2,L'ISPDDDNA(,R2)                START OF NEXT TEXT     06044000
+         SPACE 1                                                        06045000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06046000
+         MVC   0(L'ISPDDSOR,R2),ISPDDSOR         SPECIFY DSORG TEXT     06047000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06048000
+         LA    R2,L'ISPDDSOR(,R2)                START OF NEXT TEXT     06049000
+         SPACE 1                                                        06050000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06051000
+         MVC   0(L'ISPDFREE,R2),ISPDFREE         SPECIFY FREE TEXT      06052000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06053000
+         LA    R2,L'ISPDFREE(,R2)                START OF NEXT TEXT     06054000
+         SPACE 1                                                        06055000
+         MVC   SPFCURSR(8),ISPDSYSP              SYSOUT VARIABLE        06056000
+         CLI   SPFDSOUT,X'40'                    DSNAME ALLOCATION?     06057000
+         BH    ISPD080                           NO, BRANCH             06058000
+         OI    S99FLG11,S99NOCNV                 NO CONVERT   ABL JAN87 06059000
+         MVC   SPFCURSR(8),ISPDDSNP              DSNAME VARIABLE        06060000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06061000
+         MVC   0(L'ISPDDSNA,R2),ISPDDSNA         SPECIFY DSNAME TEXT    06062000
+         MVC   6(44,R2),SPFDDSN                  SPECIFY DSNAME         06063000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06064000
+         LA    R2,L'ISPDDSNA+44(,R2)             START OF NEXT TEXT     06065000
+         SPACE 1                                                        06066000
+         CLI   SPFDMEM,X'41'                     ANY MEMBER?            06067000
+         BL    ISPD050                           NO, BRANCH             06068000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06069000
+         MVC   0(L'ISPDMEMB,R2),ISPDMEMB         SPECIFY MEMBER TEXT    06070000
+         MVC   6(8,R2),SPFDMEM                   SPECIFY MEMBER         06071000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06072000
+         LA    R2,L'ISPDMEMB(,R2)                START OF NEXT TEXT     06073000
+         SPACE 1                                                        06074000
+ISPD050  LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06075000
+         MVC   0(L'ISPDALLO,R2),ISPDALLO         SPECIFY DISP=OLD       06076000
+         CLI   SPFDDISP,C'S'                     SHR?                   06077000
+         BNE   *+8                               NO, BRANCH             06078000
+         MVI   6(R2),ISPDSHR                     SPECIFY DISPOSITION    06079000
+         CLI   SPFDDISP,C'M'                     MOD?                   06080000
+         BNE   *+8                               NO, BRANCH             06081000
+         MVI   6(R2),ISPDMOD                     SPECIFY DISPOSITION    06082000
+         CLI   SPFDDISP,C'N'                     NEW?                   06083000
+         BNE   *+8                               NO, BRANCH             06084000
+         MVI   6(R2),ISPDNEW                     SPECIFY DISPOSITION    06085000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06086000
+         LA    R2,L'ISPDALLO(,R2)                START OF NEXT TEXT     06087000
+         SPACE 1                                                        06088000
+         CLI   SPFDDISP,C'O'                     OLD?                   06089000
+         BE    ISPD070                           YES, BRANCH            06090000
+         CLI   SPFDDISP,C'S'                     SHR?                   06091000
+         BE    ISPD070                           YES, BRANCH            06092000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06093000
+         MVC   0(L'ISPDFIRS,R2),ISPDFIRS         SPECIFY PRIMARY        06094000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06095000
+         LA    R2,L'ISPDFIRS(,R2)                START OF NEXT TEXT     06096000
+         SPACE 1                                                        06097000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06098000
+         MVC   0(L'ISPDSECO,R2),ISPDSECO         SPECIFY SECONDARY      06099000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06100000
+         LA    R2,L'ISPDSECO(,R2)                START OF NEXT TEXT     06101000
+         SPACE 1                                                        06102000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06103000
+         MVC   0(L'ISPDTRK,R2),ISPDTRK           SPECIFY TRACK ALLOC    06104000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06105000
+         LA    R2,L'ISPDTRK(,R2)                 START OF NEXT TEXT     06106000
+         SPACE 1                                                        06107000
+         CLI   SPFDMEM,X'41'                     ANY MEMBER NAME?       06108000
+         BL    ISPD070                           NO, BRANCH             06109000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06110000
+         MVC   0(L'ISPDDIR,R2),ISPDDIR           SPECIFY DIRECTORY BLKS 06111000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06112000
+         LA    R2,L'ISPDDIR(,R2)                 START OF NEXT TEXT     06113000
+         SPACE 1                                                        06114000
+ISPD070  LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06115000
+         MVC   0(L'ISPDNORM,R2),ISPDNORM         SPECIFY DISP=(,CATLG)  06116000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06117000
+         LA    R2,L'ISPDNORM(,R2)                START OF NEXT TEXT     06118000
+         SPACE 1                                                        06119000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06120000
+         MVC   0(L'ISPDANOR,R2),ISPDANOR         SPECIFY DISP=(,,KEEP)  06121000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06122000
+         B     ISPD110                                                  06123000
+         SPACE 1                                                        06124000
+ISPD080  CLI   SPFDFORM,X'41'                    ANY FORM?              06125000
+         BL    ISPD090                           NO, BRANCH             06126000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06127000
+         MVC   0(L'ISPDFORM,R2),ISPDFORM         SPECIFY FORMS TEXT     06128000
+         MVC   6(4,R2),SPFDFORM                  SPECIFY FORM NAME      06129000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06130000
+         LA    R2,L'ISPDFORM(,R2)                START OF NEXT TEXT     06131000
+         SPACE 1                                                        06132000
+ISPD090  CLI   SPFDDEST,X'41'                    ANY DEST?              06133000
+         BL    ISPD095                           NO, BRANCH             06134000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06135000
+         MVC   0(L'ISPDDEST,R2),ISPDDEST         SPECIFY DEST TEXT      06136000
+         MVC   6(8,R2),SPFDDEST                  SPECIFY DESTINATION    06137000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06138000
+         LA    R2,L'ISPDDEST(,R2)                START OF NEXT TEXT     06139000
+         SPACE 1                                                        06140000
+ISPD095  CLC   SPFDNUM(2),=C'01'                 ANY COPY NUMBER        06141000
+         BE    ISPD100                           NO, BRANCH             06142000
+         LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06143000
+         MVC   0(L'ISPDNUMC,R2),ISPDNUMC         SPECIFY COPIES TEXT    06144000
+         CLI   SPFDNUM+1,X'40'                   SECOND DIGIT BLANK?    06145000
+         BH    ISPD096                           NO, BRANCH             06146000
+         MVC   SPFDNUM+1(1),SPFDNUM              SLIDE FIRST DIGIT DOWN 06147000
+         MVI   SPFDNUM,C'0'                      ADD A LEADING ZERO     06148000
+ISPD096  PACK  DOUBLE(8),SPFDNUM(2)              CONVERT TO PACKED      06149000
+         CVB   R0,DOUBLE                         CONVERT TO BINARY      06150000
+         STC   R0,6(,R2)                         SPECIFY THE COUNT      06151000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06152000
+         LA    R2,L'ISPDNUMC(,R2)                START OF NEXT TEXT     06153000
+         SPACE 1                                                        06154000
+ISPD100  LA    R15,4(,R15)                       NEXT POINTER ELEMENT   06155000
+         MVC   0(L'ISPDSYSO,R2),ISPDSYSO         SPECIFY SYSOUT TEXT    06156000
+         MVC   6(1,R2),SPFDSOUT                  SPECIFY SYSOUT CLASS   06157000
+         ST    R2,S99TUPTR                       POINT TO TEXT UNIT     06158000
+         SPACE 1                                                        06159000
+ISPD110  OI    S99TUPTR,X'80'                    MARK END OF LIST       06160000
+         DYNALLOC                                                       06161000
+         SPACE 2                                                        06162000
+         DROP  R1,R14,R15                                               06163000
+         MVC   DDNAMEH,WORKTBL+6        SAVE DDNAME                     06164000
+         LTR   R15,R15                  SUCCESSFUL?                     06165000
+         BZ    ISPD120                  YES, BRANCH                     06166000
+         SPACE 2                                                        06167000
+         LA    R14,M99RB                POINTER TO SVC 99 BLOCK         06168000
+         ST    R15,DAIRRC               RETURN CODE                     06169000
+         LA    R15,DAIRRC               POINTER TO RETURN CODE          06170000
+         LA    R0,ADDRFF02              POINTER TO A(IKJEFF02)          06171000
+         LA    R1,=AL2(DFSVC99)         POINTER TO INVOCATION TYPE      06172000
+         L     R2,ADDRCPPL              POINTER TO THE CPPL             06173000
+         STM   R14,R2,DFDAPLP           INITIALIZE DFDAPLP, DFDRCP,     06174000
+*                                         DFJEFF02, DFIDP AND DFCPPLP   06175000
+         SPACE 1                                                        06176000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               06177000
+         MVC   SPFMSGID(8),ISPD701X     ERROR MESSAGE                   06178000
+         LTR   R15,R15                  PROBLEM WITH IKJEFF18?          06179000
+         BNZ   ISPD020                  YES, BRANCH                     06180000
+         B     ISPD020                                                  06181000
+         SPACE 2                                                        06182000
+ISPD120  CLI   SPFDSOUT,X'40'           SYSOUT ALLOCATION?              06183000
+         BH    ISPD180                  YES, BRANCH                     06184000
+         CLI   WORKTBL+14+6,DS1DSGPO    PARTITIONED?                    06185000
+         BNE   ISPD130                  NO, BRANCH                      06186000
+         CLI   SPFDMEM,X'41'            ANY MEMBER NAME?                06187000
+         BL    ISPD170                  NO, ERROR                       06188000
+         B     ISPD180                                                  06189000
+         SPACE 1                                                        06190000
+ISPD130  CLI   WORKTBL+14+6,DS1DSGPS    SEQUENTIAL?                     06191000
+         BNE   ISPD170                  NO, ERROR                       06192000
+         CLI   SPFDMEM,X'41'            ANY MEMBER NAME?                06193000
+         BL    ISPD180                  NO, OK                          06194019
+         SPACE 1                                                        06195000
+ISPD170  MVC   SPFMSGID(8),ISPD702X     ERROR MESSAGE                   06196000
+         B     ISPD020                                                  06197000
+         SPACE 2                                                        06198000
+*** OPEN THE SYSOUT/DATA SET                                            06199000
+ISPD180  MVC   BAMDCB(ISPDDCBL),ISPDDCB      CONSTRUCT A DCB            06200000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),DDNAMEH                        06201000
+         MVI   OPENLIST,X'80'                                           06202000
+         OPEN  (BAMDCB,(OUTPUT)),MF=(E,OPENLIST)                        06203000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'  OPEN ALREADY               06204000
+         BNO   ISPD190                       NO, ERROR                  06205000
+         OI    HFLAGSDD,X'02'                OPEN NOW                   06206000
+         TM    HFLAGSDD,X'01'                OPEN WITH GOOD VALUES?     06207000
+         BO    ISPD200                       YES, BRANCH                06208000
+         MVI   OPENLIST,X'80'                                           06209000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 06210000
+ISPD190  MVC   SPFMSGID(8),ISPD703X     ERROR MESSAGE                   06211000
+         B     ISPD020                                                  06212000
+         SPACE 2                                                        06213000
+*** OUTPUT THE DATA                                                     06214000
+ISPD200  DS    0H                                                       06215000
+         BAS   R2,ISPMVTBL              GET INFO               SS AUG86 06216000
+         LA    R15,4(,R15)              ALTERNATE ENTRY        SS AUG86 06217000
+         ST    R15,SPFTSV1              TEMPORARY SAVE ADDRESS SS AUG86 06218017
+         ST    R14,SPFTSV2              ALSO SAVE TITLE ADDR   SS AUG86 06219000
+         MVC   SPFTSVX,10(R1)           ALSO SAVE TITLE COUNT  SS AUG86 06220000
+         MVC   SPFTSVC,11(R1)           ALSO SAVE HEADER TYPE ABL FEB87 06221000
+         SR    R0,R0                    *                      SS AUG86 06222000
+         IC    R0,9(R1)                 GET LENGTH             SS AUG86 06223000
+         STH   R0,SPFTSVH               SAVE LENGTH            SS AUG86 06224000
+*                                                                       06225000
+         STM   R14,R8,MSGTEXT1              SAVE ENTRY REGS   ABL FEB87 06226000
+         L     R8,ISPDTIME                  TIME ROUTINE      ABL FEB87 06227000
+         MVI   ##SUBCOM,C'N'                NOT "TIME"        ABL FEB87 06228000
+         BASR  R2,R8                        CALL TIME ROUTINE ABL FEB87 06229000
+         LM    R14,R8,MSGTEXT1              RESET ENTRY REGS  ABL FEB87 06230000
+*                                                                       06231000
+         MVI   MSGTEXT1+4,X'40'                               ABL FEB87 06232000
+         MVC   MSGTEXT1+5(255),MSGTEXT1+4   CLEAR MSGTEXT1    DRK APR08 06233041
+*        MVC   MSGTEXT1+5(79),MSGTEXT1+4    CLEAR MSGTEXT1    ABL FEB87 06233130
+         SR    R1,R1                                          ABL FEB87 06234000
+         IC    R1,SPFTSVC                   HEADER TYPE       ABL FEB87 06235000
+         SLL   R1,5                         TIMES 32          ABL FEB87 06236000
+         LA    R1,ISPDHEAD(R1)              INDEX TO HEADER   ABL FEB87 06237000
+         MVC   MSGTEXT1+4(32),0(R1)         MOVE IN HEADER    ABL FEB87 06238000
+         MVC   MSGTEXT1+41(42),MSGTEXT2+4   MOVE IN TIME/DATE ABL FEB87 06239000
+         LA    R0,MSGTEXT1+4                TIME HEADER MSG   ABL FEB87 06240000
+         PUT   BAMDCB,(0)                                     ABL FEB87 06241000
+*                                                                       06242000
+         MVI   MSGTEXT1+4,X'40'                               ABL FEB87 06243000
+         MVC   MSGTEXT1+5(255),MSGTEXT1+4   CLEAR MSGTEXT1    DRK APR08 06243141
+*        MVC   MSGTEXT1+5(79),MSGTEXT1+4    CLEAR MSGTEXT1    ABL FEB87 06244030
+         LA    R0,MSGTEXT1+4                BLANK LINE        ABL FEB87 06245000
+         PUT   BAMDCB,(0)                                     ABL FEB87 06246000
+*                                                                       06247000
+         CLI   SPFTSVC,3                    LISTA?            ABL FEB87 06248000
+         BE    ISPD250                      YES, BRANCH       ABL FEB87 06249000
+         CLI   SPFTSVC,4                    LISTV?            ABL FEB87 06250000
+         BE    ISPD250                      YES, BRANCH       ABL FEB87 06251000
+         LA    R15,FIRST4K                                    ABL JUL86 06252000
+         LA    R15,SPFDSNMG-FIRST4K(,R15)   DSN AND VOL MSG   DRK JUL04 06253039
+         MVI   MSGTEXT1+4,X'40'                               DRK JUL04 06253131
+         MVC   MSGTEXT1+5(255),MSGTEXT1+4   CLEAR MSGTEXT1    DRK APR08 06253241
+         MVC   MSGTEXT1+5(79),0(R15)        MOVE MSG          DRK JUL04 06253332
+         LA    R0,MSGTEXT1+4                DSN AND VOL MSG   DRK JUL04 06253431
+         PUT   BAMDCB,(0)                                     ABL JUL86 06254000
+ISPD250  DS    0H                                             ABL FEB87 06255000
+*                                                                       06256000
+         LA    R14,TBTOP                    TBTOP                       06257000
+         LA    R15,SPFTBL                   TABLE ADDRESS               06258000
+         STM   R14,R15,PARMLIST                                         06259000
+         OI    PARMLIST+4,X'80'                                         06260000
+         LA    R1,PARMLIST                                              06261000
+         L     R15,ISPLINK                                              06262000
+         BASR  R14,R15                                                  06263000
+         SPACE 2                                                        06264000
+         L     R0,RECOVER                   CURRENT RECOVERY ADDRESS    06265000
+         STM   R14,R8,WORKTBL               SAVE ENTRY REGISTERS        06266000
+         LA    R0,ISPD500                   LOCAL RECOVERY ADDRESS      06267000
+         ST    R0,RECOVER                                               06268000
+         OI    ##ADRPA#,$Q                  QUIET MODE IF ABEND         06269000
+         SPACE 1                                                        06270000
+*  THIS IS CONTROLLED BY PANEL TABLE                           SS NOV85 06271000
+         L     R0,SPFTSV2               GET TITLE ADDRESS     ABL FEB87 06272000
+         SPACE 1                                                        06273000
+         CLI   SPFTSVX,1                ONE OR MORE TITLES    ABL FEB87 06274000
+         BL    ISPD300                  NO                    ABL FEB87 06275000
+         BAS   R2,PREPUT                                      DRK SEP11 06275152
+         PUT   BAMDCB,(0)                                               06276000
+         SPACE 1                                                        06277000
+         CLI   SPFTSVX,2                TWO OR MORE TITLES     SS AUG86 06278000
+         BL    ISPD300                  NO                     SS AUG86 06279000
+         L     R0,SPFTSV2               GET TITLE ADDRESS      SS AUG86 06280000
+         AH    R0,SPFTSVH               ADD LENGTH             SS AUG86 06281000
+         BAS   R2,PREPUT                                      DRK SEP11 06281152
+         PUT   BAMDCB,(0)                                               06282000
+         CLI   SPFTSVX,3                THREE TITLES           SS AUG86 06283000
+         BL    ISPD300                  NO                     SS AUG86 06284000
+         L     R0,SPFTSV2               GET TITLE ADDRESS      SS AUG86 06285000
+         AH    R0,SPFTSVH               ADD LENGTH             SS AUG86 06286000
+         AH    R0,SPFTSVH               ADD LENGTH             SS AUG86 06287000
+         BAS   R2,PREPUT                                      DRK SEP11 06287152
+         PUT   BAMDCB,(0)                                               06288000
+         B     ISPD300                                                  06288153
+         SPACE 2                                                        06288253
+* MOVE TITLE TO A CLEAR AREA (FOR LRECL > 80)                           06288353
+PREPUT   NOP   0(,R0)                                                   06288453
+         MVI   MSGTEXT1+4,X'40'             BLANK             DRK SEP11 06288553
+         MVC   MSGTEXT1+5(255),MSGTEXT1+4   CLEAR MSGTEXT1    DRK SEP11 06288653
+         SR    R15,R15                      ZERO              DRK SEP11 06288753
+         ICM   R15,B'0011',SPFTSVH          INSERT LENGTH     DRK SEP11 06288853
+         BCTR  R15,R0                       -1 FOR MVC        DRK SEP11 06288954
+         LR    R1,R0                        TITLE ADDRESS     DRK SEP11 06289053
+         EX    R15,MVCHDR                   MOVE TO MSGTEXT1  DRK SEP11 06289153
+         LA    R0,MSGTEXT1+4                PT @ AREA         DRK SEP11 06289253
+         BR    R2                           RETURN            DRK SEP11 06289353
+MVCHDR   MVC   MSGTEXT1+4(*-*),0(R1)                          DRK SEP11 06289453
+         SPACE 2                                                        06289500
+ISPD300  LA    R14,TBSKIP                   TBSKIP                      06290000
+         LA    R15,SPFTBL                   TABLE ADDRESS               06291000
+         STM   R14,R15,PARMLIST                                         06292000
+         OI    PARMLIST+4,X'80'                                         06293000
+         LA    R1,PARMLIST                                              06294000
+         L     R15,ISPLINK                                              06295000
+         BASR  R14,R15                                                  06296000
+         LTR   R15,R15                      END OF DATA?                06297000
+         BNZ   ISPD600                      NO, BRANCH                  06298000
+         SPACE 2                                                        06299000
+*   OUTPUT FORMATING RTNS NOW SEPARATE SUBROUTINES             SS AUG86 06300000
+         L     R15,SPFTSV1              FORMAT RTN ADDRESS     SS AUG86 06301000
+ISPD420  LA    R1,WORKTBL+80            *                      SS AUG86 06302000
+         MVI   0(R1),C' '               BLANK                  SS AUG86 06303000
+         MVC   1(255,R1),0(R1)          RIPPLE (WIDE LOG)     DRK APR08 06304042
+*        MVC   1(79,R1),0(R1)           RIPPLE                 SS AUG86 06304123
+         BASR  R2,R15                   MOVE ROUTINE           SS AUG86 06305000
+         LR    R2,R15                   SAVE NEXT RTN ADDR     SS AUG86 06306000
+         LR    R0,R1                                                    06307000
+         PUT   BAMDCB,(0)                                               06308000
+         LTR   R15,R2                   NEXT RTN IF ANY        SS AUG86 06309000
+         BNZ   ISPD420                  YES                    SS AUG86 06310000
+         B     ISPD300                  NEXT TABLE ENTRY       SS AUG86 06311000
+         SPACE 1                                                        06312000
+ISPD500  LM    R14,R8,WORKTBL               RESET ENTRY REGISTERS       06313000
+         ST    R0,RECOVER                   RESET THE RECOVERY ADDRESS  06314000
+         NI    ##ADRPA#,FF-$Q               RESET QUIET MODE            06315000
+         MVC   SPFMSGID(8),ISPD704X         ERROR MESSAGE               06316000
+         MVI   OPENLIST,X'80'                                           06317000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'  STILL OPEN?                06318000
+         BNO   ISPD020                       NO, BRANCH                 06319000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 06320000
+         B     ISPD020                                                  06321000
+         SPACE 2                                                        06322000
+*** CLOSE THE SYSOUT/DSNAME DATA SET                                    06323000
+ISPD600  MVI   OPENLIST,X'80'                                           06324000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 06325000
+         LM    R14,R1,WORKTBL               RELOAD CHANGED REGISTERS    06326000
+         ST    R0,RECOVER                   RESET THE RECOVERY ADDRESS  06327000
+         MVC   SPFMSGID(8),ISPD705X         COMPLETED MESSAGE           06328000
+         SPACE 1                                                        06329000
+ISPD900  NI    ##ADRPA#,FF-$Q-$A-$D         RESET QUIET MODE/ATTN       06330000
+         BAS   R2,REFSAVE                   TPIN, TPOUT COUNT ABL JAN87 06331000
+         LA    R15,40                       RETURN TO ISPDISP6 SS NOV85 06332000
+         BR    R3                           WILL NOT RESTART   SS JUL85 06333000
+         SPACE 3                                                        06334000
+         USING IHADCB,R1                                                06335000
+*** DCB OPEN EXIT                                                       06336000
+ISPD980  SR    R15,R15                                                  06337000
+         CH    R15,DCBDSORG                  ANY DSORG?                 06338000
+         BNE   *+8                           YES, BRANCH                06339000
+         OI    DCBDSORG,DS1DSGPS             NO, USE DSORG=PS           06340000
+         TM    DCBDSORG,DS1DSGPS             DSORG=PS?                  06341000
+         BNOR  R14                           NO, ERROR                  06342000
+         CLI   DCBRECFM,0                    ANY RECFM?                 06343000
+         BNE   *+8                           YES, BRANCH                06344000
+         MVI   DCBRECFM,DCBRECF+DCBRECBR     NO, USE RECFM=FB           06345000
+         SPACE 1                                                        06345147
+* AVOID S013-34 ABENDS WHEN ALLOCATING NEW USERID.LOAD- FILES IN TSO    06345249
+         TM    DCBRECFM,DCBRECU              RECFM=U?         DRK MAY11 06345347
+         BNO   ISPD982                       NO               DRK MAY11 06345447
+         CLC   DCBBLKSI,=H'0'                ANY BLKSIZE?     DRK MAY11 06345547
+         BNE   *+8                           YES, BRANCH      DRK MAY11 06345647
+         MVC   DCBBLKSI,=H'32760'            NO, AVOID S013-34        " 06345748
+ISPD982  DS    0H                                             DRK MAY11 06345847
+         SPACE 1                                                        06345947
+         TM    DCBRECFM,DCBRECF+DCBRECV      RECFM=F. OR RECFM=V.?      06346000
+         BNMR  R14                           NO, ERROR                  06347000
+         LA    R0,80                         DEFAULT LRECL              06348000
+         CLC   SPFPANEL+3(4),=C'PN1W'        WIDE LOG?        DRK SEP05 06348136
+         BNE   *+4+4                         NO               DRK JUL04 06348224
+         LA    R0,160                        DEFAULT WIDE     DRK JUL04 06348324
+         TM    DCBRECFM,DCBRECV              RECFM=V.?                  06349000
+         BOR   R14                           YES, ERROR                 06350000
+         CH    R15,DCBLRECL                  ANY LRECL?                 06351000
+         BNE   *+8                           YES, BRANCH                06352000
+         STH   R0,DCBLRECL                   NO, USE DEFAULT            06353024
+         CH    R0,DCBLRECL                   LRECL=DEFAULT?             06354024
+         NOPR  R14                           NO, ERROR        DRK OCT05 06355037
+*        BNER  R14                           NO, ERROR                  06355137
+         LA    R0,0                          USE SDB FOR NEW  DRK JUL04 06356022
+*        LA    R0,3120                       DEFAULT BLKSIZE            06356122
+         CH    R15,DCBBLKSI                  ANY BLKSIZE?               06357000
+         BNE   *+8                           YES, BRANCH                06358000
+         STH   R0,DCBBLKSI                   NO, USE DEFAULT            06359133
+         OI    HFLAGSDD,X'01'                ALL ATTRIBUTES ARE CORRECT 06360000
+         BR    R14                                                      06361000
+         DROP  R1                                                       06362000
+         SPACE 2                                                        06363000
+ISPDVCOP LA    R1,VCOPY              COPY VARIABLE VALUES               06364000
+         ST    R1,PARMLIST                                              06365000
+*        LA    R14,XXXXXX            GET FIRST VARIABLE                 06366000
+*        L     R15,YYYYYY            SET LENGTH                         06367000
+         ST    R15,SPFFIXED                                             06368000
+         LA    R15,SPFFIXED                                             06369000
+*        LA    R0,ZZZZZZ             SET OUTPUT VARIABLE NAME           06370000
+         LA    R1,ISPMOVE                                               06371000
+         STM   R14,R1,PARMLIST+4                                        06372000
+         OI    PARMLIST+16,X'80'                                        06373000
+         LA    R1,PARMLIST                                              06374000
+         L     R15,ISPLINK                                              06375000
+         BASR  R14,R15                                                  06376000
+         C     R15,ISPL8                                       SS NOV85 06377000
+         BH    ISPERR                                          SS NOV85 06378000
+         BR    R2                                                       06379000
+         SPACE 2                                                        06380000
+         LTORG  ,                                              SS NOV85 06381000
+         SPACE 2                                               SS NOV85 06382000
+         PRINT NOGEN                                                    06383000
+ISPDDCB  DCB   DSORG=PS,DDNAME=PDSLOG,MACRF=(PM),EXLST=ISPDXIT          06384000
+ISPDDCBL EQU   *-ISPDDCB                                                06385000
+         PRINT GEN                                                      06386000
+         SPACE 2                                                        06387000
+ISPDXIT  DC    0F'0',X'85',AL3(ISPD980)      OPEN EXIT ONLY             06388000
+ISPDTIME DC    V(TIME)                       TIME ROUTINE               06389000
+ISPDDSNL DC    C'EXTRDSN '                                              06390000
+ISPDMEML DC    C'MEMBER '                                               06391000
+ISPDDESL DC    C'PDSPDEST '                                             06392000
+ISPDFORL DC    C'PDSPFORM '                                             06393000
+ISPDDISL DC    C'PDSPDISP '                                             06394000
+ISPDSYSP DC    C'PDSPCLAS '                                             06395000
+ISPDDSNP DC    C'PDSPXDSN '                                             06396000
+ISPDNUM  DC    C'PDSPNUM '                                              06397000
+ISPDCMD  DC    C'CMD  '                                                 06398000
+ISPDTEXT DC    CL8'LOGCOPY'                                             06399000
+ISPDDDNA DC    X'0055000100084040404040404040'     RETURN DDNAME        06400000
+ISPDDSOR DC    X'0057000100024040'                 RETURN DSORG         06401000
+ISPDFREE DC    X'001C0000'                         FREE=CLOSE           06402000
+ISPDMEMB DC    X'0003000100084040404040404040'     MEMBER NAME          06403018
+ISPDDSNA DC    X'00020001002C'                     DSNAME               06404000
+ISPDALLO DC    X'00040001000101'                   DISP=(_)             06405000
+ISPDNORM DC    X'00050001000102'                   DISP=(,CATLG)        06406000
+ISPDANOR DC    X'00060001000108'                   DISP=(,,KEEP)        06407000
+ISPDTRK  DC    X'00070000'                         SPACE=(TRK,          06408000
+ISPDFIRS DC    X'000A00010003000001'               SPACE=(,1            06409000
+ISPDSECO DC    X'000B00010003000004'               SPACE=(,,4           06410000
+ISPDDIR  DC    X'000C00010003000005'               SPACE=(,,,5)         06411000
+ISPDNUMC DC    X'001D0001000100'                   COPIES=_             06412000
+ISPDOLD  EQU   X'01'                                                    06413000
+ISPDMOD  EQU   X'02'                                                    06414000
+ISPDNEW  EQU   X'04'                                                    06415000
+ISPDSHR  EQU   X'08'                                                    06416000
+ISPDSYSO DC    X'001800010001C1'                   SYSOUT=A             06417000
+ISPDFORM DC    X'001A00010004C4F1F0F1'             SYSOUT=(,,D101)      06418000
+ISPDDEST DC    X'005800010008D5F1F3F040404040'     DEST=R130            06419000
+ISPDEXN  DC    CL8'&P.VEXT '                       PANEL NAME  SS NOV85 06420000
+ISPD701X DC    CL8'PDS&M.1X'                       ERROR NAME           06421000
+ISPD702X DC    CL8'PDS&M.2X'                       ERROR NAME           06422000
+ISPD703X DC    CL8'PDS&M.3X'                       ERROR NAME           06423000
+ISPD704X DC    CL8'PDS&M.4X'                       ERROR NAME           06424000
+ISPD705X DC    CL8'PDS&M.5X'                       DONE MESSAGE         06425000
+         SPACE 1                                              DRK AUG98 06425103
+*                   123456789 123456789 123456789    TYPE     ABL FEB87 06425203
+ISPDHEAD DC    CL32'*** LOG TABLE OUTPUT ***'          00     ABL FEB87 06425303
+         DC    CL32'*** MEMLIST TABLE OUTPUT ***'      01     ABL FEB87 06425403
+         DC    CL32'*** MEMLIST TABLE OUTPUT ***'      02     ABL FEB87 06425503
+         DC    CL32'*** LISTA TABLE OUTPUT ***'        03     ABL FEB87 06425603
+         DC    CL32'*** LISTV TABLE OUTPUT ***'        04     ABL FEB87 06425703
+         DC    CL32'*** LISTF TABLE OUTPUT ***'        05     ABL JAN89 06425803
+         DC    CL32'*** TCT TABLE OUTPUT ***'          06     ABL JAN89 06425903
+         DC    CL32'*** CAX TABLE OUTPUT ***'          07     ABL JAN89 06426003
+         SPACE 1                                              DRK AUG98 06426103
+ISPDT0   DS    0H   TITLES FOR TABLE OUTPUT FOLLOW:                     06426200
+ISPDT1   DC    CL80'ISPMODE TABLE FOLLOWS:'                             06427000
+ISPDT2   DC    CL80'ISPMODE TABLE FOLLOWS: 1-79 AND 80-156'             06427100
+ISPDT4   DC    CL80'ISPMODE TABLE DISPLAY COLUMNS 80-158'     ABL JAN89 06427200
+ISPDT5   DC    CL80'CMD  NAME     DATA     VER.MOD    CREATED   LAST MOX06428000
+               DIFIED  SIZE  INIT    ID'                                06429000
+ISPDT6   DC    CL80'CMD  NAME     DATA     ALIASOF   TTR      VER.MOD  X06430000
+                LAST MODIFIED  SIZE  ID'                                06431000
+ISPDT7   DC    CL80'CMD  NAME     DATA     ALIASOF  LEN/LKED --  ATTRIBX06432000
+               UTES   -- APF  MODE  MAIN'                               06433000
+ISPDT8   DC    CL80'CMD  NAME     DATA     ALIASOF   TTR     MAIN    MAX06434000
+               TCH   LENGTH  ENTRY   SSI'                               06435000
+ISPDTB   DC    CL80'ISPMODE TABLE DISPLAY COLUMNS 1-79 (ON THE FIRST LIX06435300
+               NE)'                                                     06435400
+         DC    CL80'ISPMODE TABLE DISPLAY COLUMNS 80-158 (ON THE SECONDX06435500
+                LINE)'                                                  06435600
+ISPDTD   DC    CL80'CMD  NAME     DATA     ALIASOF  LEN/LKED --  ATTRIBX06436000
+               UTES   -- APF  MODE  MAIN'                               06437000
+         DC    CL80'                       MATCH    LENGTH   TTR       X06438000
+               ENTRY     SSI'                                           06439000
+ISPDTF   DC    CL80'CMD  DDNAME   DATA     TYPE O# VOLUME  MEMBER   ---X06440000
+               --- DATA SET NAME ----------'                            06441000
+ISPDTG   DC    CL80'CMD  DDNAME   DATA     TYPE O# STAT ------DATA SET X06442000
+               NAME ----------------------'                             06443000
+         DC    CL80'                       VOLUME  CREATED     ---- DISX06444016
+               P ----   BLKSI LRECL RECFM'                              06445015
+ISPDTH   DC    CL80'CMD  VOLUME   DATA   DEV  DEV   MOUNT USE ---TOTAL X06446063
+               FREE--- --LARGEST--  STATUS'                   DRK SEP12 06447063
+         DC    CL80'      NAME  -------- ADDR TYPE   ATTR CNT     CYL TX06448061
+               RK  EXT     CYL TRK --INDC--'                  DRK SEP12 06449064
+ISPDTI   DC    CL80'CMD  VOLUME   DATA   DEV  DEV    ------MOUNT-------X06450000
+                USE -----VTOC---- FREE'                                 06451000
+         DC    CL80'      NAME  -------- ADDR TYPE   ATTR STAT --INDC--X06452001
+                CNT --CCHH-- SIZE DSCB'                                 06453000
+ISPDTK   DC    CL80'CMD  C V DATA/MSG DO  RECF LRECL BLKSI VOLUME -----X06453144
+               ----DATA SET NAME ----------'                            06453200
+ISPDTL   DC    CL80'CMD  C V DATA/MSG DO  RECF VOLUME ---------DATA SETX06453346
+                NAME ---------------------'                             06453400
+ISPDTM   DC    CL80'CMD  C V DATA/MSG DO  RECF VOLUME ---------DATA SETX06453546
+                NAME ---------------------'                             06453600
+         DC    CL80'                   LRECL       CREATED    REFERENCEX06453750
+               D     SIZE   USED'                             DRK MAY14 06453865
+         DC    CL80'                   BLKSI                  UPD EXT  X06453950
+                     FREE   SECONDARY'                        DRK SEP11 06454051
+ISPDTN   DC    CL80'OPT    MSG/RC  TYPE ------ PDS/TSO COMMAND OR CLISTX06454100
+                ----------------'                                       06454200
+ISPDTO   DC    CL80'CMD  DATA/MSG TYPE STATUS  HIT%  NUM VOLUME -------X06454340
+               --DATA SET NAME ----------'                              06454400
+ISPDTR   DC    CL80'CMD  VOLUME   DATA   DEV  DEV   MOUNT USE SPACE  PRX06454506
+               IM  ALT  F0    FREE FRAG'                      DRK SEP12 06454660
+         DC    CL80'      NAME  -------- ADDR TYPE   ATTR CNT  USED  CYX06454702
+               LINDERS  DSCB   VIR INDEX'                     DRK SEP12 06454860
+ISPDTS   DC    CL80'CMD  NAME     DATA     VER.MOD    CREATED       LASX06454914
+               T MODIFIED  SIZE XSTAT ID'                     DRK SEP11 06455050
+         DROP  R4                                              SS MAR85 06460000
+         TITLE 'ISPF - MOVE TABLE AND ROUTINES'                SS AUG86 06461000
+*                                       *                      SS AUG86 06462000
+*    THE FOLLOWING TABLE IS INDEXED BY SPFTBPPI                SS AUG86 06463000
+*    BY LH, AH, AH  AND SHIFTING BY 2 (TIMES 12)               SS AUG86 06464000
+*                                       *                      SS AUG86 06465000
+ISPMOVES DS    0F                                              SS AUG86 06466000
+*                                                             DRK AUG98 06466103
+* TYPE CODE DEFINED ABOVE IN ISPDHEAD <---------.             DRK AUG98 06466203
+*                                               |             DRK AUG98 06466403
+*                                               |             DRK AUG98 06466503
+*     RTN ADD   TITLE      CNT    LENG  T CNT  TYPE            SS AUG86 06467000
+ DC  A(ISPM310),A(ISPDT1),X'01',AL1(80),X'00',X'00'     1=01  ABL FEB87 06468000
+ DC  A(ISPM310),A(ISPDT1),X'01',AL1(80),X'00',X'00'     2=02  ABL FEB87 06469000
+ DC  A(ISPM310),A(ISPDT1),X'01',AL1(80),X'00',X'00'     3=03  ABL FEB87 06470000
+ DC  A(ISPM340),A(ISPDT4),X'01',AL1(80),X'01',X'00'     4=04  ABL JAN89 06471000
+ DC  A(ISPM350),A(ISPDT5),X'01',AL1(80),X'01',X'01'     5=05   SS AUG86 06472000
+ DC  A(ISPM360),A(ISPDT6),X'01',AL1(80),X'01',X'01'     6=06   SS AUG86 06473000
+ DC  A(ISPM370),A(ISPDT7),X'01',AL1(80),X'01',X'02'     7=07   SS AUG86 06474000
+ DC  A(ISPM380),A(ISPDT8),X'01',AL1(80),X'01',X'02'     8=08   SS AUG86 06475000
+ DC  A(ISPM310),A(ISPDT1),X'01',AL1(80),X'00',X'00'     9=09  ABL FEB87 06476000
+ DC  A(ISPM340),A(ISPDT4),X'01',AL1(80),X'01',X'00'     A=10  ABL JAN89 06476100
+ DC  A(ISPM3B0),A(ISPDTB),X'02',AL1(80),X'02',X'00'     B=11  ABL JAN89 06478000
+ DC  A(ISPM3B0),A(ISPDTB),X'02',AL1(80),X'02',X'00'     C=12  ABL JAN89 06479000
+ DC  A(ISPM3D0),A(ISPDTD),X'03',AL1(80),X'02',X'02'     D=13   SS AUG86 06480000
+ DC  A(ISPM340),A(ISPDT4),X'01',AL1(80),X'01',X'00'     E=14  ABL JAN89 06480100
+ DC  A(ISPM3F0),A(ISPDTF),X'01',AL1(80),X'01',X'03'     F=15   SS AUG86 06482000
+ DC  A(ISPM3G0),A(ISPDTG),X'03',AL1(80),X'02',X'03'     G=16   SS AUG86 06483000
+ DC  A(ISPM3H0),A(ISPDTH),X'01',AL1(80),X'02',X'04'     H=17   SS AUG86 06484000
+ DC  A(ISPM3I0),A(ISPDTI),X'01',AL1(80),X'02',X'04'     I=18  ABL FEB87 06485000
+ DC  A(ISPM3B0),A(ISPDTB),X'02',AL1(80),X'02',X'00'     J=19  ABL JAN89 06485100
+ DC  A(ISPM3K0),A(ISPDTK),X'01',AL1(80),X'01',X'05'     K=20  ABL JAN89 06485245
+ DC  A(ISPM3L0),A(ISPDTL),X'01',AL1(80),X'01',X'05'     L=21  ABL JAN89 06485300
+ DC  A(ISPM3M0),A(ISPDTM),X'03',AL1(80),X'03',X'05'     M=22  ABL JAN89 06485400
+ DC  A(ISPM3N0),A(ISPDTN),X'01',AL1(80),X'01',X'06'     N=23  ABL JAN89 06485500
+ DC  A(ISPM3O0),A(ISPDTO),X'01',AL1(80),X'01',X'07'     O=24  ABL JAN89 06485600
+ DC  A(ISPM3O0),A(ISPDTO),X'01',AL1(80),X'01',X'08'     P=25  ABL JAN89 06485700
+ DC  A(ISPM3O0),A(ISPDTO),X'01',AL1(80),X'01',X'09'     Q=26  ABL JAN89 06485800
+ DC  A(ISPM3R0),A(ISPDTR),X'01',AL1(80),X'02',X'04'     R=27  DRK AUG98 06485902
+ DC  A(ISPM3S0),A(ISPDTS),X'01',AL1(80),X'01',X'01'     S=28  DRK NOV99 06486013
+ DC  A(ISPM310),A(ISPDT1),X'01',AL1(80),X'00',X'00'    1W=29  DRK SEP05 06486135
+         SPACE 2                        *                      SS AUG86 06487000
+*  GROUP TABLES NOT YET BUILT           *                      SS AUG86 06487100
+         SPACE 5                        *                      SS AUG86 06488000
+*                                                              SS AUG86 06489000
+* THE FOLLOWING ROUTES RUN WITHOUT A BASE                      SS AUG86 06490000
+* CALLER CAN USE BASR R2,R15 (R15 SET FROM TABLE)              SS AUG86 06491000
+* OR BAS R2,4(,R15) FOR ALTERNATE ENTRY                        SS AUG86 06492000
+* R1 POINTS TO PRE CLEARED OUTPUT AREA                         SS AUG86 06493000
+* FOR PRIME ENTRY EACH LINE FOLLOWS THE LAST                   SS AUG86 06494000
+* FOR ALTERNATE ENTRY R15 IS SET TO NEXT RECORD ROUTINE        SS AUG86 06495034
+* OR ZERO WHEN END OF ROUTINES                                 SS AUG86 06496000
+* BETWEEN EACH ROUTINE THE CALLER CAN PROCESS THE RECORD       SS AUG86 06497000
+* AND CLEAR THE OUTPUT AREA FOR THE NEXT RECORD THEN           SS AUG86 06498000
+* CONTINUE BY BASR R2,R15                                      SS AUG86 06499000
+*                                                              SS AUG86 06500000
+ISPM300  NOP   0(,R0)                      NULL LINE           SS OCT88 06500100
+         SR    R15,R15                  *                      SS OCT88 06500200
+         BR    R2                       *                      SS OCT88 06500300
+ISPM310  NOP   0(,R0)                                          SS AUG86 06501000
+         MVC   0(160,R1),SPFLINE            ADD TABLE DATA    DRK JUL04 06502026
+*        MVC   0(80,R1),SPFLINE             ADD TABLE DATA              06502126
+         SR    R15,R15                      END OF LINE        SS AUG86 06503027
+         CLI   0(R1),X'02'                  DELINK OUTPUT?    DRK DEC05 06503138
+         BER   R2                           YES               DRK DEC05 06503238
+         CLI   0(R1),X'39'                  NULL FIRST BYTE?            06504000
+         BHR   R2                           NO, BRANCH         SS AUG86 06505000
+         MVI   0(R1),X'40'                  YES, RESET TO BLANK         06506000
+         BR    R2                                              SS AUG86 06507000
+         SPACE 2                                                        06508000
+ISPM340  NOP   0(,R0)                                         ABL JAN89 06508200
+         MVC   0(79,R1),SPFLINE+79          ADD TABLE DATA    ABL JAN89 06508300
+         SR    R15,R15                      END OF LINE       ABL JAN89 06508400
+         CLI   0(R1),X'02'                  DELINK OUTPUT?    DRK DEC05 06508538
+         BER   R2                           YES               DRK DEC05 06508638
+         CLI   0(R1),X'39'                  NULL FIRST BYTE?  ABL JAN89 06508700
+         BHR   R2                           NO, BRANCH        ABL JAN89 06508800
+         MVI   0(R1),X'40'                  YES, RESET BLANK  ABL JAN89 06508900
+         BR    R2                                             ABL JAN89 06509000
+         SPACE 2                                                        06510000
+ISPM350  NOP   0(,R0)                                          SS AUG86 06510700
+         MVC   0(4,R1),MEM2OPT              PANEL=5                     06510800
+         OC    4+1(8,R1),MEMLNAME                                       06511000
+         OC    13+1(8,R1),MEMLDATA                                      06512000
+         OC    23+1(6,R1),MEM2VMOD                                      06513000
+         OC    31+2(8,R1),MEM2CDAT                                      06514000
+         OC    41+2(8,R1),MEM2MDAT                                      06515000
+         OC    51+1(5,R1),MEM2MTIM                            DRK MAR01 06516014
+         OC    57+1(8,R1),MEM2CSIZ                                      06517000
+         OC    63+1(8,R1),MEM2ISIZ                                      06518000
+         OC    71+1(8,R1),MEM2MID                                       06519000
+         SR    R15,R15                     END OF LINE         SS AUG86 06520000
+         BR    R2                                              SS AUG86 06521000
+         SPACE 2                                                        06522000
+ISPM360  NOP   0(,R0)                                          SS AUG86 06523000
+         MVC   0(4,R1),MEM2OPT              PANEL=6                     06524000
+         OC    4+1(8,R1),MEMLNAME                                       06525000
+         OC    13+1(8,R1),MEMLDATA                                      06526000
+         OC    22+1(8,R1),MEM2ALIS                                      06527000
+         OC    31+2(8,R1),MEM2TTR                                       06528000
+         OC    41+2(5,R1),MEM2VMOD                                      06529000
+         OC    50+1(8,R1),MEM2MDAT                                      06530000
+         OC    59+1(5,R1),MEM2MTIM                                      06531000
+         OC    65+1(5,R1),MEM2CSIZ                                      06532000
+         OC    71+1(8,R1),MEM2MID                             DRK JAN17 06533076
+         SR    R15,R15                     END OF LINE         SS AUG86 06534000
+         BR    R2                                              SS AUG86 06535000
+         SPACE 2                                                        06536000
+ISPM370  NOP   0(,R0)                                          SS AUG86 06537000
+         MVC   0(4,R1),MEM2OPT              PANEL=7                     06538000
+         OC    4+1(8,R1),MEMLNAME                                       06539000
+         OC    13+1(8,R1),MEMLDATA                                      06540000
+         OC    22+1(8,R1),MEM2ALIS                                      06541000
+         OC    31+1(8,R1),MEM2LDAT                                      06542000
+         OC    40+1(4,R1),MEM2ATT1                                      06543000
+         OC    45+1(4,R1),MEM2ATT2                                      06544000
+         OC    50+1(4,R1),MEM2DC                                        06545000
+         OC    55+1(4,R1),MEM2TEST                                      06546000
+         OC    60+1(4,R1),MEM2APF                                       06547000
+         OC    65+1(4,R1),MEM2MODE                                      06548000
+         OC    70+1(8,R1),MEM2MNAM                                      06549000
+         SR    R15,R15                     END OF LINE         SS AUG86 06550000
+         BR    R2                                              SS AUG86 06551000
+         SPACE 2                                                        06552000
+ISPM380  NOP   0(,R0)                                          SS AUG86 06553000
+         MVC   0(4,R1),MEM2OPT              PANEL=8                     06554000
+         OC    4+1(8,R1),MEMLNAME                                       06555000
+         OC    13+1(8,R1),MEMLDATA                                      06556000
+         OC    22+1(8,R1),MEM2ALIS                                      06557000
+         OC    30+2(6,R1),MEM2TTR                                       06558000
+         OC    37+2(8,R1),MEM2MNAM                                      06559000
+         OC    47+1(8,R1),MEM2MTTR                                      06560000
+         OC    56+1(6,R1),MEM2LENG                                      06561000
+         OC    63+1(6,R1),MEM2ENTY                                      06562000
+         OC    70+1(8,R1),MEM2SSI                                       06563000
+         SR    R15,R15                     END OF LINE         SS AUG86 06564000
+         BR    R2                                              SS AUG86 06565000
+         SPACE 2                                                        06566000
+ISPM3B0  OI    SPFLAG4,SPFMORE                                 SS OCT88 06566100
+         BASR  R15,0                        PANEL=B            SS OCT88 06566200
+ISPM3B1  MVC   0(79,R1),SPFLINE             ADD TABLE DATA     SS OCT88 06566300
+         CLI   0(R1),X'02'                  DELINK OUTPUT?    DRK DEC05 06566438
+         BE    ISPM3B2-ISPM3B1(R15)         YES               DRK DEC05 06566538
+         CLI   0(R1),X'39'                  NULL FIRST BYTE?   SS OCT88 06566600
+         BH    ISPM3B2-ISPM3B1(R15)         NO, BRANCH         SS OCT88 06566700
+         MVI   0(R1),X'40'                  YES, RESET TO BLAN SS OCT88 06566800
+ISPM3B2  BASR  R15,0                    GENERATE ADDRESS *     SS OCT88 06566900
+         LA    R15,14(R15)              RESTART *+14           SS OCT88 06567000
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN     SS OCT88 06567100
+         BZR   R2                       RETURN                 SS OCT88 06567200
+         LA    R1,80(R1)                NEXT SLOT              SS OCT88 06567300
+         BASR  R15,0                    GENERATE ADDRESS *     SS OCT88 06567400
+         MVC   0(79,R1),SPFLINE+79          ADD TABLE DATA     SS OCT88 06567500
+         SR    R15,R15                      END OF LINE        SS OCT88 06567638
+         CLI   0(R1),X'02'                  DELINK OUTPUT?    DRK DEC05 06567738
+         BER   R2                           YES               DRK DEC05 06567838
+         CLI   0(R1),X'39'                  NULL FIRST BYTE?   SS OCT88 06567900
+         BHR   R2                           NO, BRANCH         SS OCT88 06568000
+         MVI   0(R1),X'40'                  YES, RESET TO BLAN SS OCT88 06568100
+         BR    R2                       *                      SS OCT88 06568200
+         SPACE 2                                                        06568300
+ISPM3D0  OI    SPFLAG4,SPFMORE                                 SS AUG86 06568400
+         MVC   0(4,R1),MEM2OPT              PANEL=D                     06568500
+         OC    4+1(8,R1),MEMLNAME                                       06569000
+         OC    13+1(8,R1),MEMLDATA                                      06570000
+         OC    22+1(8,R1),MEM2ALIS                                      06571000
+         OC    31+1(8,R1),MEM2LDAT                                      06572000
+         OC    40+1(4,R1),MEM2ATT1                                      06573000
+         OC    45+1(4,R1),MEM2ATT2                                      06574000
+         OC    50+1(4,R1),MEM2DC                                        06575000
+         OC    55+1(4,R1),MEM2TEST                                      06576000
+         OC    60+1(4,R1),MEM2APF                                       06577000
+         OC    65+1(4,R1),MEM2MODE                                      06578000
+         OC    70+1(8,R1),MEM2MNAM                                      06579000
+         BASR  R15,0                    GENERATE ADDRESS *     SS AUG86 06580000
+         LA    R15,14(R15)              RESTART *+14           SS AUG86 06581000
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN     SS AUG86 06582000
+         BZR   R2                       RETURN                 SS AUG86 06583000
+         LA    R1,80(R1)                NEXT SLOT              SS AUG86 06584000
+         OC    22+1(8,R1),MEM2MTTR                            ABL FEB87 06585000
+         OC    31+1(6,R1),MEM2LENG                                      06586000
+         OC    40+1(6,R1),MEM2TTR                                       06587000
+         OC    50+1(6,R1),MEM2ENTY                                      06588000
+         OC    60+1(8,R1),MEM2SSI                                       06589000
+         BASR  R15,0                    GENERATE ADDRESS *     SS AUG86 06590000
+         LA    R15,10(R15)              RESTART *+10           SS AUG86 06591000
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN     SS AUG86 06592000
+         BZR   R2                       RETURN                 SS AUG86 06593000
+*  NULL LINE                                                   SS AUG86 06594000
+         NI    SPFLAG4,255-SPFMORE      NO MORE                SS AUG86 06595000
+         SR    R15,R15                     END OF LINE         SS AUG86 06596000
+         BR    R2                                              SS AUG86 06597000
+         SPACE 2                                                        06598000
+ISPM3F0  NOP   0(,R0)                   *                      SS AUG86 06599000
+         MVC   0(4,R1),SPFAOPT              PANEL=F                     06600000
+         OC    04+1(8,R1),SPFADDNM                                      06601000
+         OC    13+1(8,R1),SPFADATA                                      06602000
+         OC    22+1(4,R1),SPFATYPE                                      06603000
+         OC    27+1(1,R1),SPFAOCNT                                      06604000
+         OC    30+1(6,R1),SPFAVOL                                       06605000
+         OC    37+1(8,R1),SPFAMEM                                       06606000
+         OC    46+1(32,R1),SPFADSN                                      06607000
+         SR    R15,R15                     END OF LINE         SS AUG86 06608000
+         BR    R2                                              SS AUG86 06609000
+         SPACE 2                                                        06610000
+ISPM3G0  OI    SPFLAG4,SPFMORE                                 SS AUG86 06611000
+         MVC   0(4,R1),SPFAOPT              PANEL=G                     06612000
+         OC    04+1(8,R1),SPFADDNM                                      06613000
+         OC    13+1(8,R1),SPFADATA                                      06614000
+         OC    22+1(4,R1),SPFATYPE                                      06615000
+         OC    27+1(1,R1),SPFAOCNT                                      06616000
+         OC    30+1(4,R1),SPFASTAT                                      06617000
+         OC    35+1(44,R1),SPFADSN                                      06618000
+         BASR  R15,0                    GENERATE ADDRESS *     SS AUG86 06619000
+         LA    R15,14(R15)              RESTART *+14           SS AUG86 06620000
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN     SS AUG86 06621000
+         BZR   R2                       RETURN                 SS AUG86 06622000
+         LA    R1,80(R1)                NEXT SLOT              SS AUG86 06623000
+         OC    22+1(6,R1),SPFAVOL                                       06624000
+         OC    30+1(8,R1),SPFAMEM                                       06625000
+         OC    42+1(4,R1),SPFAALLC                                      06626000
+         OC    47+1(4,R1),SPFADISP                                      06627000
+         OC    52+1(4,R1),SPFAADSP                                      06628000
+         OC    59+1(5,R1),SPFABLKS                            DRK JUN03 06628115
+         OC    65+1(5,R1),SPFALREC                            DRK JUN03 06628215
+         OC    71+1(4,R1),SPFARECF                            DRK JUN03 06628315
+         BASR  R15,0                    GENERATE ADDRESS *     SS AUG86 06629000
+         LA    R15,10(R15)              RESTART *+10           SS AUG86 06630000
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN     SS AUG86 06631000
+         BZR   R2                       RETURN                 SS AUG86 06632000
+*  NULL LINE                                                   SS AUG86 06633000
+         NI    SPFLAG4,255-SPFMORE      NO MORE                SS AUG86 06634000
+         SR    R15,R15                     END OF LINE         SS AUG86 06635000
+         BR    R2                                              SS AUG86 06636000
+         SPACE 2                                                        06637000
+ISPM3H0  NOP   0(,R0)                   *                      SS AUG86 06638000
+         MVC   0(4,R1),SPFVOPT              PANEL=H                     06639000
+         OC    04+1(6,R1),SPFVVOL                                       06640000
+         OC    11+1(8,R1),SPFVDATA                                      06641000
+         OC    20+1(4,R1),SPFVADDR                            DRK MAY98 06642000
+         OC    25+1(6,R1),SPFVTYPE                            DRK MAY98 06643000
+         OC    32+1(4,R1),SPFVATTR                            DRK MAY98 06644000
+         OC    37+1(4,R1),SPFVCNT                             DRK MAY98 06645000
+         OC    41+1(7,R1),SPFVTCYL+0                          DRK SEP12 06646058
+         OC    49+1(3,R1),SPFVTTRK+4                          DRK SEP12 06647059
+         OC    53+1(4,R1),SPFVXNUM                            DRK MAY98 06648000
+         OC    58+1(7,R1),SPFVLCYL+0                          DRK SEP12 06650058
+         OC    66+1(3,R1),SPFVLTRK+4                          DRK SEP12 06651059
+         OC    70+1(8,R1),SPFVINDC                                      06652000
+         SR    R15,R15                     END OF LINE         SS AUG86 06653000
+         BR    R2                                              SS AUG86 06654000
+         SPACE 2                                                        06655000
+ISPM3I0  NOP   0(,R0)                   *                      SS AUG86 06656000
+         MVC   0(4,R1),SPFVOPT              PANEL=I                     06657000
+         OC    04+1(6,R1),SPFVVOL                                       06658000
+         OC    11+1(8,R1),SPFVDATA                                      06659000
+         OC    20+1(4,R1),SPFVADDR                            DRK MAY98 06660000
+         OC    25+1(6,R1),SPFVTYPE                            DRK MAY98 06661000
+         OC    32+1(4,R1),SPFVATTR                            DRK MAY98 06662000
+         OC    37+1(4,R1),SPFVSTAT                            DRK MAY98 06663000
+         OC    42+1(8,R1),SPFVINDC                            DRK MAY98 06664000
+         OC    51+1(3,R1),SPFVCNT                             DRK MAY98 06665000
+         OC    55+1(8,R1),SPFVVTOC                            DRK MAY98 06666000
+         OC    64+1(4,R1),SPFVVSIZ                            DRK MAY98 06667000
+         OC    69+1(4,R1),SPFVDSCB                            DRK MAY98 06668000
+         SR    R15,R15                     END OF LINE         SS AUG86 06669000
+         BR    R2                                              SS AUG86 06670000
+         SPACE 2                                                        06680000
+ISPM3K0  NOP   0(,R0)                   *                     ABL JAN89 06690000
+         MVC   0(4,R1),SPFCOPT              PANEL=K           ABL JAN89 06700000
+         OC    04+1(L'SPFCCAT,R1),SPFCCAT                     ABL JAN89 06710000
+         OC    06+1(L'SPFCVTOC,R1),SPFCVTOC                   ABL JAN89 06711000
+         OC    08+1(L'SPFCDATA,R1),SPFCDATA                   ABL JAN89 06712000
+         OC    17+1(L'SPFCDSOR,R1),SPFCDSOR                   ABL JAN89 06713000
+         OC    20+2(L'SPFCRF,R1),SPFCRF                       DRK NOV08 06714044
+         OC    26+1(L'SPFCLREC,R1),SPFCLREC                   ABL JAN89 06715000
+         OC    32+1(L'SPFCBLKS,R1),SPFCBLKS                   ABL JAN89 06716000
+         OC    38+1(L'SPFCVOL,R1),SPFCVOL                     ABL JAN89 06717000
+         OC    45+1(34,R1),SPFCDSN                            ABL JAN89 06718000
+         SR    R15,R15                     END OF LINE        ABL JAN89 06720000
+         BR    R2                                             ABL JAN89 06730000
+         SPACE 2                                                        06740000
+ISPM3L0  NOP   0(,R0)                   *                     ABL JAN89 06750000
+         MVC   0(4,R1),SPFCOPT              PANEL=L           ABL JAN89 06760000
+         OC    04+1(L'SPFCCAT,R1),SPFCCAT                     ABL JAN89 06761000
+         OC    06+1(L'SPFCVTOC,R1),SPFCVTOC                   ABL JAN89 06762000
+         OC    08+1(L'SPFCDATA,R1),SPFCDATA                   ABL JAN89 06763000
+         OC    17+1(L'SPFCDSOR,R1),SPFCDSOR                   ABL JAN89 06764000
+         OC    20+2(L'SPFCRF,R1),SPFCRF                       DRK NOV08 06765046
+         OC    26+1(L'SPFCVOL,R1),SPFCVOL                     ABL JAN89 06766000
+         OC    33+1(44,R1),SPFCDSN                            ABL JAN89 06850000
+         SR    R15,R15                     END OF LINE        ABL JAN89 06860000
+         BR    R2                                             ABL JAN89 06870000
+         SPACE 2                                                        06880000
+ISPM3M0  OI    SPFLAG4,SPFMORE                                ABL JAN89 06881000
+         MVC   0(4,R1),SPFCOPT              PANEL=M           ABL JAN89 06881100
+         OC    04+1(L'SPFCCAT,R1),SPFCCAT                     ABL JAN89 06882000
+         OC    06+1(L'SPFCVTOC,R1),SPFCVTOC                   ABL JAN89 06883000
+         OC    08+1(L'SPFCDATA,R1),SPFCDATA                   ABL JAN89 06884000
+         OC    17+1(L'SPFCDSOR,R1),SPFCDSOR                   ABL JAN89 06885000
+         OC    20+2(L'SPFCRF,R1),SPFCRF                       DRK NOV08 06887346
+         OC    26+1(L'SPFCVOL,R1),SPFCVOL                     ABL JAN89 06887400
+         OC    33+1(44,R1),SPFCDSN                            ABL JAN89 06888000
+         BASR  R15,0                    GENERATE ADDRESS *    ABL JAN89 06981000
+         LA    R15,14(R15)              RESTART *+14          ABL JAN89 06982000
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN    ABL JAN89 06983000
+         BZR   R2                       RETURN                ABL JAN89 06984000
+         LA    R1,80(R1)                NEXT SLOT             ABL JAN89 06985000
+         OC    18+1(L'SPFCLREC,R1),SPFCLREC                   ABL JAN89 06985300
+*        OC    25+1(L'SPFCKEYL,R1),SPFCKEYL                   ABL JAN89 06985450
+         OC    30+1(L'SPFCCDAT,R1),SPFCCDAT                   ABL JAN89 06985500
+         OC    41+1(L'SPFCEDAT,R1),SPFCRDAT                   DRK SEP11 06985650
+         OC    52+1(L'SPFCTOT,R1),SPFCTOT                     DRK SEP11 06985750
+         OC    63+1(L'SPFCUSED,R1),SPFCUSED                   DRK MAY14 06985867
+*        OC    59+1(L'SPFCDIR,R1),SPFCDIR                     ABL JAN89 06985965
+*        OC    66+1(L'SPFCATYP,R1),SPFCATYP                   ABL JAN89 06986065
+         BASR  R15,0                    GENERATE ADDRESS *    ABL JAN89 06986100
+         LA    R15,14(R15)              RESTART *+14          ABL JAN89 06986200
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN    ABL JAN89 06986300
+         BZR   R2                       RETURN                ABL JAN89 06986400
+         LA    R1,80(R1)                NEXT SLOT             ABL JAN89 06986500
+         OC    18+1(L'SPFCBLKS,R1),SPFCBLKS                   DRK SEP11 06986650
+*        OC    27+1(L'SPFCRKP,R1),SPFCRKP                     ABL JAN89 06986750
+*        OC    31+1(L'SPFCRDAT,R1),SPFCRDAT                   ABL JAN89 06986850
+         OC    41+1(L'SPFCUPD,R1),SPFCUPD                     DRK SEP11 06986950
+         OC    45+1(L'SPFCEXT,R1),SPFCEXT                     DRK SEP11 06987050
+         OC    52+1(L'SPFCFREE,R1),SPFCFREE                   DRK SEP11 06987150
+*        OC    60+1(L'SPFCMMCT,R1),SPFCMMCT                   ABL JAN89 06987250
+         OC    67+1(L'SPFCSEC,R1),SPFCSEC                     DRK SEP11 06987350
+         BASR  R15,0                    GENERATE ADDRESS *    ABL JAN89 06987400
+         LA    R15,10(R15)              RESTART *+10          ABL JAN89 06987500
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN    ABL JAN89 06988000
+         BZR   R2                       RETURN                ABL JAN89 06989000
+*  NULL LINE                                                  ABL JAN89 06989100
+         NI    SPFLAG4,255-SPFMORE      NO MORE               ABL JAN89 06989200
+         SR    R15,R15                     END OF LINE        ABL JAN89 06989300
+         BR    R2                                             ABL JAN89 06989400
+         SPACE 2                                                        06989500
+ISPM3N0  OI    SPFLAG4,SPFMORE                                ABL JAN89 06989600
+         MVC   0(4,R1),SPFTOPT              PANEL=N           ABL JAN89 06989700
+         OC    06+1(L'SPFTDATA,R1),SPFTDATA                   ABL JAN89 06990000
+         OC    15+1(L'SPFTTYPE,R1),SPFTTYPE                   ABL JAN89 07000000
+         L     R15,SPFSEC4A                SECOND 4K          ABL JAN89 07010000
+         MVC   17+1(62,R1),SPFTCMDD-SPFSEC4K(R15)             ABL JAN89 07030000
+         BASR  R15,0                    GENERATE ADDRESS *    ABL JAN89 07059100
+         LA    R15,14(R15)              RESTART *+14          ABL JAN89 07059200
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN    ABL JAN89 07059300
+         BZR   R2                       RETURN                ABL JAN89 07059400
+         LA    R1,80(R1)                NEXT SLOT             ABL JAN89 07059500
+         L     R15,SPFSEC4A                SECOND 4K          ABL JAN89 07059600
+         MVC   0(80,R1),SPFTCMDD-SPFSEC4K+62(R15)             ABL JAN89 07059700
+         BASR  R15,0                    GENERATE ADDRESS *    ABL JAN89 07059800
+         LA    R15,10(R15)              RESTART *+10          ABL JAN89 07059900
+         TM    SPFLAG4,SPFMORE          CONTINUE OR RETURN    ABL JAN89 07060000
+         BZR   R2                       RETURN                ABL JAN89 07060100
+*  NULL LINE                                                  ABL JAN89 07060200
+         NI    SPFLAG4,255-SPFMORE      NO MORE               ABL JAN89 07060300
+         SR    R15,R15                     END OF LINE        ABL JAN89 07060400
+         BR    R2                                             ABL JAN89 07060500
+         SPACE 2                                                        07061000
+ISPM3O0  NOP   0(,R0)                   *                     ABL JAN89 07070000
+         MVC   0(4,R1),SPFXOPT              PANEL=O           ABL JAN89 07080000
+         OC    04+1(L'SPFXDATA,R1),SPFXDATA                   ABL JAN89 07110000
+         OC    13+1(L'SPFXTYPE,R1),SPFXTYPE                   ABL JAN89 07120000
+         OC    18+1(L'SPFXSTAT,R1),SPFXSTAT                   ABL JAN89 07130000
+         OC    25+1(L'SPFXADDR,R1),SPFXADDR                   ABL JAN89 07140000
+         OC    32+1(L'SPFXNUM,R1),SPFXNUM                     ABL JAN89 07141000
+         OC    36+1(L'SPFXVOL,R1),SPFXVOL                     ABL JAN89 07142000
+         OC    43+1(36,R1),SPFXDSN                            ABL JAN89 07150000
+         SR    R15,R15                     END OF LINE        ABL JAN89 07160000
+         BR    R2                                             ABL JAN89 07170000
+         SPACE 2                                                        07171002
+ISPM3R0  NOP   0(,R0)                   *                     DRK AUG98 07180002
+         MVC   0(4,R1),SPFVOPT              PANEL=R           DRK AUG98 07190002
+         OC    04+1(6,R1),SPFVVOL                             DRK AUG98 07200002
+         OC    11+1(8,R1),SPFVDATA                            DRK AUG98 07210002
+         OC    20+1(4,R1),SPFVADDR                            DRK AUG98 07220002
+         OC    25+1(6,R1),SPFVTYPE                            DRK AUG98 07230002
+         OC    32+1(4,R1),SPFVATTR                            DRK AUG98 07240002
+         OC    37+1(4,R1),SPFVCNT                             DRK AUG98 07250002
+         OC    42+1(4,R1),SPFVSPCU                            DRK AUG98 07260004
+         OC    47+1(7,R1),SPFVDCYL+0                          DRK SEP12 07270058
+         OC    55+1(2,R1),SPFVACYL+2                          DRK SEP12 07280059
+         OC    58+1(5,R1),SPFVFMT0+2                          DRK SEP12 07290056
+         OC    64+1(5,R1),SPFVVIRS+2                          DRK SEP12 07300056
+         OC    71+1(4,R1),SPFVFRAG                            DRK DEC98 07310007
+         SR    R15,R15                     END OF LINE        DRK AUG98 07320002
+         BR    R2                                             DRK AUG98 07330002
+         SPACE 2                                                        07340013
+ISPM3S0  NOP   0(,R0)                                         DRK NOV99 07350013
+         MVC   0(4,R1),MEM2OPT              PANEL=S           DRK NOV99 07360013
+         OC    4+1(8,R1),MEMLNAME                             DRK NOV99 07370013
+         OC    13+1(8,R1),MEMLDATA                            DRK NOV99 07380013
+         OC    23+1(6,R1),MEM2VMOD                            DRK NOV99 07390013
+         OC    29+2(10,R1),MEM2CDAX                           DRK NOV99 07400013
+         OC    40+2(10,R1),MEM2MDAX                           DRK NOV99 07410013
+         OC    52+1(8,R1),MEM2MTIM                            DRK NOV99 07420013
+         OC    61+1(8,R1),MEM2CSIZ                            DRK MAR01 07430014
+         OC    68+1(1,R1),MEM2XSTA                            DRK SEP11 07450050
+         OC    71+1(8,R1),MEM2MID                             DRK NOV99 07451050
+         SR    R15,R15                     END OF LINE        DRK NOV99 07460013
+         BR    R2                                             DRK NOV99 07470013

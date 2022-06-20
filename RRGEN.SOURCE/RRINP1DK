@@ -1,0 +1,47 @@
+RRIN1DKN  CSECT                                                         00000010
+*  THIS MODULE IS CALLED BY GEN PROGRAM                                 00000020
+*   TO READ DA DATA SETS / TYPE = DI  (DATA AND KEY)                    00000030
+         SAVE  (2,12),T,*                                               00000040
+         BALR  11,0                                                     00000050
+         USING *,11                                                     00000060
+         ST    13,SAVEAREA+4                                            00000070
+         LR    4,13                                                     00000080
+         LA    13,SAVEAREA                                              00000090
+         ST         13,8(4)                                             00000100
+ML01     B     ML03         1ST TIME SWITCH                             00000110
+         MVC   DECBIN+29(1),4(14)   PUT APPRO REG FOR BLK ADR           00000120
+         MVC   ML03A+2(2),6(14)  * MOVE KEY ADR TO NEXT INST            00000130
+ML03A    LA    14,*+0            * CONV BASE/DISP TO ACTUAL ADR         00000140
+         ST    14,DECBIN+20   * STORE ACTUAL ADR IN READ MACRO          00000150
+         LA    13,SAVEAREA       * POINT 13 BACK TO MY SAVEAREA         00000160
+ML02     READ  DECBIN,DK,DCBIN,*+12,'S',*+20,(7)                        00000170
+         WAIT  ECB=DECBIN                                               00000180
+         TM    DECBIN+1,X'80'   Q.  RECORD NOT FOUND                    00000190
+         BZ    CHECK                NO                                  00000200
+         L     6,HOLD                                                   00000210
+         MVC   0(6,6),NOHIT         MOVE 'NOHIT' TO AREA                00000220
+         B     ML02A                GO BACK                             00000230
+CHECK    CHECK DECBIN                NO                                 00000240
+ML02A    L     13,SAVEAREA+4  * RELOAD                                  00000250
+         LM    14,12,12(13)     *  AND                                  00000260
+         LA    15,0(0,0)      *     RETURN                              00000270
+         LA    14,12(0,14)    *      TO                                 00000280
+         BR    14             *       USER                              00000290
+ML03     MVC   DECBIN+12(4),0(14)  MOVE AREA ADR TO READ INST           00000300
+         MVC   ML04+2(2),4(14)   MOVE REC AREA ADR TO LOAD ADR INST.    00000310
+         MVC   HOLD,DECBIN+12                                           00000320
+ML04     LA    2,*+0             CONVERT TO ACT ADR.                    00000330
+         ST    2,DECBIN+24     STORE BLK ADR FOR READ                   00000340
+         OPEN  (DCBIN)                                                  00000350
+         MVI   ML01+1,X'00'      NOP  1ST TIME SWITCH                   00000360
+         B     ML02A                                                    00000370
+* EOF EXIT                                                              00000380
+ML05     L     13,SAVEAREA+4                                            00000390
+         LM    14,12,12(13)                                             00000400
+         LA    15,0(0,0)                                                00000410
+         BR    14                                                       00000420
+SAVEAREA DC    18F'0'                                                   00000430
+HOLD     DS    CL4                                                      00000440
+NOHIT    DC    CL8'NOHIT '                                              00000450
+DCBIN    DCB   DDNAME=INP1,DSORG=DA,MACRF=RCK,RECFM=F                   00000460
+         END                                                            00000470

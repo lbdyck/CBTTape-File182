@@ -1,0 +1,646 @@
+         TITLE 'P D S  --  ISRSUPC SEARCH-FOR INTERFACE       4/18/06'  00010000
+*********************************************************************** 00020000
+***      SRCHFOR SUBCOMMAND   ADDED BY JOHN KALINICH -- APR., 2006  *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050000
+SRCHFOR  CSECT                                                          00060000
+         USING *,R8                                                     00070000
+         SPACE 1                                                        00080000
+*  FREE SYSIN, NEWDD, AND OUTDD DATASETS                                00090000
+         LA    R1,=CL8'SYSIN'           SYSIN DDNAME                    00100000
+         BAS   R2,SRC8580               FREE THIS DATA SET              00110000
+         LA    R1,NEWDD                 NEWDD DDNAME                    00120000
+         BAS   R2,SRC8580               FREE THIS DATA SET              00130000
+         LA    R1,OUTDD                 OUTDD DDNAME                    00140000
+         BAS   R2,SRC8580               FREE THIS DATA SET              00150000
+*  ALLOCATE SRCHFOR //NEWDD DATA SET    INPUT PDS                       00160000
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00170000
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00180000
+         USING S99RBP,R1                                                00190000
+         SPACE 1                                                        00200000
+         LA    R4,M99RB                                                 00210000
+         USING S99RB,R4                                                 00220000
+         ST    R4,S99RBPTR                                              00230000
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00240000
+         SPACE 1                                                        00250000
+         LA    R5,M99TUPL                                               00260000
+         USING S99TUPL,R5                                               00270000
+         MVI   S99RBLN,20               LENGTH 20                       00280000
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00290000
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00300000
+         LA    R3,WORKTBL                        START OF TEXT          00310000
+         SPACE 1                                                        00320000
+         MVC   0(L'SRCDDNNW+5,R3),SRCDDNNW       SPECIFY DDNAME TEXT    00330000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00340000
+         LA    R3,L'SRCDDNNW+5(,R3)              START OF NEXT TEXT     00350000
+         SPACE 1                                                        00360000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00370000
+         MVC   0(L'SRCDSNAM,R3),SRCDSNAM         SPECIFY DSNAME TEXT    00380000
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00390000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00400000
+         LA    R3,L'SRCDSNAM+44(,R3)             START OF NEXT TEXT     00410000
+         SPACE 1                                                        00420000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00430000
+         MVC   0(L'SRCALLOC,R3),SRCALLOC         SPECIFY DISP TEXT      00440000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00450000
+         LA    R3,L'SRCALLOC(,R3)                START OF NEXT TEXT     00460000
+         SPACE 1                                                        00470000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00480000
+         MVC   0(L'SRCNORM,R3),SRCNORM           SPECIFY NORMAL TEXT    00490000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00500000
+         LA    R3,L'SRCNORM(,R3)                 START OF NEXT TEXT     00510000
+         SPACE 1                                                        00520000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00530000
+         MVC   0(L'SRCANORM,R3),SRCANORM         SPECIFY ABNORMAL TEXT  00540000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00550000
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00560000
+         SPACE 1                                                        00570000
+         DYNALLOC                                                       00580000
+         SPACE 2                                                        00590000
+         DROP  R1,R4,R5                                                 00600000
+         LTR   R15,R15                       SUCCESSFUL?                00610000
+         BNZ   SRCERROR                      NO, BRANCH                 00620000
+         SPACE 2                                                        00630000
+*  ALLOCATE SRCHFOR //SYSIN FILE                                        00640000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00650000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00660000
+         USING S99RBP,R1                                                00670000
+         SPACE 1                                                        00680000
+         LA    R4,M99RB                                                 00690000
+         USING S99RB,R4                                                 00700000
+         ST    R4,S99RBPTR                                              00710000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00720000
+         SPACE 1                                                        00730000
+         LA    R5,M99TUPL                                               00740000
+         USING S99TUPL,R5                                               00750000
+         MVI   S99RBLN,20                 LENGTH 20                     00760000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00770000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00780000
+         SPACE 1                                                        00790000
+         MVC   #CMXSYS3(11),SRCDDNIN      SYSIN DDNAME                  00800000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00810000
+         USING S99TUNIT,R3                                              00820000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00830000
+         MVC   S99TUPTR+4(40),SRCSYSIN    ADD OTHER LIST ELEMENTS       00840000
+         SPACE 1                                                        00850000
+         DYNALLOC                                                       00860000
+         SPACE 2                                                        00870000
+         DROP  R1,R3,R4,R5                                              00880000
+         LTR   R15,R15                    SUCCESSFUL?                   00890000
+         BNZ   SRCERROR                   NO, BRANCH                    00900000
+         SPACE 3                                                        00910000
+*  ALLOCATE SRCHFOR //OUTDD DATA SET                                    00920000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00930000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00940000
+         USING S99RBP,R1                                                00950000
+         SPACE 1                                                        00960000
+         LA    R4,M99RB                                                 00970000
+         USING S99RB,R4                                                 00980000
+         ST    R4,S99RBPTR                                              00990000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              01000000
+         SPACE 1                                                        01010000
+         LA    R5,M99TUPL                                               01020000
+         USING S99TUPL,R5                                               01030000
+         MVI   S99RBLN,20                 LENGTH 20                     01040000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      01050000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        01060000
+         SPACE 1                                                        01070000
+         MVC   #CMXSYS3(11),SRCDDNPR      OUTDD DDNAME                  01080000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            01090000
+         USING S99TUNIT,R3                                              01100000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     01110000
+         MVC   S99TUPTR+4(40),SRCSYSPR    ADD OTHER LIST ELEMENTS       01120000
+         SPACE 1                                                        01130000
+         DYNALLOC                                                       01140000
+         SPACE 2                                                        01150000
+         DROP  R1,R3,R4,R5                                              01160000
+         LTR   R15,R15                    SUCCESSFUL?                   01170000
+         BNZ   SRCERROR                   NO, BRANCH                    01180000
+         B     SRC2100                                                  01190000
+         SPACE 2                                                        01200000
+SRCERROR ST    R15,DAIRRC                 SAVE RETURN CODE              01210000
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       01220000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        01230000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        01240000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    01250000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           01260000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   01270000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 01280000
+         SPACE 1                                                        01290000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               01300000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        01310000
+         BZ    SRC8550                    NO, BRANCH                    01320000
+         SPACE 1                                                        01330000
+         CVD   R15,DOUBLE                                               01340000
+         MVI   MTLEN,4                                                  01350000
+         MVC   INSERT#1(4),=X'40202120'                                 01360000
+         ED    INSERT#1(4),DOUBLE+6                                     01370000
+         MVI   INSERT#1,C'='                                            01380000
+         M$MSG L835$1                                                   01390000
+         B     SRC8550                                                  01400000
+         SPACE 3                                                        01410000
+SRC2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      01420000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       01430000
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      01440000
+         BO    SRC2200               YES, BRANCH                        01450000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               01460000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      01470000
+         BO    SRC2110               YES, BRANCH                        01480000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       01490000
+         BO    SRC2200               YES, BRANCH                        01500000
+SRC2110  TM    #SRCALI,#SRCASS2      ASSOCIATES TOO?                    01510000
+         BO    SRC2200               YES, BRANCH                        01520000
+         SPACE 1                                                        01530000
+SRC2120  DS    0H                                                       01540000
+         TM    #SRCALI,#SRCASS2+2    ALIAS/NOALIAS SPECIFIED?           01550000
+         BM    SRC2130               YES                                01560000
+*        OI    #SRCALI,&SRCALI       USE THE DEFAULT                    01570000
+         OI    #SRCALI,1             USE THE DEFAULT          DRK APR06 01580000
+         TM    #SRCALI,#SRCASS2      ASSOCIATES TOO?                    01590000
+         BO    SRC2200               YES                                01600000
+         SPACE 3                                                        01610000
+SRC2130  DS    0H                                                       01620000
+         OI    #SRCALI,#SRCONE       ONLY A SINGLE MEMBER/DATA SET      01630000
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           01640000
+         MVC   0(8,R4),DIRNAME                                          01650000
+         ST    R4,#MEMPTR                                               01660000
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             01670000
+         B     SRC2900                                                  01680000
+SRC2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        01690000
+         TM    #SRCALI,#SRCASS2+2    ALIAS/NOALIAS SPECIFIED?           01700000
+         BM    *+8                   YES                                01710000
+*        OI    #SRCALI,&SRCALI       NO, USE THE DEFAULT                01720000
+         OI    #SRCALI,1             NO, USE THE DEFAULT      DRK APR06 01730000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         01740000
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    01750000
+         LA    R5,256/2              256 MEMBERS INITIALLY              01760000
+         SPACE 1                                                        01770000
+SRC2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            01780000
+         LR    R3,R5                                                    01790000
+         LR    R0,R5                                                    01800000
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              01810000
+         ICM   R0,B'1000',SUBPOOLT                                      01820000
+         GETMAIN R,LV=(0)                                               01830000
+         LR    R4,R1                 NEW TABLE ADDRESS                  01840000
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              01850000
+         BNZ   SRC2220               YES, BRANCH                        01860000
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             01870000
+         B     SRC2500                                                  01880000
+         SPACE 1                                                        01890000
+SRC2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   01900000
+         LR    R14,R4                NEW TABLE START ADDRESS            01910000
+         LR    R15,R5                                                   01920000
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           01930000
+         LR    R2,R15                START OF NEW PART                  01940000
+         LR    R1,R15                                                   01950000
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             01960000
+         L     R1,#MEMPTR                                               01970000
+         LR    R0,R2                 LENGTH TO FREE                     01980000
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    01990000
+         FREEMAIN R,LV=(0),A=(1)                                        02000000
+         ST    R4,#MEMPTR            START OF NEW TABLE                 02010000
+         AR    R4,R2                 WHERE TO ADD MEMBERS               02020000
+         SPACE 3                                                        02030000
+SRC2300  TM    #SRCALI,#SRCASSP      ASSOCIATES PHASE?                  02040000
+         BO    SRC2320               YES, BRANCH                        02050000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      02060000
+         BO    SRC2320               YES, BRANCH                        02070000
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              02080000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               02090000
+         BNO   SRC2500               NO, BRANCH                         02100000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      02110000
+         BO    SRC2605               YES, BRANCH                        02120000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       02130000
+         BNO   SRC2605               NO, BRANCH                         02140000
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               02150000
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   02160000
+         BNO   SRC2605               NO, END OF LIST                    02170000
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              02180000
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       02190000
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               02200000
+         ST    R1,PMEMCURR                                              02210000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         02220000
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  02230000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              02240000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      02250000
+         BO    SRC2319               YES, BRANCH                        02260000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               02270000
+         MVC   DIRNAME,MEMBER1       MOVE TO BLDLLIST                   02280000
+         SPACE 2                                                        02290000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           02300000
+         B     *+4(R15)                PROCESS RETURN CODE              02310000
+         B     SRC2315                   00 - SUCCESSFUL                02320000
+         B     SRC2310                   04 - MEMBER NOT FOUND          02330000
+         B     IOERROR                   08 - I/O ERROR                 02340000
+         SPACE 1                                                        02350000
+SRC2310  MVC   INSERT#1(8),DIRNAME                                      02360000
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           02370000
+         B     SRC2300                                                  02380000
+         SPACE 1                                                        02390000
+SRC2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  02400000
+         B     SRC2500                                                  02410000
+         SPACE 1                                                        02420000
+SRC2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               02430000
+         SPACE 1                                                        02440000
+SRC2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           02450000
+         B     SRC2600               END OF MEMBERS -- BRANCH           02460000
+         SPACE 1                                                        02470000
+         TM    #SRCALI,#SRCASSP      ASSOCIATES PHASE?                  02480000
+         BO    SRC2400               YES, BRANCH                        02490000
+         SPACE 1                                                        02500000
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 02510000
+         B     SRC2600                 00 - SIMULATE DIRECTORY END      02520000
+         B     SRC2300                 04 - MEMBER FAILED FILTERING     02530000
+         B     SRC2500                 08 - MEMBER PASSED FILTERING     02540000
+         SPACE 3                                                        02550000
+SRC2400  L     R1,#MEMPTR            START OF MEMBER LIST               02560000
+         B     SRC2410+4             SKIP FIRST ADD                     02570000
+SRC2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   02580000
+         CR    R1,R4                 END OF TABLE?                      02590000
+         BNL   SRC2300               YES, IGNORE THIS ENTRY             02600000
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      02610000
+         BNE   SRC2410               NO, BRANCH                         02620000
+         SPACE 3                                                        02630000
+SRC2500  L     R1,#MEMPTR            START OF MEMBER LIST               02640000
+         B     SRC2510+4             SKIP FIRST ADD                     02650000
+SRC2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   02660000
+         CR    R1,R4                 END OF TABLE?                      02670000
+         BNL   SRC2580               YES, ADD THIS ENTRY                02680000
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       02690000
+         BE    SRC2300               YES, IGNORE THIS ENTRY             02700000
+         B     SRC2510               NO, CONTINUE SEARCHING             02710000
+         SPACE 2                                                        02720000
+SRC2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   02730000
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               02740000
+         S     R3,=F'1'              ANY MORE FIT?                      02750000
+         BNP   SRC2210               NO, BRANCH                         02760000
+         B     SRC2300               YES, GET NEXT MEMBER               02770000
+         SPACE 3                                                        02780000
+SRC2600  TM    #SRCALI,#SRCASSP      ASSOCIATED MEMBERS?                02790000
+         BO    SRC2605               YES, BRANCH                        02800000
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         02810000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      02820000
+         BO    SRC2605               YES, BRANCH                        02830000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       02840000
+         BO    SRC2300               YES, BRANCH                        02850000
+         SPACE 1                                                        02860000
+SRC2605  TM    #SRCALI,#SRCASSP      ASSOCIATES PHASE STARTED?          02870000
+         BO    SRC2700               YES, BRANCH                        02880000
+         TM    #SRCALI,#SRCASS2      ASSOCIATE MEMBERS TOO?             02890000
+         BNO   SRC2700               NO, BRANCH                         02900000
+         OI    #SRCALI,#SRCASSP      YES, ASSOCIATES PHASE STARTED      02910000
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   02920000
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    02930000
+         B     SRC2300               DO ANY ASSOCIATED MEMBERS          02940000
+         SPACE 3                                                        02950000
+SRC2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   02960000
+         SPACE 3                                                        02970000
+SRC2900  DS    0H                                                       02980000
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           02990000
+*  OPEN SYSIN DATA SET                                                  03000000
+         MVC   BAMDCB(SRCDL),SRCDCB           GET MODEL DCB             03010000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSIN'                    03020000
+         MVI   OPENLIST,X'80'                                           03030000
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               03040000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         03050000
+         BO    SRC2910                         YES, BRANCH              03060000
+         LA    R1,SRC865E                      NO STATUS AVAILABLE      03070000
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       03080000
+         B     SRC8550                         EXIT                     03090000
+         SPACE 3                                                        03100000
+SRC2910  DS    0H                                                       03110000
+         MVC   MSGTEXT1(136),MSGBL132   CLEAR THE MESSAGE AREA          03120000
+         LA    R5,MSGTEXT1+4                                            03130000
+         MVC   0(8,R5),SRCCMD           SRCHFOR COMMAND                 03140000
+         LA    R5,8(R5)                                                 03150000
+         CLI   #SRCHEX,1                HEX STRING?                     03160000
+         BNE   SRC3000                  NO                              03170001
+         MVI   0(R5),C'X'               YES                             03180000
+         LA    R5,1(R5)                                                 03190000
+SRC3000  DS    0H                                                       03200000
+         MVI   0(R5),C''''              STARTING QUOTE                  03210000
+         LA    R5,1(R5)                                                 03220000
+         LH    R15,#SRCSTRL             SEARCH STRING LENGTH            03230000
+         BCTR  R15,0                                                    03240000
+         MVC   0(*-*,R5),#SRCSTR        <<EXECUTED>>                    03250000
+         EX    R15,*-6                  MOVE SEARCH STRING              03260000
+         LA    R5,1(R15,R5)                                             03270000
+         MVI   0(R5),C''''              ENDING QUOTE                    03280000
+         LA    R5,1(R5)                                                 03290000
+         SPACE 1                                                        03300000
+         CLI   #SRCTYP,1                PREFIX?                         03310000
+         BE    SRC3010                  YES                             03320000
+         CLI   #SRCTYP,2                SUFFIX?                         03330000
+         BE    SRC3020                  YES                             03340000
+         CLI   #SRCTYP,3                WORD?                           03350000
+         BE    SRC3030                  YES                             03360000
+         B     SRC3050                  NO                              03370000
+SRC3010  DS    0H                                                       03380000
+         MVC   0(2,R5),=CL2',P'                                         03390000
+         B     SRC3040                                                  03400000
+SRC3020  DS    0H                                                       03410000
+         MVC   0(2,R5),=CL2',S'                                         03420000
+         B     SRC3040                                                  03430000
+SRC3030  DS    0H                                                       03440000
+         MVC   0(2,R5),=CL2',W'                                         03450000
+SRC3040  DS    0H                                                       03460000
+         LA    R5,2(R5)                                                 03470000
+SRC3050  DS    0H                                                       03480000
+         CLI   #SRCCOL,C' '             RANGE SPECIFIED?                03490000
+         BE    SRC3060                  NO, BRANCH                      03500000
+         LH    R15,#SRCCOLL             SEARCH RANGE LENGTH             03510000
+         MVI   0(R5),C','                                               03520000
+         LA    R5,1(R5)                                                 03530000
+         BCTR  R15,0                                                    03540000
+         MVC   0(*-*,R5),#SRCCOL        <<EXECUTED>>                    03550000
+         EX    R15,*-6                  MOVE SEARCH STRING              03560000
+SRC3060  DS    0H                                                       03570000
+         PUT   BAMDCB,MSGTEXT1+4        OUTPUT SRCHFOR STATEMENT        03580000
+         SPACE 1                                                        03590000
+SRC3070  DS    0H                                                       03600000
+         TM    FLAGSHH,FMEMALLM         ALL MEMBERS?                    03610000
+         BNO   SRC4000                  NO                              03620000
+         B     SRC4540                  YES                             03630000
+SRC4000  DS    0H                                                       03640000
+         CLI   #SRCLST,2                  NOSLIST?                      03650000
+         BNE   SRC4010                    NO                            03660000
+         MVC   MSGTEXT1(136),MSGBL132     YES                           03670000
+         MVC   MSGTEXT1+4(9),SLISTOFF                                   03680000
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT SLIST STATEMENT        03690000
+SRC4010  DS    0H                                                       03700000
+         L     R3,#MEMPTR                 FIRST MEMBER POINTER          03710000
+         L     R4,#MEMLAST                LAST MEMBER POINTER           03720000
+         MVC   MSGTEXT1(136),MSGBL132     CLEAR THE MESSAGE AREA        03730000
+         SPACE 1                                                        03740000
+SRC4530  CR    R3,R4                      END OF MEMBER TABLE?          03750000
+         BNL   SRC4540                    YES                           03760000
+         LA    R5,MSGTEXT1+4                                            03770000
+         MVC   0(7,R5),=CL7'SELECT '      SELECT STATEMENT              03780000
+         LA    R5,7(R5)                                                 03790000
+         MVC   0(8,R5),0(R3)              MEMBER NAME                   03800000
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT SELECT STATEMENT       03810000
+         LA    R3,16(,R3)                 NEXT MEMBER POSITION          03820000
+         B     SRC4530                                                  03830000
+         SPACE 1                                                        03840000
+SRC4540  DS    0H                                                       03850000
+         CLI   #SRCLPF,0                  LPSF(NUM)           DRK DEC21 03860002
+         BE    SRC4545                    NO                  DRK DEC21 03870003
+         MVC   MSGTEXT1(136),MSGBL132     YES                 DRK DEC21 03880002
+         MVC   MSGTEXT1+4(5),=CL8'LPSFV'  LPSFV STATEMENT     DRK DEC21 03890002
+         SR    R15,R15                    ZERO                DRK DEC21 03900002
+         ICM   R15,B'0001',#SRCLPF        NUMBER OF LINES     DRK DEC21 03910002
+         CVD   R15,DOUBLE                 PACK                DRK DEC21 03920002
+         MVC   MSGTEXT1+9(4),=X'40202120' PATTERN             DRK DEC21 03930002
+         ED    MSGTEXT1+9(4),DOUBLE+6     PREV/NEXT NUMBER    DRK DEC21 03940002
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT LPSFV STATEMENT        03950002
+         SPACE 1                                                        03960000
+SRC4545  DS    0H                                                       03970000
+         MVI   OPENLIST,X'80'                                           03980000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   03990000
+         LA    R1,BAMDCB                                                04000000
+         FREEPOOL (1)                                                   04010000
+         SPACE 2                                                        04020000
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          04030000
+         STAX  SRCHNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X04040000
+               OBUF=(SRC484W,SRC484WL),MF=(E,STAXPARM)                  04050000
+*        LA    R1,SRCPARM                 PARM=SRCHCMP        DRK OCT08 04060000
+         SPACE 1                                                        04070000
+         MVC   MSGTEXT2(132),MSGBL132     BLANK LINE          DRK OCT08 04080000
+         LA    R5,MSGTEXT2                                    DRK OCT08 04090000
+         LH    R15,SRCPARM                LENGTH OF PARM      DRK OCT08 04100000
+         LA    R15,1(,R15)                +1 FOR MOVE         DRK OCT08 04110000
+         MVC   0(*-*,R5),SRCPARM          <<EXECUTED>>        DRK OCT08 04120000
+         EX    R15,*-6                    MOVE LENGTH + PARM  DRK OCT08 04130000
+         LA    R5,1(R15,R5)               SKIP BY LEN + PARM  DRK OCT08 04140000
+         CLI   #SRCPAK,1                  CKPACKL?            DRK OCT08 04150000
+         BNE   SRC4550                    NO                  DRK OCT08 04160000
+         MVC   0(8,R5),=CL8',CKPACKL'     YES                 DRK OCT08 04170000
+         LA    R5,8(,R5)                  SKIP BY CKPACKL     DRK OCT08 04180000
+         LA    R15,8(,R15)                INCREASE PARM LEN   DRK OCT08 04190000
+SRC4550  DS    0H                                             DRK OCT08 04200000
+         CLI   #SRCCOB,1                  COBOL?              DRK OCT08 04210000
+         BNE   SRC4560                    NO                  DRK OCT08 04220000
+         MVC   0(6,R5),=CL6',COBOL'       YES                 DRK OCT08 04230000
+         LA    R5,6(,R5)                  SKIP BY COBOL       DRK OCT08 04240000
+         LA    R15,6(,R15)                INCREASE PARM LEN   DRK OCT08 04250000
+SRC4560  DS    0H                                             DRK OCT08 04260000
+         CLI   #SRCSEQ,1                  SEQ?                DRK OCT08 04270000
+         BNE   SRC4570                    NO                  DRK OCT08 04280000
+         MVC   0(4,R5),=CL4',SEQ'         YES                 DRK OCT08 04290000
+         LA    R5,4(,R5)                  SKIP BY SEQ         DRK OCT08 04300000
+         LA    R15,4(,R15)                INCREASE PARM LEN   DRK OCT08 04310000
+SRC4570  DS    0H                                             DRK OCT08 04320000
+         CLI   #SRCLPF,0                  LPSF(NUM)?          DRK DEC21 04330002
+         BE    SRC4580                    NO                  DRK DEC21 04340004
+         MVC   0(5,R5),=CL5',LPSF'        YES                 DRK OCT08 04350000
+         LA    R5,5(,R5)                  SKIP BY SEQ         DRK OCT08 04360000
+         LA    R15,5(,R15)                INCREASE PARM LEN   DRK OCT08 04370000
+SRC4580  DS    0H                                             DRK OCT08 04380000
+         BCTR  R15,0                      ACTUAL PARM LEN     DRK OCT08 04390000
+         STH   R15,MSGTEXT2               STORE NEW PARM LEN  DRK OCT08 04400000
+         LA    R1,MSGTEXT2                PT TO DYNAMIC PARM  DRK OCT08 04410000
+         SPACE 1                                                        04420000
+         ST    R1,#CMXLIST                                              04430000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              04440000
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 04450000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                04460000
+         LA    R15,SRCPGM               2 POINT TO CALLED PROGRAM       04470000
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  04480000
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          04490000
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          04500000
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           04510000
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       04520000
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     04530000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  04540000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    04550000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      04560000
+         SPACE 2                                                        04570000
+         L     R2,RECOVER                                               04580000
+         LA    R1,SRC7080                 RECOVERY ADDRESS              04590000
+         ST    R1,RECOVER                                               04600000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                04610000
+         SPACE 1                                                        04620000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 04630000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            04640000
+         CLC   ##SUBCAL(8),SRCEFTSR       INVOKE IKJEFTSR?              04650000
+         BNE   SRCNLNK                    NO, BRANCH                    04660000
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   04670000
+         SPACE 2                                                        04680000
+SRCNLNK  BAS   R2,ATTACH                  ISRSUPC                       04690000
+         SPACE 3                                                        04700000
+SRC7080  LM    R2,R8,#SUBHOLD+88                                        04710000
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        04720000
+         STAX  ,                                                        04730000
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        04740000
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       04750000
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      04760000
+         SPACE 1                                                        04770000
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 04780000
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 04790000
+         BNE   SRC8000                    NO                  DRK JAN07 04800000
+         MVC   INSERT#1(8),SRCPGM         YES, ERROR          DRK JAN07 04810000
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 04820000
+         B     SRC8550                                        DRK JAN07 04830000
+         SPACE 1                                                        04840000
+SRC8000  MVC   BAMDCB(SRCDL),SRCDCB         GET MODEL DCB               04850000
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),OUTDD                          04860000
+         MVI   OPENLIST,X'80'                                           04870000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN OUTDD                  04880000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            04890000
+         BO    SRC8010                      YES, BRANCH                 04900000
+         LA    R1,SRC865E                   NO STATUS AVAILABLE         04910000
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          04920000
+         B     SRC8550                      EXIT                        04930000
+         SPACE 3                                                        04940000
+*  PROCESS OUTDD RECORDS                                                04950000
+SRC8010  GET   BAMDCB                     GET LIST RECORD               04960000
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        04970000
+         MVC   MSGTEXT1+4(202),1(R1)      ADD THE SRCHFOR MESSAGE       04980000
+         MVI   MSGTEXT1+1,202+4           MAXIMUM LONGLN LENGTH         04990000
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            05000000
+         B     SRC8010                                                  05010000
+         SPACE 3                                                        05020000
+SRC8500  DS    0H                                                       05030000
+         CLC   ##SUBCAL(8),SRCEFTSR       INVOKE IKJEFTSR?              05040000
+         BNE   SRC8540                    NO, BRANCH                    05050000
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JAN07 05060000
+         BL    SRC8540                    YES, VALID SRCHFOR            05070000
+         MVI   MTLEN+4,11                                               05080000
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    05090000
+         SR    R15,R15                                                  05100000
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 05110000
+         CVD   R15,DOUBLE                                               05120000
+         MVC   INSERT#1(8),##SUBCOM                                     05130000
+         MVC   INSERT#2(4),=X'40202120'                                 05140000
+         ED    INSERT#2(4),DOUBLE+6                                     05150000
+         MVI   INSERT#2,C'='              RETURN CODE                   05160000
+         SPACE 1                                                        05170000
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   05180000
+         BNE   SRC8530                    NO, SKIP MESSAGE              05190000
+         SPACE 1                                                        05200000
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 05210000
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 05220000
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 05230000
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 05240000
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 05250000
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 05260000
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 05270000
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 05280000
+         SPACE 1                                              DRK NOV07 05290000
+         SRL   R1,20                    USER ABEND            DRK NOV07 05300000
+         CVD   R1,DOUBLE                                      DRK NOV07 05310000
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 05320000
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 05330000
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 05340000
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 05350000
+         SPACE 1                                                        05360000
+SRC8530  DS    0H                                                       05370000
+         M$MSG L171$2                                                   05380000
+SRC8540  DS    0H                                                       05390000
+         MVI   OPENLIST,X'80'                                           05400000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE OUTDD FILE          05410000
+         LA    R1,BAMDCB                                                05420000
+         FREEPOOL (1)                                                   05430000
+         SPACE 2                                                        05440000
+SRC8550  M$ERRST MSGBLANK                                               05450000
+         LA    R1,OUTDD                   OUTDD DDNAME                  05460000
+         BAS   R2,SRC8580                 FREE THIS DATA SET            05470000
+         LA    R1,NEWDD                   NEWDD DDNAME                  05480000
+         BAS   R2,SRC8580                 FREE THIS DATA SET            05490000
+         LA    R1,=CL8'SYSIN'             SYSIN DDNAME                  05500000
+         BAS   R2,SRC8580                 FREE THIS DATA SET            05510000
+         B     NEWSTAX                                                  05520000
+         SPACE 1                                                        05530000
+SRC8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         05540000
+         BLR   R2                         NO, RETURN                    05550000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                05560000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           05570000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            05580000
+         USING S99RBP,R1                                                05590000
+         SPACE 1                                                        05600000
+         LA    R4,M99RB                                                 05610000
+         USING S99RB,R4                                                 05620000
+         ST    R4,S99RBPTR                                              05630000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              05640000
+         SPACE 1                                                        05650000
+         LA    R5,M99TUPL                                               05660000
+         USING S99TUPL,R5                                               05670000
+         MVI   S99RBLN,20                 LENGTH 20                     05680000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    05690000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         05700000
+         SPACE 1                                                        05710000
+         LA    R3,#CMXSYS3                TEXT POINTER                  05720000
+         USING S99TUNIT,R3                                              05730000
+         MVC   S99TUKEY(6),SRCFDDNA       ADD TEXT KEYS                 05740000
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            05750000
+         LA    R0,SRCUNALC                UNALLOC EVEN IF "PERM"        05760000
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          05770000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     05780000
+         SPACE 1                                                        05790000
+         DYNALLOC                                                       05800000
+         BR    R2                                                       05810000
+         SPACE 1                                                        05820000
+         DROP  R1,R3,R4,R5                                              05830000
+         SPACE 2                                                        05840000
+         B     RESTART0                                                 05850000
+         SPACE 2                                                        05860000
+SRCHNULL BR    R14                                                      05870000
+         SPACE 2                                                        05880000
+*  ISRSUPC CONSTANTS                                                    05890000
+         PRINT NOGEN                                                    05900000
+SRCDCB   DCB   DSORG=PS,DDNAME=SRC,MACRF=(GL,PM),EODAD=SRC8500          05910000
+SRCDL    EQU   *-SRCDCB                                                 05920000
+         PRINT NOGEN                                                    05930000
+SRC484W  DC    C'PDS484W SRCHFOR SHOULD NOT BE INTERRUPTED'             05940000
+SRC484WL EQU   *-SRC484W                                                05950000
+SRC865E  M$TX  'PDS865E THE SRCHFOR OUTPUT CAN NOT BE OPENED'           05960000
+         PRINT GEN                                                      05970000
+SRCEFTSR DC    CL8'IKJEFTSR'                                            05980000
+SRCPGM   DC    CL8'ISRSUPC'                      SUPER-C                05990000
+NEWDD    DC    CL8'NEWDD'                                               06000000
+OUTDD    DC    CL8'OUTDD'                                               06010000
+SRCCMD   DC    CL8'SRCHFOR'                                             06020000
+SLISTOFF DC    CL9'SLIST OFF'                                           06030000
+SRCPARM  DC    AL2(SRCPARML-2)                   PARM LENGTH            06040000
+         DC    C'SRCHCMP,LONGLN'                 PARM VALUE             06050000
+         DC    C',&SRCHOPT'                      + GLOBAL VALUE         06060000
+SRCPARML EQU   *-SRCPARM                                                06070000
+SRCDDNIN DC    X'000100010005',C'SYSIN'          SYSIN    DDNAME        06080000
+SRCDDNPR DC    X'000100010005',C'OUTDD'          OUTDD    DDNAME        06090000
+SRCDDNNW DC    X'000100010005',C'NEWDD'          NEWDD    DDNAME        06100000
+SRCDSNAM DC    X'00020001002C'                   DSNAME                 06110000
+SRCALLOC DC    X'00040001000108'                 DISP=SHR               06120000
+SRCNORM  DC    X'00050001000108'                 DISP=(,KEEP)           06130000
+SRCANORM DC    X'00060001000108'                 DISP=(,,KEEP)          06140000
+SRCDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          06150000
+SRCFDDNA DC    X'000100010008'                   FOR FREE DDNAME        06160000
+SRCNEW   DC    X'00040001000104'                 DISP=(NEW)             06170000
+SRCDEL   DC    X'00050001000104'                 DISP=(,DELETE)         06180000
+SRCCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        06190000
+SRCPERM  DC    X'00520000'                       PERMANENT ALLOCATION   06200000
+SRCUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   06210000
+         SPACE 2                                                        06220000
+SRCPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           06230000
+SRCPRTSE DC    X'000B00010003',AL3(100)          SPACE=(,(,NNN))        06240000
+SRCPRTIN DC    X'000900010003',AL3(27811)        SPACE=(27811)          06250000
+SRCSINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           06260000
+         SPACE 1                                                        06270000
+SRCPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          06280000
+SRCPRTLR DC    X'004200010002',AL2(203)          DCB=LRECL=203          06290000
+SRCPRTBL DC    X'003000010002',AL2(27811)        DCB=BLKSIZE=27811      06300000
+         SPACE 2                                                        06310000
+SRCSINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           06320000
+SRCSINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           06330000
+SRCSINBL DC    X'003000010002',AL2(3120)         DCB=BLKSIZE=3120       06340000
+         SPACE 2                                                        06350000
+SRCSYSIN DC    A(SRCPRTFI,SRCPRTSE,SRCSINSP)                            06360000
+         DC    A(SRCSINRE,SRCSINLR,SRCSINBL)                            06370000
+         DC    A(SRCNEW,SRCDEL,SRCCDEL),X'80',AL3(SRCPERM)              06380000
+SRCSYSPR DC    A(SRCPRTFI,SRCPRTSE,SRCPRTIN)                            06390000
+         DC    A(SRCPRTRE,SRCPRTLR,SRCPRTBL)                            06400000
+         DC    A(SRCNEW,SRCDEL,SRCCDEL),X'80',AL3(SRCPERM)              06410000
+         SPACE 2                                                        06420000
+#SRCASSP EQU   X'80'            SRCH: ASSOCIATES PHASE                  06430000
+#SRCONE  EQU   X'10'            SRCH: A SINGLE MEMBER                   06440000
+#SRCASS2 EQU   X'01'            SRCH: SRCH ASSOCIATES TOO               06450000
+         SPACE 2                                                        06460000

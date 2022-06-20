@@ -1,0 +1,9 @@
+         MACRO M$MSG   -   OUTPUT A STATUS OR ERROR MESSAGE WITH MSGID  01100001
+&NAME    M$MSG &NUM                                                     01101001
+         AIF   ('&NUM' EQ '(1)' OR '&NUM' EQ '(R1)').CALL               01102000
+&NAME    LA    R1,&NUM                                                  01103000
+         BAS   R14,$TMSGRT                                              01104002
+         MEXIT                                                          01105000
+.CALL    ANOP                                                           01106000
+&NAME    BAS   R14,$TMSGRT                                              01107002
+         MEND                                                           01108000

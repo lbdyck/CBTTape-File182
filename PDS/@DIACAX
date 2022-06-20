@@ -1,0 +1,254 @@
+         TITLE 'ACTIVE CATALOG    FUNCTION'                    SS NOV88 00010000
+*************************************************************  SS NOV88 00020000
+*                                                              SS NOV88 00030000
+*      CAX FUNCTION                                            SS NOV88 00040000
+*                                                              SS NOV88 00050000
+*  NOTE:  THIS FUNCTION USES THE CATALOG AUXILIARY WORK AREA   SS NOV88 00060000
+*         (CAXWA) CONTROL BLOCK CHAIN FOR ALL ITS INFORMATION  SS NOV88 00070000
+*                                                              SS NOV88 00080000
+*************************************************************  SS NOV88 00090000
+         SPACE 2                                               SS NOV88 00100000
+ISPCAX   DS    0H                                              SS NOV88 00110000
+         USING *,R4                                            SS NOV88 00120000
+         BAS   R2,ISPSETST              SET STATS PREV TABLE   SS NOV88 00130000
+         CLI   SPFFUNST+7,C'P'          LISTC   PENDING PROC   SS NOV88 00140000
+         BNE   ISPCAX5                  NO                     SS NOV88 00150000
+         LH    R1,SPFFUNLP+14     GET LAST PANEL               SS NOV88 00160000
+         LNR   R1,R1                    *                      SS NOV88 00170000
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS NOV88 00180000
+         LA    R15,36             GO TO PENDING ACT PROC       SS NOV88 00190000
+         BR    R3                                              SS NOV88 00200000
+ISPCAX5  DS    0H                       *                      SS NOV88 00210000
+         CLI   SPFFUNST+7,C'I'    INACTIVE                     SS NOV88 00220000
+         BE    ISPCAX7            YES   OPEN THE TABLE         SS NOV88 00230000
+         CLI   SPFTBPFI+1,7       ALREADY AT CAX               SS NOV88 00240000
+         BE    ISPCAX6            THEN DISPLAY                 SS NOV88 00250000
+         LH    R1,SPFFUNLP+14     GET LAST PANEL               SS NOV88 00260000
+         LNR   R1,R1                    *                      SS NOV88 00270000
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS NOV88 00280000
+ISPCAX6  DS    0H                       *                      SS NOV88 00290000
+         BAS   R2,ISPQUERY        GET                          SS NOV88 00300000
+         L     R1,SPFTSIZE            COUNT                    SS NOV88 00310000
+         LTR   R1,R1              ZERO  *                      SS NOV88 00320000
+         BZ    ISPCAX8            RELOAD TABLE                 SS NOV88 00330000
+ISPCAX40 DS    0H                       *                      SS NOV88 00340000
+         TM    SPFLAG5,SPFXA            REALLY XA             DRK MAR07 00350023
+         BZ    *+4+4+2                  NO, SKIP  BSM         DRK MAR07 00360023
+         LA    R14,*+4+2                POINT AFTER BSM       DRK MAR07 00370023
+         BSM   0,R14                    SET MODE 24           DRK MAR07 00380023
+         SPACE 1                                              DRK MAR07 00390023
+         LA    R15,40             DISPLAY IF NO MORE CMDS      SS NOV88 00400000
+         BR    R3                 TO ROUTER                    SS NOV88 00410000
+ISPCAX7  DS    0H                       *                      SS NOV88 00420000
+* OPEN TB                                                      SS NOV88 00430000
+* DO VDEF FIRST                                                SS NOV88 00440000
+         LA    R1,ISPCAXAV        DEF VAR TABLE                SS NOV88 00450000
+         BAS   R2,ISPVDEFX                                     SS NOV88 00460000
+         LA    R1,24              CAX PANEL                    SS NOV88 00470000
+         LNR   R1,R1                    *                      SS NOV88 00480000
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS NOV88 00490000
+         MVC   SPFTBL,SPFCSUF    GET BASE NAME                 SS NOV88 00500000
+         MVI   SPFTBL+2,C'X'     SET TO PDX                    SS NOV88 00510004
+         XC    SPFTFLG1(4),SPFTFLG1                            SS NOV88 00520000
+         XC    SPFTFF(2),SPFTFF                                SS NOV88 00530000
+*        LA    R15,ISPBLK8       NO KEYS                       SS NOV88 00540003
+         LA    R15,CAXTKEY       NUMBER IS KEY                DRK AUG98 00550004
+         LA    R0,ISPCAXVN       VER NAMES                     SS NOV88 00560000
+         BAS   R2,ISPTBOPN                                     SS NOV88 00570000
+         BAS   R2,ISPSETST         ALSO INIT STATUS FLAG       SS NOV88 00580000
+         LH    R0,SPFTBPSR         SORT INIT INDEX             SS NOV88 00590000
+         BAS   R2,ISPSORTI         REQUEST SORT INIT           SS NOV88 00600000
+* INSERT LINES                          *                      SS NOV88 00610000
+ISPCAX8  DS    0H                       *                      SS NOV88 00620000
+         TM    SPFLAG5,SPFXA            REALLY XA             DRK MAR07 00630023
+         BZ    *+4+4+4+2                NO, SKIP  BSM         DRK MAR07 00640023
+         LA    R14,*+4+4+2              POINT AFTER BSM       DRK MAR07 00650023
+         O     R14,ISPX80               31 BIT MODE           DRK MAR07 00660023
+         BSM   0,R14                    SET MODE              DRK MAR07 00670023
+         SPACE 1                                              DRK MAR07 00680023
+         L     R1,CVTPTR(,R0)   PT. TO CVT                     SS NOV88 00690039
+         L     R1,CVTCBSP-CVT(R1)      AMCBS PTER              SS NOV88 00700000
+         L     R1,20(R1)        PT. TO 1ST CAXWA               SS NOV88 00710000
+         XC    SPFTSVH,SPFTSVH  SET ZERO COUNT                 SS NOV88 00720000
+ISPCAX10 DS    0H                                              SS NOV88 00730000
+*        LA    R1,0(R1)         CLEAR HIGH ORDER BYTE         DRK MAR07 00740024
+         LTR   R1,R1            IS THERE A CAXWA CHAIN?        SS NOV88 00750000
+         BZ    ISPCAX40         NO CAX  GO DISPLAY             SS NOV88 00760000
+*  IS IT THE MASTER CATALOG?                                   SS NOV88 00770000
+         TM    8(R1),X'04'                                     SS NOV88 00780000
+         BZ    ISPCAX11         NO                             SS NOV88 00790000
+         MVC   SPFXTYPE,ISPCAXMS                               SS NOV88 00800000
+         B     ISPCAX20                 *                      SS NOV88 00810000
+ISPCAX11 DS    0H                                              SS NOV88 00820000
+         TM    10(R1),X'20'     ICF                            SS NOV88 00830000
+         BZ    ISPCAX12         NO                             SS NOV88 00840000
+         MVC   SPFXTYPE,ISPCAXIC                               SS NOV88 00850000
+         B     ISPCAX20                 *                      SS NOV88 00860000
+ISPCAX12 DS    0H                                              SS NOV88 00870000
+         TM    09(R1),X'02'     RECV VSAM                      SS NOV88 00880000
+         BZ    ISPCAX13         NO                             SS NOV88 00890000
+         MVC   SPFXTYPE,ISPCAXRV                               SS NOV88 00900000
+         B     ISPCAX20                 *                      SS NOV88 00910000
+ISPCAX13 DS    0H                                              SS NOV88 00920000
+         MVC   SPFXTYPE,ISPCAXVS  VSAM                         SS NOV88 00930000
+ISPCAX20 DS    0H                                              SS NOV88 00940000
+         MVC   SPFXSTAT,ISPCAXAC  ASSUME ACTIVE                SS NOV88 00950000
+*  HAS THE CATALOG BEEN DELETED?                               SS NOV88 00960000
+         TM    9(R1),X'80'      DELETED                        SS NOV88 00970000
+         BZ    ISPCAX21         NO                             SS NOV88 00980000
+         MVC   SPFXSTAT,ISPCAXDE                               SS NOV88 00990000
+         B     ISPCAX30                 *                      SS NOV88 01000000
+ISPCAX21 DS    0H                                              SS NOV88 01010000
+         TM    1(R1),X'08'      DISCONNECTED                   SS NOV88 01020000
+         BZ    ISPCAX30         NO                             SS NOV88 01030000
+         MVC   SPFXSTAT,ISPCAXDS                               SS NOV88 01040000
+ISPCAX30 DS    0H                                              SS NOV88 01050000
+*  ABLE TO GET CORE?                                           SS NOV88 01060000
+         TM    9(R1),X'20'      GETMAIN ERROR                  SS NOV88 01070000
+         BZ    ISPCAX31         NO                             SS NOV88 01080000
+         MVC   SPFXSTAT+2(4),ISPCAXNM                          SS NOV88 01090000
+         B     ISPCAX50                 *                      SS NOV88 01100000
+ISPCAX31 DS    0H                                              SS NOV88 01110000
+*  CHECK FOR AN I/O ERROR                                      SS NOV88 01120000
+         TM    9(R1),X'10'                                    DRK AUG98 01130007
+         BZ    ISPCAX50         NO                             SS NOV88 01140000
+         MVC   SPFXSTAT+2(4),ISPCAXIO                          SS NOV88 01150000
+ISPCAX50 DS    0H                                              SS NOV88 01160000
+*  PICKUP THE VOL SER                                          SS NOV88 01170000
+         ICM   R2,B'1111',188(R1)       31-BIT UCB ADDR?      DRK SEP98 01180016
+         BNZ   *+4+4                    YES                   DRK SEP98 01190016
+         L     R2,28(,R1)               NO, USE 24-BIT ADDR   DRK SEP98 01200019
+         ST    R2,UCBADDR               SAVE UCB ADDRESS      DRK MAR07 01210030
+         MVC   SPFXVOL(6),28(R2)        PICKUP VOL SER         SS NOV88 01220016
+*  FIND CATALOG NAME                                           SS NOV88 01230000
+NAMES    MVC   SPFXDSN(44),52(R1)  MOVE IN CATALOG NAME        SS NOV88 01240000
+         MVC   SPFXOPT,ISPBLK8          *                      SS NOV88 01250000
+         MVC   SPFXDATA,ISPBLK8         *                      SS NOV88 01260000
+         ST    R1,SPFTSV1               SAVE ADDRESS           SS NOV88 01270000
+         BAS   R2,ISPHEXCV              *                      SS NOV88 01280000
+         MVC   SPFXADDR,SPFHEXCV+2      GET 3 BYTE ADDRESS     SS NOV88 01290000
+         LH    R1,SPFTSVH               GET COUNT              SS NOV88 01300000
+         LA    R1,1(,R1)                ADD ONE                SS NOV88 01310000
+         STH   R1,SPFTSVH               SAVE NEW COUNT         SS NOV88 01320000
+         BAS   R2,ISPDECCV              CONVERT TO DECIMAL     SS NOV88 01330000
+         MVC   SPFXNUM,SPFDCNV3         3 DIGITS               SS NOV88 01340000
+         SPACE 1                                                        01350026
+*  REPLACEMENT FOR STATUS AND ADDR                            DRK MAR07 01360034
+*        AGO   .SKIPNEW                 UNCOMMENT FOR OLD STYLE         01370032
+         L     R1,SPFTSV1               GET CAXWA ADDR        DRK MAR07 01380025
+         USING IGGCAXWA,R1                                    DRK MAR07 01390026
+         SLR   R15,R15                  CLEAR FOR DIVIDE      DRK MAR07 01400028
+         CLC   CAXSEAR,=F'0'            FROM SHOWZOS ------.     RS0701 01410033
+         BE    ISPCAX60                                    "     RS0701 01420033
+         L     R15,CAXFOUND             NO OF FOUND        "     RS0701 01430033
+         M     R14,=F'100'              * 100              "     RS0701 01440033
+         D     R14,CAXSEAR              NO OF SEARCHES     "     RS0701 01450033
+ISPCAX60 DS    0H                                                       01460028
+         LR    R1,R15                   R15=HIT%              DRK MAR07 01470026
+         BAS   R2,ISPDECCV              CONVERT TO DECIMAL    DRK MAR07 01480026
+         MVC   SPFXADDR,ISPBLK8                               DRK MAR07 01490026
+         MVC   SPFXADDR+2(3),SPFDCNV3   3 DIGITS              DRK MAR07 01500026
+         SPACE 1                                                        01510030
+         L     R1,SPFTSV1              GET CAXWA ADDR         DRK MAR07 01520036
+         MVC   SPFXSTAT(6),=C'N-----'  DEFAULT             "     RS0301 01530033
+*        ICM   R2,B'1111',CAXDSABP     ALLOCATE TO CAS?    "     RS1199 01540043
+*        BZ    CAXST21                   NO                "     RS1199 01550043
+         TM    CAXFLG5,CAXF5CAS        ALLOCATE TO CAS?    "  DRK DEC21 01560045
+         BNO   CAXST21                   NO                "  DRK DEC21 01570043
+         MVI   SPFXSTAT,C'Y'             YES, SET INDICATOR"     RS1199 01580033
+CAXST21  DS    0H                                          "     RS1199 01590033
+         TM    CAXFLG3,CAXF3ICF        CHECK SMS           "     RS1199 01600033
+         BZ    CAXST22                   NO                "     RS1199 01610033
+         L     R14,UCBADDR                                    DRK MAR07 01620031
+         LTR   R14,R14                 UCB                 "     DL0200 01630033
+         BZ    CAXST22                   NO                "     RS1199 01640033
+         TM    1(R14),X'20'            DATA MANAGEMENT?    "     DL0200 01650033
+         BZ    CAXST22                   NO                "     RS1199 01660033
+         MVI   SPFXSTAT+1,C'S'           YES, SET SMS FLAG "     RS1199 01670033
+CAXST22  DS    0H                                          "     RS1199 01680033
+         MVI   SPFXSTAT+2,C'D'         MARK AS DELETED     "     RS1199 01690033
+         TM    CAXFLG2,CAXF2DT         DELETED?            "     RS1199 01700033
+         BNZ   CAXST210                  YES, LEAVE THE D-FLAG   RS1199 01710030
+         MVI   SPFXSTAT+2,C'C'         MARK AS CLOSED      "     RS1199 01720033
+         ICM   R2,B'1111',CAXACB       ACB PRESENT         "     RS1199 01730033
+         BZ    CAXST23                   NO, CHECK ISC     "     RS1199 01740033
+         ICM   R2,B'1111',4(R2)        CHECK ACB           "     RS1199 01750033
+         BZ    CAXST210                  OK, LEAVE THE C-FLAG    RS1199 01760030
+CAXST23  DS    0H                                          "     RS1199 01770035
+         MVI   SPFXSTAT+2,C'V'         MARK AS VLF         "     RS1199 01780033
+         TM    CAXFLG6,CAXCDSCA        VLF?                "     RS1199 01790033
+         BNZ   CAXST29                   YES, LEAVE THE V-FLAG   RS0402 01800030
+         MVI   SPFXSTAT+2,C'I'         MARK AS ISC         "     RS1199 01810033
+         ICM   R2,B'1111',CAXISC       ISC?                "     RS1199 01820033
+         BNZ   CAXST29                   YES, LEAVE THE I-FLAG   RS0301 01830030
+         MVI   SPFXSTAT+2,C'-'         MARK AS NEUTRAL     "     RS1199 01840033
+CAXST29  DS    0H                                          "     RS0301 01850033
+         TM    CAXFLG4,CAXLOCK         LOCKED?             "     RS0301 01860033
+         BZ    CAXST210                  NO                "     RS0301 01870033
+         MVI   SPFXSTAT+5,C'K'           YES, LOCKED       "     RS0301 01880033
+CAXST210 DS    0H                                          "     RS0301 01890033
+*        TM    CAXFLG3,CAXF3ICF+CAXF3SO4+CAXF3SHD  CROSS SHARED? RS1199 01900042
+         TM    CAXFLG3,CAXF3SO4+CAXF3SHD       CROSS SHARED?  DRK DEC21 01910044
+         BNO   CAXST211                  NO                "     RS1199 01920042
+         MVI   SPFXSTAT+4,C'R'         SET R-FLAG          "     RS1199 01930042
+         ICM   R2,B'1111',CAXECS       ECS?                "     RS0301 01940042
+         BZ    CAXST211                  NO                "     RS0301 01950042
+         MVI   SPFXSTAT+4,C'E'           YES, SET E-FLAG   "     RS1199 01960042
+CAXST211 DS    0H                                          "     RS1199 01970042
+         TM    CAXFLG5,CAXLCDB         ATL?                "     RS1199 01980042
+         BZ    CAXST212                  NO                "     RS1199 01990042
+         MVI   SPFXSTAT+3,C'A'           YES, SET A-FLAG   "     RS1199 02000042
+CAXST212 DS    0H                                                       02010042
+*                                                           * DRK MAR07 02020042
+*  STATUS                                                   * DRK MAR07 02030042
+*  ------                                                   * DRK MAR07 02040042
+*  YSDARK                                                   * DRK MAR07 02050042
+*  N C E                                                    * DRK MAR07 02060042
+*    V                                                      * DRK MAR07 02070042
+*    I                                                      * DRK MAR07 02080042
+*                                                           * DRK MAR07 02090042
+*  Y/N-ALLOC, S-SMS, V-VLF, I-ISC, C-CLOSED,                * DRK MAR07 02100042
+*  R-SHARED, A-ATL, E-ECS, K=LOCKED, D-DELETED              * DRK MAR07 02110042
+*                                                           * DRK MAR07 02120042
+.SKIPNEW ANOP                                                 DRK MAR07 02130034
+         SPACE 1                                                        02140034
+         BAS   R2,ISPTBADD              ADD TO TABLE           SS NOV88 02150000
+*  PT TO NEXT CAXWA                                            SS NOV88 02160000
+         L     R1,SPFTSV1               GET CAXWA ADDR         SS NOV88 02170000
+         L     R1,4(R1)                                        SS NOV88 02180000
+         B     ISPCAX10                                        SS NOV88 02190000
+ISPCAXMS DC    CL4'MSTR'                *                      SS NOV88 02200000
+ISPCAXIC DC    CL4'ICF '                *                      SS NOV88 02210000
+ISPCAXVS DC    CL4'VSAM'                *                      SS NOV88 02220000
+ISPCAXRV DC    CL4'RECV'                *                      SS NOV88 02230000
+ISPCAXAC DC    CL6'ACTIVE'              *                      SS NOV88 02240000
+ISPCAXDS DC    CL6'DISCON'              *                      SS NOV88 02250000
+ISPCAXDE DC    CL6'DELETE'              *                      SS NOV88 02260000
+ISPCAXHG DC    CL6'HUNG  '              *                      SS NOV88 02270000
+ISPCAXIO DC    CL4'-IOE'                *                      SS NOV88 02280000
+ISPCAXNM DC    CL4'-NOM'                *                      SS NOV88 02290000
+         DS    0F                       *                      SS NOV88 02300000
+ISPCAXAV DC    H'1',X'80',X'00'                                SS NOV88 02310000
+         DC    A(VSPFXOPT),AL2(SPFXOPT-SPWRKC),H'04'           SS NOV88 02320000
+         DC    A(VSPFXDAT),AL2(SPFXDATA-SPWRKC),H'08'          SS NOV88 02330000
+         DC    A(VSPFXTYP),AL2(SPFXTYPE-SPWRKC),H'04'          SS NOV88 02340000
+         DC    A(VSPFXNUM),AL2(SPFXNUM-SPWRKC),H'03'           SS NOV88 02350000
+         DC    A(VSPFXSTA),AL2(SPFXSTAT-SPWRKC),H'06'          SS NOV88 02360000
+         DC    A(VSPFXADR),AL2(SPFXADDR-SPWRKC),H'06'          SS NOV88 02370000
+         DC    A(VSPFXVOL),AL2(SPFXVOL-SPWRKC),H'06'           SS NOV88 02380000
+         DC    A(VSPFXDSN),AL2(SPFXDSN-SPWRKC),H'44'           SS NOV88 02390000
+         DC    X'FF'                                           SS NOV88 02400000
+VSPFXOPT DC    C'PDSXOPT '                                     SS NOV88 02410000
+VSPFXDAT DC    C'PDSXDATA '                                    SS NOV88 02420000
+VSPFXTYP DC    C'PDSXTYPE '                                    SS NOV88 02430000
+VSPFXNUM DC    C'PDSXNUM  '                                    SS NOV88 02440000
+VSPFXSTA DC    C'PDSXSTAT '                                    SS NOV88 02450000
+VSPFXADR DC    C'PDSXADDR '                                    SS NOV88 02460000
+VSPFXVOL DC    C'PDSXVOL  '                                    SS NOV88 02470000
+VSPFXDSN DC    C'PDSXDSN  '                                    SS NOV88 02480000
+CAXTKEY  DC    C'(PDSXNUM)'                                   DRK AUG98 02490004
+ISPCAXVN DC    C'(PDSXOPT PDSXDATA PDSXTYPE '                 DRK AUG98 02500006
+         DC    C'PDSXSTAT PDSXADDR PDSXVOL  PDSXDSN '          SS NOV88 02510000
+         DC    C')'  ABOVE TABLE LAST EDIT                     SS NOV88 02520000
+         LTORG ,                                              DRK MAR07 02530038
+         DROP  R1,R4                    *                     DRK MAR07 02540025

@@ -1,0 +1,19 @@
+         MACRO M$PUTLIN -  OUTPUT A DATA LINE                           01135000
+&NAME   M$PUTLIN &LINE,&ATTN=                                           01136000
+         AIF   ('&LINE' EQ '(1)' OR '&LINE' EQ '(R1)').CALL             01137000
+         AIF   ('&LINE'(1,1) EQ '(').R                                  01138000
+&NAME    LA    R1,&LINE                      ADDRESS OF DATA LINE       01139000
+         BAS   R14,M$PUTLIN                  INVOKE PUTLINE INTERFACE   01140000
+         AGO   .ATTN                                                    01141000
+.R       ANOP                                                           01142000
+&NAME    LR    R1,&LINE(1)                   ADDRESS OF DATA LINE       01143000
+         BAS   R14,M$PUTLIN                  INVOKE PUTLINE INTERFACE   01144000
+         AGO   .ATTN                                                    01145000
+.CALL    ANOP                                                           01146000
+&NAME    BAS   R14,M$PUTLIN                  INVOKE PUTLINE INTERFACE   01147000
+.ATTN    ANOP                                                           01148000
+         AIF   ('&ATTN' EQ '').NOATTN                                   01149000
+         B     &ATTN                         EXIT IF ATTENTION OCCURRED 01150000
+         AGO   .END                                                     01151000
+.NOATTN  NOP   0                             IGNORE ATTENTIONS          01152000
+.END     MEND                                                           01153000

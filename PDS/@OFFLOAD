@@ -1,0 +1,873 @@
+         TITLE 'P D S  --  OFFLOAD INTERFACE                  5/22/06'  00003399
+*********************************************************************** 00003416
+***      OFFLOAD SUBCOMMAND   ADDED BY JOHN KALINICH -- MAY., 2006  *** 00003599
+*********************************************************************** 00004016
+*                                                                       00050000
+OFFLOAD  CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         SPACE 1                                                        00120000
+*  FREE SYSIN, SYSUT1, SYSUT2, AND SYSPRINT DATASETS                    00120199
+         LA    R1,=CL8'SYSIN'           SYSIN DDNAME                    00120266
+         BAS   R2,OFL8580               FREE THIS DATA SET              00120399
+         LA    R1,SYSUT1                SYSUT1 DDNAME                   00120499
+         BAS   R2,OFL8580               FREE THIS DATA SET              00120599
+         LA    R1,SYSUT2                SYSUT2 DDNAME                   00120699
+         BAS   R2,OFL8580               FREE THIS DATA SET              00120799
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120899
+         BAS   R2,OFL8580               FREE THIS DATA SET              00120999
+*  ALLOCATE OFFLOAD //SYSUT1 DATA SET   INPUT PDS                       00121099
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00121199
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00121299
+         USING S99RBP,R1                                                00121399
+         SPACE 1                                                        00121499
+         LA    R4,M99RB                                                 00121599
+         USING S99RB,R4                                                 00121699
+         ST    R4,S99RBPTR                                              00121799
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00121899
+         SPACE 1                                                        00121999
+         LA    R5,M99TUPL                                               00122099
+         USING S99TUPL,R5                                               00122199
+         MVI   S99RBLN,20               LENGTH 20                       00122299
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00122399
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00122499
+         LA    R3,WORKTBL                        START OF TEXT          00122599
+         SPACE 1                                                        00122699
+         MVC   0(L'OFLDDNU1+6,R3),OFLDDNU1       SPECIFY DDNAME TEXT    00122799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00122899
+         LA    R3,L'OFLDDNU1+6(,R3)              START OF NEXT TEXT     00122999
+         SPACE 1                                                        00123099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123199
+         MVC   0(L'OFLDSNAM,R3),OFLDSNAM         SPECIFY DSNAME TEXT    00123299
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00123399
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123499
+         LA    R3,L'OFLDSNAM+44(,R3)             START OF NEXT TEXT     00123599
+         SPACE 1                                                        00123699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123799
+         MVC   0(L'OFLALLOC,R3),OFLALLOC         SPECIFY DISP TEXT      00123899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123999
+         LA    R3,L'OFLALLOC(,R3)                START OF NEXT TEXT     00124099
+         SPACE 1                                                        00124199
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124299
+         MVC   0(L'OFLNORM,R3),OFLNORM           SPECIFY NORMAL TEXT    00124399
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124499
+         LA    R3,L'OFLNORM(,R3)                 START OF NEXT TEXT     00124599
+         SPACE 1                                                        00124699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124799
+         MVC   0(L'OFLANORM,R3),OFLANORM         SPECIFY ABNORMAL TEXT  00124899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124999
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00125099
+         SPACE 1                                                        00125199
+         DYNALLOC                                                       00125299
+         SPACE 2                                                        00125399
+         DROP  R1,R4,R5                                                 00125499
+         LTR   R15,R15                       SUCCESSFUL?                00125599
+         BNZ   OFLERROR                      NO, BRANCH                 00125699
+         SPACE 2                                                        00126052
+*  ALLOCATE OFFLOAD //SYSUT2 DATA SET   OUTPUT SEQ DSN                  00127099
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00128099
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00129099
+         USING S99RBP,R1                                                00129199
+         SPACE 1                                                        00129299
+         LA    R4,M99RB                                                 00129399
+         USING S99RB,R4                                                 00129499
+         ST    R4,S99RBPTR                                              00129599
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00129699
+         SPACE 1                                                        00129799
+         LA    R5,M99TUPL                                               00129899
+         USING S99TUPL,R5                                               00129999
+         MVI   S99RBLN,20               LENGTH 20                       00130099
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00130199
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00130299
+         LA    R3,WORKTBL                        START OF TEXT          00130399
+         SPACE 1                                                        00130499
+         MVC   0(L'OFLDDNU2+6,R3),OFLDDNU2       SPECIFY DDNAME TEXT    00130599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00130699
+         LA    R3,L'OFLDDNU2+6(,R3)              START OF NEXT TEXT     00130799
+         SPACE 1                                                        00130999
+OFL0000  DS    0H                                                       00131099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00131199
+         MVC   0(L'OFLDSNAM,R3),OFLDSNAM         SPECIFY DSNAME TEXT    00131299
+*        MVC   6(44,R3),MSGDS2                   MOVE IN DSNAME TEXT    00131999
+         SPACE 1                                                        00132099
+         LA    R2,5(,R3)                         WHERE TO STORE OUTPUT  00132199
+         MVC   6(44,R3),BLANK128                 CLEAR DSNAME AREA      00132299
+         MVC   DOUBLE(8),BLANK128                CLEAR MEMBER AREA      00132399
+         LA    R1,MSGDS2                         DSN OR DSN(MBR)        00132499
+         LA    R0,44                                                    00132599
+         CLI   0(R1),C''''                       QUOTED?                00132699
+         BE    OFL0010                           YES, BRANCH            00132799
+         SR    R14,R14                           NO                     00132899
+         L     R15,ADDRUPT                       START OF THE UPT       00132999
+* 8-CHAR PREFIX                                               DRK JUL17 00133099
+         TM    FLAGSZZ,TSO#8                     8-CHAR ID/PREFIX?    " 00133199
+         BNO   OFL7PRE                           NO                   " 00133299
+OFL8PRE  DS    0H                                YES                  " 00133399
+         ICM   R14,B'0001',UPTPRF8L-UPT(R15)     PREFIX LENGTH ZERO?  " 00133499
+         BZ    OFL0010+4                         YES, BRANCH          " 00133599
+         MVC   6(8,R3),UPTPREF8-UPT(R15)         DSNAME PREFIX        " 00133699
+         B     OFLCONT                                                " 00133799
+OFL7PRE  DS    0H                                                     " 00133899
+         ICM   R14,B'0001',UPTPREFL-UPT(R15)     PREFIX LENGTH ZERO?  " 00133999
+         BZ    OFL0010+4                         YES, BRANCH          " 00134099
+         MVC   6(7,R3),UPTPREFX-UPT(R15)         DSNAME PREFIX        " 00134199
+OFLCONT  DS    0H                                             DRK JUL17 00134299
+         AR    R2,R14                            POSITION FOR PERIOD    00134399
+         SR    R0,R14                                                   00134499
+         MVI   1(R2),C'.'                                               00134599
+         BCTR  R0,0                                                     00134699
+         BCTR  R1,0                                                     00134799
+         LA    R2,1(,R2)                                                00134899
+         SPACE 1                                                        00134999
+OFL0010  LA    R1,1(,R1)                         NEXT INPUT BYTE        00135099
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       00135199
+         CLI   0(R1),C''''                       END OF DSNAME?         00135299
+         BE    OFL0050                           YES, BRANCH            00135399
+         CLI   0(R1),C'('                        PARENTHESIS?           00135499
+         BE    OFL0020                           YES, BRANCH            00135599
+         CLI   0(R1),X'40'                       BLANK?                 00135699
+         BE    OFL0050                           YES, BRANCH            00135799
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  00135899
+         BCT   R0,OFL0010                                               00135999
+         B     OFL0050                                                  00136099
+         SPACE 1                                                        00136199
+OFL0020  MVC   DOUBLE(8),BLANK128                MEMBER NAME            00136299
+         LA    R0,8                                                     00136399
+         LA    R2,DOUBLE-1                                              00136499
+         SPACE 1                                                        00136599
+OFL0030  LA    R1,1(,R1)                         NEXT INPUT BYTE        00136699
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       00136799
+         CLI   0(R1),C''''                       END OF DSNAME?         00136899
+         BE    OFL0050                           YES, BRANCH            00136999
+         CLI   0(R1),C')'                        PARENTHESIS?           00137099
+         BE    OFL0050                           YES, BRANCH            00137199
+         CLI   0(R1),X'40'                       BLANK?                 00137299
+         BE    OFL0050                           YES, BRANCH            00137399
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  00137499
+         BCT   R0,OFL0030                                               00137599
+OFL0050  DS    0H                                                       00137699
+         LA    R1,M99RBPTR                       RESET R1               00137799
+         MVC   MSGDS2(44),6(R3)                  RESET THE DSNAME       00137899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00137999
+         LA    R3,L'OFLDSNAM+44(,R3)             START OF NEXT TEXT     00138099
+OFL0060  DS    0H                                                       00138199
+         SPACE 1                                                        00138299
+* LOCATE OUTPUT DSNAME                                                  00138599
+         ST    R1,#SAVEREG              SAVE R1                         00138699
+         MVC   WORKTMP(44),MSGDS2       COPY DSNAME                     00138799
+         L     R14,LOCATE2                                              00138899
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00138999
+         SR    R0,R0                    NO CVOL VALUE                   00139099
+         LA    R1,MSGTEXT1              LOCATE WORK AREA                00139199
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00139299
+         LOCATE PARMLIST                                                00139399
+         CLI   #OFLDISP,4               NEW?                            00139499
+         BNE   OFLNOTNW                 NO                              00139599
+         LTR   R15,R15                  SUCCESSFUL LOCATE?              00139699
+         BZ    OFLDSN                   YES, ERROR                      00139799
+         L     R1,#SAVEREG              RESTORE R1                      00139899
+         B     OFL0075                  NO, OK                          00139999
+OFLNOTNW DS    0H                                                       00140299
+         LTR   R15,R15                  SUCCESSFUL LOCATE?              00140399
+         BNZ   OFLNODSN                 NO, ERROR                       00140499
+         SPACE 1                                                        00140599
+* OBTAIN DSCB                                                           00140699
+         L     R14,OBTAIN2              OBTAIN FLAGS                    00140799
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00140899
+         LA    R0,MSGTEXT1+6            VOLUME SERIAL (FROM LOCATE)     00140999
+         LA    R1,MSGTEXT2              OUTPUT START ADDRESS            00141099
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00141199
+         OBTAIN PARMLIST                GET THE FORMAT 1 DSCB           00141299
+         LTR   R15,R15                  SUCCESSFUL?                     00141399
+         BZ    OFLDSCB                  YES, BRANCH                     00141499
+         M$MSG L830                     NO DSCB FOUND MESSAGE           00141599
+         MVC   PMEMCURR,=XL4'00'        CURRENT MEMBER POINTER          00141699
+         NI    FLAGSAA,FF-FMEM#MEM      TURN OFF MEMBER GROUP           00141799
+         NI    FLAGSII,FF-FDIRGRP       NORMAL INPUT NOW                00141899
+         B     NEWCMD                                                   00141999
+OFLDSN   MVI   MTLEN,44                 LENGTH OF INSERT                00142099
+         MVC   INSERT#1(44),MSGDS2      DSNAME                          00142199
+         M$MSG L852$1                   DSNAME DOES NOT EXIST           00142299
+         MVC   PMEMCURR,=XL4'00'        CURRENT MEMBER POINTER          00142399
+         NI    FLAGSAA,FF-FMEM#MEM      TURN OFF MEMBER GROUP           00142499
+         NI    FLAGSII,FF-FDIRGRP       NORMAL INPUT NOW                00142599
+         B     NEWCMD                                                   00142699
+OFLNODSN MVI   MTLEN,44                 LENGTH OF INSERT                00142799
+         MVC   INSERT#1(44),MSGDS2      DSNAME                          00142899
+         M$MSG L844$1                                                   00142999
+         MVC   PMEMCURR,=XL4'00'        CURRENT MEMBER POINTER          00143099
+         NI    FLAGSAA,FF-FMEM#MEM      TURN OFF MEMBER GROUP           00143199
+         NI    FLAGSII,FF-FDIRGRP       NORMAL INPUT NOW                00143299
+         B     NEWCMD                                                   00143399
+OFLDSCB  DS    0H                                                       00143499
+         CLI   MSGTEXT2+X'26',X'02'     DSORG PARTITIONED?              00143599
+         BNE   OFL0065                  NO                              00143699
+         CLI   DOUBLE,C' '              YES, MEMBER SPECIFIED?          00143799
+         BNE   OFL0065                       YES                        00143899
+         MVC   DOUBLE(8),$OFFLOAD            NO, GENERATE NAME          00143999
+OFL0065  DS    0H                                                       00144099
+         SPACE 1                                                        00144199
+         L     R1,#SAVEREG                       RESTORE R1             00144299
+         CLI   DOUBLE,C' '                       MEMBER NAME?           00144399
+         BE    OFL0075                           NO                     00144499
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00144599
+         MVC   0(L'OFLDSMBR,R3),OFLDSMBR         SPECIFY MEMBER TEXT    00144699
+         MVC   6(8,R3),DOUBLE                    MOVE IN MEMBER TEXT    00144799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00144899
+         LA    R3,L'OFLDSMBR+8(,R3)              START OF NEXT TEXT     00144999
+OFL0075  DS    0H                                                       00146199
+* DISP                                                        DRK MAR18 00146299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00146399
+         MVC   0(L'OFLALLOC,R3),OFLALLOC         SPECIFY DISP TEXT      00146499
+         CLI   #OFLDISP,0                        ANY OLD/SHR/MOD/NEW?   00146599
+         BNE   *+8                               YES, BRANCH            00146699
+         MVI   #OFLDISP,2                        NO, USE DEFAULT        00146799
+         SPACE 1                                                        00146899
+         CLI   #OFLDISP,1                        OLD?                   00146999
+         BNE   *+8                               NO, BRANCH             00147099
+         MVI   6(R3),OFLOOLD                     SPECIFY DISPOSITION    00147199
+         SPACE 1                                                        00147299
+         CLI   #OFLDISP,2                        SHR?                   00147399
+         BNE   *+8                               NO, BRANCH             00147499
+         MVI   6(R3),OFLOSHR                     SPECIFY DISPOSITION    00147599
+         SPACE 1                                                        00147699
+         CLI   #OFLDISP,3                        MOD?                   00147799
+         BNE   *+8+8                             NO, BRANCH             00147899
+         CLI   MSGTEXT2+X'26',X'40'              DSORG SEQ?             00147999
+         BNE   *+8                               NO                     00148099
+         MVI   6(R3),OFLOMOD                     SPECIFY DISPOSITION    00148199
+         SPACE 1                                                        00148299
+         CLI   #OFLDISP,4                        NEW?                   00148399
+         BNE   *+8                               NO, BRANCH             00148499
+         MVI   6(R3),OFLONEW                     SPECIFY DISPOSITION    00148599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00148699
+         LA    R3,L'OFLALLOC(,R3)                START OF NEXT TEXT     00148799
+         SPACE 1                                                        00148899
+* DISP=NEW                                                    DRK MAR18 00148999
+         CLI   #OFLDISP,4                        NEW?                   00149099
+         BL    OFLNW30                           NO, BRANCH             00149199
+         SPACE 1                                                        00149299
+         CLI   #OFLVOL,0                         ANY VOLUME SERIAL?     00149399
+         BE    OFLNW10                           NO, BRANCH             00149499
+* VOLSER, UNIT                                                DRK MAR18 00149599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00149699
+         MVC   0(L'OFLVOLSR,R3),OFLVOLSR         SPECIFY VOLUME         00149799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00149899
+         MVC   6(6,R3),#OFLVOL                   MOVE VOLSER            00149999
+         LA    R3,L'OFLVOLSR(,R3)                START OF NEXT TEXT     00150099
+         SPACE 1                                                        00150199
+OFLNW10  DS    0H                                                       00150299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00150399
+         MVC   0(L'OFLUNITP+8,R3),OFLUNITP       SPECIFY UNIT           00150499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00150599
+         LA    R3,L'OFLUNITP+8(,R3)              START OF NEXT TEXT     00150699
+* DSORG, RECFM, LRECL, BLKSIZE                                DRK MAR18 00150799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00150899
+         MVC   0(L'OFLSDS+2,R3),OFLSDS           SPECIFY DSORG          00150999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00151099
+         LA    R3,L'OFLSDS+2(,R3)                START OF NEXT TEXT     00151199
+         SPACE 1                                                        00151299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00151399
+         MVC   0(L'OFLSRF+1,R3),OFLSRF           SPECIFY RECFM          00151499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00151599
+         LA    R3,L'OFLSRF+1(,R3)                START OF NEXT TEXT     00151699
+         SPACE 1                                                        00151799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00151899
+         MVC   0(L'OFLSLR,R3),OFLSLR             SPECIFY LRECL          00151999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00152099
+         MVC   6(2,R3),LRECL                     MOVE LRECL             00152199
+         LA    R3,L'OFLSLR+2(,R3)                START OF NEXT TEXT     00152299
+         SPACE 1                                                        00152399
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00152499
+         MVC   0(L'OFLSBL,R3),OFLSBL             SPECIFY BLKSIZE        00152599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00152699
+         MVC   6(2,R3),BLKSI                     MOVE BLKSIZE           00152799
+         LA    R3,L'OFLSBL+2(,R3)                START OF NEXT TEXT     00152899
+         SPACE 1                                                        00152999
+* TRK/CYL ALLOCATION                                          DRK MAR18 00153099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00153199
+         MVC   0(L'OFLTRK,R3),OFLTRK             SPECIFY TRACK ALLOC    00153299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00153399
+         CLI   #OFLTRCY,0                        TRK/CYL REQUESTED?     00153499
+         BH    OFLNW15                           YES, BRANCH            00153599
+         MVI   #OFLTRCY,1                        NO, DEFAULT TO TRK     00153699
+OFLNW15  CLI   #OFLTRCY,1                        TRACK?                 00153799
+         BNE   *+8                               NO, BRANCH             00153899
+         MVI   1(R3),X'07'                       YES, CONVERT TO TRK    00153999
+         CLI   #OFLTRCY,2                        CYLINDER?              00154099
+         BNE   *+8                               NO, BRANCH             00154199
+         MVI   1(R3),X'08'                       YES, CONVERT TO CYL    00154299
+         LA    R3,L'OFLTRK(,R3)                  START OF NEXT TEXT     00154399
+         SPACE 1                                                        00154499
+* SPACE (P,S)                                                 DRK MAR18 00154599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00154699
+         MVC   0(L'OFLFIRST+3,R3),OFLFIRST       SPECIFY PRIMARY        00154799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00154899
+         SR    R14,R14                                                  00154999
+         ICM   R14,B'0011',#OFLSPAC              ANY PRIMARY SPACE?     00155099
+         BNZ   OFLNW20                           YES, BRANCH            00155199
+         B     OFLNW25                           NO, USE DEFAULT        00155299
+OFLNW20  STCM  R14,B'0111',6(R3)                 UPDATE FIRST QUANTITY  00155399
+OFLNW25  DS    0H                                                       00155499
+         LA    R3,L'OFLFIRST+3(,R3)              START OF NEXT TEXT     00155599
+         SPACE 1                                                        00155699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00155799
+         MVC   0(L'OFLSECON+3,R3),OFLSECON       SPECIFY SECONDARY      00155899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00155999
+         SR    R14,R14                                                  00156099
+         ICM   R14,B'0011',#OFLSPAC+2            SECONDARY SPACE?       00156199
+         BZ    OFLNW30                           NO                     00156299
+         SPACE 1                                                        00156399
+         STCM  R14,B'0111',6(R3)                 UPDATE 2ND QUANTITY    00156499
+OFLNW30  DS    0H                                                       00156599
+         LA    R3,L'OFLSECON+3(,R3)              START OF NEXT TEXT     00156699
+         SPACE 1                                                        00156799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00156899
+         MVC   0(L'OFLCAT,R3),OFLCAT             DISP=(,CATLG)          00156999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00157099
+         CLI   #OFLDISP,4                        NEW?                   00157199
+         BE    *+8                               YES, BRANCH            00157299
+         MVI   6(R3),X'08'                       NO, USE DISP=(,KEEP)   00157399
+         LA    R3,L'OFLCAT(,R3)                  START OF NEXT TEXT     00157499
+         SPACE 1                                                        00157599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00157699
+         MVC   0(L'OFLCDEL,R3),OFLCDEL           DISP=(,,DELETE)        00157799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00157899
+         CLI   #OFLDISP,4                        NEW?                   00157999
+         BE    *+8                               YES, BRANCH            00158099
+         MVI   6(R3),X'08'                       NO, USE DISP=(,,KEEP)  00158199
+         SPACE 1                                                        00158299
+OFLNW99  DS    0H                                                       00158399
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00158499
+         SPACE 1                                                        00158599
+         DYNALLOC                                                       00158699
+         DROP  R1,R4,R5                                                 00158799
+OFLDB01  DS    0H                                                       00158899
+         LTR   R15,R15                       SUCCESSFUL?                00158999
+         BNZ   OFLERROR                      NO, BRANCH                 00159099
+         CLI   #OFLDISP,4                    NEW?                       00159199
+         BNE   OFLDB02                       NO, BRANCH                 00159299
+         MVI   MTLEN,44                 LENGTH OF INSERT                00159399
+         MVC   INSERT#1(44),MSGDS2      DSNAME                          00159499
+         M$MSG L273$1                   DISPLAY OUTPUT DSN *DEBUG*      00159599
+OFLDB02  DS    0H                                                       00159699
+         SPACE 2                                                        00159799
+*  ALLOCATE OFFLOAD //SYSIN FILE                                        00159899
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00159999
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00160099
+         USING S99RBP,R1                                                00161099
+         SPACE 1                                                        00170023
+         LA    R4,M99RB                                                 00180023
+         USING S99RB,R4                                                 00190023
+         ST    R4,S99RBPTR                                              00200023
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00210023
+         SPACE 1                                                        00220023
+         LA    R5,M99TUPL                                               00230023
+         USING S99TUPL,R5                                               00240023
+         MVI   S99RBLN,20                 LENGTH 20                     00250023
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00260023
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00270023
+         SPACE 1                                                        00280023
+         MVC   #CMXSYS3(11),OFLDDNIN      SYSIN DDNAME                  00290099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00300023
+         USING S99TUNIT,R3                                              00310023
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00320023
+         MVC   S99TUPTR+4(40),OFLSYSIN    ADD OTHER LIST ELEMENTS       00330099
+         SPACE 1                                                        00340023
+         DYNALLOC                                                       00350023
+         SPACE 2                                                        00370023
+         DROP  R1,R3,R4,R5                                              00380023
+         LTR   R15,R15                    SUCCESSFUL?                   00390023
+         BNZ   OFLERROR                   NO, BRANCH                    00400099
+         SPACE 3                                                        00410023
+*  ALLOCATE OFFLOAD //SYSPRINT DATA SET                                 02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),OFLDDNPR      SYSPRINT DDNAME               02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),OFLSYSPR    ADD OTHER LIST ELEMENTS       02360099
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   OFLERROR                   NO, BRANCH                    02570099
+         B     OFL2100                                                  02580099
+         SPACE 2                                                        08580000
+OFLERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    OFL8550                    NO, BRANCH          DRK MAR18 08702099
+         SPACE 1                                                        08710000
+OFLDAIR  DS    0H                                                       08711099
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     OFL8550                    TERMINATE           DRK MAR18 08780099
+         SPACE 3                                                        08790000
+OFL2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      08790199
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       08790292
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      08790392
+         BO    OFL2200               YES, BRANCH                        08790499
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08790592
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08790692
+         BO    OFL2110               YES, BRANCH                        08790799
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08790892
+         BO    OFL2200               YES, BRANCH                        08790999
+OFL2110  TM    #OFLALI,#OFLASS2      ASSOCIATES TOO?                    08791099
+         BO    OFL2200               YES, BRANCH                        08791199
+         SPACE 1                                                        08791292
+OFL2120  DS    0H                                                       08791399
+         TM    #OFLALI,#OFLASS2+2    ALIAS/NOALIAS SPECIFIED?           08791499
+         BM    OFL2130               YES                                08791599
+*        OI    #OFLALI,&OFLALI       USE THE DEFAULT                    08791699
+         OI    #OFLALI,2             USE THE DEFAULT          DRK MAY06 08791799
+         TM    #OFLALI,#OFLASS2      ASSOCIATES TOO?                    08791899
+         BO    OFL2200               YES                                08791999
+         SPACE 3                                                        08792092
+OFL2130  DS    0H                                                       08792199
+         OI    #OFLALI,#OFLONE       ONLY A SINGLE MEMBER/DATA SET      08792299
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           08792392
+         MVC   0(8,R4),DIRNAME                                          08792492
+         ST    R4,#MEMPTR                                               08792592
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             08792692
+         B     OFL2900                                                  08792799
+OFL2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        08792899
+         TM    #OFLALI,#OFLASS2+2    ALIAS/NOALIAS SPECIFIED?           08792999
+         BM    *+8                   YES                                08793092
+*        OI    #OFLALI,&OFLALI       NO, USE THE DEFAULT                08793199
+         OI    #OFLALI,2             NO, USE THE DEFAULT      DRK MAY06 08793299
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         08793392
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    08793492
+         LA    R5,256/2              256 MEMBERS INITIALLY              08793592
+         SPACE 1                                                        08793692
+OFL2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            08793799
+         LR    R3,R5                                                    08793892
+         LR    R0,R5                                                    08793992
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              08794092
+         ICM   R0,B'1000',SUBPOOLT                                      08794192
+         GETMAIN R,LV=(0)                                               08794292
+         LR    R4,R1                 NEW TABLE ADDRESS                  08794392
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              08794492
+         BNZ   OFL2220               YES, BRANCH                        08794599
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             08794692
+         B     OFL2500                                                  08794799
+         SPACE 1                                                        08794892
+OFL2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   08794999
+         LR    R14,R4                NEW TABLE START ADDRESS            08795092
+         LR    R15,R5                                                   08795192
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           08795292
+         LR    R2,R15                START OF NEW PART                  08795392
+         LR    R1,R15                                                   08795492
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             08795592
+         L     R1,#MEMPTR                                               08795692
+         LR    R0,R2                 LENGTH TO FREE                     08795792
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    08795892
+         FREEMAIN R,LV=(0),A=(1)                                        08795992
+         ST    R4,#MEMPTR            START OF NEW TABLE                 08796092
+         AR    R4,R2                 WHERE TO ADD MEMBERS               08796192
+         SPACE 3                                                        08796292
+OFL2300  TM    #OFLALI,#OFLASSP      ASSOCIATES PHASE?                  08796399
+         BO    OFL2320               YES, BRANCH                        08796499
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      08796592
+         BO    OFL2320               YES, BRANCH                        08796699
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              08796792
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08796892
+         BNO   OFL2500               NO, BRANCH                         08796999
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08797092
+         BO    OFL2605               YES, BRANCH                        08797199
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08797292
+         BNO   OFL2605               NO, BRANCH                         08797399
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               08797492
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   08797592
+         BNO   OFL2605               NO, END OF LIST                    08797699
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              08797792
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       08797892
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               08797992
+         ST    R1,PMEMCURR                                              08798092
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         08798192
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  08798292
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              08798392
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      08798492
+         BO    OFL2319               YES, BRANCH                        08798599
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08798692
+         MVC   DIRNAME,MEMBER1       MOVE TO BLDLLIST                   08798792
+         SPACE 2                                                        08798892
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           08798992
+         B     *+4(R15)                PROCESS RETURN CODE              08799092
+         B     OFL2315                   00 - SUCCESSFUL                08799199
+         B     OFL2310                   04 - MEMBER NOT FOUND          08799299
+         B     IOERROR                   08 - I/O ERROR                 08799392
+         SPACE 1                                                        08799492
+OFL2310  MVC   INSERT#1(8),DIRNAME                                      08799599
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           08799692
+         B     OFL2300                                                  08799799
+         SPACE 1                                                        08799892
+OFL2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  08799999
+         B     OFL2500                                                  08800099
+         SPACE 1                                                        08800192
+OFL2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               08800299
+         SPACE 1                                                        08800392
+OFL2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           08800499
+         B     OFL2600               END OF MEMBERS -- BRANCH           08800599
+         SPACE 1                                                        08800692
+         TM    #OFLALI,#OFLASSP      ASSOCIATES PHASE?                  08800799
+         BO    OFL2400               YES, BRANCH                        08800899
+         SPACE 1                                                        08800992
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 08801092
+         B     OFL2600                 00 - SIMULATE DIRECTORY END      08801199
+         B     OFL2300                 04 - MEMBER FAILED FILTERING     08801299
+         B     OFL2500                 08 - MEMBER PASSED FILTERING     08801399
+         SPACE 3                                                        08801492
+OFL2400  L     R1,#MEMPTR            START OF MEMBER LIST               08801599
+         B     OFL2410+4             SKIP FIRST ADD                     08801699
+OFL2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   08801799
+         CR    R1,R4                 END OF TABLE?                      08801892
+         BNL   OFL2300               YES, IGNORE THIS ENTRY             08801999
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      08802092
+         BNE   OFL2410               NO, BRANCH                         08802199
+         SPACE 3                                                        08802292
+OFL2500  L     R1,#MEMPTR            START OF MEMBER LIST               08802399
+         B     OFL2510+4             SKIP FIRST ADD                     08802499
+OFL2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   08802599
+         CR    R1,R4                 END OF TABLE?                      08802692
+         BNL   OFL2580               YES, ADD THIS ENTRY                08802799
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       08802892
+         BE    OFL2300               YES, IGNORE THIS ENTRY             08802999
+         B     OFL2510               NO, CONTINUE SEARCHING             08803099
+         SPACE 2                                                        08803192
+OFL2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   08803299
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               08803392
+         S     R3,=F'1'              ANY MORE FIT?                      08803492
+         BNP   OFL2210               NO, BRANCH                         08803599
+         B     OFL2300               YES, GET NEXT MEMBER               08803699
+         SPACE 3                                                        08803792
+OFL2600  TM    #OFLALI,#OFLASSP      ASSOCIATED MEMBERS?                08803899
+         BO    OFL2605               YES, BRANCH                        08803999
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         08804092
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08804192
+         BO    OFL2605               YES, BRANCH                        08804299
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08804392
+         BO    OFL2300               YES, BRANCH                        08804499
+         SPACE 1                                                        08804592
+OFL2605  TM    #OFLALI,#OFLASSP      ASSOCIATES PHASE STARTED?          08804699
+         BO    OFL2700               YES, BRANCH                        08804799
+         TM    #OFLALI,#OFLASS2      ASSOCIATE MEMBERS TOO?             08804899
+         BNO   OFL2700               NO, BRANCH                         08804999
+         OI    #OFLALI,#OFLASSP      YES, ASSOCIATES PHASE STARTED      08805099
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   08805192
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    08805292
+         B     OFL2300               DO ANY ASSOCIATED MEMBERS          08805399
+         SPACE 3                                                        08805492
+OFL2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   08805599
+         SPACE 3                                                        08805692
+OFL2900  DS    0H                                                       08805799
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           08805892
+*  OPEN SYSIN DATA SET                                                  08805995
+         MVC   BAMDCB(OFLDL),OFLDCB           GET MODEL DCB             08806099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSIN'                    08806199
+         MVI   OPENLIST,X'80'                                           08806295
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               08806395
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08806495
+         BO    OFL2910                         YES, BRANCH              08806599
+         LA    R1,OFL865E                      NO STATUS AVAILABLE      08806699
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08806795
+         B     OFL8550                         EXIT                     08806899
+         SPACE 3                                                        08806995
+OFL2910  DS    0H                                                       08807099
+         MVC   MSGTEXT1(136),MSGBL132   CLEAR THE MESSAGE AREA          08807193
+         LA    R5,MSGTEXT1+4                                            08807294
+         CLI   #OFLSEP,2                NOSEP?                DRK DEC15 08807399
+         BNE   *+4+6+4                  NO                    DRK DEC15 08807499
+         MVC   0(20,R5),OFLHDR          O I=SYSUT1,O=SYSUT2             08807599
+         B     OFL2920                                                  08807699
+         MVC   0(31,R5),OFLHDR          O I=SYSUT1,O=SYSUT2,T=IEBUPDTE  08807799
+OFL2920  DS    0H                                                       08807899
+         PUT   BAMDCB,MSGTEXT1+4        OUTPUT OFFLOAD STATEMENT        08814699
+         SPACE 1                                                        08814795
+OFL3070  DS    0H                                                       08814899
+         TM    FLAGSHH,FMEMALLM         ALL MEMBERS?                    08814995
+         BNO   OFL4000                  NO                              08815099
+         B     OFL4540                  YES                             08815199
+OFL4000  DS    0H                                                       08815299
+         L     R3,#MEMPTR                 FIRST MEMBER POINTER          08815995
+         L     R4,#MEMLAST                LAST MEMBER POINTER           08816095
+         MVC   MSGTEXT1(136),MSGBL132     CLEAR THE MESSAGE AREA        08816195
+         SPACE 1                                                        08816295
+OFL4530  CR    R3,R4                      END OF MEMBER TABLE?          08816399
+         BNL   OFL4540                    YES                           08816499
+         LA    R5,MSGTEXT1+4                                            08816595
+         MVC   0(5,R5),SELECT             SELECT STATEMENT              08816699
+         LA    R5,5(R5)                                                 08816799
+         MVC   0(8,R5),0(R3)              MEMBER NAME                   08816895
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT SELECT STATEMENT       08816995
+         LA    R3,16(,R3)                 NEXT MEMBER POSITION          08817095
+         B     OFL4530                                                  08817199
+         SPACE 1                                                        08817295
+OFL4540  DS    0H                                                       08818099
+         MVI   OPENLIST,X'80'                                           10560018
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   10570066
+         LA    R1,BAMDCB                                                10580000
+         FREEPOOL (1)                                                   10590000
+         SPACE 2                                                        10590169
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590299
+         STAX  OFFLNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X10590699
+               OBUF=(OFL484W,OFL484WL),MF=(E,STAXPARM)                  10590799
+         LA    R1,OFLPARM                 PARM=                         10830099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,OFLPGM               2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950099
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,OFL7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),OFLEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   OFLNLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+OFLNLNK  BAS   R2,ATTACH                  OFFLOAD                       11440099
+         SPACE 3                                                        11490000
+OFL7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        11820000
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 11820199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 11820299
+         BNE   OFL8000                    NO                  DRK JAN07 11820399
+         MVC   INSERT#1(8),OFLPGM         YES, ERROR          DRK JAN07 11820499
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 11820599
+         B     OFL8550                                        DRK JAN07 11820699
+         SPACE 1                                                        11830099
+OFL8000  MVC   BAMDCB(OFLDL),OFLDCB         GET MODEL DCB               12310099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSPRINT'                 12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    OFL8010                      YES, BRANCH                 12360099
+         LA    R1,OFL865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     OFL8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS SYSPRINT RECORDS                                             12400099
+OFL8010  GET   BAMDCB                     GET LIST RECORD               12420099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         SR    R15,R15                                                  12570099
+         ICM   R15,B'0011',DCBLRECL-IHADCB+BAMDCB  RECFM=UA             12580099
+         SH    R15,=H'2'                  -2 (MACHINE LENGTH AND ASA)   12590099
+         MVC   MSGTEXT1+4(*-*),1(R1)      << EXECUTED >>                12600099
+         EX    R15,*-6                    ADD THE OFFLOAD MESSAGE       12601099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     OFL8010                                                  12650099
+         SPACE 3                                                        12660000
+OFL8500  DS    0H                                                       12660199
+         CLC   ##SUBCAL(8),OFLEFTSR       INVOKE IKJEFTSR?              12660299
+         BNE   OFL8540                    NO, BRANCH                    12660399
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JAN07 12660699
+         BL    OFL8540                    YES, VALID OFFLOAD            12660899
+         MVI   MTLEN+4,11                                               12660985
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    12661099
+         SR    R15,R15                                                  12661185
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 12661299
+         CVD   R15,DOUBLE                                               12661485
+         MVC   INSERT#1(8),##SUBCOM                                     12661585
+         MVC   INSERT#2(4),=X'40202120'                                 12661685
+         ED    INSERT#2(4),DOUBLE+6                                     12661785
+         MVI   INSERT#2,C'='              RETURN CODE                   12661885
+         SPACE 1                                                        12661985
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12662099
+         BNE   OFL8530                    NO, SKIP MESSAGE              12662199
+         SPACE 1                                                        12662299
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 12662399
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 12662499
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 12662599
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 12662699
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 12662799
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 12662899
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 12662999
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 12663099
+         SPACE 1                                              DRK NOV07 12663199
+         SRL   R1,20                    USER ABEND            DRK NOV07 12663299
+         CVD   R1,DOUBLE                                      DRK NOV07 12663399
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 12663499
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 12663599
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 12663699
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 12663799
+         SPACE 1                                                        12663899
+OFL8530  DS    0H                                                       12664099
+         M$MSG L171$2                                                   12670085
+OFL8540  DS    0H                                                       12830099
+         MVI   OPENLIST,X'80'                                           12840000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE       12850099
+         LA    R1,BAMDCB                                                12860000
+         FREEPOOL (1)                                                   12870000
+         SPACE 2                                                        12880000
+OFL8550  M$ERRST MSGBLANK                                               12890099
+         SPACE 1                                                        12895099
+         LA    R1,=CL8'SYSPRINT'          SYSPRINT DNAME                12900099
+         BAS   R2,OFL8580                 FREE THIS DATA SET            12910099
+         LA    R1,SYSUT1                  SYSUT1 DDNAME                 12911099
+         BAS   R2,OFL8580                 FREE THIS DATA SET            12912099
+         LA    R1,SYSUT2                  SYSUT2 DDNAME                 12912199
+         BAS   R2,OFL8580                 FREE THIS DATA SET            12912299
+         LA    R1,=CL8'SYSIN'             SYSIN DDNAME                  12913099
+         BAS   R2,OFL8580                 FREE THIS DATA SET            12914099
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+OFL8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),OFLFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,OFLUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+OFFLNULL BR    R14                                                      13252099
+         SPACE 2                                                        13260000
+*  OFFLOAD CONSTANTS                                                    13460099
+         PRINT NOGEN                                                    13470000
+OFLDCB   DCB   DSORG=PS,DDNAME=OFL,MACRF=(GL,PM),EODAD=OFL8500          13480099
+OFLDL    EQU   *-OFLDCB                                                 13490099
+         PRINT NOGEN                                                    13550138
+OFL484W  DC    C'PDS484W OFFLOAD SHOULD NOT BE INTERRUPTED'             13550399
+OFL484WL EQU   *-OFL484W                                                13550499
+OFL865E  M$TX  'PDS865E THE OFFLOAD OUTPUT CAN NOT BE OPENED'           13550599
+         PRINT GEN                                                      13551038
+OFLEFTSR DC    CL8'IKJEFTSR'                                            13710099
+OFLPGM   DC    CL8'OFFLOAD'                      OFFLOAD                13720099
+OFLPARM  DC    AL2(OFLPARML-2)                   PARM LENGTH            13721099
+OFLPARML EQU   *-OFLPARM                                                13721299
+OFLDDNIN DC    X'000100010005',C'SYSIN'          SYSIN    DDNAME        13722099
+OFLDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722199
+OFLDDNU1 DC    X'000100010006',C'SYSUT1'         SYSUT1   DDNAME        13722399
+OFLDDNU2 DC    X'000100010006',C'SYSUT2'         SYSUT2   DDNAME        13722499
+OFLDSNAM DC    X'00020001002C'                   DSNAME                 13722599
+OFLDSMBR DC    X'000300010008'                   MEMBER                 13722699
+OFLALLOC DC    X'00040001000108'                 DISP=SHR               13722799
+OFLALMOD DC    X'00040001000102'                 DISP=MOD               13722899
+OFLNORM  DC    X'00050001000108'                 DISP=(,KEEP)           13722999
+OFLANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13723099
+OFLDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13724099
+OFLFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+OFLNEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+OFLDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+OFLCAT   DC    X'00050001000102'                 DISP=(,CATLG)          13791099
+OFLCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+OFLPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+OFLUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+OFLTRK   DC    X'00070000'                       SPACE=(TRK,            13830099
+OFLFIRST DC    X'000A00010003',AL3(15)           SPACE=(,15             13831099
+OFLSECON DC    X'000B00010003',AL3(15)           SPACE=(,,15            13832099
+OFLOOLD  EQU   X'01'                             DISP=OLD               13833099
+OFLOMOD  EQU   X'02'                             DISP=MOD               13834099
+OFLONEW  EQU   X'04'                             DISP=NEW               13835099
+OFLOSHR  EQU   X'08'                             DISP=SHR               13836099
+OFLVOLSR DC    X'001000010006404040404040'       VOL=SER=               13837099
+OFLUNITP DC    X'001500010008',CL8'&PUNIT'       UNIT=SYSALLDA          13838099
+         SPACE 2                                                        13839099
+OFLSDS   DC    X'003C00010002',XL2'4000'         DSORG=PS               13839199
+OFLSRF   DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13839299
+OFLSLR   DC    X'004200010002',AL2(80)           DCB=LRECL=80           13839399
+OFLSBL   DC    X'003000010002',AL2(27920)        DCB=BLKSIZE=27920      13839499
+         SPACE 2                                                        13840000
+OFLPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+OFLPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860099
+OFLPRTIN DC    X'000900010003',AL3(27930)        SPACE=(27930)          13870099
+OFLSINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           13880099
+         SPACE 1                                                        13920000
+OFLPRTRE DC    X'004900010001',XL1'C4'           DCB=RECFM=UA           13930099
+OFLPRTLR DC    X'004200010002',AL2(121)          DCB=LRECL=121          13940099
+OFLPRTBL DC    X'003000010002',AL2(121)          DCB=BLKSIZE=121        13950099
+         SPACE 2                                                        13960000
+OFLSINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13970099
+OFLSINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980099
+OFLSINBL DC    X'003000010002',AL2(3120)         DCB=BLKSIZE=3120       13990099
+         SPACE 2                                                        14000000
+OFLSYSIN DC    A(OFLPRTFI,OFLPRTSE,OFLSINSP)                            14020099
+         DC    A(OFLSINRE,OFLSINLR,OFLSINBL)                            14030099
+         DC    A(OFLNEW,OFLDEL,OFLCDEL),X'80',AL3(OFLPERM)              14040099
+OFLSYSPR DC    A(OFLPRTFI,OFLPRTSE,OFLPRTIN)                            14080099
+         DC    A(OFLPRTRE,OFLPRTLR,OFLPRTBL)                            14090099
+         DC    A(OFLNEW,OFLDEL,OFLCDEL),X'80',AL3(OFLPERM)              14100099
+#OFLASSP EQU   X'80'            OFFLOAD: ASSOCIATES PHASE               14110099
+#OFLONE  EQU   X'10'            OFFLOAD: A SINGLE MEMBER                14120099
+#OFLASS2 EQU   X'01'            OFFLOAD: OFFLOAD ASSOCIATES TOO         14130099
+OFLHDR   DC    CL31' O I=SYSUT1,O=SYSUT2,T=IEBUPDTE'                    14150099
+SYSUT1   DC    CL8'SYSUT1'                                              14150199
+SYSUT2   DC    CL8'SYSUT2'                                              14150299
+$OFFLOAD DC    CL8'$OFFLOAD'                                            14150399
+SELECT   DC    CL5' S M='                                               14150499
+         SPACE 3                                                        14150599
+OBTAIN2  CAMLST SEARCH,0,0,0                                            14150699
+         ORG   OBTAIN2+4                                                14150799
+         SPACE 3                                                        14150899
+LOCATE2  CAMLST NAME,0,,0                                               14150999
+         ORG   LOCATE2+4                                                14151099
+         SPACE 3                                                        14160099

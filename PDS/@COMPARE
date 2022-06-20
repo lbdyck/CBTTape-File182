@@ -1,0 +1,245 @@
+         TITLE 'P D S  --  PDS COMPARE                       09/28/88'  02157000
+*********************************************************************** 02158000
+***      COMPARE SUBCOMMAND    ADDED BY BRUCE LELAND --  MAY, 1984  *** 02159000
+*********************************************************************** 02160000
+*                                                                       02161000
+         SPACE 1                                                        02162000
+COMPARE  CSECT                                                          02163001
+         USING *,R8                                                     02164000
+         SPACE 1                                                        02165000
+*                                                                       02166000
+*  MSGLINE                                                              02167000
+*      OFFSET  |  FIELD    |  DESCRIPTION                               02168000
+*     -------- | --------- | -------------                              02169000
+*     0-99     | OPERANDS  | ANY OPERANDS AFTER THE NAMES               02170000
+*MSGDS1  EQU   MSGLINE+100,64                                           02171000
+*     +0,56    | DSNAME1   | THE FIRST DATA SET NAME STRING             02172000
+*     +61,1    | FLAG      | X'80' IF MEMBER ONLY                       02173000
+*     +62,2    | LSTR1     | LENGTH OF STRING                           02174000
+*              |           |                                            02175000
+*MSGDS2  EQU   MSGLINE+164,64                                           02176000
+*     +0,56    | DSNAME2   | THE SECOND DATA SET NAME STRING            02177000
+*     +61,1    | FLAG      | X'80' IF MEMBER ONLY                       02178000
+*     +62,2    | LSTR2     | LENGTH OF STRING                           02179000
+*                                                                       02180000
+*                                                                       02181000
+         SPACE 1                                                        02181105
+* TEST FOR SUPERC COMPARE TYPES                                         02181205
+         CLC   ##SUBCAL(8),SUPCPGM     SUPERC COMPARE?        DRK NOV16 02181513
+         BNE   COMPA01                 NO                     DRK NOV16 02181613
+         CLC   MSGLINE(4),SUPCLINE     1ST OPERAND = LINE?    DRK DEC16 02181911
+         BE    COMPTYPL                YES                    DRK DEC16 02182011
+         CLC   MSGLINE(4),SUPCBYTE     1ST OPERAND = BYTE?    DRK NOV16 02182111
+         BE    COMPTYPB                YES                    DRK NOV16 02182211
+         CLC   MSGLINE(4),SUPCFILE     1ST OPERAND = FILE?    DRK NOV16 02182311
+         BE    COMPTYPF                YES                    DRK NOV16 02182411
+         CLC   MSGLINE(4),SUPCWORD     1ST OPERAND = WORD?    DRK NOV16 02182511
+         BE    COMPTYPW                YES                    DRK NOV16 02182611
+         CLC   MSGLINE(4),YALEPGM      1ST OPERAND = YALE?    DRK JUN18 02182714
+         BE    COMPTYPY                YES                    DRK JUN18 02182812
+         B     COMPA01                 NO                     DRK NOV16 02182912
+COMPTYPL DS    0H                                             DRK DEC16 02183012
+         MVC   MSGLINE(96),MSGLINE+4   SHIFT LEFT TO CLEAR    DRK DEC16 02183112
+         B     COMPA01                                        DRK DEC16 02183212
+COMPTYPB MVC   ##SUBCAL+4(4),SUPCBYTE  CHANGE PGM NAME        DRK NOV16 02183312
+         MVC   MSGLINE(96),MSGLINE+4   SHIFT LEFT TO CLEAR    DRK NOV16 02183412
+         B     COMPA01                                        DRK NOV16 02183512
+COMPTYPF MVC   ##SUBCAL+4(4),SUPCFILE  CHANGE PGM NAME        DRK NOV16 02183612
+         MVC   MSGLINE(96),MSGLINE+4   SHIFT LEFT TO CLEAR    DRK NOV16 02183712
+         B     COMPA01                                        DRK NOV16 02183812
+COMPTYPW MVC   ##SUBCAL+4(4),SUPCWORD  CHANGE PGM NAME        DRK JUN18 02183912
+         MVC   MSGLINE(96),MSGLINE+4   SHIFT LEFT TO CLEAR    DRK JUN18 02184012
+         B     COMPA01                                        DRK JUN18 02184112
+COMPTYPY MVC   ##SUBCAL+4(4),SUPCYALE  CHANGE PGM NAME        DRK NOV16 02184212
+         MVC   MSGLINE(96),MSGLINE+4   SHIFT LEFT TO CLEAR    DRK NOV16 02184312
+         B     COMPA01                                        DRK NOV16 02184412
+SUPCPGM  DC    CL8'COMPAREC'                                  DRK NOV16 02184512
+SUPCLINE DC    CL4'LINE'                                      DRK NOV16 02184612
+SUPCBYTE DC    CL4'BYTE'                                      DRK NOV16 02184712
+SUPCFILE DC    CL4'FILE'                                      DRK NOV16 02184812
+SUPCWORD DC    CL4'WORD'                                      DRK NOV16 02184912
+YALEPGM  DC    CL4'YALE'                                      DRK JUN18 02185014
+SUPCYALE DC    CL4'ARE$'               YALE COMPARE PROGRAM   DRK JUN18 02185112
+COMPA01  DS    0H                                             DRK NOV16 02185212
+         XC    DIRUSER,DIRUSER         CLEAR THE USER FIELDS            02185312
+         MVC   DIRNAME,MSGDS1          FIRST PART OF DSNAME1            02185412
+         CLI   MSGDS1+63,8             MORE THAN 8 DIGITS?              02185512
+         BH    COMPA10                 YES, BRANCH                      02185612
+         CLI   MSGDS1,C''''            QUOTED?                          02186000
+         BE    COMPA10                 YES, BRANCH                      02187000
+         TM    DSORG,DS1DSGPO          PARTITIONED?                     02188000
+         BNO   COMPA10                 NO, BRANCH                       02189000
+         LA    R1,DIRNAME-1            START OF SEARCH -1               02190000
+         LA    R0,8                    CHARACTERS TO SEARCH             02191000
+         SPACE 1                                                        02192000
+COMPA02  LA    R1,1(,R1)               NEXT CHARACTER                   02193000
+         CLI   0(R1),C'.'              PERIOD?                          02194000
+         BE    COMPA10                 YES, BRANCH                      02195000
+         CLI   0(R1),C'('              PARENTHESIS?                     02196000
+         BE    COMPA10                 YES, BRANCH                      02197000
+         BCT   R0,COMPA02              CHECK ALL 8 CHARACTERS           02198000
+         SPACE 1                                                        02199000
+         OI    MSGDS1+61,X'80'         USE THIS AS A MEMBER NAME        02200000
+         TM    SPFLAG2,SPFLNCD         LINE COMMAND?           SS AUG85 02201000
+         BO    COMPA07                 YES, BRANCH                      02202000
+         SPACE 1                                                        02203000
+         LH    R0,MSGDS1+62            MEMBER NAME LENGTH               02204000
+         BCTR  R0,0                    MACHINE LENGTH                   02205000
+         STCM  R0,B'0011',MEMBERD+1    CHANGE DEFAULT MEMBER LENGTH     02206000
+         MVC   MEMBERD+1+2(8),DIRNAME  CHANGE DEFAULT MEMBER NAME       02207000
+         MVI   MEMBERD,FMEMBER1        ONLY ONE MEMBER NAME NOW         02208000
+         NI    PMEMMIN,FF-X'80'        NO MEMBER LIST NOW               02209000
+         BAS   R14,DEFGROUP            ADD DEFAULT GROUP                02210000
+         SPACE 2                                                        02211000
+COMPA07  BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           02212000
+         B     *+4(R15)                PROCESS RETURN CODE              02213000
+         B     COMPA10                   00 - SUCCESSFUL                02214000
+         B     NOMEMBER                  04 - MEMBER NOT FOUND          02215000
+         B     IOERROR                   08 - I/O ERROR                 02216000
+         SPACE 2                                                        02217000
+COMPA10  MVC   DIRNAME,MSGDS2          FIRST PART OF DSNAME2            02218000
+         CLI   MSGDS2+63,8             MORE THAN 8 DIGITS?              02219000
+         BH    COMPA20                 YES, BRANCH                      02220000
+         CLI   MSGDS2,C''''            QUOTED?                          02221000
+         BE    COMPA20                 YES, BRANCH                      02222000
+         TM    DSORG,DS1DSGPO          PARTITIONED?                     02223000
+         BNO   COMPA20                 NO, BRANCH                       02224000
+         LA    R1,DIRNAME-1            START OF SEARCH -1               02225000
+         LA    R0,8                    CHARACTERS TO SEARCH             02226000
+         SPACE 1                                                        02227000
+COMPA12  LA    R1,1(,R1)               NEXT CHARACTER                   02228000
+         CLI   0(R1),C'.'              PERIOD?                          02229000
+         BE    COMPA20                 YES, BRANCH                      02230000
+         CLI   0(R1),C'('              PARENTHESIS?                     02231000
+         BE    COMPA20                 YES, BRANCH                      02232000
+         BCT   R0,COMPA12              CHECK ALL 8 CHARACTERS           02233000
+         SPACE 1                                                        02234000
+         OI    MSGDS2+61,X'80'         USE THIS AS A MEMBER NAME        02235000
+         TM    SPFLAG2,SPFLNCD         LINE COMMAND?           SS AUG85 02236000
+         BO    COMPA17                 YES, BRANCH                      02237000
+         SPACE 1                                                        02238000
+         LH    R0,MSGDS2+62            MEMBER NAME LENGTH               02239000
+         BCTR  R0,0                    MACHINE LENGTH                   02240000
+         STCM  R0,B'0011',MEMBERD+1    CHANGE DEFAULT MEMBER LENGTH     02241000
+         MVC   MEMBERD+1+2(8),DIRNAME  CHANGE DEFAULT MEMBER NAME       02242000
+         MVI   MEMBERD,FMEMBER1        ONLY ONE MEMBER NAME NOW         02243000
+         NI    PMEMMIN,FF-X'80'        NO MEMBER LIST NOW               02244000
+         BAS   R14,DEFGROUP            ADD DEFAULT GROUP                02245000
+         SPACE 2                                                        02246000
+COMPA17  BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           02247000
+         B     *+4(R15)                PROCESS RETURN CODE              02248000
+         B     COMPA20                   00 - SUCCESSFUL                02249000
+         B     NOMEMBER                  04 - MEMBER NOT FOUND          02250000
+         B     IOERROR                   08 - I/O ERROR                 02251000
+         SPACE 3                                                        02252000
+COMPA20  MVC   DIRNAME(8),MSGDS1       FIRST MEMBER NAME                02253000
+         MVC   MSGTEXT1+4(8),##SUBCAL  PROCESSOR TO ATTACH              02254000
+         MVI   MSGTEXT1+12,X'40'       ADD A BLANK                      02255000
+         SPACE 2                                                        02256000
+         MVI   MSGTEXT1+13,C''''       ADD A QUOTE                      02257000
+         MVC   MSGTEXT1+14(44),DSNAME  ADD THE DATA SET NAME            02258000
+         LH    R15,DSNLEN              DSNAME LENGTH                    02259000
+         LA    R3,MSGTEXT1+13(R15)     POINT TO CURRENT BYTE -1         02260000
+         SPACE 1                                                        02261000
+         MVI   1(R3),C'('              MEMBER NAME PARENTHESIS          02262000
+         MVC   2(8,R3),DIRNAME         MEMBER NAME                      02263000
+         LA    R3,2+8(,R3)             END OF MEMBER +1                 02264000
+         LA    R2,8                    MAXIMUM MACHINE LENGTH+1         02265000
+         SPACE 1                                                        02266000
+         TM    MSGDS1+61,X'80'         USE THIS AS A MEMBER NAME?       02267000
+         BO    COMPA22                 YES, BRANCH                      02268000
+         LA    R3,MSGTEXT1+13          POINT TO CURRENT BYTE            02269000
+         MVC   0(57,R3),MSGDS1         ADD THE FIRST DATA SET NAME      02270000
+         AH    R3,MSGDS1+62            ADD ITS LENGTH                   02271000
+         MVI   0(R3),X'40'             ADD A BLANK                      02272000
+         LA    R3,1(,R3)                                                02273000
+         B     COMPA27                                                  02274000
+         SPACE 1                                                        02275000
+COMPA22  BCTR  R3,0                    SCAN                             02276000
+         CLI   0(R3),X'40'                  FOR                         02277000
+         BNE   *+8                              FIRST                   02278000
+         BCT   R2,COMPA22                             NON-BLANK         02279000
+         SPACE 1                                                        02280000
+         BCTR  R2,0                    MACHINE LENGTH                   02281000
+         TRT   DIRNAME(*-*),TRTMEM     <<EXECUTED>>                     02282000
+         EX    R2,*-6                  VALID MEMBER NAME?               02283000
+         BNZ   BADMEMB                 NO, ERROR                        02284000
+         CLI   DIRNAME,C'0'            VALID FIRST CHARACTER?           02285000
+         BNL   BADMEMB                 NO, BRANCH                       02286000
+         LA    R3,1(,R3)               POINT TO TERMINATOR              02287000
+         MVI   0(R3),C')'              ADD A CLOSING PARENTHESIS        02288000
+         SPACE 1                                                        02289000
+         MVI   1(R3),C''''             ADD A QUOTE                      02290000
+         MVI   2(R3),X'40'             ADD A BLANK                      02291000
+         LA    R3,3(,R3)               ACCOUNT FOR ")' "                02292000
+         SPACE 2                                                        02293000
+COMPA27  MVC   DIRNAME(8),MSGDS2       SECOND MEMBER NAME               02294000
+         TM    MSGDS2+61,X'80'         USE THIS AS A MEMBER NAME?       02295000
+         BO    COMPA29                 YES, BRANCH                      02296000
+         MVC   0(57,R3),MSGDS2         ADD THE SECOND DATA SET NAME     02297000
+         AH    R3,MSGDS2+62            ADD ITS LENGTH                   02298000
+         MVI   0(R3),X'40'             ADD A BLANK                      02299000
+         LA    R3,1(,R3)                                                02300000
+         B     COMPA37                                                  02301000
+         SPACE 2                                                        02302000
+COMPA29  MVI   0(R3),C''''             ADD A QUOTE                      02303000
+         MVC   1(44,R3),DSNAME         ADD THE DATA SET NAME            02304000
+         LH    R15,DSNLEN              DSNAME LENGTH                    02305000
+         LA    R3,0(R3,R15)            CURRENT BYTE -1                  02306000
+         SPACE 1                                                        02307000
+         MVI   1(R3),C'('              MEMBER NAME PARENTHESIS          02308000
+         MVC   2(8,R3),DIRNAME         MEMBER NAME                      02309000
+         LA    R3,2+8(,R3)             END OF MEMBER +1                 02310000
+         LA    R2,8                    MAXIMUM MACHINE LENGTH+1         02311000
+         SPACE 1                                                        02312000
+COMPA30  BCTR  R3,0                    SCAN                             02313000
+         CLI   0(R3),X'40'                  FOR                         02314000
+         BNE   *+8                              FIRST                   02315000
+         BCT   R2,COMPA30                             NON-BLANK         02316000
+         SPACE 1                                                        02317000
+         BCTR  R2,0                    MACHINE LENGTH                   02318000
+         TRT   DIRNAME(*-*),TRTMEM     <<EXECUTED>>                     02319000
+         EX    R2,*-6                  VALID MEMBER NAME?               02320000
+         BNZ   BADMEMB                 NO, ERROR                        02321000
+         CLI   DIRNAME,C'0'            VALID FIRST CHARACTER?           02322000
+         BNL   BADMEMB                 NO, BRANCH                       02323000
+         LA    R3,1(,R3)               POINT TO TERMINATOR              02324000
+         MVI   0(R3),C')'              ADD A CLOSING PARENTHESIS        02325000
+         SPACE 1                                                        02326000
+         MVI   1(R3),C''''             ADD A QUOTE                      02327000
+         MVI   2(R3),X'40'             ADD A BLANK                      02328000
+         LA    R3,3(,R3)               ACCOUNT FOR ")' "                02329000
+         SPACE 1                                                        02330000
+COMPA37  MVC   0(100,R3),MSGLINE       ADD ANY OTHER DATA               02331000
+         AH    R3,#COMMDSZ             ADD LENGTH OF KEYWORD DATA       02332000
+         SPACE 2                                                        02333000
+         LA    R2,MSGTEXT1             START OF COMMAND TEXT            02334000
+         SR    R3,R2                   LENGTH OF COMMAND                02335000
+         SLL   R3,16                   CLEAR BOTTOM TWO BYTES           02336000
+         STCM  R3,B'1111',0(R2)        SAVE STRING TOTAL LENGTH         02337000
+*        M$ERRST (R2)                  DELETE * TO OUTPUT COMMAND       02338000
+         ST    R2,ADDRTEXT             COMMAND ADDRESS                  02339000
+         ST    R2,ADDRCBUF             COMMAND ADDRESS                  02340000
+         LA    R1,ADDRTEXT             COMMAND ADDRESS                  02341000
+         CLI   ##SUBCAL,C'%'           CLIST CALL?                      02342000
+         BNE   COMPA38                 NO, BRANCH                       02343000
+         L     R8,=A(EXEC)             YES, IMPLIED CLIST               02344000
+         BR    R8                                                       02345000
+         SPACE 1                                                        02346000
+COMPA38  MVI   3(R2),9                 OPERAND OFFSET                   02347000
+         SPACE 1                                                        02348000
+         LA    R3,##SUBCAL             PROCESSOR TO ATTACH              02349000
+COMPAZAP B     COMPA39                 LINK TO COMPARE                  02354000
+***  THE FOLLOWING INTERFACE IS FOR COMPARE FROM THE CBT TAPE, FILE 300 02356000
+         BAS   R2,ATTACH               ATTACH THIS COMMAND PROCESSOR    02357000
+         B     NEWCMD                                                   02358000
+         SPACE 1                                                        02359000
+***  EITHER THE ABOVE OR THE FOLLOWING INTERFACE MAY BE                 02360000
+***  USED BY THE COMPARE COMMAND FROM THE CBT TAPE, FILE 296            02361000
+COMPA39  LA    R0,NEWSTAX              ABEND RECOVERY                   02362000
+         ST    R0,RECOVER                                               02363000
+         L     R1,ADDRTEXT             COMMAND ADDRESS                  02364000
+         ST    R1,ADDRCBUF             COMMAND ADDRESS                  02365000
+         L     R15,=A(RX)              EXTERNAL INTERFACE START         02366000
+         BASR  R2,R15                  EXTERNAL LINK TO RELEASE         02367000
+         B     NEWCMD                  REALLOCATE AND START OVER        02368000

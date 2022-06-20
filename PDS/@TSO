@@ -1,0 +1,175 @@
+         TITLE 'P D S  --  PDS TSO                           09/28/88'  14005000
+*********************************************************************** 14006000
+***      TSO   SUBCOMMAND      ADDED BY BRUCE LELAND -- AUG., 1982  *** 14007000
+*********************************************************************** 14008000
+*                                                                       14009000
+         SPACE 1                                                        14010000
+TSO      CSECT                                                          14011001
+         USING *,R8                                                     14012000
+         XC    MSGTEXT2(32),MSGTEXT2                                    14013000
+TSO000   L     R1,ADDRCBUF                 POINT TO THE COMMAND BUFFER  14014000
+         ST    R1,ADDRTEXT                                              14015000
+         MVC   MSGTEXT2(4),0(R1)           COMMAND BUFFER LENGTHS       14016000
+         LA    R1,PARMLIST                 USE THE SAME PARAMETER LIST  14017000
+         L     R15,ADDRSCAN                SCAN START ADDRESS           14018000
+         BASR  R14,R15                     INVOKE COMMAND SCAN          14019000
+         SPACE 1                                                        14020000
+         LA    R5,SCANANSR                       ADDR OF ANSWER AREA    14021000
+         TM    CSOAFLG-CSOA(R5),CSOANOC          EMPTY BUFFER?          14022000
+         BO    TSO090                            YES, NO TSO COMMAND    14023000
+         TM    CSOAFLG-CSOA(R5),CSOAVWP+CSOAVNP  VALID COMMAND?         14024000
+         LA    R1,L874                           ASSUME NOT             14025000
+         BZ    MSGNEW                            NO, BRANCH             14026000
+         L     R2,CSOACNM-CSOA(,R5)              ADDR OF COMMAND NAME   14027000
+         LH    R3,CSOALNM-CSOA(,R5)              LENGTH OF NAME         14028000
+         BCTR  R3,0                              MACHINE LENGTH         14029000
+         SPACE 1                                                        14030000
+         MVC   DIRNAME,BLANKS              INITIALIZE WITH BLANKS       14031000
+         MVC   DIRNAME(*-*),0(R2)          <<EXECUTED>>                 14032000
+         EX    R3,*-6                      MOVE IN THE COMMAND NAME     14033000
+         SPACE 1                                                        14034000
+         L     R1,ADDRCBUF                 COMMAND BUFFER ADDRESS       14035000
+         ST    R1,ADDRTEXT                 COMMAND ADDRESS              14036000
+         SPACE 1                                                        14037000
+TSO005   CLC   DIRNAME(5),TSOLTIME         TIME REQUEST?                14038000
+         BNE   *+10                        NO, BRANCH                   14039000
+         MVC   DIRNAME(8),TSOLIKJ          YES, USE IKJEFT25 INSTEAD    14040000
+         SPACE 1                                                        14041000
+         CLC   DIRNAME(2),TSOLH            HELP REQUEST?                14042000
+         BE    TSO010                      YES, BRANCH                  14043000
+         CLC   DIRNAME(5),TSOLHEL          HELP REQUEST?                14044000
+         BNE   TSO020                      NO, BRANCH                   14045000
+TSO010   MVC   DDNAMEH,DDNAME              SAVE ACTUAL DDNAME           14046000
+         MVC   DDNAME,SYSHELP              DDNAME TO FREE               14047000
+         BAS   R2,DEALLOCZ                 FORCE A FREE OF SYSHELP      14048000
+         MVC   DDNAME,DDNAMEH              RESTORE ACTUAL DDNAME        14049000
+         SPACE 1                                                        14050000
+TSO020   ICM   R15,B'1111',=V(VTSOCMD)     VERIFY THE TSO COMMAND?      14051000
+         BZ    TSO024                      NO, BRANCH                   14052000
+         OI    FLAGSJJ,FTSOCMD             YES, SET A ESTAE FLAG        14053000
+         MVC   MSGTEXT1(16),ADDRTEXT       MOVE ARGUMENT LIST           14054000
+         LA    R2,DIRNAME                  COMMAND NAME                 14055000
+         ST    R2,MSGTEXT1+16              FOR VERIFICATION ROUTINE     14056000
+         OI    MSGTEXT1+16,X'80'           MARK END OF LIST             14057000
+         LA    R1,MSGTEXT1                 START OF ARGUMENT LIST       14058000
+         BASR  R14,R15                     CALL VERIFICATION ROUTINE    14059000
+         NI    FLAGSJJ,FF-FTSOCMD          RESET THE ESTAE FLAG         14060000
+         LTR   R15,R15                     AUTHORIZED?                  14061000
+         BZ    TSO024                      YES, BRANCH                  14062000
+         CH    R15,=H'8'                   RETURN CODE 8?               14063000
+         BNE   TSO022                      NO, BRANCH                   14064000
+         OI    CSOAFLG-CSOA(R5),CSOAEXEC   IMPLIED CLIST                14065000
+         B     TSO024                                                   14066000
+TSO022   MVC   INSERT#1(8),DIRNAME         COMMAND NAME                 14067000
+         M$MSG L910$1                      NOT AUTHORIZED               14068000
+         B     TSO090                      BYPASS THIS COMMAND          14069000
+         SPACE 1                                                        14070000
+TSO024   L     R4,ADDRECT                  ECT ADDRESS                  14071000
+         OI    ECTSWS-ECT(R4),ECTNOPD      ASSUME NO OPERAND            14072000
+         TM    CSOAFLG-CSOA(R5),CSOAVWP    ANY OPERAND?                 14073000
+         BNO   *+8                         NO, BRANCH                   14074000
+         NI    ECTSWS-ECT(R4),FF-ECTNOPD   YES, ZAP THE NO OPERAND FLAG 14075000
+         TM    CSOAFLG-CSOA(R5),CSOAEXEC   IMPLIED CLIST?               14076000
+         BO    TSO030                      YES, BRANCH                  14077000
+         SPACE 2                                                        14078000
+*** MODULE NOT AN IMPLIED CLIST, TRY FOR A LINKLIST LIBRARY             14079000
+         BLDL  0,BLDLLIST -----+           CHECK FOR A LOAD MODULE      14080001
+         LA    R1,X'100'       |           TTR=1 (FOR SEQUENTIAL)       14080101
+         ST    R1,DIRTTR       |           RESET TTR                    14080201
+         LTR   R15,R15    <----+           IN THE LINKLIST?             14081001
+         BZ    TSO040                      YES, ATTACH IT               14082000
+         L     R15,CVTPTR(,R0)             NEED TO ALSO CHECK LPALIB    14083000
+         L     R15,CVTLPDIA-CVTMAP(R15)    POINT TO LINK PACK DIRECTORY 14084000
+         SPACE 2                                                        14085000
+*** MODULE NOT IN LINKLIST, TRY THE LPALIB DIRECTORY (IN STORAGE)       14086000
+TSO026   CLC   8(8,R15),DIRNAME            THIS MODULE NAME?            14087000
+         BE    TSO040                      YES, FOUND                   14088000
+         CLI   8(R15),X'FF'                END OF DIRECTORY?            14089000
+         LA    R15,40(,R15)                                             14090000
+         BNE   TSO026                      NO, BRANCH                   14091000
+         SPACE 2                                                        14092000
+*** MODULE NOT FOUND ANYWHERE, TRY IT AS AN IMPLIED CLIST               14093000
+TSO030   MVC   DIRNAME(8),#EXE             INVOKE CLIST PROCESSOR       14094000
+         L     R15,ADDRCBUF                COMMAND LINE                 14095000
+         MVC   0(4,R15),MSGTEXT2           RESET THE OPERAND OFFSET     14096000
+*        NI    ECTSWS-ECT(R4),FF-ECTNOPD   ZAP THE NO OPERAND FLAG      14097000
+         SR    R1,R1                                                    14098000
+         ICM   R1,B'0011',2(R15)           OFFSET TO OPERAND            14099000
+         BZ    TSO040                      NULL RETURN                  14100000
+         STCM  R1,B'1100',2(R15)           CLEAR THE OFFSET             14101000
+TSO034   LA    R15,1(,R15)                 NEXT BYTE                    14102000
+         MVI   3(R15),X'40'                CLEAR THE BYTE               14103000
+         BCT   R1,TSO034                   REPEAT FOR ALL CHARACTERS    14104000
+         SPACE 1                                                        14105000
+*** MODULE WAS FOUND, WE CAN ATTACH IT DIRECTLY                         14106000
+TSO040   MVC   ECTPCMD-ECT(8,R4),DIRNAME   COMMAND NAME                 14107000
+         MVC   ECTSCMD-ECT(8,R4),BLANKS    NO SUBCOMMAND                14108000
+         SPACE 1                                                        14109000
+         CLI   ##SUBCAL,X'40'              TSOEXEC-TYPE PROCESSOR?      14110000
+         BE    TSO050                      NO, BRANCH                   14111000
+         CLC   ECTPCMD-ECT(8,R4),#EXE      CLIST PROCESSOR?             14112000
+         BE    TSO050                      YES, BRANCH                  14113000
+         LA    R3,##SUBCAL                 PDS EXTERNAL SUBCOMMAND      14114000
+         NI    ECTSWS-ECT(R4),FF-ECTNOPD   ZAP THE NO OPERAND FLAG      14115000
+         MVC   ECTPCMD-ECT(8,R4),##SUBCAL  COMMAND NAME IS TSOEXEC      14116000
+         L     R15,ADDRCBUF                COMMAND BUFFER ADDRESS       14117000
+         MVC   0(4,R15),MSGTEXT2           RESTORE THE COMMAND OFFSETS  14118000
+         MVC   DIRNAME(8),##SUBCAL         INVOKE TSOEXEC               14119000
+         SPACE 1                                                        14120000
+TSO050   L     R1,ADDRTEXT                 CPPL START                   14121000
+*        M$ERRST (R1)                      DELETE * FOR OUTPUT          14122000
+         LA    R1,ADDRTEXT                 CPPL START                   14123000
+         MVI   ATTNECB,0                   CLEAR ATTENTION ECB          14124000
+         LA    R3,DIRNAME                  PDS EXTERNAL SUBCOMMAND      14125000
+         BAS   R2,ATTACH                   GO ATTACH IT                 14126000
+         SPACE 1                                                        14127000
+TSO090   ICM   R1,B'1111',MSGTEXT2+4+4     ANY GETLINE BUFFER?          14128000
+         BZ    TSO092                      NO, BRANCH                   14129000
+         LH    R0,0(,R1)                   LENGTH                       14130000
+         ICM   R0,B'1000',=X'01'           SUBPOOL 1                    14131000
+         FREEMAIN R,LV=(0),A=(1)                                        14132000
+         SPACE 1                                                        14133000
+TSO092   L     R4,ADDRECT                                               14134000
+         L     R1,ECTIOWA-ECT(R4)          --> I/O WORK AREA            14135000
+         L     R1,0(,R1)                   --> ELEMENT ON STACK         14136000
+         TM    0(R1),X'40'                 FROM CLIST?                  14137000
+         BZ    NEWSTAX                     NO, BRANCH                   14138000
+         CLM   R1,B'0111',PARMSTAK+1       SAME AS ORIGINAL STACK?      14138101
+         BE    NEWSTAX                     YES, EXIT                    14138201
+         SPACE 1                                                        14139000
+         LA    R1,MSGTEXT2+12              I/O PARM LIST OFR GETLINE    14140000
+         L     R2,ADDRUPT                  UPT FOR GETLINE              14141000
+         L     R3,ADDRECT                  ECT FOR GETLINE              14142000
+         L     R4,MSGTEXT2+12+16           ECB FOR GETLINE              14143000
+         L     R15,ADDRGETL                ADDRESS OF GETLINE           14144000
+         MVC   MSGTEXT2+4(TSO099),TSO098   INITIALIZE GETLINE PARMS     14145000
+         GETLINE PARM=MSGTEXT2+4,UPT=(R2),ECT=(R3),ECB=(R4),          XX14146000
+               ENTRY=(15),MF=(E,(1))                                    14147000
+         CH    R15,=H'16'                  END OF INPUT?                14148000
+         BE    NEWSTAX                     YES, BRANCH                  14149000
+         L     R1,MSGTEXT2+4+4             NEXT COMMAND                 14150000
+         ST    R1,ADDRCBUF                                              14151000
+         SPACE 2                                                        14152000
+         LA    R15,PARMLIST                                             14153000
+         USING CSPL,R15                                                 14154000
+         SPACE 1                                                        14155000
+         L     R1,ADDRUPT              ADDRESS OF THE UPT               14156000
+         L     R2,ADDRECT              ADDRESS OF THE ECT               14157000
+         LA    R3,ATTNECB              ADDRESS OF THE ATTENTION ECB     14158000
+         LA    R4,ZERO                 ADDRESS OF A ZERO FLAG AREA      14159000
+         LA    R5,SCANANSR             ADDRESS OF THE RESULT AREA       14160000
+         L     R6,ADDRCBUF             ADDRESS OF THE SUBCOMMAND        14161000
+         STM   R1,R6,CSPLUPT           SETUP CSPLUPT, CSPLECT, CSPLECB, 14162000
+         DROP  R15                           CSPLFLG, CSPLOA & CSPLCBUF 14163000
+         B     TSO000                                                   14164000
+         SPACE 1                                                        14165000
+TSO098   GETLINE MF=L                                                   14166000
+TSO099   EQU   *-TSO098                                                 14167000
+* MSGTEXT2+00,4   COMMAND BUFFER START HALFWORDS                        14168000
+* MSGTEXT2+04,8   GETLINE I/O AREA                                      14169000
+* MSGTEXT2+12,16  GETLINE I/O PARM LIST                                 14170000
+* MSGTEXT2+28,4   GETLINE ECB                                           14171000
+TSOLTIME DC    C'TIME '                                                 14172000
+TSOLIKJ  DC    C'IKJEFT25'                                              14173000
+TSOLH    DC    C'H '                                                    14174000
+TSOLHEL  DC    C'HELP '                                                 14175000

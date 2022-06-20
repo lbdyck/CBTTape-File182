@@ -1,0 +1,37 @@
+//*                                                                     00010000
+//*  THIS MEMBER GENERATES AND EXECUTES THE HELPLIST PROGRAM FOR PDS    00020000
+//*                                                                     00030000
+//HELPGEN PROC MEMBER=MISSING,                                          00040000
+//             INSTLIB='PDS.INSTALL.LIBRARY'        <<=== INSTALL LIB   00050000
+//* INVOKE HIGH LEVEL ASSEMBLER                                         00050105
+//ASM      EXEC  PGM=ASMA90,REGION=32M,                                 00050205
+//             PARM=(NORLD,TERM,OBJ,                                    00050305
+//             'XREF(SHORT),SIZE(MAX,ABOVE)')                           00050405
+//SYSUT1   DD  UNIT=VIO,SPACE=(4096,(120,120),,,ROUND),DCB=BUFNO=1      00050505
+//SYSLIN   DD  UNIT=VIO,SPACE=(TRK,(5,5)),DISP=(MOD,PASS),DSN=&&X,      00050605
+//             DCB=BLKSIZE=3120                                         00050705
+//SYSPRINT DD  SYSOUT=*                                                 00050805
+//SYSTERM  DD  SYSOUT=*                                                 00050905
+//SYSIN    DD  DISP=SHARE,DSN=&INSTLIB.(&MEMBER)                        00051005
+//SYSLIB   DD  DSN=SYS1.MODGEN,DISP=SHARE                               00051105
+//         DD  DSN=SYS1.MACLIB,DISP=SHARE                               00051205
+//         DD  DSN=&INSTLIB,DISP=SHARE                                  00052005
+//       PEND                                                           00190000
+//*                                                                     00200000
+//*                                                                     00210000
+//HELPLIST EXEC HELPGEN,MEMBER=HELPLIST                                 00220000
+//*                                                                     00230000
+//LK1    EXEC  PGM=IEWL,PARM='MAP,LET,NCAL',COND=(0,LT)                 00240000
+//SYSPRINT DD  SYSOUT=*                                                 00250000
+//IN       DD  DSN=&&X,DISP=(OLD,DELETE)                                00260000
+//SYSLMOD  DD  DISP=SHR,DSN=LINKLIST.LIB            <<=== LINK TARGET   00270000
+//SYSUT1   DD  UNIT=VIO,SPACE=(TRK,(5,5))                               00280002
+//SYSLIN   DD  *                                                        00290000
+  INCLUDE  IN                                                           00300000
+  NAME     HELPLIST(R)                              <<=== LOADMOD NAME  00310000
+//*                                                                     00320000
+//ONE   EXEC  PGM=HELPLIST                          <<=== LOADMOD NAME  00330000
+//SYSPRINT DD  SYSOUT=*                                                 00340004
+//SYSUT1   DD  DSN=SYS2.HELP,DISP=SHR               <<=== HELP LIBRARY  00350000
+//SYSIN    DD  *                                                        00360000
+PDS86                                               <<=== HELP MEMBER   00370000

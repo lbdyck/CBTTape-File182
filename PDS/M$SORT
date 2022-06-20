@@ -1,0 +1,68 @@
+         MACRO M$SORT  - SORT A TABLE IN MEMORY                         00000104
+&NAME    M$SORT &FIELDS=(1,1,CH,A),&FIRST=,&LAST=,&A=,&FORMAT=,        *00000204
+               &LENGTH=                                                 00000301
+.*       AUTHOR - PETER HAVERCAN, IBM HURSLEY LAB                       00000403
+         GBLC  &##EQU                                                   00000501
+         LCLA  &X,&Y,&Z,&LEN                                            00000601
+         LCLC  &HI,&LO,&R0,&R1,&R14,&R15                                00000701
+&X       SETA  N'&FIELDS                                                00000801
+         AIF   (&X NE 3 AND &X NE 4).ERR1                               00000901
+         AIF   (&X EQ 4 AND '&FIELDS(3)' NE 'CH').ERR2                  00001001
+&HI      SETC  'H'                                                      00001101
+&LO      SETC  'L'                                                      00001201
+         AIF   ('&FIELDS(&X)' NE 'D').TESTA                             00001301
+&HI      SETC  'L'                                                      00001401
+&LO      SETC  'H'                                                      00001501
+         AGO   .SETREGS                                                 00001601
+.TESTA   AIF   ('&FIELDS(&X)' EQ 'A').SETREGS                           00001701
+         MNOTE *,'*** SORT TYPE NOT A OR D - A ASSUMED'                 00001801
+.SETREGS ANOP                                                           00001901
+&R0      SETC  '&##EQU.0'                                               00002001
+&R1      SETC  '&##EQU.1'                                               00002101
+&R14     SETC  '&##EQU.14'                                              00002201
+&R15     SETC  '&##EQU.15'                                              00002301
+         AIF   ('&LENGTH' EQ '').NOLNGTH                                00002401
+&LEN     SETA  &LENGTH                                                  00002501
+         AGO   .LENSET                                                  00002601
+.NOLNGTH ANOP                                                           00002701
+&LEN     SETA  L'&FIRST                                                 00002801
+.LENSET  ANOP                                                           00002901
+&X       SETA  &FIELDS(1)-1            OFFSET WITHIN RECORD             00003001
+&Y       SETA  &FIELDS(2)              LENGTH OF SORT-KEY               00003101
+&Z       SETA  &X+&LEN                 OFFSET WITHIN NEXT RECORD        00003201
+         AIF   ('&FIRST&LAST' EQ '').ATYPE                              00003301
+&NAME    LA    &R15,&FIRST             ADDRESS FIRST ENTRY              00003401
+         LA    &R0,&LENGTH             LOAD WIDTH OF TABLE              00003501
+         LA    &R1,&LAST               ADDRESS LAST ENTRY               00003601
+         AGO   .STEPBCK                                                 00003701
+.ATYPE   AIF   ('&A' EQ '').ERR3                                        00003801
+&NAME    LM    &R15,&R1,&A             FIRST ENTRY,WIDTH,LAST ENTRY     00003901
+.STEPBCK ANOP                                                           00004001
+         SR    &R1,&R0                 R1 POINTS AT PENULTIMATE         00004101
+         CLC   &X.(&Y,&R15),&Z.(&R1)   COMPARE FIRST & LAST ENTRIES     00004201
+         B&LO  *+22                    RECDS IN SEQUENCE                00004301
+         XC    0(&LEN,&R15),&LEN.(&R1) SWITCH FIRST AND                 00004401
+         XC    &LEN.(&LEN,&R1),0(&R15) LAST ENTRIES INTO                00004501
+         XC    0(&LEN,&R15),&LEN.(&R1) CORRECT SEQUENCE                 00004601
+         LA    &R14,&LEN.(&R15)        ADDRESS NEXT RECORD              00004701
+         CLC   &X.(&Y,&R14),&X.(&R15)  COMPARE SORT KEYS                00004801
+         BN&LO *+26                    IN SEQUENCE FROM FRONT           00004901
+         XC    0(&LEN,&R14),0(&R15)    SWITCH FIELDS                    00005001
+         XC    0(&LEN,&R15),0(&R14)    WHICH ARE OUT                    00005101
+         XC    0(&LEN,&R14),0(&R15)    OF SEQUENCE                      00005201
+         B     *+32                    GO TO LOOP CONTROL               00005301
+         CLC   &X.(&Y,&R14),&Z.(&R1)   COMPARE WITH FINAL RECORD        00005401
+         BN&HI *+22                    IN SEQUENCE FROM REAR            00005501
+         XC    0(&LEN,&R14),&LEN.(&R1) SWITCH FIELDS                    00005601
+         XC    &LEN.(&LEN,&R1),0(&R14) WHICH ARE OUT                    00005701
+         XC    0(&LEN,&R14),&LEN.(&R1) OF SEQUENCE                      00005801
+         BXLE  &R14,&R0,*-60           INCREMENT & LOOP BACK            00005901
+         SR    &R1,&R0                 DECREMENT END POINTER            00006001
+         BXLE  &R15,&R0,*-98           ADVANCE FRONT POINTER            00006101
+         MEXIT                                                          00006201
+.ERR1    MNOTE 8,'INVALID NO. OF ENTRIES IN FIELDS PARAMETER'           00006301
+         MEXIT                                                          00006401
+.ERR2    MNOTE 4,'FORMAT TYPE IS NOT SUPPORTED'                         00006501
+         MEXIT                                                          00006601
+.ERR3    MNOTE 8,'NEITHER A FIRST NOR LAST ARE SPECIFIED'               00007005
+         MEND                                                           00010001

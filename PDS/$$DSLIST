@@ -1,0 +1,18 @@
+                                                                        00000108
+Note:  The command table addition below is no longer required.          00000206
+       This is optional after the DRK JUN07 update to PDSMAIN.          00000306
+       TSO PDS 'dsname' from the command line in ISPF DSLIST            00000406
+       should work as expected (use the cataloged dsname).              00000506
+                                                                        00000607
+If &DSLIST is set to 'YES' (use VOLSER from 3.4 DSLIST table),          00001108
+then add the command below to your USER/SITE/SYSTEM                     00002002
+ISPF command table.                                                     00002102
+                                                                        00002202
+This will enable you to issue a PDS 'dsname' from the command           00003002
+line in ISPF DSLIST without the &ZDLVOL substitution.                   00003103
+                                                                        00007002
+Verb      T  Action                                                     00008002
+                Description                                             00009002
+                                                                        00010002
+PDS       0  SELECT CMD(PDS &ZPARM) NEWAPPL(ISR) PASSLIB                00020002
+                PDS command processor                                   00030002

@@ -1,0 +1,188 @@
+         TITLE 'P D S  --  PDS DISPLAY, PATTERN              09/28/88'  00010000
+*********************************************************************** 00020000
+***      DISPLAY SUBCOMMAND                                         *** 00030000
+***                                                                 *** 00040000
+***      PATTERN SUBCOMMAND    ADDED BY BRUCE LELAND -- JAN, 1980   *** 00050000
+*********************************************************************** 00060000
+*                                                                       00070000
+         SPACE 1                                                        00080000
+DISPLAY  CSECT                                                          00090015
+         USING *,R8                                                     00100000
+         B     PATTERNZ                  **  MEMBER RANGE               00110000
+         B     DISPLAY2                  **  ADDITIONAL GROUP MEMBERS   00120000
+PATTERN  L     R8,=A(DISPLAY)            **  MEMBER PATTERN             00130000
+         B     DISPLAYA                                                 00140000
+         SPACE 1                                                        00150000
+PATTERNZ OI    FLAGSAA,FMEMRANG          **  MEMBER RANGE SELECTION     00160000
+         TM    FLAGSAA,FMEMBER1+FMEMBER2 DISPLAY RANGE?                 00170000
+         BNO   DISPLAYA                  NO, NO RANGE CHECK             00180000
+         LH    R14,LMEMBER1                                             00190000
+         CH    R14,LMEMBER2              DETERMINE MIN NAME LENGTH      00200000
+         BNH   *+8                                                      00210000
+         LH    R14,LMEMBER2                                             00220000
+         CLC   MEMBER1(*-*),MEMBER2      <<EXECUTED>>                   00230000
+         EX    R14,*-6                   VALID DISPLAY RANGE?           00240000
+         LA    R1,L700                   INVALID RANGE MESSAGE          00250000
+         BH    MSGNEWXX                  YES, BRANCH                    00260000
+         SPACE 1                                                        00270000
+DISPLAYA LA    R1,80                     ASSUME AN ACTIVE MODE          00280000
+         TM    SPFLAG0,SPFDON            ISPMODE ACTIVE?                00290000
+         BO    DISPLAY0                  YES, BRANCH                    00300000
+         TM    CONTOPTN,1                ANY LOG RECORDING?             00310000
+         BO    DISPLAY0                  YES, BRANCH                    00320000
+*        GTSIZE ,                        TERMINAL SIZE         SS MAY89 00330001
+         GTSIZE                                                         00340001
+         CH    R1,=H'120'                120 OR LESS BYTES?             00350000
+         BL    *+8                       YES, BRANCH                    00360000
+         LH    R1,=H'120'                NO, USE 120 BYTES              00370000
+DISPLAY0 ST    R1,LINESIZE               CHARACTERS/LINE                00380000
+         NI    FLAGSBB,FF-FEXIST-FLINESET-FRANPAT                       00390000
+         MVI   STARTTR+2,X'01'          TTR=000001 (START OF DIRECTORY) 00400000
+         SPACE 1                                                        00410000
+DISPLAY1 L     R4,LINESIZE               GET TERMINAL LINE SIZE         00420000
+         LA    R4,MSGTEXT1+3-11(R4)      END OF LINE ADDRESS            00430000
+         LA    R5,MSGTEXT1+4             START OF LINE                  00440000
+         MVC   MSGTEXT1(136),MSGBL132    CLEAR THE DATA LINE            00450000
+         SPACE 1                                                        00460000
+DISPLAY2 EQU   *                                                        00470002
+         CLC   ##SUBCOM(8),$DIS          DISPLAY SUBCOMMAND?   GP SEP05 00480002
+         BE    DISPLAYK                  YES, FINE, OKAY       GP SEP05 00490002
+         CLC   ##SUBCOM(8),$PAT          PATTERN SUBCOMMAND?   GP SEP05 00500002
+         BE    DISPLAYK                  YES, FINE, OKAY       GP SEP05 00510002
+         CLC   ##SUBCOM(8),$MEM          MEMBERS SUBCOMMAND?   GP SEP05 00520004
+         BE    DISPLAYK                  YES, FINE, OKAY       GP SEP05 00530004
+         CLC   ##SUBCOM(8),$DEL          DELETE SUBCOMMAND?    GP SEP05 00540004
+         BE    DISPLAYK                  YES, FINE, OKAY       GP SEP05 00550004
+         CLC   ##SUBCOM(8),$SUB          SUBMIT SUBCOMMAND?    GP SEP05 00560004
+         BE    DISPLAYK                  YES, FINE, OKAY       GP SEP05 00570004
+         CLC   ##SUBCOM(8),$COP          COPY SUBCOMMAND?      GP APR06 00571008
+         BE    DISPLAYK                  YES, FINE, OKAY       GP APR06 00572008
+         CLC   ##SUBCOM(8),$RPR          REPRO SUBCOMMAND?     GP APR06 00573009
+         BE    DISPLAYK                  YES, FINE, OKAY       GP APR06 00574008
+         CLC   ##SUBCOM(8),$XMI          XMIT SUBCOMMAND?     DRK APR06 00575008
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK APR06 00576008
+         CLC   ##SUBCOM(8),$SRC          SRCHFOR SUBCOMMAND?  DRK APR06 00577011
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK APR06 00578010
+         CLC   ##SUBCOM(8),$SEA          SRCHFOR SUBCOMMAND?  DRK APR06 00579011
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK APR06 00579111
+         CLC   ##SUBCOM(8),$OFF          OFFLOAD SUBCOMMAND?  DRK MAY06 00579212
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK MAY06 00579312
+         CLC   ##SUBCOM(8),$CBN          OFFLOAD SUBCOMMAND?  DRK MAY06 00579413
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK MAY06 00579513
+         CLC   ##SUBCOM(8),$SMP          SMPGEN SUBCOMMAND?   DRK JUN06 00579614
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK JUN06 00579714
+         CLC   ##SUBCOM(8),$LMA          LMA SUBCOMMAND?      DRK SEP06 00579817
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK SEP06 00579917
+         CLC   ##SUBCOM(8),$COB          COBANAL SUBCOMMAND?  DRK NOV07 00580018
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK NOV07 00580118
+         CLC   ##SUBCOM(8),$ANA          COBANAL SUBCOMMAND?  DRK NOV07 00580219
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK NOV07 00580319
+         CLC   ##SUBCOM(8),$AMB          AMBLIST SUBCOMMAND?  DRK SEP09 00580420
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK SEP09 00580520
+         CLC   ##SUBCOM(8),$REP          REPLACE SUBCOMMAND?  DRK FEB12 00580821
+         BE    DISPLAYK                  YES, FINE, OKAY      DRK FEB12 00580921
+         OI    FLAGSAA,FADSDIR           NEED DATA ISOLATION   GP SEP05 00581018
+DISPLAYK EQU   *                                               GP SEP05 00590002
+         BAS   R14,READDIR               GET NEXT DIRECTORY ENTRY       00600002
+         B     DISPLAY6                  LAST MEMBER IN DIRECTORY       00610000
+         SPACE 1                                                        00620000
+         OI    FLAGSBB,FEXIST            MEMBER EXISTS FLAG             00630000
+         SPACE 1                                                        00631025
+* SUBLIST REVERSE                                                       00631125
+         CLC   ##SUBCOM(8),$SUL          SUBLIST SUBCOMMAND?  DRK MAY16 00631225
+         BNE   DISPLASX                  NO                   DRK MAY16 00631325
+         CLI   #SULREV,1                 SUBLIST REVERSE?     DRK MAY16 00631425
+         BNE   DISPLASX                  NO                   DRK MAY16 00631525
+         SPACE 1                                                        00631625
+         BAS   R2,MFILTER            CHECK MEMBER NAMES       DRK MAY16 00631725
+*        B     DISPLAY6                00 - SIMULATE DIRECTORY END    " 00631928
+         B     DISPLAY4    REVERSE     00 - SIMULATE DIRECTORY END    " 00632029
+*        B     DISPLAY2                04 - MEMBER FAILED FILTERING     00632129
+         B     DISPLAY4    REVERSE     04 - MEMBER FAILED FILTERING   " 00632229
+*        B     DISPLAY4                08 - MEMBER PASSED FILTERING     00632329
+         B     DISPLAY2    SKIP        08 - MEMBER PASSED FILTERING   " 00632429
+         SPACE 1                                                        00632528
+DISPLASX DS    0H                                                       00632628
+         SPACE 1                                                        00633025
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 00640000
+         B     DISPLAY6                00 - SIMULATE DIRECTORY END      00650000
+         B     DISPLAY2                04 - MEMBER FAILED FILTERING     00660000
+         B     DISPLAY4                08 - MEMBER PASSED FILTERING     00670000
+         SPACE 1                                                        00680000
+DISPLAYT TRT   MEMNAME(*-*),TRTMEM       <<EXECUTED>>                   00690000
+DISPLAY4 TM    FLAGSAA,FMEM#MEM          MEMBER NAME GROUP DESIRED?     00700000
+         BO    MEMSNEXT                  YES, FOUND A MEMBER            00710000
+         LA    R1,7                      MEMBER NAME MACHINE LENGTH     00720000
+         LA    R14,MEMNAME+8             END OF MEMBER NAME +1          00730000
+DISPLAYB BCTR  R14,0                     SCAN                           00740000
+         CLI   0(R14),X'40'                  BACKWARDS                  00750000
+         BNE   *+8                                    FOR A             00760000
+         BCT   R1,DISPLAYB                                 NON-BLANK    00770000
+         CLI   MEMNAME,C'0'              FIRST DIGIT NUMERIC?           00780000
+         BNL   *+12                      YES, FORCE A HEX DISPLAY       00790000
+         EX    R1,DISPLAYT               ANY INVALID OR UNPRINTABLE?    00800000
+         BZ    DISPLAY8                  NO, BRANCH                     00810000
+         TM    FLAGSBB,FLINESET          LINE IN PROGRESS?              00820000
+         BZ    DISPLAY9                  NO, SKIP THE PUTLINE           00830000
+         M$ERRST MSGTEXT1                                               00840000
+         NI    FLAGSBB,FF-FLINESET                                      00850000
+         SPACE 2                                                        00860000
+DISPLAY9 MVC   MSGTEXT1(136),MSGBL132    CLEAR THE DATA LINE            00870000
+         UNPK  MSGTEXT1+4(9),MEMNAME(5)  FIRST HALF OF NAME             00880000
+         UNPK  MSGTEXT1+12(9),MEMNAME+4(5) SECOND HALF OF NAME          00890000
+         TR    MSGTEXT1+4(16),TRTABLE    FINISH TRANSLATION             00900000
+         MVC   MSGTEXT1+20(8),BLANKS     CLEAN UP GARBAGE               00910000
+         TM    MEMFLAG,X'80'             ALIAS?                         00920000
+         BZ    *+10                      NO, SKIP -A                    00930000
+         MVC   MSGTEXT1+20(2),=C'-A'     YES, SET -A                    00940000
+         MVI   MSGTEXT1+24,C'*'                                         00950000
+         MVC   MSGTEXT1+25(8),MEMNAME    MEMBER NAME FROM DIRECTORY     00960000
+         TR    MSGTEXT1+25(8),TRLINE     TRANSLATE TO PRINTABLE         00970000
+         MVI   MSGTEXT1+33,C'*'                                         00980000
+         OI    FLAGSBB,FLINESET+FRANPAT  OUTPUT AND MEMBERS EXIST NOW   00990000
+         B     DISPLAY5                                                 01000000
+         SPACE 1                                                        01010000
+DISPLAY8 MVC   0(8,R5),MEMNAME                                          01020000
+         TM    MEMFLAG,X'80'             ALIAS?                         01030000
+         BZ    DISPLAY7                  NO, BRANCH                     01040000
+         MVC   8(2,R5),=C'-A'                                           01050000
+DISPLAY7 OI    FLAGSBB,FLINESET+FRANPAT                                 01060000
+         LA    R5,10+2(R5)                                              01070000
+         CR    R5,R4                     LINE FULL?                     01080000
+         BL    DISPLAY2                  NO, CONTINUE                   01090000
+         SPACE 1                                                        01100000
+DISPLAY5 M$ERRST MSGTEXT1                                               01110000
+         NI    FLAGSBB,FF-FLINESET                                      01120000
+         B     DISPLAY1                  RETURN                         01130000
+         SPACE 2                                                        01140000
+DISPLAY6 STD   R2,DOUBLE                 CHECK PDSE STATUS     GP SEP05 01150003
+         ICM   R0,15,DOUBLE              ANY DANGLING STORAGE? GP SEP05 01160003
+         BZ    DISPLAYY                  NO                    GP SEP05 01170003
+         FREEMAIN R,SP=19                YES, FREE IT          GP SEP05 01180003
+         XC    DOUBLE,DOUBLE                                   GP SEP05 01190003
+         LD    R2,DOUBLE                 RESET CACHE STATUS    GP SEP05 01200003
+DISPLAYY TM    FLAGSBB,FLINESET          OUTPUT LINE IN PROGRESS?       01210003
+         BNO   DISPLAYX                  NO, BRANCH                     01220000
+         LA    R1,MSGTEXT1                                              01230000
+         TM    FLAGSAA,FMEM#MEM          MEMBER GROUP IN PROGRESS?      01240000
+         BNO   MSGNEW                    NO, BRANCH                     01250000
+         SPACE 2                                                        01260000
+DISPLAYX TM    FLAGSBB,FRANPAT           MEMBER IN RANGE?               01270000
+         BO    DISPLAYZ                  YES, BRANCH                    01280000
+         NI    FLAGSAA,FF-FMEM#MEM       TERMINATE ANY MEMBER GROUP     01290000
+         TM    FLAGSBB,FEXIST            NO, BUT ANY IN DIRECTORY?      01300000
+         LA    R1,L400                                                  01310000
+         BZ    MSGNEW                    NO, ** EMPTY DIRECTORY **      01320000
+         LA    R1,L711                   ASSUME NONE IN RANGE           01330000
+         TM    FLAGSAA,FMEMRANG          CORRECT?                       01340000
+         BO    MSGNEW                    YES, BRANCH                    01350000
+         LA    R1,L713                   ASSUME NO MATCH PARTIAL NAME   01360000
+         TM    FLAGSAA,FMEMASTR          CORRECT?                       01370000
+         BO    MSGNEW                    YES, BRANCH                    01380000
+         LA    R1,L712                   NO, NONE MATCHING PATTERN      01390000
+         B     MSGNEW                                                   01400000
+         SPACE 1                                                        01410000
+DISPLAYZ TM    FLAGSAA,FMEM#MEM          MEMBER GROUP?                  01420000
+         BNO   NEWCMD                    NO, BRANCH                     01430000
+         NI    FLAGSAA,FF-FMEM#MEM       TERMINATE THE MEMBER GROUP     01440000
+         B     NEWCMD                                                   01450000

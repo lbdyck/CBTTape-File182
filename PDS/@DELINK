@@ -1,0 +1,470 @@
+         TITLE 'P D S  --  DELINK INTERFACE                  12/30/05'  00000299
+*********************************************************************** 00000316
+***      DELINK SUBCOMMAND   ADDED BY JOHN KALINICH -- DEC., 2005   *** 00000499
+*********************************************************************** 00000516
+*                                                                       00050000
+DELINK   CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         LA    R1,L530          ASSUME A NON-PARTITIONED DATA SET       00080192
+         TM    DSORG,DS1DSGPO   CORRECT?                                00080292
+         BNO   MSGNEW           YES, BRANCH                             00080399
+         LA    R1,L701          ASSUME NOT A LOAD LIBRARY               00080492
+         TM    FLAGSCC,RECFMU   CORRECT?                                00081092
+         BNO   MSGNEW           YES, BRANCH                             00090099
+         LA    R1,L706$1        ASSUME A PDS-E DATA SET       DRK FEB21 00090499
+         MVC   INSERT#1(8),##SUBCOM                           DRK FEB21 00090699
+         TM    DS1SMSFG,DS1PDSE CORRECT?                      DRK FEB21 00091099
+         BO    MSGNEW           YES, BRANCH                   DRK FEB21 00100099
+         SPACE 1                                                        00120000
+*  FREE SYSIN, SYSLIB, SYSPRINT, SYSLIN, AND LINKCNTL DATASETS          00120199
+         LA    R1,=CL8'SYSIN'           SYSIN DDNAME                    00120266
+         BAS   R2,DLI8580               FREE THIS DATA SET              00120399
+         LA    R1,=CL8'SYSLIB'          SYSLIB DDNAME                   00120482
+         BAS   R2,DLI8580               FREE THIS DATA SET              00120599
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120682
+         BAS   R2,DLI8580               FREE THIS DATA SET              00120799
+         LA    R1,=CL8'SYSLIN'          SYSLIN DDNAME                   00120899
+         BAS   R2,DLI8580               FREE THIS DATA SET              00120999
+         LA    R1,=CL8'LINKCNTL'        LINKCNTL DDNAME                 00121099
+         BAS   R2,DLI8580               FREE THIS DATA SET              00121199
+*  ALLOCATE DELINK //SYSLIB DATA SET                                    00121299
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00121399
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00121499
+         USING S99RBP,R1                                                00121599
+         SPACE 1                                                        00121699
+         LA    R4,M99RB                                                 00121799
+         USING S99RB,R4                                                 00121899
+         ST    R4,S99RBPTR                                              00121999
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00122099
+         SPACE 1                                                        00122199
+         LA    R5,M99TUPL                                               00122299
+         USING S99TUPL,R5                                               00122399
+         MVI   S99RBLN,20               LENGTH 20                       00122499
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00122599
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00122699
+         LA    R3,WORKTBL                        START OF TEXT          00122799
+         SPACE 1                                                        00122899
+         MVC   0(L'DLIDDNLI+6,R3),DLIDDNLI       SPECIFY DDNAME TEXT    00122999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123099
+         LA    R3,L'DLIDDNLI+6(,R3)              START OF NEXT TEXT     00123199
+         SPACE 1                                                        00123299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123399
+         MVC   0(L'DLIDSNAM,R3),DLIDSNAM         SPECIFY DSNAME TEXT    00123499
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00123599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123699
+         LA    R3,L'DLIDSNAM+44(,R3)             START OF NEXT TEXT     00123799
+         SPACE 1                                                        00123899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123999
+         MVC   0(L'DLIALLOC,R3),DLIALLOC         SPECIFY DISP TEXT      00124099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124199
+         LA    R3,L'DLIALLOC(,R3)                START OF NEXT TEXT     00124299
+         SPACE 1                                                        00124399
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124499
+         MVC   0(L'DLINORM,R3),DLINORM           SPECIFY NORMAL TEXT    00124599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124699
+         LA    R3,L'DLINORM(,R3)                 START OF NEXT TEXT     00124799
+         SPACE 1                                                        00124899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124999
+         MVC   0(L'DLIANORM,R3),DLIANORM         SPECIFY ABNORMAL TEXT  00125099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00125199
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00125299
+         SPACE 1                                                        00125399
+         DYNALLOC                                                       00125499
+         SPACE 2                                                        00125599
+         DROP  R1,R4,R5                                                 00125699
+         LTR   R15,R15                       SUCCESSFUL?                00125799
+         BNZ   DLIERROR                      NO, BRANCH                 00125899
+         SPACE 2                                                        00126052
+*  ALLOCATE DELINK //SYSIN FILE                                         00130099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00140023
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00150023
+         USING S99RBP,R1                                                00160023
+         SPACE 1                                                        00170023
+         LA    R4,M99RB                                                 00180023
+         USING S99RB,R4                                                 00190023
+         ST    R4,S99RBPTR                                              00200023
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00210023
+         SPACE 1                                                        00220023
+         LA    R5,M99TUPL                                               00230023
+         USING S99TUPL,R5                                               00240023
+         MVI   S99RBLN,20                 LENGTH 20                     00250023
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00260023
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00270023
+         SPACE 1                                                        00280023
+         MVC   #CMXSYS3(11),DLIDDNIN      SYSIN DDNAME                  00290099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00300023
+         USING S99TUNIT,R3                                              00310023
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00320023
+         MVC   S99TUPTR+4(40),DLISYSIN    ADD OTHER LIST ELEMENTS       00330099
+         SPACE 1                                                        00340023
+         DYNALLOC                                                       00350023
+         MVC   #CMXDDIN(8),=CL8'SYSIN'    MOVE IN THE DDNAME            00360066
+         SPACE 2                                                        00370023
+         DROP  R1,R3,R4,R5                                              00380023
+         LTR   R15,R15                    SUCCESSFUL?                   00390023
+         BNZ   DLIERROR                   NO, BRANCH                    00400099
+         SPACE 3                                                        00410023
+*  ALLOCATE DELINK //SYSPRINT DATA SET                                  02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),DLIDDNPR      SYSPRINT DDNAME               02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),DLISYSPR    ADD OTHER LIST ELEMENTS       02360099
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         MVC   #CMXDDPR(8),=CL8'SYSPRINT' MOVE IN THE DDNAME            02540083
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   DLIERROR                   NO, BRANCH                    02570099
+         SPACE 3                                                        02570194
+*  ALLOCATE DELINK //SYSLIN DATA SET                                    02570299
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02570399
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02570499
+         USING S99RBP,R1                                                02570599
+         SPACE 1                                                        02570699
+         LA    R4,M99RB                                                 02570799
+         USING S99RB,R4                                                 02570899
+         ST    R4,S99RBPTR                                              02570999
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02571099
+         SPACE 1                                                        02571199
+         LA    R5,M99TUPL                                               02571299
+         USING S99TUPL,R5                                               02571399
+         MVI   S99RBLN,20                 LENGTH 20                     02571499
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02571599
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02571699
+         SPACE 1                                                        02571799
+         MVC   #CMXSYS3(12),DLIDDNLN      SYSLIN DDNAME                 02571899
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02571999
+         USING S99TUNIT,R3                                              02572099
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02572199
+         MVC   S99TUPTR+4(40),DLISYSLN    ADD OTHER LIST ELEMENTS       02572299
+         SPACE 1                                                        02572899
+         DYNALLOC                                                       02572999
+         SPACE 2                                                        02573099
+         DROP  R1,R3,R4,R5                                              02573299
+         LTR   R15,R15                    SUCCESSFUL?                   02573399
+         BNZ   DLIERROR                   NO, BRANCH                    02573499
+         SPACE 3                                                        02573599
+*  ALLOCATE DELINK //LINKCNTL DATA SET                                  02573699
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02573799
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02573899
+         USING S99RBP,R1                                                02574094
+         SPACE 1                                                        02575094
+         LA    R4,M99RB                                                 02576094
+         USING S99RB,R4                                                 02577094
+         ST    R4,S99RBPTR                                              02578094
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02579094
+         SPACE 1                                                        02579194
+         LA    R5,M99TUPL                                               02579294
+         USING S99TUPL,R5                                               02579394
+         MVI   S99RBLN,20                 LENGTH 20                     02579494
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02579594
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02579694
+         SPACE 1                                                        02579794
+         MVC   #CMXSYS3(14),DLIDDNCN      LINKCNTL DDNAME               02579899
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02579994
+         USING S99TUNIT,R3                                              02580094
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02581094
+         MVC   S99TUPTR+4(20),DLISYSCN    ADD OTHER LIST ELEMENTS       02582099
+         SPACE 1                                                        02588094
+         DYNALLOC                                                       02589094
+         SPACE 2                                                        02589194
+         DROP  R1,R3,R4,R5                                              02589394
+         LTR   R15,R15                    SUCCESSFUL?                   02589494
+         BNZ   DLIERROR                   NO, BRANCH                    02589599
+         B     DLI6000                                                  02590099
+         SPACE 2                                                        08580000
+DLIERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    DLI8550                    NO, BRANCH                    08700099
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     DLI8550                                                  08780099
+         SPACE 3                                                        08790000
+DLI6000  DS    0H                                                       08800099
+*  OPEN SYSIN DATA SET                                                  08810066
+         MVC   BAMDCB(DLIDL),DLIDCB           GET MODEL DCB             08820099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDIN                       08830024
+         MVI   OPENLIST,X'80'                                           08840000
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               08850000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08860000
+         BO    DLI6010                         YES, BRANCH              08870099
+         LA    R1,DLI865E                      NO STATUS AVAILABLE      08880299
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08881039
+         B     DLI8550                         EXIT                     08890099
+         SPACE 3                                                        08900000
+*  OUTPUT SYSIN RECORDS                                                 08910066
+DLI6010  DS    0H                                                       08930099
+         MVC   MSGTEXT1(136),MSGBL132      CLEAR THE MESSAGE AREA       09240049
+         L     R2,ADDRCBUF                 COMMAND STRING               09240151
+         LH    R1,0(R2)                    TOTAL LENGTH                 09240263
+         LH    R3,2(R2)                    LENGTH OF COMMAND VERB       09240399
+         SR    R1,R3                       MINUS COMMAND VERB           09240499
+         S     R1,=F'4'                    MINUS LENGTH HALFWORDS       09240564
+         BCTR  R1,0                        MACHINE LENGTH               09240668
+         LA    R2,4(R2)                    SKIP LENGTH HALFWORDS        09240751
+         AR    R2,R3                       PT AT DELINK ARG             09240899
+         OC    0(10,R2),BLANK128           FOLD TO UPPER CASE           09240999
+         LA    R15,MSGTEXT1+4                                           09241099
+         MVC   0(7,R15),DLIMBR             MEMBER STATEMENT             09241199
+         LA    R15,7(R15)                  POINT AFTER                  09241299
+         LA    R14,8                       LOOP LIMIT                   09241399
+DLI6015  DS    0H                                                       09241499
+         CLI   0(R2),C' '                  END OF MEMBER NAME?          09241599
+         BE    DLI6020                     YES                          09241699
+         MVC   0(1,R15),0(R2)              MOVE CHARACTER               09241799
+         LA    R2,1(R2)                    BUMP                         09241899
+         LA    R15,1(R15)                   UP                          09241999
+         BCT   R14,DLI6015                                              09242099
+DLI6020  DS    0H                                                       09242199
+         MVC   0(2,R15),=C').'             TRAILER                      09242299
+         PUT   BAMDCB,MSGTEXT1+4           OUTPUT DELINK STATEMENT      09750099
+         MVI   OPENLIST,X'80'                                           10560018
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   10570099
+         LA    R1,BAMDCB                                                10580000
+         FREEPOOL (1)                                                   10590000
+         SPACE 2                                                        10590169
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590299
+         STAX  DLINULL,USADDR=(R7),REPLACE=NO,IBUF=0,                  X10590699
+               OBUF=(DLI484W,DLI484WL),MF=(E,STAXPARM)                  10590799
+         LA    R1,DLIPARM                 PARM=                         10830099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910090
+         LA    R15,DLIPGM               2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930090
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940090
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950090
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960090
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970090
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,DLI7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),DLIEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   DLINLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+DLINLNK  BAS   R2,ATTACH                  DELINK                        11440099
+         SPACE 3                                                        11490000
+DLI7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        12300099
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 12300199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 12300299
+         BNE   DLI8000                    NO                  DRK JAN07 12300399
+         MVC   INSERT#1(8),DLIPGM         YES, ERROR          DRK JAN07 12300499
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 12300599
+         B     DLI8550                                        DRK JAN07 12300699
+         SPACE 1                                                        12301099
+DLI8000  MVC   BAMDCB(DLIDL),DLIDCB         GET MODEL DCB               12310099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSLIN'                   12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSLIN                 12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    DLI8010                      YES, BRANCH                 12360099
+         LA    R1,DLI865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     DLI8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS SYSLIN RECORDS                                               12400099
+DLI8010  GET   BAMDCB                     GET OBJECT RECORD             12420099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(80),0(R1)       ADD THE DELINK MESSAGE        12600099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     DLI8010                                                  12650099
+         SPACE 3                                                        12660000
+DLI8500  DS    0H                                                       12830099
+         CLC   ##SUBCAL(8),DLIEFTSR       INVOKE IKJEFTSR?              12832099
+         BNE   DLI8540                    NO, BRANCH                    12833099
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JUL11 12835199
+         BL    DLI8540                    YES, VALID DELINK             12836099
+         MVI   MTLEN+4,11                 NO, ISSUE MESSAGE             12837099
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA          DRK JAN06 12837199
+         SR    R15,R15                                                  12838099
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 12839199
+         CVD   R15,DOUBLE                                               12839299
+         MVC   INSERT#1(8),##SUBCOM                                     12839399
+         MVC   INSERT#2(4),=X'40202120'                                 12839499
+         ED    INSERT#2(4),DOUBLE+6                                     12839599
+         MVI   INSERT#2,C'='              RETURN CODE                   12839699
+         SPACE 1                                                        12839799
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12839899
+         BNE   DLI8530                    NO, SKIP MESSAGE              12839999
+         SPACE 1                                                        12840099
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 12840199
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 12840299
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 12840399
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 12840499
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 12840599
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 12840699
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 12840799
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 12840899
+         SPACE 1                                              DRK NOV07 12840999
+         SRL   R1,20                    USER ABEND            DRK NOV07 12841099
+         CVD   R1,DOUBLE                                      DRK NOV07 12841199
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 12841299
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 12841399
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 12841499
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 12841599
+         SPACE 1                                                        12841699
+DLI8530  DS    0H                                                       12841799
+         M$MSG L171$2                                                   12841899
+DLI8540  DS    0H                                                       12841999
+         MVI   OPENLIST,X'80'                                           12842000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE       12850083
+         LA    R1,BAMDCB                                                12860000
+         FREEPOOL (1)                                                   12870000
+         SPACE 2                                                        12880000
+DLI8550  M$ERRST MSGBLANK                                               12890099
+         LA    R1,#CMXDDPR                SYSPRINT DDNAME               12900083
+         BAS   R2,DLI8580                 FREE THIS DATA SET            12910099
+         LA    R1,#CMXDDIN                SYSIN DDNAME                  12911099
+         BAS   R2,DLI8580                 FREE THIS DATA SET            12912099
+         LA    R1,=CL8'LINKCNTL'          LINKCNTL DDNAME               12913099
+         BAS   R2,DLI8580                 FREE THIS DATA SET            12914099
+         LA    R1,=CL8'SYSLIB'            SYSLIB DDNAME                 12915099
+         BAS   R2,DLI8580                 FREE THIS DATA SET            12916099
+         LA    R1,=CL8'SYSLIN'            SYSLIN DDNAME                 12917099
+         BAS   R2,DLI8580                 FREE THIS DATA SET            12918099
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+DLI8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),DLIFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,DLIUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+DLINULL  BR    R14                                                      13252099
+         SPACE 2                                                        13260000
+*  DELINK CONSTANTS                                                     13460099
+         PRINT NOGEN                                                    13470000
+DLIDCB   DCB   DSORG=PS,DDNAME=DLI,MACRF=(GL,PM),EODAD=DLI8500          13480099
+DLIDL    EQU   *-DLIDCB                                                 13490099
+         PRINT NOGEN                                                    13550138
+DLI484W  DC    C'PDS484W DELINK SHOULD NOT BE INTERRUPTED'              13550399
+DLI484WL EQU   *-DLI484W                                                13550499
+DLI865E  M$TX  'PDS865E THE DELINK OUTPUT CAN NOT BE OPENED'            13550599
+         PRINT GEN                                                      13551038
+DLIEFTSR DC    CL8'IKJEFTSR'                                            13710099
+DLIPGM   DC    CL8'DELINKI'                      DELINKER, CBT 90       13720099
+DLIPARM  DC    AL2(DLIPARML-2)                   PARM LENGTH            13721199
+         DC    C'ALL31(OFF),STACK(,,BELOW)/'     LE PARM      DRK JAN06 13721299
+DLIPARML EQU   *-DLIPARM                                                13721499
+DLIDDNLI DC    X'000100010006',C'SYSLIB'         SYSLIB   DDNAME        13721599
+DLIDDNIN DC    X'000100010005',C'SYSIN'          SYSIN    DDNAME        13722099
+DLIDDNLN DC    X'000100010006',C'SYSLIN'         SYSLIN   DDNAME        13722199
+DLIDDNCN DC    X'000100010008',C'LINKCNTL'       LINKCNTL DDNAME        13722399
+DLIDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722499
+DLIDSNAM DC    X'00020001002C'                   DSNAME                 13722599
+DLIALLOC DC    X'00040001000108'                 DISP=SHR               13722699
+DLINORM  DC    X'00050001000108'                 DISP=(,KEEP)           13722799
+DLIANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13722899
+DLIDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13723099
+DLIFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+DLIDUMMY DC    X'00240000'                       DUMMY DATA SET         13740099
+DLIBLKSI DC    X'0030000100020050'               DCB=BLKSIZE=80         13750099
+DLINEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+DLIDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+DLICDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+DLIPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+DLIUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+         SPACE 2                                                        13840000
+DLIPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+DLIPRTSE DC    X'000B00010003',AL3(100)          SPACE=(,(,NNN))        13860099
+DLIPRTIN DC    X'000900010003',AL3(27930)        SPACE=(27930)          13870099
+DLISINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           13880099
+DLISLNSP DC    X'000900010003',AL3(27920)        SPACE=(27920)          13890099
+         SPACE 1                                                        13920000
+DLIPRTRE DC    X'004900010001',XL1'50'           DCB=RECFM=VB           13951099
+DLIPRTLR DC    X'004200010002',AL2(137)          DCB=LRECL=137          13952099
+DLIPRTBL DC    X'003000010002',AL2(6854)         DCB=BLKSIZE=6854       13953099
+         SPACE 2                                                        13960000
+DLISINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13970099
+DLISINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980099
+DLISINBL DC    X'003000010002',AL2(3120)         DCB=BLKSIZE=3120       13990099
+DLISLNBL DC    X'003000010002',AL2(27920)        DCB=BLKSIZE=27920      13991099
+         SPACE 2                                                        14000000
+DLISYSIN DC    A(DLIPRTFI,DLIPRTSE,DLISINSP)                            14020099
+         DC    A(DLISINRE,DLISINLR,DLISINBL)                            14030099
+         DC    A(DLINEW,DLIDEL,DLICDEL),X'80',AL3(DLIPERM)              14040099
+DLISYSPR DC    A(DLIPRTFI,DLIPRTSE,DLIPRTIN)                            14080099
+         DC    A(DLIPRTRE,DLIPRTLR,DLIPRTBL)                            14090099
+         DC    A(DLINEW,DLIDEL,DLICDEL),X'80',AL3(DLIPERM)              14100099
+DLISYSLN DC    A(DLIPRTFI,DLIPRTSE,DLISLNSP)                            14110099
+         DC    A(DLISINRE,DLISINLR,DLISLNBL)                            14111099
+         DC    A(DLINEW,DLIDEL,DLICDEL),X'80',AL3(DLIPERM)              14130099
+DLISYSCN DC    A(DLIDUMMY,DLIBLKSI,DLINEW,DLIDEL),X'80',AL3(DLICDEL)    14140099
+         SPACE 2                                                        14370000
+DLIMBR   DC    CL7'MEMBER('                                             14380099
+         SPACE 2                                                        14390099

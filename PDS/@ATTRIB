@@ -1,0 +1,1825 @@
+         TITLE 'P D S  --  PDS ATTRIB                        09/28/88'  00010000
+*********************************************************************** 00020000
+***      ATTRIB SUBCOMMAND                                          *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050000
+         SPACE 1                                                        00060000
+ATTRIB   CSECT                                                          00070000
+         USING *,R8,R6                                                  00080000
+         LA    R6,2048                                        DRK FEB98 00090000
+         LA    R6,2048(R6,R8)      SECOND BASE                DRK FEB98 00100000
+         SPACE 1                                                        00110000
+         TM    FLAGSCC,RECFMU          RECFM=U?               DRK SEP05 00110100
+         BNO   ATTRCHG1                NO, CHECK FOR MODS     DRK JUN18 00110200
+*        BNO   ATTRCONT                NO, CONTINUE           DRK SEP05 00110300
+         TM    DS1SMSFG,DS1PDSE        PDSE DATASET?          DRK SEP05 00110400
+         BO    ATTRCHG                 YES, CHECK FOR MODS    DRK APR16 00110500
+         TM    FLAGSHH,FMEMALLM        ALL LOAD MEMBERS?      DRK APR16 00110600
+         BO    ATTRCHG                 YES, CHECK FOR MODS    DRK APR16 00110700
+         B     ATTRCONT                NO, CONTINUE           DRK APR16 00110800
+         SPACE 1                                              DRK SEP05 00111000
+ATTRCHG  DS    0H                                                       00111100
+         CLC   ##SUBCOM+#LSUB(8),$ATTL IF OR THEN FORM?       DRK AUG06 00111200
+         BNE   ATTRCONT                YES, CONTINUE          DRK AUG06 00111300
+         CLI   #AMODE,0                ANY AMODE CHANGE?      DRK SEP05 00111400
+         BNE   ATTRCHG2                YES                    DRK SEP05 00111500
+         CLI   #AUTHOPT,0              CHANGE APF PROCESSING? DRK SEP05 00111600
+         BNE   ATTRCHG2                YES                    DRK SEP05 00111700
+         CLC   #MODTXT(8),BLANKS       ANY ENTRY(EXTNAME)?    DRK SEP05 00111800
+         BNE   ATTRCHG2                YES                    DRK SEP05 00111900
+         CLI   #PAGEOPT,0              CHANGE PAGE ALIGNMENT? DRK SEP05 00112000
+         BNE   ATTRCHG2                YES                    DRK SEP05 00112100
+         CLI   #RLDERR,0               RLDFIX OPERAND?        DRK SEP05 00112200
+         BNE   ATTRCHG2                YES                    DRK SEP05 00112300
+         CLI   #RMODE,0                ANY RMODE CHANGE?      DRK SEP05 00112400
+         BNE   ATTRCHG2                YES                    DRK SEP05 00112500
+         CLI   #SSIOPT,0               ANY SSI CHANGE?        DRK SEP05 00112600
+         BNE   ATTRCHG2                YES                    DRK SEP05 00112700
+         CLI   #UNALIAS,0              TURN OFF ALIAS BIT?    DRK SEP05 00112800
+         BNE   ATTRCHG2                YES                    DRK SEP05 00112900
+         CLI   #ATTRNO,X'FF'           DIRFLAGS?              DRK SEP05 00113000
+         BNE   ATTRCHG2                YES                    DRK SEP05 00113100
+         CLI   #ATTRNO+1,X'FF'         DIRFLAGS?              DRK SEP05 00113200
+         BNE   ATTRCHG2                YES                    DRK SEP05 00113300
+         CLI   #ATTRYES,0              DIRFLAGS?              DRK SEP05 00113400
+         BNE   ATTRCHG2                YES                    DRK SEP05 00113500
+         CLI   #ATTRYES+1,0            DIRFLAGS?              DRK SEP05 00113600
+         BNE   ATTRCHG2                YES                    DRK SEP05 00113700
+         B     ATTRCONT                                       DRK SEP05 00113800
+* CHECK SOURCE IF MODS AND ALL MEMBERS                        DRK JUN18 00113900
+ATTRCHG1 DS    0H                                                     " 00114000
+         SR    R1,R1                   CLEAR R1               DRK JUN18 00114100
+         ICM   R1,B'0001',#ATTROPT     SPF OPTIONS            DRK JUN18 00114200
+         ICM   R1,B'0010',#OPTOPT      OTHER OPTIONS          DRK JUN18 00114300
+         LTR   R1,R1                   ANY ATTRIBUTES CHANGED?        " 00114400
+         BZ    ATTRCONT                NO, CONTINUE           DRK JUN18 00114500
+         B     ATTRCHG3                YES, CHECK ALL MEMBERS DRK JUN18 00115000
+ATTRCHG2 DS    0H                                             DRK APR16 00115100
+         TM    DS1SMSFG,DS1PDSE        PDSE DATASET?          DRK APR16 00115200
+         BNO   ATTRCHG3                NO, THEN ALL MEMBERS   DRK APR16 00115300
+         MVI   MTLEN,15                LENGTH OF INSERT       DRK SEP05 00115400
+         MVC   INSERT#1(7),=C'ATTRIB ' COMMAND NAME           DRK SEP05 00115500
+         MVC   INSERT#1+7(8),=X'9392858481A3A399' LKEDATTR    DRK SEP05 00115600
+         M$MSG L996$1                  NOT SUPPORTED MSG      DRK SEP05 00115700
+         M$ERRST MSGBLANK              ONE BLANK LINE         DRK SEP05 00115800
+         B     NEWCMD                  NOBBLED                DRK SEP05 00115900
+ATTRCHG3 DS    0H                                             DRK APR16 00116000
+         TM    FLAGSHH,FMEMALLM        ALL MEMBERS?           DRK APR16 00116100
+         BNO   ATTRCONT                NO, CONTINUE           DRK APR16 00116200
+         TM    FLAGSZZ,ATT#MSG         PDS397A ISSUED?        DRK APR16 00116300
+         BO    ATTRCONT                YES                    DRK APR16 00116400
+         OI    FLAGSZZ,ATT#MSG         NO, TURN ON FLAG       DRK APR16 00116500
+         LA    R1,PDS397A              ATTRIB PROMPT MESSAGE  DRK APR16 00116600
+         BAS   R2,YESNO                PROMPT FOR YES OR NO   DRK APR16 00116700
+         B     MSGNEWXX                NO, TERMINATE GROUP    DRK JUN18 00116800
+*        NOP   NEWCMD                  NO, PA1 TO ABORT       DRK APR16 00116900
+ATTRCONT DS    0H                                             DRK SEP05 00117000
+         CLI   #EXTEND,2               EXTENDED SPF STATS?    DRK AUG09 00117100
+         BNE   ATTRCON2                NO                     DRK AUG09 00117200
+         CLI   #ADDSTAT,2              ADDSTATS?              DRK AUG09 00117300
+         BE    ATTRCON2                YES, BRANCH            DRK AUG09 00117400
+         SPACE 1                       NO, EXTEND REQUIRES    DRK AUG09 00117500
+         M$MSG L522                        ADDSTATS           DRK AUG09 00117600
+         M$ERRST MSGBLANK              ONE BLANK LINE         DRK AUG09 00117700
+         B     NEWCMD                  NOBBLED                DRK AUG09 00117800
+ATTRCON2 DS    0H                                                       00117900
+         SPACE 1                                                        00118000
+         LA    R1,L530             ASSUME A NON-PARTITIONED DATA SET    00120000
+         TM    DSORG,DS1DSGPO      CORRECT?                             00130000
+         BZ    MSGNEW              YES, BRANCH                          00140000
+         SPACE 1                                                        00150000
+         L     R1,AATTRSUM         ATTRIB SUMMARY                       00160000
+         ST    R1,ADDRSUMR         SET FOR A LATTER CALL                00170000
+         TM    FLAGSCC,RECFMU      LOAD MODULE LIBRARY?                 00180000
+         BO    ATTR020             YES, BRANCH                          00190000
+         CLI   DIRFLAG,X'0F'       ISPF STATISTICS AND NOT ALIAS?       00200000
+         BE    ATTRIB01            YES                        DRK AUG09 00210000
+         CLI   DIRFLAG,X'14'       ISPF XSTATISTICS AND NOT ALIAS?    " 00210100
+         BE    ATTRIB01            YES                                " 00210200
+         B     ATTRIB02            NO, BRANCH                         " 00210300
+ATTRIB01 DS    0H                                                     " 00211000
+         L     R1,ATTRCNT2         NUMBER OF ENTRIES                    00220000
+         LA    R1,1(,R1)           ONE MORE ENTRY                       00230000
+         ST    R1,ATTRCNT2         NUMBER OF ENTRIES                    00240000
+         SPACE 1                                                        00250000
+ATTRIB02 DS    0H                                                       00260000
+         CLI   #LONGOPT,X'01'          LONG COUNTS?           DRK SEP09 00260100
+         BNE   ATTRIB03                NO                     DRK SEP09 00260200
+         MVC   INSERT#1(72),SPFSTATL   8-DIGIT SIZE/INIT      DRK SEP09 00260400
+         B     ATTRIB04                                       DRK SEP09 00260500
+ATTRIB03 DS    0H                                                       00260600
+         MVC   INSERT#1(72),SPFSTAT1   5-DIGIT SIZE/INIT/MOD            00261000
+ATTRIB04 DS    0H                                                       00262000
+         MVI   MTLEN,72                                                 00270000
+         TM    ##ADRCM#+#LSUB,FATTRHDR HEADER WRITTEN YET?              00280000
+         BO    ATTR000                 YES, BRANCH                      00290000
+         CLI   #LONGOPT,X'01'          LONG COUNTS?           DRK SEP09 00291100
+         BNE   ATTRIB05                NO                     DRK SEP09 00292000
+         M$MSG L231$1                  HEADER LINE            DRK SEP09 00300000
+         B     ATTRIB06                                       DRK SEP09 00300100
+ATTRIB05 DS    0H                                                       00300200
+         M$MSG L230$1                                                   00301000
+ATTRIB06 DS    0H                                                       00302000
+         OI    ##ADRCM#+#LSUB,FATTRHDR MARK FOR NEXT CALL               00310000
+         SPACE 1                                                        00320000
+ATTR000  MVC   INSERT#1(72),BLANK128                                    00330000
+         CLI   #SSIOPT,0               ANY SSI CHANGE?                  00340000
+         BE    ATTR003                 NO, BRANCH                       00350000
+         CLI   #SSIOPT,1               SSI(HEXDATA)?                    00360000
+         BE    ATTR002                 YES, BRANCH                      00370000
+         TM    DIRFLAG,X'0F'           ISPF STATISTICS?                 00380000
+         BO    ATTR003                 YES, BRANCH                      00390000
+         TM    DIRFLAG,X'14'           ISPF XSTATISTICS?      DRK AUG09 00391000
+         BO    ATTR003                 YES, BRANCH            DRK AUG09 00392000
+         NI    DIRFLAG,FF-X'1F'        TURN OFF SSI DATA                00400000
+         XC    DIRSTART(4),DIRSTART    CLEAR THE SSI FIELD              00410000
+         B     ATTR003                                                  00420000
+         SPACE 1                                                        00430000
+ATTR002  MVC   DIRSTART(4),#SSITEXT    ADD THE CURRENT SSI DATA         00440000
+         NI    DIRFLAG,FF-X'1F'        TURNS OFF ANY HALFWORDS          00450000
+         OI    DIRFLAG,X'02'           ADDS IN TWO HALFWORDS            00460000
+         SPACE 1                                                        00470000
+ATTR003  CLI   #ADDSTAT,0              ANY STATS CHANGE?                00480000
+         BE    ATTR006                 NO, BRANCH                       00490000
+         CLI   #ADDSTAT,2              ADDSTATS?                        00500000
+         BE    ATTR004                 YES, BRANCH                      00510000
+*                                      NO, THEN NONE                    00511000
+         NI    DIRFLAG,FF-X'1F'        TURN OFF SSI DATA OR ISPF STATS  00520000
+         XC    DIRSTART(4),DIRSTART    CLEAR THE SSI FIELD              00530000
+** ATTRIB XX:YY NONE FOR SOURCE MODULE -- REREAD THE LAST DATA BLOCK    00540000
+** TO ENSURE THAT WE DON'T MISS ANY DIRECTORY ENTRIES WHEN THESE SHIFT  00550000
+         MVC   IODIR1+4+00(8),CURDIR   RESET READ ADDRESS               00560000
+         MVI   IODIR1+4+08,X'08'       RESET KEY LENGTH                 00570000
+         MVC   IODIR1+4+09(2),=H'256'  RESET DATA LENGTH                00580000
+         MVI   IODIR1+4+11,0           RESET SECTOR ADDRESS TO ZERO     00590000
+         MVI   IOECB,X'7F'             LAST READ WAS OK                 00600000
+         B     ATTR006                                                  00610000
+         SPACE 1                                                        00620000
+ATTR004  DS    0H                                                       00630000
+         XC    DIRSAVE(30),DIRSAVE     CLEAR DIR SAVE AREA    DRK SEP09 00630100
+         TM    DIRFLAG,X'0F'           ISPF STATISTICS?                 00631000
+         BO    ATTR0040                YES, CHECK FOR EXTEND  DRK SEP09 00640000
+         TM    DIRFLAG,X'14'           ISPF XSTATISTICS?      DRK AUG09 00641000
+         BO    ATTR006                 YES, DON'T ADD         DRK AUG09 00642000
+         B     ATTR0041                NO                               00642100
+ATTR0040 DS    0H                                                       00643000
+         CLI   #EXTEND,2               EXTENDED SPF STATS?    DRK SEP09 00644000
+         BNE   ATTR006                 NO, DON'T ADD          DRK SEP09 00645000
+         MVC   DIRSAVE(30),DIRSTART    YES, SAVE REG STATS    DRK SEP09 00645100
+ATTR0041 DS    0H                                                       00645200
+         XC    DIRSTART(30),DIRSTART   CLEAR THE DIRECTORY AREA         00650000
+         CLI   #EXTEND,2               EXTENDED SPF STATS?    DRK AUG09 00651000
+         BNE   ATTR0042                NO                     DRK AUG09 00652000
+         OI    DIRSPFFL,DIRSPFXS       YES, SET EXTENDED FLAG DRK AUG09 00652100
+         OI    DIRFLAG,X'14'           ADDS 20 HALFWORDS      DRK AUG09 00652200
+         B     ATTR0043                                       DRK AUG09 00652300
+ATTR0042 DS    0H                                                       00653000
+         OI    DIRFLAG,X'0F'           ADDS 15 HALFWORDS                00660000
+ATTR0043 DS    0H                                                       00661000
+         MVI   DIRSPFV,1               VERSION=1 IS THE DEFAULT         00670000
+         TIME  DEC                     GOT THE TIME?                    00680000
+         STCM  R1,B'1111',DIRSPFCR     CREATION DATE                    00690000
+         STCM  R1,B'1111',DIRSPFCD     CHANGED DATE                     00700000
+         STCM  R0,B'1100',DIRSPFCT     TIME LAST CHANGE (HHMM)          00710000
+         STCM  R0,B'0010',DIRSPFCS     TIME LAST CHANGE (SS)  DRK OCT09 00711000
+         SPACE 2                                                        00720000
+         SR    R2,R2                   LOGICAL RECORDS                  00730000
+         MVC   STARTTR(3),DIRTTR       FIRST TTR                        00740000
+         SPACE 2                                                        00750000
+ATTR0051 L     R15,=V(EXCP)                                             00760000
+         ST    R2,#SAVEREG             SAVE R2 BEFORE PAM     DRK AUG05 00770000
+         BASR  R14,R15                                                  00780000
+         L     R2,#SAVEREG             RESTORE R2 AFTER PAM   DRK AUG05 00790000
+         B     *+4(R15)                PROCESS RETURN CODE              00800000
+         B     ATTR0052                  00 - SUCCESSFUL READ           00810000
+         B     ATTR0058                  04 - END OF FILE               00820000
+         B     ATTR0058                  08 - END OF DATA SET           00830000
+         B     ATTR0058                  12 - I/O ERROR                 00840000
+         SPACE 2                                                        00850000
+ATTR0052 LR    R3,R0                   BUFFER START                     00860000
+         L     R5,LS                   BLOCK LENGTH                     00870000
+ATTR0053 AR    R5,R3                   END OF BUFFER                    00880000
+         BCTR  R5,0                    END OF BUFFER -1                 00890000
+         LH    R4,LRECL                                                 00900000
+         TM    FLAGSCC,RECFMF          RECFM=F?                         00910000
+         BO    ATTR0056                YES, BRANCH                      00920000
+         AH    R3,=H'4'                SKIP BLOCK LENGTH WORD           00930000
+         SPACE 1                                                        00940000
+ATTR0055 TM    FLAGSCC,RECFMV          RECFM=V?                         00950000
+         BNO   ATTR0056                NO, BRANCH                       00960000
+         SR    R4,R4                                                    00970000
+         ICM   R4,B'0011',0(R3)        RECORD LENGTH +4                 00980000
+         AH    R3,=H'4'                SKIP RECORD LENGTH WORD          00990000
+         SH    R4,=H'4'                RECORD LENGTH VALID?             01000000
+         BNP   ATTR0051                NO, BRANCH                       01010000
+         SPACE 1                                                        01020000
+ATTR0056 A     R2,=F'1'                NUMBER OF LOGICAL RECORDS        01030000
+ATTR0057 BXLE  R3,R4,ATTR0055          GET THE NEXT LOGICAL RECORD      01040000
+         B     ATTR0051                END OF BLOCK, BRANCH             01050000
+         SPACE 2                                                        01060000
+ATTR0058 MVC   DIRSPFID+7(3),BLANKS    BLANK TRAILING ID BYTES          01061000
+*        L     R1,ADDRPSCB             ADDRESS OF THE PSCB              01062000
+*        MVC   DIRSPFID(7),PSCBUSER-PSCB(R1)  LOGON USERID              01063000
+         LA    R1,@4K                       BASE FOR TSOUID   DRK JUL17 01063100
+         MVC   DIRSPFID(8),TSOUID-@4K(R1)   USERID            DRK JUL17 01064000
+         CLI   #EXTEND,2               EXTENDED STATISTICS?   DRK AUG09 01080100
+         BNE   ATTR005B                NO                     DRK AUG09 01080200
+         CLC   DIRSAVE(30),HEXZERO     REGULAR STATS SAVED?   DRK SEP09 01080400
+         BE    ATTR0059                NO                     DRK SEP09 01080500
+         MVC   DIRSTART(30),DIRSAVE    YES, RESTORE           DRK SEP09 01080600
+         OI    DIRSPFFL,DIRSPFXS       SET EXTENDED FLAG      DRK SEP09 01080700
+         NI    DIRFLAG,X'F0'           - 15 HALFWORDS         DRK SEP09 01080800
+         OI    DIRFLAG,X'14'           ADDS 20 HALFWORDS      DRK SEP09 01080900
+ATTR0059 DS    0H                                                       01081100
+         ST    R2,DIRSPXSI             EXTENDED SIZE          DRK AUG09 01081200
+         ST    R2,DIRSPXIN             EXTENDED INITIAL       DRK AUG09 01081300
+         XC    DIRSPXMD(4),DIRSPXMD    EXTENDED MODIFIED      DRK AUG09 01081400
+         CLC   DIRSAVE(30),HEXZERO     REGULAR STATS SAVED?   DRK SEP09 01081500
+         BE    ATTR005B                NO                     DRK SEP09 01081600
+         XC    DIRSPXIN(2),DIRSPXIN    YES, CLEAR HI ORDER 2  DRK SEP09 01081700
+         MVC   DIRSPXIN+2(2),DIRSPFIN  RESTORE INIT LINES     DRK SEP09 01081800
+         MVC   DIRSPXMD+2(2),DIRSPFMD  RESTORE MOD LINES      DRK SEP09 01081900
+         SR    R1,R1                   CLEAR R1               DRK JAN10 01082000
+         ICM   R1,B'0011',DIRSPFIN     INITIAL SIZE           DRK JAN10 01082100
+         C     R1,=F'65535'            INITIAL @ 64K LIMIT?   DRK JAN10 01082200
+         BNE   ATTR005A                NO                     DRK JAN10 01082400
+         ST    R2,DIRSPXIN             YES, USE EXTENDED INIT SIZE    " 01082600
+ATTR005A DS    0H                                                       01082800
+         L     R1,=F'65535'            SET TO X'FFFF'         DRK MAY17 01082900
+         STCM  R1,B'0011',DIRSPFSI     CURRENT SIZE = MAX     DRK MAY17 01083000
+         C     R2,=F'65536'            LESS THAN 64K LIMIT?   DRK MAY17 01083100
+         BNL   ATTR006                 NO                     DRK MAY17 01083200
+         STCM  R2,B'0011',DIRSPFSI     CURRENT SIZE (RESIZE)  DRK MAY17 01083300
+         B     ATTR006                 CONTINUE               DRK MAY17 01083400
+ATTR005B DS    0H                                                       01086000
+         C     R2,=F'65536'            LESS THAN 64K LIMIT?   DRK JAN98 01087000
+         BL    ATTR005C                YES                    DRK JAN98 01088000
+         L     R2,=F'65535'            NO, SET TO X'FFFF'     DRK JAN98 01090000
+ATTR005C DS    0H                                                       01091000
+         STCM  R2,B'0011',DIRSPFSI     CURRENT SIZE           DRK JAN98 01100000
+         STCM  R2,B'0011',DIRSPFIN     INITIAL SIZE           DRK JAN98 01110000
+         SPACE 1                                                        01150000
+ATTR006  MVC   INSERT#1+1(8),DIRNAME                                    01160000
+         CLI   #UNALIAS,1              TURN OFF ALIAS BIT?              01170000
+         BNE   *+8                     NO, BRANCH                       01180000
+         NI    DIRFLAG,FF-X'80'        YES, RESET ANY ALIAS BIT         01190000
+         TM    DIRFLAG,X'80'           ALIAS MEMBER?                    01200000
+         BNO   *+10                    NO, BRANCH                       01210000
+         MVC   INSERT#1+1+8(2),=C'-A'  YES, ADD A FLAG                  01220000
+         LA    R2,DIRUSER          LOAD START OF USER AREA (FOR SSI)    01230000
+         TM    DIRFLAG,X'0F'       SPF STATISTICS PRESENT?              01240000
+         BO    ATTR0060            YES                                  01250000
+         TM    DIRFLAG,X'14'       EXT SPF STATISTICS PRESENT?DRK AUG09 01251000
+         BO    ATTR0060            YES                        DRK AUG09 01252000
+         B     ATTR010             NO, BRANCH                 DRK AUG09 01252100
+ATTR0060 DS    0H                                                       01255000
+         TM    DIRSPFFL,DIRSPFXS     EXTENDED STATS?          DRK SEP17 01255100
+         BNO   *+4+4+4               NO                       DRK SEP17 01256000
+         TM    DIRSPFFL,255-DIRSPFXS-DIRSPFSC  MUST BE ZEROS  DRK OCT16 01257000
+         BNZ   ATTR012                         NO, SKIP       DRK OCT16 01258000
+         TM    DIRSPFCR,X'FE'      0C OF 0CYYDDDF ZEROS?      Y2K AUG97 01260000
+         BNZ   ATTR010             NO, BRANCH                 Y2K AUG97 01270000
+         TM    DIRSPFCD,X'FE'      0C OF OTHER 0CYYDDDF ZERO? Y2K AUG97 01280000
+         BNZ   ATTR010             NO, BRANCH                 Y2K AUG97 01290000
+         SPACE 1                                                        01300000
+         TM    #ATTROPT,X'80'        USERID CHANGE?                     01310000
+         BNO   *+10                  NO, BRANCH                         01320000
+         MVC   DIRSPFID(8),#USERTXT  NEW USERID               DRK JAN17 01331000
+         SPACE 1                                                        01340000
+         TM    #ATTROPT,X'40'        VERSION CHANGE?                    01350000
+         BNO   *+10                  NO, BRANCH                         01360000
+         MVC   DIRSPFV(1),#ATTRVER   NEW VERSION NUMBER                 01370000
+         SPACE 1                                                        01380000
+         TM    #ATTROPT,X'20'        MOD CHANGE?                        01390000
+         BNO   *+10                  NO, BRANCH                         01400000
+         MVC   DIRSPFR(1),#ATTRMOD   NEW MODIFICATION NUMBER            01410000
+         SPACE 1                                                        01420000
+         TM    #ATTROPT,X'10'        CREATED CHANGE?          DRK FEB01 01430000
+         BNO   ATTR0061              NO, BRANCH               DRK FEB01 01440000
+         MVI   DIRSPFCR,X'00'         ASSUME 19XX             DRK FEB01 01450000
+         MVC   DIRSPFCR+1(3),#IFCREIF NEW CREATION DATE       DRK FEB01 01460000
+         CLI   DIRSPFCR+1,X'&WIN19XX' BELOW 19XX WINDOW?      DRK FEB01 01470000
+         BNL   *+4+4                  NO, THEN 19XX           DRK FEB01 01480000
+         MVI   DIRSPFCR,X'01'         YES, THEN 20XX          DRK FEB01 01490000
+         SPACE 1                                              DRK FEB01 01500000
+ATTR0061 TM    #ATTROPT,X'08'        MODIFIED CHANGE?         DRK FEB01 01510000
+         BNO   ATTR0062              NO, BRANCH               DRK FEB01 01520000
+         MVI   DIRSPFCD,X'00'         ASSUME 19XX             DRK FEB01 01530000
+         MVC   DIRSPFCD+1(3),#IFMODIF NEW MODIFIED DATE       DRK FEB01 01540000
+         CLI   DIRSPFCD+1,X'&WIN19XX' BELOW 19XX WINDOW?      DRK FEB01 01550000
+         BNL   *+4+4                  NO, THEN 19XX           DRK FEB01 01560000
+         MVI   DIRSPFCD,X'01'         YES, THEN 20XX          DRK FEB01 01570000
+         SPACE 1                                              DRK FEB01 01580000
+ATTR0062 TM    #ATTROPT,X'04'        TIME CHANGE?             DRK FEB01 01590000
+         BNO   *+4+6+6               NO, BRANCH               DRK FEB01 01600000
+         MVC   DIRSPFCT(2),#ATTRTIM   NEW MODIFIED TIME       DRK FEB01 01610000
+         XC    DIRSPFZ+1(1),DIRSPFZ+1 ZERO SECONDS FIELD      DRK FEB01 01620000
+         SPACE 1                                              DRK FEB01 01630000
+ATTR0063 TM    #ATTROPT,X'02'        TIME SECONDS CHANGE?     DRK FEB01 01640000
+         BNO   ATTR0064              NO, BRANCH               DRK FEB01 01650000
+         XC    DIRSPFZ+1(1),DIRSPFZ+1 ZERO SECONDS FIELD      DRK FEB01 01660000
+         CLI   #ATTRSEC,X'60'         SS < 60?                DRK FEB01 01670000
+         BNL   ATTR0064               NO, IGNORE              DRK FEB01 01680000
+         MVC   DIRSPFZ+1(1),#ATTRSEC  NEW MODIFIED TIME SECS  DRK FEB01 01690000
+         SPACE 1                                              DRK FEB01 01700000
+ATTR0064 DS    0H                                             DRK FEB01 01710000
+         SPACE 1                                                        01711001
+* NIX EXTENDED STATS IF NOEXTEND                              DRK MAY22 01712001
+         CLI   #EXTEND,1             NIX EXTENDED SPF STATS?  DRK MAY22 01713001
+         BNE   ATTR064A              NO                       DRK MAY22 01714001
+         TM    DIRFLAG,X'14'         XSTATS?                  DRK MAY22 01717001
+         BNO   ATTR064A              NO                       DRK MAY22 01718001
+         NI    DIRFLAG,FF-X'1F'      YES, TURN OFF HALFWORDS  DRK MAY22 01719001
+         OI    DIRFLAG,X'0F'         15 HALFWORDS (REGULAR)   DRK MAY22 01719101
+         NI    DIRSPFFL,FF-X'20'     TURN OFF XSTATS FLAG     DRK MAY22 01719201
+         MVC   DIRSTART+28(2),BLANKS MAKE BLANKS              DRK MAY22 01719304
+         SPACE 1                                                        01719401
+ATTR064A DS    0H                                             DRK FEB01 01719501
+         LA    R2,INSERT#1-7                                            01720000
+         SR    R1,R1                                                    01730000
+         IC    R1,DIRSPFR          REVISION NUMBER FIRST                01740000
+         CVD   R1,DOUBLE                                                01750000
+         MVC   21(4,R2),=X'40212020'                                    01760000
+         ED    21(4,R2),DOUBLE+6                                        01770000
+         MVI   22(R2),C'.'                                              01780000
+         IC    R1,DIRSPFV          VERSION NUMBER                       01790000
+         CVD   R1,DOUBLE                                                01800000
+         MVC   18(4,R2),=X'40212020'                                    01810000
+         ED    18(4,R2),DOUBLE+6                                        01820000
+         LA    R1,DIRSPFCR+1           POINT TO YYDDDF                  01830000
+         LA    R15,FULLWORD+1                                           01840000
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY FORMAT         01850000
+         MVC   FULLWORD(1),FULLWORD+3  CONVERT TO YYMMDD                01860000
+         MVC   26(L'DATEMASK,R2),DATEMASK                               01870000
+         ED    26(L'DATEMASK,R2),FULLWORD                               01880000
+         OI    27(R2),X'F0'            UNSUPPRESS ZERO        Y2K AUG97 01890000
+         LA    R1,DIRSPFCD+1           POINT TO YYDDDF                  01900000
+         LA    R15,FULLWORD+1                                           01910000
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY FORMAT         01920000
+         MVC   FULLWORD(1),FULLWORD+3  CONVERT TO YYMMDD                01930000
+         MVC   36(L'DATEMASK,R2),DATEMASK                               01940000
+         ED    36(L'DATEMASK,R2),FULLWORD                               01950000
+         OI    37(R2),X'F0'            UNSUPPRESS ZERO        Y2K AUG97 01960000
+         MVC   45(6,R2),=X'4021207A2020'                                01970000
+         ED    45(6,R2),DIRSPFCT       TIME OF LAST CHANGE              01980000
+         SPACE 1                                                        01981000
+         CLI   #LONGOPT,X'01'          LONG COUNTS?           DRK SEP09 01981100
+         BNE   ATTR007                 NO                     DRK SEP09 01981200
+         TM    DIRSPFFL,DIRSPFXS       EXTENDED STATS?        DRK SEP09 01981300
+         BNO   ATTR007                 NO                     DRK SEP09 01981400
+         SGR   R1,R1                   CLEAR ALL 64 BITS      DRK MAY16 01981500
+         L     R1,DIRSPXSI             YES                    DRK SEP09 01981600
+         CVDG  R1,DOUBLE-8             31 DIGITS              DRK MAY16 01981700
+         B     ATTR0071                                       DRK SEP09 01982000
+ATTR007  DS    0H                                             DRK FEB01 01983000
+         SR    R1,R1                                          DRK JAN98 01990000
+         ICM   R1,B'0011',DIRSPFSI     CURRENT SIZE           DRK JAN98 02000000
+         CVD   R1,DOUBLE               15 DIGITS              DRK MAY16 02000100
+ATTR0071 DS    0H                                             DRK FEB01 02001000
+         TM    DIRFLAG,X'80'           ALIAS MEMBER?                    02020000
+         BO    ATTR008                 YES, DO NOT ACCUMULATE           02030000
+         OI    ATTRTOT2+7,X'0F'        INSURE VALID PACKED SIGN         02040000
+         AP    ATTRTOT2(8),DOUBLE(8)   ADD IN CURRENT VALUE             02050000
+         SPACE 1                                                        02051000
+ATTR008  DS    0H                                                       02060000
+         CLI   #LONGOPT,X'01'          LONG COUNTS?           DRK SEP09 02060100
+         BNE   ATTR009                 NO                     DRK SEP09 02060200
+         MVC   WORKTBL(10),=XL10'40202020202020202120'        DRK SEP09 02060500
+         ED    WORKTBL(10),DOUBLE+3                           DRK SEP09 02060600
+         MVC   51(9,R2),WORKTBL+1      CURRENT SIZE           DRK SEP09 02060700
+         CP    DOUBLE+3(5),=PL5'99999999'                     DRK FEB11 02060800
+         BNH   *+4+6                                          DRK FEB11 02060900
+         MVC   51(9,R2),=CL9'     >99M'                       DRK FEB11 02061000
+         TM    DIRSPFFL,DIRSPFXS       EXTENDED STATS?        DRK SEP09 02061400
+         BNO   ATTR0081                NO                     DRK SEP09 02061500
+         SGR   R1,R1                   CLEAR ALL 64 BITS      DRK MAY16 02061600
+         L     R1,DIRSPXIN             YES, INITIAL SIZE      DRK SEP09 02061700
+         CVDG  R1,DOUBLE-8             31 DIGITS              DRK MAY16 02061800
+         B     ATTR0082                                       DRK SEP09 02061900
+ATTR0081 DS    0H                                                       02062000
+         SR    R1,R1                                          DRK SEP09 02062100
+         ICM   R1,B'0011',DIRSPFIN     INITIAL SIZE           DRK SEP09 02062200
+         CVD   R1,DOUBLE               15 DIGITS              DRK MAY16 02062300
+ATTR0082 DS    0H                                                       02062500
+         MVC   WORKTBL(10),=XL10'40202020202020202120'        DRK SEP09 02063500
+         ED    WORKTBL(10),DOUBLE+3                           DRK SEP09 02063600
+         MVC   60(9,R2),WORKTBL+1      INITIAL SIZE           DRK SEP09 02063700
+         CP    DOUBLE+3(5),=PL5'99999999'                     DRK FEB11 02063800
+         BNH   *+4+6                                          DRK FEB11 02063900
+         MVC   60(9,R2),=CL9'     >99M'                       DRK FEB11 02064000
+         B     ATTR0091                                       DRK SEP09 02064100
+ATTR009  DS    0H                                                       02064200
+         SR    R1,R1                                          DRK SEP09 02065000
+         ICM   R1,B'0011',DIRSPFSI     CURRENT SIZE           DRK SEP09 02066000
+         CVD   R1,DOUBLE                                                02067000
+         MVC   51(6,R2),=X'402020202120'                                02070000
+         ED    51(6,R2),DOUBLE+5                                        02080000
+         SPACE 1                                                        02090000
+         SR    R1,R1                                          DRK JAN98 02100000
+         ICM   R1,B'0011',DIRSPFIN     INITIAL SIZE           DRK JAN98 02110000
+         CVD   R1,DOUBLE                                                02120000
+         MVC   57(6,R2),=X'402020202120'                                02130000
+         ED    57(6,R2),DOUBLE+5                                        02140000
+         SPACE 1                                                        02141000
+         SR    R1,R1                                          DRK JAN98 02150000
+         ICM   R1,B'0011',DIRSPFMD     MODIFIED LINES         DRK JAN98 02160000
+         CVD   R1,DOUBLE                                                02170000
+         MVC   63(6,R2),=X'402020202120'                                02180000
+         ED    63(6,R2),DOUBLE+5                                        02190000
+ATTR0091 DS    0H                                                       02191000
+         MVC   71(8,R2),DIRSPFID                                        02200000
+         B     ATTR012                 NO SSI FOR SPF-SAVED MEMBERS     02210000
+         SPACE 1                                                        02220000
+ATTR010  CLC   ZERO,0(R2)              ZERO?                            02230000
+         BE    ATTR012                 YES, NO SSI                      02240000
+         CLC   =F'-1',0(R2)            FFFFFFFF?                        02250000
+         BE    ATTR012                 YES, NO SSI                      02260000
+         SPACE 1                                                        02270000
+         MVC   INSERT#1+2+8+3(4),=C'SSI:'                               02280000
+         UNPK  INSERT#1+2+8+3+5(9),0(5,R2)                              02290000
+         TR    INSERT#1+2+8+3+5(8),TRTABLE                              02300000
+         MVI   INSERT#1+2+8+3+5+8,X'40'                                 02310000
+         SPACE 1                                                        02320000
+ATTR012  DS    0H                                                       02330000
+         CLI   #LONGOPT,X'01'          LONG COUNTS?           DRK SEP09 02330100
+         BNE   ATTR0121                NO                     DRK SEP09 02330200
+         M$MSG L231$1                  YES, OUTPUT STATISTICS DRK SEP09 02330300
+         B     ATTR0122                                       DRK SEP09 02330400
+ATTR0121 DS    0H                                                       02330500
+         M$MSG L230$1                  OUTPUT STATISTICS                02331000
+ATTR0122 DS    0H                                                       02332000
+         MVI   MTLEN,8                 RESET THE INSERT LENGTH          02340000
+         CLI   #OPTOPT,FF              ANY ILLEGAL CHANGES?             02350000
+         BNE   ATTR014                 NO, BRANCH                       02360000
+         M$MSG L701                    NOT A LOAD MODULE                02370000
+ATTR014  CLI   #OPTOPT,X'F0'           ANY SSI CHANGE?                  02380000
+         BE    ATTR240                 YES, BRANCH                      02390000
+         TM    #ATTROPT,X'FF'          ANY ATTRIBUTES CHANGED?          02400000
+         BNZ   ATTR240                 YES, BRANCH                      02410000
+         B     ATTR600                 CHECK FOR ALIAS                  02420000
+         SPACE 3                                                        02430000
+ATTR020  CLC   ##SUBCOM+#LSUB(8),$ATTL IF OR THEN FORM?                 02440000
+         BE    *+8                     NO, BRANCH                       02450000
+         MVI   #ALIAOPT,X'03'          YES, SET FOR SHORT FORMAT        02460000
+         TM    FLAGSHH,FHEAD           BLANK SEPARATOR WRITTEN YET?     02470000
+*        BNO   ATTR022                 NO, BRANCH                       02480000
+         NOP   ATTR022                 NOP FOR SUBLISTS       DRK JUN05 02490000
+         CLI   #ALIAOPT,X'03'          SHORT FORMAT DESIRED?            02500000
+         BE    ATTR022                 YES, BRANCH                      02510000
+         M$ERRST MSGBLANK              NOW SEPARATORS CAN BE WRITTEN    02520000
+         SPACE 1                                                        02530000
+ATTR022  OI    FLAGSHH,FHEAD                                            02540000
+         LA    R1,L702                 ASSUME SOURCE CHANGES WERE MADE  02550000
+         TM    #ATTROPT,X'FF'          CORRECT?                         02560000
+         BNZ   MSGNEWXX                YES, BRANCH                      02570000
+         SPACE 2                                                        02580000
+         MVI   RLDCOUNT,X'FF'          ASSUME NO RLD/CONTROL DATA       02590000
+         MVI   LKEDDATE,X'FF'          ASSUME NO LKED DATE              02600000
+         CLI   #RLDERR,X'01'           "RLDFIX" OPERAND?                02610000
+         BE    ATTR024                 YES, BRANCH                      02620000
+         CLI   #LKEDOPT,X'02'          "NOLKEDDATE"?                    02630000
+         BE    ATTR030                 YES, BRANCH                      02640000
+         CLI   #LKEDOPT,X'01'          "LKEDDATE" DESIRED?              02650000
+         BE    ATTR024                 YES, BRANCH                      02660000
+         TM    FLAGSGG,FLKEDCON        NO LKEDDATE DEFAULT?             02670000
+         BO    ATTR030                 YES, BRANCH                      02680000
+ATTR024  L     R15,=A(READIDR)         FIRST RLD COUNT, LKED DATA       02690000
+         BASR  R14,R15                 IDR DATA AVAILABLE?              02700000
+         MVI   LKEDDATE,X'FF'          NO, ERROR                        02710000
+         SPACE 1                                                        02720000
+ATTR030  TM    #OPTOPT,X'F0'           ANY CHANGED ATTRIBUTES?          02730000
+         BNO   ATTR250                 NO, BRANCH                       02740000
+         SPACE 1                                                        02750000
+         CLI   #RLDERR,X'01'           "RLDFIX"?                        02760000
+         BNE   ATTR038                 NO, BRANCH                       02770000
+         TM    DIRATTR2,DIRAOSLE       OS/VS LINKAGE-EDITOR?            02780000
+         BNO   ATTR034                 NO, BRANCH                       02790000
+         CLI   RLDCOUNT,X'FF'          ANY RLD/CONTROL DATA FOUND?      02800000
+         BE    ATTR034                 NO, BRANCH                       02810000
+         MVC   DIRATTR4(1),RLDCOUNT    MODIFY THE DIRECTORY ENTRY       02820000
+         B     ATTR038                                                  02830000
+ATTR034  M$MSG L723                    NO CHANGE IS POSSIBLE            02840000
+         SPACE 2                                                        02850000
+ATTR038  CLI   #AUTHOPT,X'01'          CHANGE APF PROCESSING?           02860000
+         BL    ATTR060                 NO, BRANCH                       02870000
+         BE    ATTR040                 YES, BRANCH                      02880000
+         TM    DIRATTR2,DIRAOSLE+DIRAPFLG  NEED CHANGE APF INFORMATION? 02890000
+         BNO   ATTR060                     NO, BRANCH                   02900000
+         SPACE 1                                                        02910000
+ATTR040  TM    DIRATTR2,DIRAOSLE+DIRAPFLG  CAN CHANGE APF INFORMATION?  02920000
+         BNO   ATTR050                     NO, BRANCH                   02930000
+         LA    R2,DIRAPF                   YES, POINT TO APF DATA       02940000
+         TM    DIRATTR,ATTRSCTR        SCATTER LOAD?                    02950000
+         BNO   *+8                     NO, BRANCH                       02960000
+         LA    R2,8(,R2)               SCATTER SIZE                     02970000
+         TM    DIRFLAG,X'80'           ALIAS?                           02980000
+         BO    ATTR044                 YES, BRANCH                      02990000
+***PDSMAN CHANGES: ATTRIB AUTH/NOAUTH                         ABL NOV86 03000000
+         TM    5(R2),X'0F'             PDSMAN DATE?           ABL NOV86 03010000
+         BO    ATTR046                 YES, BRANCH            ABL NOV86 03020000
+         TM    6(R2),X'0F'             PDSMAN DATE?           ABL NOV86 03030000
+         BO    ATTR046                 YES, BRANCH            ABL NOV86 03040000
+         TM    4+5(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 03050000
+         BO    ATTR046                 YES, BRANCH            ABL NOV86 03060000
+         TM    4+6(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 03070000
+         BO    ATTR046                 YES, BRANCH            ABL NOV86 03080000
+         CLI   8(R2),0                 CONVERTED ALIAS ENTRY?           03090000
+*        BE    *+8                     NO, BRANCH                       03100000
+         B     *+8                     BRANCH                 DRK JAN98 03110000
+ATTR044  LA    R2,11(,R2)              ADD ALIAS LENGTH                 03120000
+ATTR046  DS    0H                                             ABL NOV86 03130000
+         TM    DIRATTR2,DIR2SSI        SSI?                             03140000
+         BNO   *+12                    NO, BRANCH                       03150000
+         LA    R2,5(,R2)               ADD 4 AND ROUND TO HALFWORD      03160000
+         N     R2,=F'-2'                                                03170000
+         CLI   0(R2),1                 LENGTH RIGHT?                    03180000
+         BNE   ATTR050                 NO, BRANCH                       03190000
+         MVI   1(R2),1                 ASSUME TURN AUTHORIZATION ON     03200000
+         CLI   #AUTHOPT,X'01'          CORRECT?                         03210000
+         BE    ATTR060                 YES, BRANCH                      03220000
+         MVI   1(R2),0                 NO, TURN OFF                     03230000
+         B     ATTR060                                                  03240000
+         SPACE 3                                                        03250000
+ATTR050  M$MSG L722                        INVALID APF DATA LENGTH      03260000
+         SPACE 2                                                        03270000
+ATTR060  CLI   #PAGEOPT,X'01'              CHANGE PAGE ALIGNMENT?       03280000
+         BL    ATTR100                     NO, BRANCH                   03290000
+         BE    ATTR070                     YES, BRANCH                  03300000
+         TM    DIRATTR2,DIRAOSLE+DIRAPFLG  NEED CHANGE PAGE INFO?       03310000
+         BNO   ATTR100                     NO, BRANCH                   03320000
+         SPACE 1                                                        03330000
+ATTR070  TM    DIRATTR2,DIRAOSLE+DIRAPFLG  CAN CHANGE PAGE INFORMATION? 03340000
+         BNO   ATTR080                     NO, BRANCH                   03350000
+         OI    DIRATTR2,DIR2PAGA           ASSUME TURN ON PAGE BOUNDARY 03360000
+         CLI   #PAGEOPT,X'01'              CORRECT?                     03370000
+         BE    ATTR100                     YES, BRANCH                  03380000
+         NI    DIRATTR2,FF-DIR2PAGA        NO, TURN OFF PAGE BOUNDARY   03390000
+         B     ATTR100                                                  03400000
+         SPACE 1                                                        03410000
+ATTR080  M$MSG L726                    PAGE ALIGNMENT CANNOT BE CHANGED 03420000
+         SPACE 2                                                        03430000
+ATTR100  CLI   #RMODE,1                    ANY RMODE CHANGE?            03440000
+         BL    ATTR120                     NO, BRANCH                   03450000
+         B     ATTR110                     YES, BRANCH        DRK OCT02 03460000
+*        TM    DIRATTR2,DIRAOSLE           CAN CHANGE RMODE?  DRK OCT02 03470000
+*        BNO   ATTR150                     NO, BRANCH         DRK OCT02 03480000
+         SPACE 1                                                        03490000
+ATTR110  LA    R1,L724                     NOT MVS LKED MESSAGE         03500000
+         TM    DIRATTR2,DIRAOSLE           CAN CHANGE RMODE?            03510000
+         BNO   ATTR150                     NO, BRANCH                   03520000
+         NI    DIRATTR3,FF-DIRRMANY        SET RMODE=24                 03530000
+         CLI   #RMODE,1                    CORRECT?                     03540000
+         BE    ATTR120                     YES, BRANCH                  03550000
+         OI    DIRATTR3,DIRRMANY           NO, TURN ON RMODE ANY        03560000
+         SPACE 2                                                        03570000
+ATTR120  CLI   #AMODE,1                    ANY AMODE CHANGE?            03580000
+         BL    ATTR160                     NO, BRANCH                   03590000
+         B     ATTR130                     YES, BRANCH        DRK OCT02 03600000
+*        TM    DIRATTR2,DIRAOSLE           CAN CHANGE AMODE?  DRK OCT02 03610000
+*        BNO   ATTR160                     NO, BRANCH         DRK OCT02 03620000
+         SPACE 1                                                        03630000
+ATTR130  LA    R1,L724                     NOT MVS LKED MESSAGE         03640000
+         TM    DIRATTR2,DIRAOSLE           CAN CHANGE AMODE?            03650000
+         BNO   ATTR150                     NO, BRANCH                   03660000
+         TM    DIRFLAG,X'80'               ALIAS ENTRY?                 03670000
+         BO    ATTR140                     YES, BRANCH                  03680000
+         OI    DIRATTR3,DIRAM64+DIRAM31    MAIN ENTRY -- AMODE=64+31    03690000
+         XI    DIRATTR3,DIRAM31            SET AMODE=64       DRK OCT02 03700000
+         CLI   #AMODE,4                    CORRECT?           DRK OCT02 03710000
+         BE    ATTR160                     YES, BRANCH                  03720000
+         OI    DIRATTR3,DIRAM31            NO, SET AMODE=ANY            03730000
+         CLI   #AMODE,3                    CORRECT?                     03740000
+         BE    ATTR160                     YES, BRANCH                  03750000
+         XI    DIRATTR3,DIRAM64            SET AMODE=31                 03760000
+         CLI   #AMODE,2                    CORRECT?           DRK OCT02 03770000
+         BE    ATTR160                     YES, BRANCH        DRK OCT02 03780000
+         NI    DIRATTR3,FF-DIRAM64-DIRAM31 SET AMODE=24       DRK OCT02 03790000
+         B     ATTR160                                                  03800000
+         SPACE 1                                                        03810000
+ATTR140  OI    DIRATTR3,DIRAA64+DIRAA31    ALIAS ENTRY -- AMODE=64+31   03820000
+         XI    DIRATTR3,DIRAA31            SET AMODE=64       DRK OCT02 03830000
+         CLI   #AMODE,4                    CORRECT?           DRK OCT02 03840000
+         BE    ATTR160                     YES, BRANCH                  03850000
+         OI    DIRATTR3,DIRAA31            NO, SET AMODE=ANY            03860000
+         CLI   #AMODE,3                    CORRECT?                     03870000
+         BE    ATTR160                     YES, BRANCH                  03880000
+         XI    DIRATTR3,DIRAA64            SET AMODE=31                 03890000
+         CLI   #AMODE,2                    CORRECT?           DRK OCT02 03900000
+         BE    ATTR160                     YES, BRANCH        DRK OCT02 03910000
+         NI    DIRATTR3,FF-DIRAA64-DIRAA31 SET AMODE=24       DRK OCT02 03920000
+         B     ATTR160                                                  03930000
+         SPACE 1                                                        03940000
+ATTR150  M$MSG (R1)                        AMODE/RMODE MESSAGE          03950000
+         SPACE 2                                                        03960000
+ATTR160  OC    DIRATTR,#ATTRYES        ADD POSITIVE ATTRIBUTES          03970000
+         NC    DIRATTR,#ATTRNO         REMOVE NEGATIVE ATTRIBUTES       03980000
+         SPACE 1                                                        03990000
+*                                                                       04000000
+*   RESTRICTION: BOTH RENT AND REUS MUST BE SPECIFIED FOR REENTRANT     04010000
+         TM    DIRATTR,ATTRRENT        WAS REENTRABLE SPECIFIED?        04020000
+         BNO   *+8                     NO, BRANCH                       04030000
+         OI    DIRATTR,ATTRREUS        YES, ALSO FORCE REUSABLE         04040000
+         SPACE 1                                                        04050000
+ATTR180  CLI   #SSIOPT,0               SSI(HEXDATA) OR NOSSI?           04060000
+         BE    ATTR216                 NO, BRANCH                       04070000
+         SR    R1,R1                   SSI INDICATOR                    04080000
+         LA    R2,DIRAPF               POINT TO APF INFORMATION         04090000
+         TM    DIRATTR,ATTRSCTR        SCATTER FORMAT?                  04100000
+         BNO   *+8                     NO, BRANCH                       04110000
+         LA    R2,8(,R2)               YES, ADD SCATTER SIZE BYTES      04120000
+         SPACE 1                                                        04130000
+         TM    DIRFLAG,X'80'           ALIAS?                           04140000
+         BO    ATTR182                 YES, BRANCH                      04150000
+***PDSMAN CHANGES: ATTRIB SSI(HEXDATA) OR NOSSI               ABL NOV86 04160000
+         TM    5(R2),X'0F'             PDSMAN DATE?           ABL NOV86 04170000
+         BO    ATTR183                 YES, BRANCH            ABL NOV86 04180000
+         TM    6(R2),X'0F'             PDSMAN DATE?           ABL NOV86 04190000
+         BO    ATTR183                 YES, BRANCH            ABL NOV86 04200000
+         TM    4+5(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 04210000
+         BO    ATTR183                 YES, BRANCH            ABL NOV86 04220000
+         TM    4+6(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 04230000
+         BO    ATTR183                 YES, BRANCH            ABL NOV86 04240000
+         CLI   8(R2),0                 CONVERTED ALIAS ENTRY?           04250000
+*        BE    *+8                     NO, BRANCH                       04260000
+         B     *+8                     BRANCH                 DRK JAN98 04270000
+ATTR182  LA    R2,11(,R2)              ADD ALIAS LENGTH                 04280000
+ATTR183  DS    0H                                             ABL NOV86 04290000
+         SPACE 1                                                        04300000
+         LR    R3,R2                   START OF DATA BEFORE ANY SSI     04310000
+         LA    R2,1(,R2)               ROUND UP TO HALFWORD             04320000
+         N     R2,=F'-2'                                                04330000
+         TM    DIRATTR2,DIRAOSLE       VS LINKAGE EDITOR?               04340000
+         BO    ATTR184                 YES, BRANCH                      04350000
+         SPACE 1                                                        04360000
+         CLC   ZERO,0(R2)              ZERO?                            04370000
+         BE    ATTR188                 YES, NO SSI                      04380000
+         CLC   =F'-1',0(R2)            FFFFFFFF?                        04390000
+         BE    ATTR188                 YES, NO SSI                      04400000
+         B     ATTR186                 NO, POINT TO SSI                 04410000
+         SPACE 1                                                        04420000
+ATTR184  TM    DIRATTR2,DIR2SSI        SSI PRESENT?                     04430000
+         BNO   ATTR188                 NO, NO SSI                       04440000
+         SPACE 1                                                        04450000
+ATTR186  LR    R1,R2                   POINT TO SSI                     04460000
+ATTR188  LR    R15,R2                  SSI POSITION                     04470000
+         SR    R15,R3                  OFFSET FROM LAST DATA TO SSI     04480000
+         LA    R15,2(,R15)             ADJUSTMENT AMOUNT                04490000
+         CLI   #SSIOPT,1               SSI(HEXDATA)?                    04500000
+         BE    ATTR200                 YES, BRANCH                      04510000
+         SPACE 1                                                        04520000
+*** NOSSI                                                               04530000
+         LTR   R1,R1                   ANY SSI?                         04540000
+         BZ    ATTR216                 NO, DONE                         04550000
+         ICM   R0,B'0011',4(R2)        APF BYTES                        04560000
+         XC    0(8,R3),0(R3)           CLEAR FOLLOWING BYTES            04570000
+         STCM  R0,B'0011',0(R3)        MOVE APF BEFORE THE SSI          04580000
+         TM    DIRATTR2,DIRAOSLE       VS LINKAGE EDITOR?               04590000
+         BNO   *+8                     NO, BRANCH                       04600000
+         NI    DIRATTR2,FF-DIR2SSI     NO SSI PRESENT                   04610000
+         LA    R3,2+1(,R3)             2 FOR APF AND 1 FOR ROUNDING     04620000
+         B     ATTR214                                                  04630000
+         SPACE 2                                                        04640000
+ATTR200  LTR   R1,R1                   SSI ALREADY?                     04650000
+         BZ    ATTR210                 NO, BRANCH                       04660000
+*** SSI(HEXTEXT) WITH EXISTING SSI INFORMATION                          04670000
+         MVC   0(4,R2),#SSITEXT        UPDATE THE SSI DATA              04680000
+         B     ATTR216                                                  04690000
+         SPACE 2                                                        04700000
+*** SSI(HEXTEXT) WITH NO PREVIOUS SSI INFORMATION                       04710000
+ATTR210  ICM   R0,B'0011',0(R3)        APF BYTES                        04720000
+         MVI   0(R3),0                 CLEAR THE FIRST APF BYTE         04730000
+         MVC   0(4,R2),#SSITEXT        MOVE IN ADDED SSI DATA           04740000
+         STCM  R0,B'0011',4(R2)        RESET THE APF INFORMATION        04750000
+         TM    DIRATTR2,DIRAOSLE       VS LINKAGE EDITOR?               04760000
+         BNO   *+8                     NO, BRANCH                       04770000
+         OI    DIRATTR2,DIR2SSI        SSI PRESENT                      04780000
+         LA    R3,4+2(,R2)             4 FOR SSI AND 2 FOR APF          04790000
+         SPACE 1                                                        04800000
+ATTR214  LA    R0,DIRSTART             FIRST BYTE AFTER DIRFLAG         04810000
+         SR    R3,R0                   LENGTH OF ADDED DATA             04820000
+         SRL   R3,1                    IN HALFWORDS                     04830000
+         NI    DIRFLAG,FF-X'1F'        REMOVE LENGTH BITS               04840000
+         IC    R0,DIRFLAG              PICK UP ALIAS FLAG, TTR COUNT    04850000
+         OR    R0,R3                   ADD IN NEW LENGTH IN HALFWORDS   04860000
+         STC   R0,DIRFLAG              UPDATE DIRECTORY FLAG ENTRY      04870000
+         SPACE 2                                                        04880000
+ATTR216  CLI   #UNALIAS,1              UNALIAS?                         04890000
+         BNE   ATTR220                 NO, BRANCH                       04900000
+         TM    DIRFLAG,X'80'           ALIAS?                           04910000
+         BNO   ATTR220                 NO, BRANCH                       04920000
+         XI    DIRFLAG,X'80'           TURN OFF THE ALIAS FLAG          04930000
+         SR    R1,R1                                                    04940000
+         LA    R3,DIRAPF               NORMAL APF LOCATION              04950000
+         TM    DIRATTR,ATTRSCTR        SCATTER LOAD?                    04960000
+         BNO   *+8                     NO, BRANCH                       04970000
+         LA    R3,8(,R3)               YES, ADD 8                       04980000
+         LA    R1,11(,R3)              POINT AFTER THE ALIAS INFO.      04990000
+         TM    DIRATTR2,DIRAOSLE       VS LKED?                         05000000
+         BNO   ATTR218                 NO, BRANCH                       05010000
+         TM    DIRATTR2,DIR2SSI        SSI PRESENT?                     05020000
+         BNO   ATTR217                 NO, BRANCH                       05030000
+         MVI   0(R3),0                 CLEAR THE FIRST BYTE             05040000
+         LA    R3,1(,R3)               SET FOR ROUNDING                 05050000
+         N     R3,=F'-2'               ROUND TO HALFWORD                05060000
+         LA    R1,1(,R1)               POINT TO SSI                     05070000
+         N     R1,=F'-2'               ROUND TO HALFWORD                05080000
+ATTR217  MVC   0(8,R3),0(R1)           SLIDE DOWN DATA                  05090000
+         LA    R3,2+1(,R3)             ACCOUNT FOR APF                  05100000
+         TM    DIRATTR2,DIR2SSI        SSI PRESENT?                     05110000
+         BNO   ATTR214                 NO, BRANCH                       05120000
+         LA    R3,4(,R3)               ACCOUNT FOR APF                  05130000
+         B     ATTR214                 UPDATE DIRECTORY ENTRY LENGTH    05140000
+         SPACE 1                                                        05150000
+ATTR218  LA    R3,1(,R3)                                                05160000
+         LA    R14,1(,R1)              ROUND TO                         05170000
+         N     R14,=F'-2'                      NEXT HALFWORD            05180000
+         CLC   ZERO,0(R14)             ZERO?                            05190000
+         BE    ATTR214                 YES, NO SSI                      05200000
+         CLC   =F'-1',0(R14)           FFFFFFFF?                        05210000
+         BE    ATTR214                 YES, NO SSI                      05220000
+         N     R3,=F'-2'               ROUND TO HALFWORD                05230000
+         MVC   0(8,R3),0(R14)          SLIDE DOWN DATA                  05240000
+         LA    R3,4(,R3)               ADD FOR SSI                      05250000
+         B     ATTR214                 UPDATE DIRECTORY ENTRY LENGTH    05260000
+         SPACE 2                                                        05270000
+ATTR220  CLI   #MODTXT,X'41'              ANY ENTRY(EXTNAME)?           05280000
+         BL    ATTR240                    NO, BRANCH                    05290000
+         MVC   #USERTXT(8),DIRNAME        SAVE THE CURRENT MEMBER NAME  05300000
+         MVC   DIRNAME(8),#MODTXT         NAME TO SEARCH FOR IN ESD     05310000
+         SPACE 1                                                        05320000
+         L     R15,=A(READESD)            SCAN ESD                      05330000
+         BASR  R14,R15                    EXTERNAL NAME IN ESD ENTRIES? 05340000
+         NOP   0(,R0)                     NO, IGNORE                    05350000
+         CLC   ENTRYPT(8),#MODTXT         NAME MATCH?                   05360000
+         BE    ATTR222                    YES, BRANCH                   05370000
+         SPACE 1                                                        05380000
+         MVC   DIRNAME(8),#USERTXT        RESTORE THE MEMBER NAME       05390000
+         MVC   INSERT#1(8),#MODTXT        EXTERNAL NAME                 05400000
+         M$MSG L705$1                                                   05410000
+         B     ATTR240                                                  05420000
+         SPACE 1                                                        05430000
+ATTR222  MVC   DIRNAME(8),#USERTXT        RESTORE THE MEMBER NAME       05440000
+         OI    DIRATTR+1,ATTREP0          ASSUME ENTRY POINT ZERO       05450000
+         LTR   R1,R1                      CORRECT?                      05460000
+         BZ    *+8                        YES, BRANCH                   05470000
+         XI    DIRATTR+1,ATTREP0          NO, INSURE ATTR FLAG OFF      05480000
+         STCM  R1,B'0111',DIREPA          SAVE ENTRY ADDRESS            05490000
+         TM    DIRATTR,ATTRSCTR           SCATTER LOADED?               05500000
+         BNO   *+8                        NO, BRANCH                    05510000
+         STCM  R15,B'0011',DIRSCEP        YES, SAVE ESDID OF ENTRY PT.  05520000
+         STC   R0,#ALIAESD                SAVE MODE RMODE/AMODE INFO    05530000
+         TM    DIRATTR,ATTROVLY           OVERLAY ATTRIBUTES            05540000
+         BO    ATTR240                    YES, BRANCH                   05550000
+         OC    #RMODE(2),#RMODE           RMODE/AMODE CHANGES ALREADY?  05560000
+         BNZ   ATTR240                    YES, BRANCH                   05570000
+         TM    DIRATTR2,DIRAOSLE          CAN CHANGE AMODE?             05580000
+         BNO   ATTR240                    NO, BRANCH                    05590000
+         OI    #RMODE,1                   MARK RMODE/AMODE CHANGE       05600000
+         SPACE 1                                                        05610000
+         TM    DIRFLAG,X'80'              ALIAS ENTRY?                  05620000
+         BO    ATTR224                    YES, BRANCH                   05630000
+         NI    DIRATTR3,FF-DIRRMANY       SET RMODE=24                  05640000
+         TM    #ALIAESD,RMODEANY          CORRECT?                      05650000
+         BZ    *+8                        YES, BRANCH                   05660000
+         OI    DIRATTR3,DIRRMANY          NO, TURN ON RMODE ANY         05670000
+         SPACE 2                                                        05680000
+         NI    DIRATTR3,FF-DIRAM64-DIRAM31  MAIN ENTRY -- AMODE=64+31   05690000
+         TM    #ALIAESD,AMODE64           AMODE 64?                     05700000
+         BNO   *+8                        NO, BRANCH                    05710000
+         OI    DIRATTR3,DIRAM64           YES, SET THE DIRECTORY        05720000
+         TM    #ALIAESD,AMODE31           AMODE 31?                     05730000
+         BNO   *+8                        NO, BRANCH                    05740000
+         OI    DIRATTR3,DIRAM31           YES, SET THE DIRECTORY        05750000
+         B     ATTR240                                                  05760000
+         SPACE 1                                                        05770000
+ATTR224  NI    DIRATTR3,FF-DIRAA64-DIRAA31  ALIAS ENTRY -- AMODE=64+31  05780000
+         TM    #ALIAESD,AMODE64           AMODE 64?                     05790000
+         BNO   *+8                        NO, BRANCH                    05800000
+         OI    DIRATTR3,DIRAA64           YES, SET THE DIRECTORY        05810000
+         TM    #ALIAESD,AMODE31           AMODE 31?                     05820000
+         BNO   *+8                        NO, BRANCH                    05830000
+         OI    DIRATTR3,DIRAA31           YES, SET THE DIRECTORY        05840000
+         SPACE 2                                                        05850000
+ATTR240  DS    0H                                                       05860000
+         ST    R6,R6SAVE               SAVE 2ND BASE          DRK AUG05 05870000
+         BAS   R2,OPENSTOW             OPEN STOW DCB; ENQUEUES          05880000
+         B     NEWCMD                  COULD NOT OPEN -- ERROR          05890000
+         L     R6,R6SAVE               RESTORE 2ND BASE       DRK AUG05 05900000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR                        05910000
+         STOW  STOWDCB,DIRNAME,R       REPLACE OPTION                   05920000
+         LR    R5,R15                  SAVE RETURN CODE                 05930000
+***      BAS   R2,SHUTSTOW             *** CLOSE STOW AFTER NEWCMD      05940000
+         SPACE 1                                                        05950000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 05960000
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 05970000
+         B     *+4(R5)                 PROCESS RETURN CODE              05980000
+         B     ATTR250                   00 - SUCCESSFUL                05990000
+         EX    0,*                       04 - SHOULD NOT OCCUR          06000000
+         EX    0,*                       08 - SHOULD NOT OCCUR          06010000
+         B     FULLDIR                   12 - DIRECTORY FULL            06020000
+*        B     IOERROR                   16 - I/O ERROR                 06030000
+         SPACE 3                                                        06040000
+ATTR250  TM    FLAGSCC,RECFMU          LOAD LIBRARY?                    06050000
+         BNO   ATTR600                 NO, CHECK FOR ALIASES            06060000
+         TM    DIRFLAG,X'80'           ALIAS?                           06070000
+         BO    ATTR260                 YES, BRANCH                      06080000
+         SR    R0,R0                                                    06090000
+         ICM   R0,B'0111',DIRSTORE LOAD MODULE                          06100000
+         CVD   R0,DOUBLE           CONVERT TO DECIMAL                   06110000
+         TM    DIRATTR3,DIRRMANY       RMODE ANY?                       06120000
+         BO    ATTR254                 YES, BRANCH                      06130000
+         L     R1,ATTRCNT2                                              06140000
+         LA    R1,1(,R1)               ONE MORE ENTRY                   06150000
+         ST    R1,ATTRCNT2             NUMBER OF ENTRIES                06160000
+         OI    ATTRTOT2+7,X'0F'        INSURE VALID PACKED SIGN         06170000
+         AP    ATTRTOT2(8),DOUBLE(8)   ADD IN CURRENT VALUE             06180000
+         B     ATTR260                                                  06190000
+ATTR254  L     R1,ATTRCNTA                                              06200000
+         LA    R1,1(,R1)               ONE MORE ENTRY                   06210000
+         ST    R1,ATTRCNTA             NUMBER OF ENTRIES                06220000
+         OI    ATTRTOTA+7,X'0F'        INSURE VALID PACKED SIGN         06230000
+         AP    ATTRTOTA(8),DOUBLE(8)   ADD IN CURRENT VALUE             06240000
+ATTR260  MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      06250000
+         MVC   INSERT#2(128),BLANK128                                   06260000
+         LA    R1,INSERT#2-1           FIRST COMMA ADDRESS (HIDDEN)     06270000
+         MVC   INSERT#2+1(4),=C'NONE'  IF NO SPECIAL ATTRIBUTES         06280000
+         LA    R14,TBLATTR-12          ATTRIBUTES TABLE                 06290000
+         LH    R2,DIRATTR              GET MODULE ATTRIBUTES            06300000
+         SPACE 2                                                        06310000
+ATTR300  LA    R14,12(R14)                                              06320000
+         CLI   0(R14),X'FF'            END OF TABLE?                    06330000
+         BE    ATTR310                 YES, BRANCH                      06340000
+         SPACE 1                                                        06350000
+         LH    R15,0(R14)              GET ATTRIBUTE FLAGS              06360000
+         TM    2(R14),X'80'            POSITIVE OR NEGATIVE ATTRIBUTE?  06370000
+         LA    R3,X'80'                MASK FOR POS (FOR BZ INST)       06380000
+         BZ    *+8                                                      06390000
+         LA    R3,X'70'                MASK FOR NEG (FOR BNZ) INST      06400000
+         NR    R15,R2                  CHECK FOR ATTRIBUTE PRESENT      06410000
+         NOP   ATTR300                 <<BZ OR BNZ>>                    06420000
+         EX    R3,*-4                  BRANCH IF NO DISPLAY ATTRIBUTE   06430000
+         SPACE 1                                                        06440000
+         MVC   0(6,R1),ATTRCOMM        COMMA AND FOLLOWING BLANKS       06450000
+         IC    R15,2(R14)              LENGTH-1 OF ATTRIBUTE            06460000
+         LA    R3,X'7F'                MASK FOR 7 BITS                  06470000
+         NR    R15,R3                                                   06480000
+         MVC   2(*-*,R1),3(R14)        <<EXECUTED>>                     06490000
+         EX    R15,*-6                                                  06500000
+         LA    R1,3(R15,R1)            JUMP POINTER                     06510000
+         B     ATTR300                                                  06520000
+         SPACE 2                                                        06530000
+ATTR310  DS    0H                                                       06540000
+         L     R1,AATTS310                                              06550000
+         CLI   #ALIAOPT,X'03'          SHORT FORMAT DESIRED?            06560000
+         BER   R1                      YES, BRANCH                      06570000
+         MVI   MTLEN,8                 RESET THE INSERT LENGTH GP JAN08 06571000
+         MVI   MTLEN+4,127                                              06580000
+         M$MSG L020$2                  ATTRIBUTES MSG                   06590000
+         MVI   MTLEN+4,8                                                06600000
+         SPACE 2                                                        06610000
+         LA    R2,DIRAPF               POINT TO APF INFORMATION         06620000
+         SPACE 1                                                        06630000
+         TM    DIRATTR,ATTRSCTR        SCATTER FORMAT?                  06640000
+         BNO   *+8                     NO, BRANCH                       06650000
+         LA    R2,8(,R2)               YES, ADD SCATTER SIZE BYTES      06660000
+         SPACE 1                                                        06670000
+         TM    DIRFLAG,X'80'           ALIAS?                           06680000
+         BO    ATTR314                 YES, BRANCH                      06690000
+***PDSMAN CHANGES: ATTRIB FOR LISTING SSI AND APF CODE        ABL NOV86 06700000
+         TM    5(R2),X'0F'             PDSMAN DATE?           ABL NOV86 06710000
+         BO    ATTR320                 YES, BRANCH            ABL NOV86 06720000
+         TM    6(R2),X'0F'             PDSMAN DATE?           ABL NOV86 06730000
+         BO    ATTR320                 YES, BRANCH            ABL NOV86 06740000
+         TM    4+5(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 06750000
+         BO    ATTR320                 YES, BRANCH            ABL NOV86 06760000
+         TM    4+6(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 06770000
+         BO    ATTR320                 YES, BRANCH            ABL NOV86 06780000
+         CLI   8(R2),0                 CONVERTED ALIAS ENTRY?           06790000
+*        BE    *+8                     NO, BRANCH                       06800000
+         B     *+8                     BRANCH                 DRK JAN98 06810000
+ATTR314  LA    R2,11(,R2)              ADD ALIAS LENGTH                 06820000
+ATTR320  DS    0H                                             ABL NOV86 06830000
+         SPACE 1                                                        06840000
+         TM    DIRATTR2,DIRAOSLE       VS LINKAGE EDITOR?               06850000
+         BO    ATTR330                 YES, BRANCH                      06860000
+         M$MSG L022                    NON-VS LINKAGE EDITOR MESSAGE    06870000
+         B     ATTR340                                                  06880000
+         SPACE 1                                                        06890000
+ATTR330  TM    DIRATTR2,DIR2SSI        SSI PRESENT?                     06900000
+         BNO   ATTR360                 NO, SKIP SSI PROCESSING          06910000
+         LA    R2,1(,R2)               ROUND UP TO HALFWORD             06920000
+         N     R2,=F'-2'                                                06930000
+         B     ATTR341                 SKIP ZERO AND FFFFFFFF TESTS     06940000
+         SPACE 1                                                        06950000
+ATTR340  LA    R2,1(,R2)               ROUND UP TO HALFWORD             06960000
+         N     R2,=F'-2'                                                06970000
+         SPACE 1                                                        06980000
+         CLC   ZERO,0(R2)              ZERO?                            06990000
+         BE    ATTR360                 YES, NO SSI                      07000000
+         CLC   =F'-1',0(R2)            FFFFFFFF?                        07010000
+         BE    ATTR360                 YES, NO SSI                      07020000
+         SPACE 1                                                        07030000
+ATTR341  UNPK  INSERT#1(9),0(5,R2)                                      07040000
+         TR    INSERT#1(8),TRTABLE                                      07050000
+         M$MSG L025$1                                                   07060000
+         LA    R2,4(,R2)               ADD SSI SIZE                     07070000
+         SPACE 2                                                        07080000
+ATTR360  TM    FLAGSCC,RECFMU          LOAD MODULE LIB?                 07090000
+         BZ    ATTR600                 NO, BRANCH                       07100000
+         SPACE 1                                                        07110000
+         MVI   MODESAVE,0                                               07120000
+         TM    DIRATTR2,DIRAOSLE           VS LINKAGE EDITOR?           07130000
+         BZ    ATTR532                     NO, NOT AUTH.      ABL NOV86 07140000
+         SR    R1,R1                                                    07150000
+         IC    R1,DIRATTR3                 AMODE BITS                   07160000
+         TM    DIRFLAG,X'80'               ALIAS?                       07170000
+         BNO   *+8                         NO, BRANCH                   07180000
+         SRL   R1,2                        YES, SHIFT AMODE BITS        07190000
+         STC   R1,MODESAVE                 SAVE CURRENT AMODE           07200000
+* RMODE64                                                               07200100
+         TM    DIRATTR3,DIRRMANY+DIRRM64   RMODE 64?          DRK APR18 07200300
+         BNO   ATT$500                     NO, BRANCH                 " 07200400
+         OI    MODESAVE,DIRRMANY+DIRRM64   YES, SET RMODE AGAIN       " 07200500
+         SPACE 1                                                        07200600
+         MVC   INSERT#1(8),BLANKS          RMODE FILLER                 07200900
+         MVC   INSERT#2(8),BLANKS          AMODE FILLER                 07201000
+         MVC   INSERT#1(3),=C'64 '         MOVE IN THE RMODE TEXT     " 07201400
+         SPACE 1                                                        07201500
+         TM    MODESAVE,DIRAM64         01 AMODE 64?          DRK APR18 07201600
+         BNO   *+10                        NO, BRANCH                   07201700
+         MVC   INSERT#2(3),=C'64 '         MOVE IN THE AMODE TEXT OCT02 07201800
+         TM    MODESAVE,DIRAM31         02 AMODE 31?                    07201900
+         BNO   *+10                        NO, BRANCH                   07202000
+         MVC   INSERT#2(3),=C'31 '         MOVE IN THE AMODE TEXT       07202100
+         TM    MODESAVE,DIRAM64+DIRAM31 03 AMODE ANY?         DRK OCT02 07202200
+         BNO   *+10                        NO, BRANCH                   07202300
+         MVC   INSERT#2(3),=C'ANY'         MOVE IN THE AMODE TEXT       07202400
+         TM    MODESAVE,DIRAM31+DIRAM64 00 AMODE 24?          DRK APR18 07202500
+         BNZ   *+10                        NO, BRANCH         DRK APR18 07202600
+         MVC   INSERT#2(3),=C'24 '         MOVE IN THE AMODE TEXT     " 07202700
+         M$MSG L120$2                                                   07202800
+         SPACE 1                                                        07202900
+         TM    MODESAVE,DIRRMANY+DIRRM64   RMODE 64?          DRK APR18 07203000
+         BNO   ATT$400                     NO, BRANCH                   07203100
+         LA    R1,=C'ANY'                  ASSUME AMODE IS ANY          07203200
+         TM    MODESAVE,DIRAM64+DIRAM31    AMODE ANY?                   07203300
+         BO    ATT$370                     YES, INVALID                 07203400
+         LA    R1,=C'31 '                  ASSUME AMODE IS 31           07203500
+         TM    MODESAVE,DIRAM31            AMODE 31?                    07203600
+         BO    ATT$370                     YES, INVALID                 07203700
+         TM    MODESAVE,DIRAM64            AMODE 64?          DRK OCT02 07203800
+         BO    ATT$400                     YES, BRANCH        DRK OCT02 07203900
+         LA    R1,=C'24 '                  AMODE IS 24                  07204000
+ATT$370  DS    0H                                                       07204100
+         MVC   INSERT#1(8),BLANKS                                       07204200
+         MVC   INSERT#1(3),0(R1)           MOVE IN THE AMODE TEXT       07204300
+         M$MSG L879$1                      RMODE 64/AMODE CONFLICT      07204400
+         SPACE 2                                                        07204500
+ATT$400  DS    0H                                                       07204600
+         B     ATTR400                                        DRK APR18 07205000
+ATT$500  DS    0H                                                       07206000
+         TM    DIRATTR3,DIRRMANY           RMODE ANY?                   07210000
+         BNO   *+8                         NO, BRANCH                   07220000
+         OI    MODESAVE,DIRRMANY           YES, SET RMODE AGAIN         07230000
+         SPACE 1                                                        07240000
+         TM    MODESAVE,DIRRMANY+DIRAM31+DIRAM64 UNUSUAL RMODE/AMODE?   07250000
+         BZ    ATTR400                     NO, BRANCH                   07260000
+         MVC   INSERT#1(8),BLANKS          RMODE FILLER                 07270000
+         MVC   INSERT#2(8),BLANKS          AMODE FILLER                 07280000
+         MVC   INSERT#1(3),=C'24 '         MOVE IN THE RMODE TEXT       07290000
+         TM    MODESAVE,DIRRMANY           RMODE ANY?                   07300000
+         BNO   *+10                        NO, BRANCH                   07310000
+         MVC   INSERT#1(3),=C'ANY'         MOVE IN THE RMODE TEXT       07320000
+         SPACE 1                                                        07330000
+         TM    MODESAVE,DIRAM64         01 AMODE 64?          DRK APR18 07330100
+         BNO   *+10                        NO, BRANCH                   07330200
+         MVC   INSERT#2(3),=C'64 '         MOVE IN THE AMODE TEXT OCT02 07330300
+         TM    MODESAVE,DIRAM31         02 AMODE 31?                    07330400
+         BNO   *+10                        NO, BRANCH                   07330500
+         MVC   INSERT#2(3),=C'31 '         MOVE IN THE AMODE TEXT       07330600
+         TM    MODESAVE,DIRAM64+DIRAM31 03 AMODE ANY?         DRK OCT02 07330700
+         BNO   *+10                        NO, BRANCH                   07330800
+         MVC   INSERT#2(3),=C'ANY'         MOVE IN THE AMODE TEXT       07330900
+         TM    MODESAVE,DIRAM31+DIRAM64 00 AMODE 24?          DRK APR18 07331000
+         BNZ   *+10                        NO, BRANCH         DRK APR18 07331100
+         MVC   INSERT#2(3),=C'24 '         MOVE IN THE AMODE TEXT     " 07332000
+         M$MSG L120$2                                                   07340000
+         TM    MODESAVE,DIRRMANY           RMODE ANY?                   07410000
+         BZ    ATTR400                     NO, BRANCH                   07420000
+         LA    R1,=C'ANY'                  ASSUME AMODE IS ANY          07430000
+         TM    MODESAVE,DIRAM64+DIRAM31 03 AMODE ANY?                   07440000
+         BO    ATTR370                     YES, INVALID                 07450000
+         TM    MODESAVE,DIRAM31         02 AMODE 31?                    07460000
+         BO    ATTR400                     YES, BRANCH                  07470000
+         TM    MODESAVE,DIRAM64         01 AMODE 64?          DRK OCT02 07480000
+         BO    ATTR400                     YES, BRANCH        DRK OCT02 07490000
+         LA    R1,=C'24 '               00 AMODE IS 24                  07500000
+ATTR370  MVC   INSERT#1(8),BLANKS                                       07510000
+         MVC   INSERT#1(3),0(R1)           MOVE IN THE AMODE TEXT       07520000
+         M$MSG L880$1                      RMODE ANY/AMODE CONFLICT     07530000
+         SPACE 2                                                        07540000
+ATTR400  CLI   RLDCOUNT,X'FF'          ANY DATA TO CHECK?               07550000
+         BE    ATTR500                 NO, BRANCH                       07560000
+         CLC   RLDCOUNT(1),DIRATTR4    RLD/CONTROL AMOUNTS AGREE?       07570000
+         BE    ATTR500                 YES, BRANCH                      07580000
+         TM    DS1SMSFG,DS1PDSE        PDSE DATASET?          DRK AUG05 07590000
+         BO    ATTR500                 YES, NO MESSAGE        DRK AUG05 07600000
+         M$MSG L826                                                     07610000
+         SPACE 2                                                        07620000
+ATTR500  TM    DIRATTR2,DIR2PAGA       PAGE ALIGNMENT REQUIRED?         07630000
+         BNO   ATTR510                 NO, BRANCH                       07640000
+         M$MSG L024                    PAGE ALIGNMENT REQUIRED          07650000
+         SPACE 2                                                        07660000
+ATTR510  LA    R1,L720                 ASSUME NO APF DATA               07670000
+         TM    DIRATTR2,DIRAPFLG       APF DATA PRESENT AND VALID?      07680000
+         BO    ATTR520                 YES, CHECK LENGTH      DRK AUG05 07690000
+         TM    DS1SMSFG,DS1PDSE        PDSE DATASET?          DRK AUG05 07700000
+         BNO   ATTR530                 NO, ISSUE MESSAGE      DRK AUG05 07710000
+         B     ATTR532                 YES, NO MESSAGE        DRK AUG05 07720000
+         SPACE 1                                              DRK AUG05 07730000
+ATTR520  DS    0H                                             DRK AUG05 07740000
+         LA    R1,L721                 ASSUME APF LENGTH INCORRECT      07750000
+         CLI   0(R2),1                 APF DATA LENGTH OK?              07760000
+         BNE   ATTR530                 NO, BRANCH                       07770000
+         SPACE 3                                                        07780000
+         LA    R1,L021                 ASSUME AUTHORIZED                07790000
+         CLI   1(R2),1                 AUTHORIZED?                      07800000
+         BE    ATTR530                 YES, BRANCH                      07810000
+         BL    ATTR532                 NO, APF=0 (NO MESSAGE) ABL NOV86 07820000
+         LA    R1,L023                 APF DATA IS TOO LARGE            07830000
+         SPACE 1                                                        07840000
+ATTR530  M$MSG (R1)                                                     07850000
+         SPACE 2                                                        07860000
+ATTR532  LA    R2,3(,R2)               SKIP APF CODE          ABL NOV86 07870000
+         N     R2,=F'-2'               HALFWORD BOUNDARY      ABL NOV86 07880000
+***PDSMAN CHANGES: ATTRIB FOR LISTING PDSMAN ATTRIBUTES       ABL NOV86 07890000
+         TM    3(R2),X'0F'             PDSMAN DATE? 0CYYDDDF  ABL NOV86 07900000
+         BNO   ATTR540                 NO, BRANCH             ABL NOV86 07910000
+         TM    0(R2),X'FE'             PDSMAN DATE? 0CYYDDDF  DRK JAN98 07920000
+         BNZ   ATTR540                 NO, BRANCH             DRK JAN98 07930000
+         TM    8(R2),X'0F'             PDSMAN DATE?   YYDDDF  DRK FEB98 07940000
+         BNO   ATTR540                 NO, BRANCH             DRK FEB98 07950000
+         TM    21(R2),X'0F'            PDSMAN DATE?   YYDDDF  DRK FEB98 07960000
+         BNO   ATTR540                 NO, BRANCH             DRK FEB98 07970000
+         MVC   INSERT#1(66),BLANK128   BLANK THE INSERT AREA  ABL NOV86 07980000
+         MVI   MTLEN,51                LENGTH OF INSERT       ABL NOV86 07990000
+         LA    R1,1(,R2)                                      ABL NOV86 08000000
+         LA    R15,FULLWORD            RESULT                 ABL NOV86 08010000
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY      ABL NOV86 08020000
+         MVC   INSERT#1(L'DATEMASK),DATEMASK                  ABL NOV86 08030000
+         ED    INSERT#1(L'DATEMASK),FULLWORD                  ABL NOV86 08040000
+         AIF   ('&ISODT'  NE 'YES').NOISOA1                   DRK NOV01 08050000
+         SPACE 1                                                        08060000
+         MVC   DOUBLE(8),INSERT#1+1      MM/DD/YY             DRK NOV01 08070000
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 08080000
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 08090000
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 08100000
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 08110000
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 08120000
+         MVC   INSERT#1+1(8),DOUBLE      YY/MM/DD             DRK NOV01 08130000
+         SPACE 1                                                        08140000
+.NOISOA1 ANOP                                                 DRK NOV01 08150000
+         SPACE 1                                              ABL NOV86 08160000
+         MVC   INSERT#1+09(6),=X'4021207A2020'                ABL NOV86 08170000
+         ED    INSERT#1+09(6),4(R2)    CONVERT TO HH:MM       ABL NOV86 08180000
+         SPACE 1                                              ABL NOV86 08190000
+         SR    R1,R1                                          ABL NOV86 08200000
+         IC    R1,4+2+3(R2)            MODIFICATION NUMBER    ABL NOV86 08210000
+         CVD   R1,DOUBLE                                      ABL NOV86 08220000
+         MVC   DOUBLE(4),=X'40202120'                         ABL NOV86 08230000
+         ED    DOUBLE(4),DOUBLE+6      CONVERT                ABL NOV86 08240000
+         MVC   DOUBLE+4(4),BLANKS                             ABL NOV86 08250000
+         LA    R1,DOUBLE                                      ABL NOV86 08260000
+         LA    R1,1(,R1)               FIND                   ABL NOV86 08270000
+         CLI   0(R1),X'40'                 FIRST              ABL NOV86 08280000
+         BE    *-8                              NON-BLANK     ABL NOV86 08290000
+         MVC   INSERT#1+20(3),0(R1)    MODIFICATION NUMBER    ABL NOV86 08300000
+         MVC   INSERT#1+16(4),ATTRLEV  LEV:                   ABL NOV86 08310000
+         SPACE 1                                              ABL NOV86 08320000
+         LA    R1,4+2+3+1(R2)          LAST MODIFIER          ABL NOV86 08330000
+         MVC   INSERT#1+27(8),0(R1)                           ABL NOV86 08340000
+         MVC   INSERT#1+24(2),ATTRBY   BY                     ABL NOV86 08350000
+         SPACE 1                                              ABL NOV86 08360000
+         LA    R1,4+2(,R2)             EXPIRATION DATE        ABL NOV86 08370000
+         LA    R15,FULLWORD            RESULT                 ABL NOV86 08380000
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY      ABL NOV86 08390000
+         MVC   INSERT#1+42(L'DATEMASK),DATEMASK               ABL NOV86 08400000
+         ED    INSERT#1+42(L'DATEMASK),FULLWORD               ABL NOV86 08410000
+         AIF   ('&ISODT'  NE 'YES').NOISOA2                   DRK NOV01 08420000
+         SPACE 1                                                        08430000
+         MVC   DOUBLE(8),INSERT#1+42+1   MM/DD/YY             DRK NOV01 08440000
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 08450000
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 08460000
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 08470000
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 08480000
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 08490000
+         MVC   INSERT#1+42+1(8),DOUBLE   YY/MM/DD             DRK NOV01 08500000
+         SPACE 1                                                        08510000
+.NOISOA2 ANOP                                                 DRK NOV01 08520000
+         MVC   INSERT#1+36(7),ATTREXPI EXPIRE:                ABL NOV86 08530000
+         SPACE 1                                              ABL NOV86 08540000
+         LA    R1,4+2+3+1+8+1(R2)      DATE MEMBER LAST READ  ABL NOV86 08550000
+         CLC   0(3,R1),ATTRNODA        ANY VALID DATE?        ABL NOV86 08560000
+         BE    ATTR534                 NO, BRANCH             ABL NOV86 08570000
+         MVI   MTLEN,66                LENGTH OF INSERT       ABL NOV86 08580000
+         LA    R15,FULLWORD            RESULT                 ABL NOV86 08590000
+         BAS   R14,CONVDATE            CONVERT TO MMDDYY      ABL NOV86 08600000
+         MVC   INSERT#1+56(L'DATEMASK),DATEMASK               ABL NOV86 08610000
+         ED    INSERT#1+56(L'DATEMASK),FULLWORD               ABL NOV86 08620000
+         AIF   ('&ISODT'  NE 'YES').NOISOA3                   DRK NOV01 08630000
+         SPACE 1                                                        08640000
+         MVC   DOUBLE(8),INSERT#1+56+1   MM/DD/YY             DRK NOV01 08650000
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 08660000
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 08670000
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 08680000
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 08690000
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 08700000
+         MVC   INSERT#1+56+1(8),DOUBLE   YY/MM/DD             DRK NOV01 08710000
+         SPACE 1                                                        08720000
+.NOISOA3 ANOP                                                 DRK NOV01 08730000
+         MVC   INSERT#1+52(5),ATTRREAD READ:                  ABL NOV86 08740000
+ATTR534  DS    0H                                             ABL NOV86 08750000
+         M$MSG L026$1                                         ABL NOV86 08760000
+         MVI   MTLEN,8                                        ABL NOV86 08770000
+         SPACE 2                                              ABL NOV86 08780000
+ATTR540  TM    DIRATTR,ATTROVLY                OVERLAY DEFINED?         08790000
+         BNO   ATTR550                         NO, BRANCH               08800000
+         MVC   INSERT#1(8),BLANKS              BLANK FILL               08810000
+         MVC   INSERT#1(4),REUSTXT+3           OVERLAY AND REENTRANT    08820000
+         TM    DIRATTR,ATTRRENT                CORRECT?                 08830000
+         BNO   ATTR542                         NO, BRANCH               08840000
+         M$MSG L884$1                          YES, ERROR               08850000
+ATTR542  MVC   INSERT#1(4),REUSTXT+3           OVERLAY AND REUSABLE     08860000
+         TM    DIRATTR,ATTRREUS                CORRECT?                 08870000
+         BNO   ATTR543                         NO, BRANCH               08880000
+         M$MSG L884$1                          YES, ERROR               08890000
+ATTR543  MVC   INSERT#1(4),REFRTXT+3           OVERLAY AND REFRESHABLE  08900000
+         TM    DIRATTR+1,ATTRREFR              CORRECT?                 08910000
+         BNO   ATTR544                         NO, BRANCH               08920000
+         M$MSG L884$1                          YES, ERROR               08930000
+ATTR544  MVC   INSERT#1(4),SCTRTXT+3           OVERLAY AND SCATTER      08940000
+         TM    DIRATTR,ATTRSCTR                CORRECT?                 08950000
+         BNO   ATTR545                         NO, BRANCH               08960000
+         M$MSG L884$1                          YES, ERROR               08970000
+ATTR545  TM    DIRATTR2,DIRAOSLE               MVS LINKAGE-EDITOR?      08980000
+         BNO   ATTR550                         NO, BRANCH               08990000
+         MVC   INSERT#1(5),=C'RMODE'                                    09000000
+         MVC   INSERT#1+6(3),=C'ANY'           RMODE ANY                09010000
+         TM    MODESAVE,DIRRMANY               CORRECT?                 09020000
+         BNO   ATTR546                         NO, BRANCH               09030000
+         M$MSG L884$1                          YES, ERROR               09040000
+ATTR546  MVI   INSERT#1,C'A'                   AMODE ANY                09050000
+         TM    MODESAVE,DIRAM31+DIRAM64        AMODE ANY?     DRK OCT02 09060000
+         BO    ATTR548                         YES, ERROR     DRK OCT02 09070000
+         MVC   INSERT#1+6(3),=C'31 '           AMODE 31       DRK OCT02 09080000
+         TM    MODESAVE,DIRAM31                AMODE 31?      DRK OCT02 09090000
+         BO    ATTR548                         YES, ERROR     DRK OCT02 09100000
+         MVC   INSERT#1+6(3),=C'64 '           AMODE 64       DRK OCT02 09110000
+         TM    MODESAVE,DIRAM64                AMODE 64?      DRK OCT02 09120000
+         BO    ATTR548                         YES, ERROR     DRK OCT02 09130000
+         B     ATTR550                         NO, BRANCH     DRK OCT02 09140000
+ATTR548  DS    0H                                             DRK OCT02 09150000
+         M$MSG L884$1                          YES, ERROR               09160000
+         SPACE 1                                                        09170000
+ATTR550  TM    DIRATTR+1,ATTRSYMS+ATTRNE       TEST AND NOT EDIT?       09180000
+         BNO   ATTR560                         NO, BRANCH               09190000
+         M$MSG L882                            YES, ERROR               09200000
+         SPACE 1                                                        09210000
+ATTR560  TM    DIRATTR,ATTRRENT                REENTRANT?               09220000
+         BNO   ATTR570                         NO, BRANCH               09230000
+         TM    DIRATTR,ATTRREUS                REUSABLE?                09240000
+         BO    ATTR570                         YES, BRANCH              09250000
+         M$MSG L881                            ERROR MESSAGE            09260000
+         SPACE 1                                                        09270000
+ATTR570  TM    DIRATTR,ATTRREUS+ATTRSCTR       REUSABLE AND SCATTER?    09280000
+         BNO   ATTR590                         NO, BRANCH               09290000
+         M$MSG L883                            YES, ERROR               09300000
+         SPACE 2                                                        09310000
+ATTR590  UNPK  INSERT#1(7),DIREPA(4)                                    09320000
+         TR    INSERT#1(6),TRTABLE                                      09330000
+         MVC   INSERT#1+6(2),BLANKS                                     09340000
+         MVI   MTLEN,8                RESET THE INSERT LENGTH  GP JAN08 09341000
+         M$MSG L102$1                 NO ENTRY POINT MESSAGE            09350000
+         SPACE 1                                                        09360000
+         UNPK  INSERT#1(7),DIRSTORE(4)                                  09370000
+         TR    INSERT#1(6),TRTABLE                                      09380000
+         MVC   INSERT#1+6(2),BLANKS                                     09390000
+         ICM   R1,B'0111',DIRSTORE    ACTUAL MODULE LENGTH              09400000
+         LA    R1,1023(,R1)           NEXT HIGHER                       09410000
+         SRL   R1,10                             1K VALUE               09420000
+         CVD   R1,DOUBLE                                                09430000
+         MVC   INSERT#2(8),=X'402020202120D2404040'                     09440000
+         ED    INSERT#2(6),DOUBLE+5                                     09450000
+         M$MSG L104$2                                                   09460000
+         SPACE 2                                                        09470000
+         CLI   LKEDDATE,X'FF'          ANY DATA TO OUTPUT?              09480000
+         BE    ATTR600                 NO, BRANCH                       09490000
+         CLI   #LKEDOPT,X'02'          "NOLKEDDATE" DESIRED?            09500000
+         BE    ATTR600                 YES, BRANCH                      09510000
+         CLI   #LKEDOPT,X'01'          "LKEDDATE" DESIRED?              09520000
+         BE    *+12                    YES, BRANCH                      09530000
+         TM    FLAGSGG,FLKEDCON        NO LKEDDATE DEFAULT?             09540000
+         BO    ATTR600                 YES, BRANCH                      09550000
+         SPACE 1                                                        09560000
+         MVC   INSERT#1-1(9),DATEMASK                                   09570000
+         ED    INSERT#1-1(9),LKEDDATE                                   09580000
+         AIF   ('&ISODT'  NE 'YES').NOISOA4                   DRK NOV01 09590000
+         SPACE 1                                                        09600000
+         MVC   DOUBLE(8),INSERT#1-1+1    MM/DD/YY             DRK NOV01 09610000
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 09620000
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 09630000
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 09640000
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 09650000
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 09660000
+         MVC   INSERT#1-1+1(8),DOUBLE    YY/MM/DD             DRK NOV01 09670000
+         SPACE 1                                                        09680000
+.NOISOA4 ANOP                                                 DRK NOV01 09690000
+         MVI   MTLEN+4,18+14                  LENGTH OF THIS INSERT     09700000
+         MVC   INSERT#2(10),LKEDNAME                                    09710000
+         MVC   INSERT#2+10(2),=CL2' V'                                  09720000
+         UNPK  INSERT#2+10+2(3),LKEDVVMM(2)                             09730000
+         MVC   INSERT#2+10+2+2(2),=CL2' M'                              09740000
+         UNPK  INSERT#2+10+2+2+2(3),LKEDVVMM+1(2)                       09750000
+         MVI   INSERT#2+10+2+2+2+2,C' '                       DRK JUN99 09760000
+         SPACE 1                                              DRK MAY99 09770000
+         CLC   LKEDTIME(4),=X'0000000F' ANY LINK EDIT TIME?   DRK JUL99 09780000
+         BE    *+4+6+6+6                NO                    DRK MAY99 09790000
+         MVC   INSERT#2+10+2+2+2+2(4),=CL4'  AT'              DRK MAY99 09800000
+         MVC   INSERT#2+10+2+2+2+2+4(10),TIMEMSK2             DRK MAR00 09810000
+         ED    INSERT#2+10+2+2+2+2+4(10),LKEDTIME             DRK MAY99 09820000
+         SPACE 1                                                        09830000
+         M$MSG L064$2                         LINKAGE EDIT MESSAGE      09840000
+         MVI   MTLEN+4,8                      LENGTH OF STANDARD INSERT 09850000
+         SPACE 3                                                        09860000
+ATTR600  TM    DIRFLAG,X'80'           ALIAS?                           09870000
+         BO    ATTR630                 YES, BRANCH                      09880000
+         OC    #RMODE(2),#RMODE        ANY RMODE/AMODE CHANGE?          09890000
+         BZ    ATTR630                 NO, BRANCH                       09900000
+         TM    FLAGSCC,RECFMU          RECFM=U?                         09910000
+         BNO   ATTR630                 NO, BRANCH                       09920000
+         NI    MODESAVE,DIRRMANY+DIRAM31+DIRAM64              DRK OCT02 09930000
+         MVC   MSGTEXT2(DIREND-DIRNAME),DIRNAME  SAVE MAIN ENTRY        09940000
+         MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  09950000
+         SPACE 1                                                        09960000
+ATTR610  MVC   DIRNAME(DIREND-DIRNAME),MSGTEXT2  RESTORE MAIN ENTRY     09970000
+         BAS   R14,READDIR             GET NEXT DIRECTORY MEMBER        09980000
+         B     ATTR630                 LAST MEMBER PROCESSED            09990000
+         SPACE 2                                                        10000000
+         CLC   DIRTTR,MEMTTR           TTR'S MATCH?                     10010000
+         BNE   ATTR610                 NO, BRANCH                       10020000
+         TM    MEMFLAG,X'80'           ALIAS ENTRY?                     10030000
+         BNO   ATTR610                 NO, CONTINUE SEARCHING           10040000
+         SPACE 2                                                        10050000
+         L     R14,DIRPTRS             CURRENT DIRECTORY ENTRY          10060000
+         MVC   DIRNAME(DIREND-DIRNAME),0(R14)                           10070000
+         SPACE 1                                                        10080000
+         MVC   DOUBLE(1),DIRATTR3                                       10090000
+         NI    DOUBLE,DIRRMANY+DIRAM31+DIRAM64                DRK OCT02 10100000
+         CLC   MODESAVE(1),DOUBLE      RMODE/AMODE ENTRIES EQUAL?       10110000
+         BE    ATTR610                 YES, BRANCH                      10120000
+         NI    DIRATTR3,FF-DIRRMANY-DIRAM31-DIRAM64           DRK OCT02 10130000
+         OC    DIRATTR3(1),MODESAVE    CHANGE THE RMODE/AMODE ENTRY     10140000
+         SPACE 1                                                        10150000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   10160000
+         STOW  STOWDCB,DIRNAME,R       REPLACE THIS MEMBER ENTRY        10170000
+         SPACE 1                                                        10180000
+         LR    R5,R15                  SAVE RETURN CODE                 10190000
+         MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      10200000
+         M$MSG L092$1                                                   10210000
+         LTR   R15,R5                  SUCCESSFUL?                      10220000
+         BNZ   IOERROR                 NO, I/O ERROR                    10230000
+         B     ATTR610                 CONTINUE FOR ALL ALIASES         10240000
+         SPACE 2                                                        10250000
+ATTR630  NI    FLAGSBB,FF-FLINESET                                      10260000
+         CLI   #ALIAOPT,X'01'          "ALIASINFO" DESIRED?             10270000
+         BE    ATTR640                 YES, BRANCH                      10280000
+         BH    NEWCMD                  "NOALIASINFO", DONE              10290000
+         TM    FLAGSGG,FALINCON        NO ALIAS INFORMATION DEFAULT?    10300000
+         BO    NEWCMD                  YES, BRANCH                      10310000
+         TM    FLAGSCC,RECFMU          RECFM=U?                         10320000
+         BO    ATTR640                 YES, BRANCH                      10330000
+         TM    DIRFLAG,X'80'           MODULE AN ALIAS?                 10340000
+         BNO   NEWCMD                  NO, DONE                         10350000
+         SPACE 1                                                        10360000
+ATTR640  MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  10370000
+         TM    DIRFLAG,X'80'           MODULE AN ALIAS?                 10380000
+         BNO   ATTR900                 NO, FIND ALL ALIASES             10390000
+         XC    INSERT#1(8),INSERT#1    NO MAIN(S) FOUND                 10400000
+         SPACE 2                                                        10410000
+*  LIST ANY CORRESPONDING MAIN MODULE NAMES                             10420000
+         SPACE 1                                                        10430000
+ATTR800  BAS   R14,READDIR        GET NEXT DIRECTORY MEMBER             10440000
+         B     ATTR810            LAST MEMBER PROCESSED                 10450000
+         SPACE 1                                                        10460000
+         TM    MEMFLAG,X'80'      THIS MODULE AN ALIAS?                 10470000
+         BO    ATTR800            YES, IGNORE                           10480000
+         CLC   DIRTTR,MEMTTR      TTR MATCH?                            10490000
+         BNE   ATTR800            NO, BRANCH                            10500000
+         MVC   INSERT#1(8),MEMNAME                                      10510000
+         M$MSG L066$1                                                   10520000
+         B     ATTR800                                                  10530000
+         SPACE 1                                                        10540000
+ATTR810  OC    INSERT#1(8),INSERT#1  ANY MAIN(S) FOUND?                 10550000
+         BNZ   NEWCMD                YES, BRANCH                        10560000
+         M$MSG L860                                                     10570000
+         TM    FLAGSCC,RECFMU     LOAD MODULE?                          10580000
+         BNO   NEWCMD             NO, BRANCH                            10590000
+         MVC   INSERT#1(8),DIRREAL                                      10600000
+         SPACE 1                                                        10610000
+         TM    DIRATTR,ATTRSCTR   SCATTER LOADED?                       10620000
+         BNO   *+10               NO, BRANCH                            10630000
+         MVC   INSERT#1(8),DIRREALS                                     10640000
+         LA    R1,L861$1                                                10650000
+         B     MSGNEW                                                   10660000
+         SPACE 2                                                        10670000
+*  LIST ANY ALIASES FOR THE MODULE                                      10680000
+         SPACE 1                                                        10690000
+ATTR900  BAS   R14,READDIR          GET NEXT DIRECTORY MEMBER           10700000
+         B     ATTR940              LAST MEMBER PROCESSED               10710000
+         SPACE 1                                                        10720000
+         CLC   DIRTTR,MEMTTR        TTR MATCH?                          10730000
+         BNE   ATTR900              NO, BRANCH                          10740000
+         TM    MEMFLAG,X'80'        AN ALIAS?                           10750000
+         BO    ATTR910              YES, BRANCH                         10760000
+         CLC   DIRNAME(8),MEMNAME   DID I FIND MYSELF?                  10770000
+         BE    ATTR900              YES, BRANCH                         10780000
+         MVC   INSERT#1(8),MEMNAME                                      10790000
+         M$MSG L864$1               THIS IS AN APPARENT ALIAS MEMBER    10800000
+         B     ATTR900                                                  10810000
+         SPACE 1                                                        10820000
+ATTR910  LA    R2,MEMNAME+7                                             10830000
+         TM    FLAGSBB,FLINESET     LINE IN PROGRESS?                   10840000
+         BO    ATTR920              YES, BRANCH                         10850000
+         OI    FLAGSBB,FLINESET     LINE NOW IN PROGRESS                10860000
+         LA    R1,80                ASSUME AN ACTIVE MODE               10870000
+         TM    SPFLAG0,SPFDON       ISPMODE ACTIVE?                     10880000
+         BO    ATTR912              YES, BRANCH                         10890000
+         TM    CONTOPTN,1           ANY LOG RECORDING?                  10900000
+         BO    ATTR912              YES, BRANCH                         10910000
+*        GTSIZE ,                   TERMINAL SIZE              SS MAY89 10920000
+         GTSIZE                                                         10930000
+         CH    R1,=H'120'           120 OR LESS BYTES?                  10940000
+         BL    *+8                  YES, BRANCH                         10950000
+         LH    R1,=H'120'           NO, USE 120 BYTES                   10960000
+ATTR912  SH    R1,=H'7'             LESS SEVEN FOR PREFIX               10970000
+         ST    R1,LINESIZE          CHARACTERS/LINE                     10980000
+         MVC   MSGLINE+4(L'MSGALIAS),MSGALIAS                           10990000
+         LA    R5,MSGLINE+4+L'MSGALIAS                                  11000000
+         MVC   FULLWORD(3),L160$1   MESSAGE IDENTIFIER                  11010000
+         SPACE 1                                                        11020000
+ATTR920  CLI   0(R2),X'40'          SCAN FOR                            11030000
+         BNE   *+8                          LAST                        11040000
+         BCT   R2,ATTR920                       NON-BLANK               11050000
+         SPACE 1                                                        11060000
+         LA    R0,MEMNAME                                               11070000
+         SR    R2,R0                                                    11080000
+         BNM   *+6                                                      11090000
+         SR    R2,R2                                                    11100000
+         LA    R15,2(R5,R2)                                             11110000
+         LA    R1,MSGLINE                                               11120000
+         SR    R15,R1                                                   11130000
+         C     R15,LINESIZE                                             11140000
+         BNH   ATTR930                                                  11150000
+         LA    R1,MSGLINE+4                                             11160000
+         SR    R5,R1                                                    11170000
+         STC   R5,MTLEN                                                 11180000
+         MVC   INSERT#1(127),MSGLINE+4                                  11190000
+         LA    R1,FULLWORD                                              11200000
+         M$MSG (R1)                                                     11210000
+         MVI   MTLEN,8                                                  11220000
+         MVI   FULLWORD+2,C'9'                                          11230000
+         LA    R5,MSGLINE+3         INDENT FOR BLANKS                   11240000
+         SPACE 1                                                        11250000
+ATTR930  MVI   0(R5),X'40'                                              11260000
+         MVC   1(8,R5),MEMNAME                                          11270000
+         TR    1(8,R5),TRLINE                                           11280000
+         LA    R1,2(R2,R5)                                              11290000
+         MVI   0(R1),C','                                               11300000
+         LA    R5,3(R2,R5)                                              11310000
+         B     ATTR900                                                  11320000
+         SPACE 2                                                        11330000
+ATTR940  TM    FLAGSBB,FLINESET     LINE IN PROGRESS?                   11340000
+         BZ    NEWCMD               NO, EXIT                            11350000
+         LA    R1,MSGLINE+5                                             11360000
+         SR    R5,R1                                                    11370000
+         STC   R5,MTLEN                                                 11380000
+         MVC   INSERT#1(127),MSGLINE+4                                  11390000
+         LA    R1,FULLWORD                                              11400000
+         M$MSG (R1)                                                     11410000
+         MVI   MTLEN,8                                                  11420000
+         B     NEWCMD                                                   11430000
+HEXZERO  DC    XL30'00'                                                 11430100
+*                                                             DRK JUN18 11430200
+PDS397A  M$TX  'PDS397A SHOULD ENTIRE DIRECTORY BE MODIFIED (Y/N) ?'  " 11431000
+TIMEMSK2 DC    X'402120207A20207A2020'     HH:MM:SS           DRK MAR00 11440000
+ATTRCOMM DC    C',     '         COMMA AND FOLLOWING BLANKS             11450000
+MSGALIAS DC    C'ALIASES FOR THIS MEMBER ARE:'                          11460000
+TBLATTR  DS    0H                                    PDS PROCESSING     11470000
+*                                                    ==============     11480000
+         DC    AL1(ATTROVLY,0,00006),CL9'OVERLAY'       LIST ONLY       11490000
+         DC    AL1(ATTRTEST,0,00003),CL9'TEST'          LIST ONLY       11500000
+         AIF   ('&MVSLEV' GE 'MVS6XX').MVSNEW                 DRK AUG05 11510000
+         DC    AL1(0,ATTRFLEV,128+6),CL9'E-LEVEL'       LIST ONLY       11520000
+.MVSNEW  ANOP                                                 DRK AUG05 11530000
+SCTRTXT  DC    AL1(ATTRSCTR,0,00003),CL9'SCTR'          LIST ONLY       11540000
+RENTTXT  DC    AL1(ATTRRENT,0,00003),CL9'RENT'       CHANGE AND LIST    11550000
+REUSTXT  DC    AL1(ATTRREUS,0,00003),CL9'REUS'       CHANGE AND LIST    11560000
+REFRTXT  DC    AL1(0,ATTRREFR,00003),CL9'REFR'       CHANGE AND LIST    11570000
+         DC    AL1(ATTRLOAD,0,00008),CL9'LOAD ONLY'  CHANGE AND LIST    11580000
+         DC    AL1(0,ATTRNE+0,00007),CL9'NOT EDIT'   CHANGE AND LIST    11590000
+         DC    AL1(ATTREXEC,0,128+7),CL9'NOT EXEC'   CHANGE AND LIST    11600000
+         DC    AL1(0,ATTRNODC,128+1),CL9'DC'         CHANGE AND LIST    11610000
+         DC    X'FFFF'                                                  11620000
+ATTREXPI DC    C'EXPIRE:'                                     ABL NOV86 11630000
+ATTRLEV  DC    C'LEV:'                                        ABL NOV86 11640000
+ATTRBY   DC    C'BY'                                          ABL NOV86 11650000
+ATTRREAD DC    C'READ:'                                       ABL NOV86 11660000
+ATTRNODA DC    X'00000F'               NULL DATE              ABL NOV86 11670000
+         SPACE 2                                                        11680000
+AATTS310 DC    A(ATTS310)                                               11690000
+AATTRSUM DC    A(ATTRSUMM)                                              11700000
+*PFSTAT1 DC    CL72'SPF STATS:  VER.MOD  CREATED   LAST MODIFIED  SIZE  11710000
+SPFSTAT1 DC    CL72'MEMBER      VER.MOD  CREATED   LAST MODIFIED  SIZE X11711000
+                INIT   MOD   ID'    PDS230I                             11720000
+SPFSTATL DC    CL72'MEMBER      VER.MOD  CREATED   LAST MODIFIED     SIX11721000
+               ZE     INIT   ID'    PDS231I                             11722000
+         DROP  R6                                             DRK OCT98 11730000
+         SPACE 3                                                        11740000
+         USING *,R8                                                     11750000
+ATTRSUMM XC    ADDRSUMR,ADDRSUMR   CLEAR THE SUMMARY ADDRESS            11760000
+         L     R1,ATTRCNT2                                              11770000
+         A     R1,ATTRCNTA                                              11780000
+*        C     R1,=F'1'            MORE THAN ONE ENTRY?                 11781000
+         C     R1,=F'0'            AT LEAST ONE ENTRY?        DRK AUG18 11790000
+         BNH   ATTRSU90            NO, BRANCH                           11800000
+         MVI   MTLEN,16            GET LENGTH                           11810000
+         MVI   MTLEN+4,16                                               11820000
+         CLI   #ALIAOPT,X'03'          SHORT FORMAT DESIRED?            11830000
+         BE    ATTRSU04                YES, BRANCH                      11840000
+         TM    FLAGSCC,RECFMU          LOAD MODULE LIBRARY?             11850000
+         BNO   ATTRSU04                NO, BRANCH                       11860000
+         M$ERRST MSGBLANK                 ONE BLANK LINE                11870000
+ATTRSU04 OI    ATTRTOT2+7,X'0F'    INSURE VALID PACKED SIGN             11880000
+*                                                                       11890000
+         L     R1,ATTRCNT2         COUNT OF MODULES                     11900000
+         CVD   R1,DOUBLE           IN PACKED FORM                       11910000
+         BAS   R14,ATTRSU99        GET THE FIRST COUNT                  11920000
+         MVC   INSERT#1(16),0(R1)  MOVE INTO COUNT AREA                 11930000
+         MVC   DOUBLE(8),ATTRTOT2  MOVE INTO COMMON AREA                11940000
+         TM    FLAGSCC,RECFMU      LOAD MODULES?                        11950000
+         BNO   ATTRSU10            NO, BRANCH                           11960000
+         AP    DOUBLE(8),ATTRUFFF  ADD 1023                             11970000
+         DP    DOUBLE(8),ATTRU1K   DIVIDE BY 1024                       11980000
+         ZAP   ATTRTOT2(8),DOUBLE(5) MOVE IN QUOTIENT                   11990000
+         MVC   DOUBLE(8),ATTRTOT2  MOVE INTO COMMON AREA                12000000
+ATTRSU10 BAS   R14,ATTRSU99        CONVERT SIZE                         12010000
+         MVC   INSERT#2(16),0(R1)  MOVE IN SIZE PARAMETER               12020000
+         TM    FLAGSCC,RECFMU      LOAD MODULES?                        12030000
+         BO    ATTRSU20            YES, BRANCH                          12040000
+         M$MSG L117$2                                                   12050000
+         B     ATTRSU90                                                 12060000
+ATTRSU20 ICM   R1,B'1111',ATTRCNT2 ANY COUNT?                           12070000
+         BZ    ATTRSU25            NO, BRANCH                           12080000
+         M$MSG L118$2                                                   12090000
+ATTRSU25 OI    ATTRTOTA+7,X'0F'    INSURE VALID PACKED SIGN             12100000
+*                                                                       12110000
+         ICM   R1,B'1111',ATTRCNTA ANY COUNT?                           12120000
+         BZ    ATTRSU90            NO, BRANCH                           12130000
+         L     R1,ATTRCNTA         COUNT OF MODULES                     12140000
+         CVD   R1,DOUBLE           IN PACKED FORM                       12150000
+         BAS   R14,ATTRSU99        GET THE FIRST COUNT                  12160000
+         MVC   INSERT#1(16),0(R1)  MOVE INTO COUNT AREA                 12170000
+         MVC   DOUBLE(8),ATTRTOTA  MOVE INTO COMMON AREA                12180000
+         AP    DOUBLE(8),ATTRUFFF  ADD 1023                             12190000
+         DP    DOUBLE(8),ATTRU1K   DIVIDE BY 1024                       12200000
+         ZAP   ATTRTOTA(8),DOUBLE(5) MOVE IN QUOTIENT                   12210000
+         MVC   DOUBLE(8),ATTRTOTA  MOVE INTO COMMON AREA                12220000
+         BAS   R14,ATTRSU99        CONVERT SIZE                         12230000
+         MVC   INSERT#2(16),0(R1)  MOVE IN SIZE PARAMETER               12240000
+         M$MSG L119$2                                                   12250000
+*                                                                       12260000
+ATTRSU90 M$ERRST MSGBLANK                 ONE BLANK LINE                12270000
+         XC    ATTRCNT2(4+4),ATTRCNT2     COUNTS                        12280000
+         XC    ATTRTOT2(8+8),ATTRTOT2     TOTALS                        12290000
+         MVI   MTLEN,8                    RESET LENGTH                  12300000
+         MVI   MTLEN+4,8                  RESET LENGTH                  12310000
+         BR    R2                                                       12320000
+ATTRSU99 DS    0H                                                       12330000
+         MVC   INSERT#2+16(15),ATTRUMMP EDIT PICTURE                    12340000
+         MVC   INSERT#2+16+15(16),BLANK128                              12350000
+         ED    INSERT#2+16(15),DOUBLE+2                                 12361000
+         LA    R1,INSERT#2+16                                           12370000
+         LA    R1,1(,R1)   <---+                                        12380000
+         CLI   0(R1),X'40'     |                                        12390000
+         BE    *-8         ----+                                        12400000
+         BR    R14                                                      12410000
+         SPACE 2                                                        12420000
+*                 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5                         12430000
+*                   1 2 , 3 4 5 , 6 7 8 , 9 0 1                         12440000
+ATTRUMMP DC    X'4020206B2020206B2020206B202120'                        12450000
+ATTRUFFF DC    PL3'1023'                                                12460000
+ATTRU1K  DC    PL3'1024'                                                12470000
+         SPACE 3                                                        12480000
+ATTS310  BASR  R8,0                    SHORT FORM ATTRIB SUBCOMMAND     12490000
+         USING *,R8                    4K OF ADDRESSABILITY             12500000
+         MVC   MSGTEXT2(86),INSERT#2   SAVE THE VARIABLE PART           12510000
+         TM    ##ADRCM#+#LSUB,FATTRHDR HEADER WRITTEN YET?              12520000
+         BO    ATTS312                 YES, BRANCH                      12530000
+         MVC   INSERT#1(72),ATTSTAT    HEADER INFORMATION               12540000
+         MVI   MTLEN,72                                                 12550000
+         M$MSG L232$1                                                   12560000
+         OI    ##ADRCM#+#LSUB,FATTRHDR MARK FOR NEXT CALL               12570000
+         SPACE 1                                                        12580000
+ATTS312  MVC   INSERT#1(127),BLANK128                                   12590000
+         MVI   MTLEN,112               MAXIMUM LENGTH INSERT            12600000
+         MVC   INSERT#1(8),DIRNAME                                      12610000
+         SPACE 2                                                        12620000
+         LA    R2,DIRAPF               POINT TO APF INFORMATION         12630000
+         SPACE 1                                                        12640000
+         TM    DIRATTR,ATTRSCTR        SCATTER FORMAT?                  12650000
+         BNO   *+8                     NO, BRANCH                       12660000
+         LA    R2,8(,R2)               YES, ADD SCATTER SIZE BYTES      12670000
+         SPACE 1                                                        12680000
+         TM    DIRFLAG,X'80'           ALIAS?                           12690000
+***PDSMAN CHANGES: ATTRIB FOR LISTING SSI (SHORT FORM)        ABL NOV86 12700000
+         BO    ATTS314                 YES, BRANCH                      12710000
+         TM    5(R2),X'0F'             PDSMAN DATE?           ABL NOV86 12720000
+         BO    ATTS320                 YES, BRANCH            ABL NOV86 12730000
+         TM    6(R2),X'0F'             PDSMAN DATE?           ABL NOV86 12740000
+         BO    ATTS320                 YES, BRANCH            ABL NOV86 12750000
+         TM    4+5(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 12760000
+         BO    ATTS320                 YES, BRANCH            ABL NOV86 12770000
+         TM    4+6(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 12780000
+         BO    ATTS320                 YES, BRANCH            ABL NOV86 12790000
+         CLI   8(R2),0                 CONVERTED ALIAS ENTRY?           12800000
+*        BE    *+8                     NO, BRANCH                       12810000
+         B     *+8                     BRANCH                 DRK JAN98 12820000
+ATTS314  LA    R2,11(,R2)              ADD ALIAS LENGTH                 12830000
+ATTS320  DS    0H                                             ABL NOV86 12840000
+         SPACE 1                                                        12850000
+         TM    DIRATTR2,DIRAOSLE       VS LINKAGE EDITOR?               12860000
+         BO    ATTS330                 YES, BRANCH                      12870000
+***      M$MSG L022                    NON-VS LINKAGE EDITOR MESSAGE    12880000
+         B     ATTS340                                                  12890000
+         SPACE 1                                                        12900000
+ATTS330  TM    DIRATTR2,DIR2SSI        SSI PRESENT?                     12910000
+         BNO   ATTS360                 NO, SKIP SSI PROCESSING          12920000
+         SPACE 1                                                        12930000
+ATTS340  LA    R2,1(,R2)               ROUND UP TO HALFWORD             12940000
+         N     R2,=F'-2'                                                12950000
+         SPACE 1                                                        12960000
+         CLC   ZERO,0(R2)              ZERO?                            12970000
+         BE    ATTS360                 YES, NO SSI                      12980000
+         CLC   =F'-1',0(R2)            FFFFFFFF?                        12990000
+         BE    ATTS360                 YES, NO SSI                      13000000
+         SPACE 1                                                        13010000
+         UNPK  INSERT#1+33(9),0(5,R2)  CONVERT TO HEXADECIMAL           13020000
+         TR    INSERT#1+33(8),TRTABLE  CONVERT TO PRINTABLE             13030000
+         MVI   INSERT#1+33+8,X'40'     FIX UNPRINTABLE CHARACTER        13040000
+***      M$MSG L025$1                                                   13050000
+         LA    R2,4(,R2)               ADD SSI SIZE                     13060000
+         SPACE 2                                                        13070000
+ATTS360  DS    0H                                                       13080000
+         MVI   MODESAVE,0                                               13090000
+         LA    R3,INSERT#1+42              WHERE VARIABLE OUTPUT STARTS 13100000
+         TM    DIRATTR2,DIRAOSLE           VS LINKAGE EDITOR?           13110000
+         BZ    ATTS540                     NO, CANNOT BE AUTHORIZED     13120000
+         SR    R1,R1                                                    13130000
+         IC    R1,DIRATTR3                 AMODE BITS                   13140000
+         TM    DIRFLAG,X'80'               ALIAS?                       13150000
+         BNO   *+8                         NO, BRANCH                   13160000
+         SRL   R1,2                        YES, SHIFT AMODE BITS        13170000
+         STC   R1,MODESAVE                 SAVE CURRENT AMODE           13180000
+         TM    DIRATTR3,DIRRMANY           RMODE ANY?                   13190000
+         BNO   *+8                         NO, BRANCH                   13200000
+         OI    MODESAVE,DIRRMANY           YES, SET RMODE AGAIN         13210000
+         SPACE 1                                                        13220000
+         TM    MODESAVE,DIRRMANY+DIRAM31+DIRAM64 UNUSUAL RMODE/AMODE?   13230000
+         BZ    ATTS400                     NO, BRANCH                   13240000
+         MVI   0(R3),C'R'                  R FOR RMODE                  13250000
+         MVC   1(3,R3),ATTS24              MOVE IN THE RMODE TEXT       13260000
+         SPACE 1                                                        13260100
+         TM    MODESAVE,DIRRMANY+DIRRM64   RMODE 64?          DRK APR18 13260200
+         BNO   *+4+6+4                     NO, BRANCH         DRK APR18 13260300
+         MVC   1(3,R3),ATTS64              MOVE IN THE RMODE TEXT     " 13260400
+         B     ATTS362                                        DRK APR18 13261000
+         SPACE 1                                                        13262000
+         TM    MODESAVE,DIRRMANY           RMODE ANY?                   13270000
+         BZ    ATTS362                     NO, BRANCH                   13280000
+         MVC   1(4,R3),ATTSANY             MOVE IN THE RMODE TEXT       13290000
+         LA    R3,1(,R3)                   ADD AN EXTRA ONE             13300000
+ATTS362  LA    R3,5(,R3)                   ALLOW FOR "R24, "            13310000
+         SPACE 1                                                        13320000
+         MVI   0(R3),C'A'                  A FOR AMODE                  13330000
+         MVC   1(3,R3),ATTS24              MOVE IN THE AMODE TEXT       13340000
+         TM    MODESAVE,DIRAM64            AMODE 64?          DRK APR18 13340100
+         BNO   *+10                        NO, BRANCH         DRK APR18 13340200
+         MVC   1(3,R3),ATTS64              MOVE IN THE AMODE TEXT     " 13341000
+         TM    MODESAVE,DIRAM31            AMODE 31?                    13350000
+         BNO   *+10                        NO, BRANCH                   13360000
+         MVC   1(3,R3),ATTS31              MOVE IN THE AMODE TEXT       13370000
+         TM    MODESAVE,DIRAM64+DIRAM31    AMODE ANY?                   13380000
+         BNO   ATTS364                     NO, BRANCH                   13390000
+         MVC   1(4,R3),ATTSANY             MOVE IN THE AMODE TEXT       13400000
+         LA    R3,1(,R3)                   ADD AN EXTRA ONE             13410000
+ATTS364  LA    R3,5(,R3)                   ALLOW FOR "A24, "            13420000
+         SPACE 1                                                        13430000
+***      M$MSG L120$2                                                   13440000
+***      TM    MODESAVE,DIRRMANY           RMODE ANY?                   13450000
+***      BZ    ATTS400                     NO, BRANCH                   13460000
+***      LA    R1,=C'ANY'                  ASSUME AMODE IS ANY          13470000
+***      TM    MODESAVE,DIRAM24+DIRAM31    AMODE ANY?                   13480000
+***      BO    ATTS370                     YES, INVALID                 13490000
+***      TM    MODESAVE,DIRAM31            AMODE 31?                    13500000
+***      BO    ATTS400                     YES, BRANCH                  13510000
+***      LA    R1,=C'24 '                  AMODE IS 24                  13520000
+***S370  MVC   INSERT#1(8),BLANKS                                       13530000
+***      MVC   INSERT#1(3),0(R1)           MOVE IN THE AMODE TEXT       13540000
+***      M$MSG L880$1                      RMODE ANY/AMODE CONFLICT     13550000
+         SPACE 2                                                        13560000
+ATTS400  CLI   RLDCOUNT,X'FF'          ANY DATA TO CHECK?               13570000
+         BE    ATTS500                 NO, BRANCH                       13580000
+         CLC   RLDCOUNT(1),DIRATTR4    RLD/CONTROL AMOUNTS AGREE?       13590000
+         BE    ATTS500                 YES, BRANCH                      13600000
+***      M$MSG L826                                                     13610000
+         SPACE 2                                                        13620000
+ATTS500  TM    DIRATTR2,DIR2PAGA       PAGE ALIGNMENT REQUIRED?         13630000
+         BNO   ATTS510                 NO, BRANCH                       13640000
+         MVC   0(5,R3),ATTSPAGE        PAGE, TEXT                       13650000
+         LA    R3,6(,R3)               NEXT PARAMETER                   13660000
+***      M$MSG L024                    PAGE ALIGNMENT REQUIRED          13670000
+         SPACE 2                                                        13680000
+ATTS510  TM    DIRATTR2,DIRAPFLG       APF DATA PRESENT AND VALID?      13690000
+         BNO   ATTS540                 NO, BRANCH                       13700000
+         SPACE 1                                                        13710000
+         LA    R1,ATTSAPFX             ASSUME APF LENGTH INCORRECT      13720000
+         CLI   0(R2),1                 APF DATA LENGTH OK?              13730000
+         BNE   ATTS530                 NO, BRANCH                       13740000
+         SPACE 3                                                        13750000
+         LA    R1,ATTSAPF1             ASSUME AUTHORIZED                13760000
+         CLI   1(R2),1                 AUTHORIZED?                      13770000
+         BE    ATTS530                 YES, BRANCH                      13780000
+         BL    ATTS540                 NO, APF=0 (NO MESSAGE NEEDED)    13790000
+         SPACE 1                                                        13800000
+***S530  M$MSG (R1)                                                     13810000
+ATTS530  MVC   0(5,R3),0(R1)           MOVE IN TEXT                     13820000
+         MVI   5(R3),C','              ADD A COMMA                      13830000
+         LA    R3,7(,R3)               NEXT PARAMETER                   13840000
+         SPACE 2                                                        13850000
+ATTS540  DS    0H                                                       13860000
+         CLC   MSGTEXT2+1(4),ATTSNONE  NONE PARAMETER?                  13870000
+         BNE   ATTS542                 NO, BRANCH                       13880000
+         LR    R1,R3                   NEXT POSITION FOR TEXT           13890000
+         SH    R1,=H'2'                POINT TO LAST COMMA IF A LIST    13900000
+         CLI   0(R1),C','              COMMA?                           13910000
+         BNE   ATTS542                 NO, BRANCH                       13920000
+         MVI   0(R1),X'40'             BLANK THE LAST COMMA             13930000
+         MVC   MSGTEXT2+1(4),BLANK128  BLANK "NONE"                     13940000
+         SPACE 1                                                        13950000
+ATTS542  MVC   0(85,R3),MSGTEXT2+1     ADD THE VARIABLE PART            13960000
+         SPACE 2                                                        13970000
+ATTS590  CLI   LKEDDATE,X'FF'          ANY DATA TO OUTPUT?              13980000
+         BE    ATTS600                 NO, BRANCH                       13990000
+         CLI   #LKEDOPT,X'02'          "NOLKEDDATE" DESIRED?            14000000
+         BE    ATTS600                 YES, BRANCH                      14010000
+         CLI   #LKEDOPT,X'01'          "LKEDDATE" DESIRED?              14020000
+         BE    *+12                    YES, BRANCH                      14030000
+         TM    FLAGSGG,FLKEDCON        NO LKEDDATE DEFAULT?             14040000
+         BO    ATTS600                 YES, BRANCH                      14050000
+         SPACE 1                                                        14060000
+         MVC   MSGTEXT2(9),DATEMASK                                     14070000
+         ED    MSGTEXT2(9),LKEDDATE                                     14080000
+         MVC   INSERT#1+18(2),MSGTEXT2+7 YY OF MM/DD/YY                 14090000
+         MVI   INSERT#1+20,C'/'          YY/                            14100000
+         MVC   INSERT#1+21(5),MSGTEXT2+1 MM/DD OF MM/DD/YY              14110000
+         OI    INSERT#1+21,X'F0'         REMOVE ANY LEADIN BLANK IN MM  14120000
+***      M$MSG L064$2                         LINKAGE EDIT MESSAGE      14130000
+         SPACE 3                                                        14140000
+ATTS600  SR    R1,R1                                          ABL NOV86 14150000
+         ICM   R1,B'0111',DIRSTORE    ACTUAL MODULE LENGTH              14160000
+         CVD   R1,DOUBLE           CONVERT TO DECIMAL                   14170000
+         C     R1,=F'99999'           BELOW 99,999?           ABL NOV86 14180000
+         BH    ATTS606                NO, BRANCH              ABL NOV86 14190000
+         MVC   MSGTEXT2(7),=X'402020202120D2404040'           ABL NOV86 14200000
+         ED    MSGTEXT2(6),DOUBLE+5                           ABL NOV86 14210000
+         MVC   INSERT#1+27(5),MSGTEXT2+1                      ABL NOV86 14220000
+         B     ATTS608                                        ABL NOV86 14230000
+ATTS606  DS    0H                                             ABL NOV86 14240000
+         LA    R1,1023(,R1)           NEXT HIGHER                       14250000
+         SRL   R1,10                             1K VALUE               14260000
+         CVD   R1,DOUBLE                                                14270000
+         MVC   MSGTEXT2(7),=X'402020202120D2404040'                     14280000
+         ED    MSGTEXT2(6),DOUBLE+5                                     14290000
+         MVC   INSERT#1+26(6),MSGTEXT2+1                                14300000
+ATTS608  DS    0H                                             ABL NOV86 14310000
+***      M$MSG L104$2                                                   14320000
+         SPACE 3                                                        14330000
+         TM    DIRFLAG,X'80'           ALIAS?                           14340000
+         BO    ATTS630                 YES, BRANCH                      14350000
+         OC    #RMODE(2),#RMODE        ANY RMODE/AMODE CHANGE?          14360000
+         BZ    ATTS630                 NO, BRANCH                       14370000
+         TM    FLAGSCC,RECFMU          RECFM=U?                         14380000
+         BNO   ATTS630                 NO, BRANCH                       14390000
+         NI    MODESAVE,DIRRMANY+DIRAM31+DIRAM64              DRK OCT02 14400000
+         MVC   MSGTEXT2(DIREND-DIRNAME),DIRNAME  SAVE MAIN ENTRY        14410000
+         MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  14420000
+         SPACE 1                                                        14430000
+ATTS610  MVC   DIRNAME(DIREND-DIRNAME),MSGTEXT2  RESTORE MAIN ENTRY     14440000
+         BAS   R14,READDIR             GET NEXT DIRECTORY MEMBER        14450000
+         B     ATTS630                 LAST MEMBER PROCESSED            14460000
+         SPACE 2                                                        14470000
+         CLC   DIRTTR,MEMTTR           TTR'S MATCH?                     14480000
+         BNE   ATTS610                 NO, BRANCH                       14490000
+         TM    MEMFLAG,X'80'           ALIAS ENTRY?                     14500000
+         BNO   ATTS610                 NO, CONTINUE SEARCHING           14510000
+         SPACE 2                                                        14520000
+         L     R14,DIRPTRS             CURRENT DIRECTORY ENTRY          14530000
+         MVC   DIRNAME(DIREND-DIRNAME),0(R14)                           14540000
+         SPACE 1                                                        14550000
+         MVC   DOUBLE(1),DIRATTR3                                       14560000
+         NI    DOUBLE,DIRRMANY+DIRAM31+DIRAM64                          14570000
+         CLC   MODESAVE(1),DOUBLE      RMODE/AMODE ENTRIES EQUAL?       14580000
+         BE    ATTS610                 YES, BRANCH                      14590000
+         NI    DIRATTR3,FF-DIRRMANY-DIRAM31-DIRAM64           DRK OCT02 14600000
+         OC    DIRATTR3(1),MODESAVE    CHANGE THE RMODE/AMODE ENTRY     14610000
+         SPACE 1                                                        14620000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   14630000
+         STOW  STOWDCB,DIRNAME,R       REPLACE THIS MEMBER ENTRY        14640000
+         SPACE 1                                                        14650000
+         LR    R5,R15                  SAVE RETURN CODE                 14660000
+***      MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      14670000
+***      M$MSG L092$1                                                   14680000
+         LTR   R15,R5                  SUCCESSFUL?                      14690000
+         BNZ   IOERROR                 NO, I/O ERROR                    14700000
+         B     ATTS610                 CONTINUE FOR ALL ALIASES         14710000
+         SPACE 2                                                        14720000
+ATTS630  NI    FLAGSBB,FF-FLINESET                                      14730000
+***      CLI   #ALIAOPT,X'01'          "ALIASINFO" DESIRED?             14740000
+***      BE    ATTS640                 YES, BRANCH                      14750000
+***      BH    NEWCMD                  "NOALIASINFO", DONE              14760000
+         TM    FLAGSGG,FALINCON        NO ALIAS INFORMATION DEFAULT?    14770000
+         BO    ATTS900                 YES, BRANCH                      14780000
+***      TM    FLAGSCC,RECFMU          RECFM=U?                         14790000
+***      BO    ATTS640                 YES, BRANCH                      14800000
+***      TM    DIRFLAG,X'80'           MODULE AN ALIAS?                 14810000
+***      BNO   NEWCMD                  NO, DONE                         14820000
+         SPACE 1                                                        14830000
+ATTS640  TM    DIRFLAG,X'80'           MODULE AN ALIAS?                 14840000
+         BNO   ATTS900                 NO, FIND ALL ALIASES             14850000
+         MVC   INSERT#1+9(8),ATTSUNK   NO MAIN FOUND                    14860000
+         MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  14870000
+         SPACE 2                                                        14880000
+*  FIND ANY CORRESPONDING MAIN MODULE NAME                              14890000
+         SPACE 1                                                        14900000
+ATTS800  BAS   R14,READDIR        GET NEXT DIRECTORY MEMBER             14910000
+         B     ATTS900            LAST MEMBER PROCESSED                 14920000
+         SPACE 1                                                        14930000
+         TM    MEMFLAG,X'80'      THIS MODULE AN ALIAS?                 14940000
+         BO    ATTS800            YES, IGNORE                           14950000
+         CLC   DIRTTR,MEMTTR      TTR MATCH?                            14960000
+         BNE   ATTS800            NO, BRANCH                            14970000
+         MVC   INSERT#1+9(8),MEMNAME                                    14980000
+***      M$MSG L066$1                                                   14990000
+***      B     ATTS800                                                  15000000
+         SPACE 1                                                        15010000
+ATTS900  DS    0H                      OUTPUT FINAL RESULT              15020000
+         M$MSG L232$1                                                   15030000
+         B     NEWCMD                                                   15040000
+         SPACE 1                                                        15040100
+L879$1   DC    C'879'                                         DRK APR18 15041000
+*                                                                       15050000
+         SPACE 2                                                        15060000
+ATTSTAT  DC    CL72'NAME     ALIASOF   CREATED  SIZE SSI      ATTRIBUTEX15070000
+               S'                                                       15080000
+ATTS24   DC    C'24,'                                                   15090000
+ATTS31   DC    C'31,'                                                   15100000
+ATTS64   DC    C'64,'                                                   15110000
+ATTSANY  DC    C'ANY,'                                                  15120000
+ATTSPAGE DC    C'PAGE,'                                                 15130000
+ATTSNONE DC    C'NONE'                                                  15140000
+ATTSAPFX DC    C'APF=?'                                                 15150000
+ATTSAPF1 DC    C'APF=1'                                                 15160000
+ATTSUNK  DC    C'?UNKNOWN'                                              15170000
+*PDS232I NAME     ALIASOF   CREATED  SIZE SSI      ATTRIBUTES           15180000
+*PDS232I 12345678 A2345678 86/01/16 9999K 12345678                      15190000
+*PDS232I                                           AC=1,                15200000
+*PDS232I                                           A24,                 15210000
+*PDS232I                                           A31,                 15220000
+*PDS232I                                           A64,                 15230000
+*PDS232I                                           AANY,                15240000
+*PDS232I                                           R24,                 15250000
+*PDS232I                                           RANY,                15260000
+*PDS232I                                           R64,                 15261000
+*PDS232I                                           NONE **              15270000
+*PDS232I                                           LOAD,                15280000
+*PDS232I                                           NOT EDIT,            15290000
+*PDS232I                                           NOT EXEC,            15300000
+*PDS232I                                           NOTF,                15310000
+*PDS232I                                           NOVS,                15320000
+*PDS232I                                           RENT,                15330000
+*PDS232I                                           REUS,                15340000
+*PDS232I                                           REFR,                15350000
+*PDS232I                                           DC,                  15360000
+*PDS232I                                           TEST,                15370000
+*PDS232I                                           OVLY,                15380000
+*PDS232I                                           SCTR,                15390000

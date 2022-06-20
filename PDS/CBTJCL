@@ -1,0 +1,47 @@
+//CBT1060P JOB 527TSO000S0008,ARNIE,CLASS=8,MSGCLASS=5,NOTIFY=TS15500   00000010
+//*                                                                     00000020
+//PDSGEN PROC  MEMBER=MISSING,                                          00000030
+//             INSTLIB='TS15500.CBT1060P.PDS'       <<=== INSTALL LIB   00000040
+//ONE    EXEC  PGM=AEV90,REGION=4064K,                                  00000050
+//             PARM=(DECK,NOOBJECT,NORLD,RENT,TERM,'XREF(FULL)')        00000060
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(CYL,(25,5))                            00000070
+//SYSUT2   DD  UNIT=SYSDA,SPACE=(CYL,(25,5))                            00000080
+//SYSUT3   DD  UNIT=SYSDA,SPACE=(CYL,(25,5))                            00000090
+//SYSPUNCH DD  UNIT=SYSDA,SPACE=(TRK,(5,5)),DISP=(MOD,PASS),DSN=&&X,    00000100
+//             DCB=BLKSIZE=3120                                         00000110
+//SYSTERM  DD  SYSOUT=*                                                 00000120
+//SYSPRINT DD  SYSOUT=*                                                 00000130
+//SYSIN    DD  DISP=SHR,DSN=&INSTLIB.(&MEMBER)                          00000140
+//SYSLIB   DD  DSN=SYS2.AMODGEN,DISP=SHR,DCB=BLKSIZE=23440              00000150
+//         DD  DSN=SYS1.MACLIB,DISP=SHR                                 00000160
+//         DD  DSN=&INSTLIB,DISP=SHR                                    00000170
+//       PEND                                                           00000180
+//*                                                                     00000190
+//BANNER#0   EXEC   BANNER,P='PDS CP  CBT1060P           '              00000210
+//*                                                                     00000230
+//PDSMAIN  EXEC  PDSGEN,MEMBER=@PDSMAIN                                 00000240
+//*                                                                     00000250
+//SUBS     EXEC  PDSGEN,MEMBER=@SUBS                                    00000260
+//*                                                                     00000270
+//PARSE    EXEC  PDSGEN,MEMBER=@PARSE                                   00000280
+//*                                                                     00000290
+//DIALOG   EXEC  PDSGEN,MEMBER=@DIALOG                                  00000300
+//*                                                                     00000310
+//LK1      EXEC  PGM=IEWL,REGION=1024K,COND=(0,LT),                     00000320
+// PARM='XREF,LIST,MAP,RENT,REUS,REFR,LET,NCAL,SIZE=(1024K,128K)'       00000330
+//SYSLIB   DD  DSN=SYS2.MLINKLIB,DISP=SHR                               00000340
+//SYSLMOD  DD  DISP=SHR,DSN=SYS2.MLINKLIB           <<=== LINK TARGET   00000350
+//*YSLMOD  DD  DISP=SHR,DSN=TS15500.T.LOAD          <<=== LINK TARGET   00000355
+//IN       DD  DSN=&&X,DISP=(OLD,DELETE)                                00000360
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(CYL,(8,1))                             00000370
+//SYSPRINT DD  DSN=&LINX,SPACE=(CYL,(5,5)),DCB=BLKSIZE=968,             00000383
+//         UNIT=SYSDA,DISP=(NEW,PASS)                                   00000386
+//SYSLIN   DD  *                                                        00000390
+  INCLUDE  IN                                                           00000400
+  ENTRY    PDSMAIN                                                      00000410
+  ORDER    PDSMAIN(P)                                                   00000420
+  NAME     CBT1060P(R)                              <<=== LOADMOD NAME  00000440
+//LKEDXREF EXEC PGM=CBT415,REGION=256K                                  00000450
+//FT05F001 DD  DSN=&LINX,DISP=(OLD,DELETE)                              00000460
+//SYSOUT   DD  SYSOUT=*                                                 00000470
+//SYSPRINT DD  SYSOUT=*                                                 00000480

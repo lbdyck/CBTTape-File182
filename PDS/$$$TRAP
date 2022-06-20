@@ -1,0 +1,29 @@
+                  PDS DIALOG TRAP SERVICE                               00000103
+                                                                        00000200
+   The PDS Dialog Trap service provides for trapping TSO                00000302
+   command output and placing it in the session View Log.               00000402
+   This service can be used by TCT and from P86..UX panels.             00000502
+                                                                        00000606
+   This service uses the TSO/E SYSOUTTRAP service.  This                00000702
+   service requires both ISPF 2.3 and TSO/E and the                     00000802
+   installation of the PDSTRAP clist.  Tt is recommended that           00000902
+   if possible to use this feature.  If ISPF 2.3 (or higher)            00001004
+   is not installed this feature will be ignored even if TRAP           00001102
+   is set to YES.  If this feature is not active, output from           00001204
+   a TSO command requested with the TRAP option will operate            00001302
+   without trapping the output, the output will go directly to          00001402
+   the users screen in the normal way.  This option can be set          00001502
+   by the individual user through the PDS SETTRAP dialog command.       00002002
+                                                                        00010000
+   To use this service first install the PDSTRAP clist into one         00020003
+   of the installation clist libraries that is included in the          00030003
+   SYSPROC DD concatenation.  The PDSTRAP clist is in FB-80 format      00040003
+   but can be copied using ISPF option 3.3 into ether a FB-80 or        00050002
+   VB-255 format library.                                               00060002
+                                                                        00061003
+** NOTE:  If you are running with the &LOGWIDE global variable          00062003
+   set to YES, then COPY the PDSTRAPW clist as PDSTRAP into             00063003
+   your SYSPROC concatenation and update the PDSTRAPT test              00064004
+   clist with the proper variable and panel names (see comments         00065004
+   in clist).                                                           00066004
+                                                                        00070002

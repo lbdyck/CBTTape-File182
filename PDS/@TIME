@@ -1,0 +1,157 @@
+         TITLE 'P D S  --  PDS TIME                          09/28/88'  13856000
+*********************************************************************** 13857000
+***      TIME  SUBCOMMAND                                           *** 13858000
+*********************************************************************** 13859000
+*                                                                       13860000
+         SPACE 1                                                        13861000
+TIME     CSECT                                                          13862003
+         USING *,R8                                                     13863000
+         MVC   MSGTEXT2(132),MSGBL132    BLANK LINE                     13864000
+         MVC   MSGTEXT2+4(14),TIMETBL    EDIT MASK                      13865000
+         CLC   ##SUBCOM(3),=CL3'IPL'     IPL TIME CONVERSION? DRK NOV06 13865107
+         BE    IPLTIME                   YES, R0-R1 LOADED    DRK NOV06 13865206
+         TIME  DEC                       R0=HHMMSSTH  R1=0CYYDDDF     " 13865309
+IPLTIME  DS    0H                                             DRK NOV06 13865510
+         CL    R0,TIMEL12A               MORNING?                       13867006
+         BL    *+12                      YES, BRANCH                    13868000
+         MVI   MSGTEXT2+14,C'P'          NO, SET TO PM                  13869000
+         SL    R0,TIMEL12A               NO, SUBTRACT 12 HOURS          13870000
+         ST    R0,TIMEWRKW               ADJUSTED TIME                  13871000
+         TM    TIMEWRKW,X'08'            ADJUSTMENT ERROR (20 OR 21)?   13872000
+         BZ    *+8                       NO, BRANCH                     13873000
+         NI    TIMEWRKW,X'09'            YES, CONVERT TO 8 OR 9 (PM)    13874000
+         CLI   TIMEWRKW,X'00'            ZERO HOURS?                    13875000
+         BNE   *+8                       NO, BRANCH                     13876000
+         MVI   TIMEWRKW,X'12'            YES, CONVERT ZERO TO 12        13877000
+         ED    MSGTEXT2+4(9),TIMEWRKW    FINISH TIME PROCESSING         13878000
+         MVC   MSGTEXT2+34(25),DATEPC    TIME CONSTANT                  13879000
+         ST    R1,TIMEWRKW               SAVE 0CYYDDDF DATE WORD        13880005
+         UNPK  MSGTEXT2+44(5),TIMEWRKW+1(3) MOVE IN "YY"                13881000
+         MVC   MSGTEXT2+42(2),=C'19'       ASSUME 19XX        Y2K AUG97 13881300
+         TM    TIMEWRKW,X'01'              CENTURY BIT ON?    Y2K MAR99 13881401
+         BNO   CEN1900                     NO,  THEN 19XX     Y2K AUG97 13881501
+         MVC   MSGTEXT2+42(2),=C'20'       YES, THEN 20XX     Y2K AUG97 13881600
+CEN1900  DS    0H                                             Y2K AUG97 13881700
+         MVC   MSGTEXT2+51(2),MSGTEXT2+44 (YY.                          13882000
+         MVC   MSGTEXT2+54(3),MSGTEXT2+46 DDD)                          13883000
+         OI    MSGTEXT2+56,X'F0'         FIX THE ZONE                   13884000
+         MVC   MSGTEXT2+46(3),BLANKS     BLANK THE NEXT THREE BYTES     13885000
+         LH    R1,TIMEWRKW+2                                            13886000
+         SRL   R1,12                     D..  (HUNDREDS)                13887000
+         M     R0,TIMEL10                                               13888000
+         IC    R15,TIMEWRKW+2                                           13889000
+         N     R15,=F'15'                                               13890000
+         AR    R1,R15                    .D.  (TENS)                    13891000
+         M     R0,TIMEL10                                               13892000
+         IC    R15,TIMEWRKW+3                                           13893000
+         SRL   R15,4                                                    13894000
+         AR    R1,R15                    ..D  (UNITS)                   13895000
+         PACK  TIMEDOUB(8),MSGTEXT2+44(2)                               13896000
+         CVB   R15,TIMEDOUB              CONVERT YEAR TO BINARY         13897000
+         LR    R0,R15                                                   13898000
+         N     R15,TIMELFFC              YEAR/4*4  (INTEGER DIVISION)   13899000
+         CR    R0,R15                    LEAP YEAR?                     13900000
+         BE    NOADJUST                  YES, NO ADJUSTMENT NEEDED      13901000
+         CH    R1,CUMDAYS+4              BEFORE FEB 30?                 13902000
+         BL    NOADJUST                  YES, NO ADJUSTMENT NEEDED      13903000
+         AH    R1,=H'1'                  ADD 1 TO THE JULIAN DATE       13904000
+NOADJUST SR    R15,R15                                                  13905000
+         AH    R15,=H'2'                                                13906000
+         CH    R1,CUMDAYS(R15)                                          13907000
+         BH    *-8                                                      13908000
+         SH    R1,CUMDAYS-2(R15)                                        13909000
+         LR    R14,R15                                                  13910000
+         SRL   R15,1                     MONTH IN BINARY                13911000
+         LA    R14,0(R14,R15)                                           13912000
+         LA    R14,MONTHS-3(R14)                                        13913000
+         MVC   MSGTEXT2+34(3),0(R14)     MONTH TEXT                     13914000
+         AR    R15,R15                                                  13915000
+         LA    R15,CONVTBL(R15)                                         13916000
+         MVC   TIMEDOUB+4(2),0(R15)      MOVE IN MONTH                  13917000
+         LR    R15,R1                    DAY OF MONTH IN BINARY         13918000
+         AR    R15,R15                                                  13919000
+         LA    R15,CONVTBL(R15)                                         13920000
+         MVC   MSGTEXT2+38(2),0(R15)     MOVE IN DAY OF MONTH           13921000
+         MVC   TIMEDOUB(4),MSGTEXT2+42   MOVE IN '19XX'                 13922000
+         MVC   TIMEDOUB+6(2),MSGTEXT2+38 MOVE IN DAY OF MONTH           13923000
+         BAS   R14,WEEKDAY               FIND THE DAY OF WEEK           13924000
+         L     R15,TIMEWRKW                                             13925000
+         SLL   R15,4                                                    13926000
+         SRL   R15,28                                                   13927000
+         MH    R15,=H'10'                                               13928000
+         LA    R15,DAY@WEEK(R15)                                        13929000
+         MVC   MSGTEXT2+22(10),0(R15)                                   13930000
+         MVI   MSGTEXT2+1,79                                            13931000
+         CLC   ##SUBCOM(4),TIMETIME                TIME SUBCOMMAND?     13932000
+         BNER  R2                                  NO, BRANCH           13933000
+         M$ERRST MSGTEXT2                                               13934000
+         B     NEWCMD                                                   13935000
+         SPACE 4                                                        13936000
+TIMETIME DC    CL4'TIME'                                                13937000
+DAY@WEEK DC    CL10'SUNDAY',CL10'MONDAY',CL10'TUESDAY',CL10'WEDNESDAY'  13938000
+         DC    CL10'THURSDAY',CL10'FRIDAY',CL10'SATURDAY'               13939000
+         SPACE 2                                                        13940000
+CONVTBL  DC    CL32' 0 1 2 3 4 5 6 7 8 9101112131415'                   13941000
+         DC    CL32'16171819202122232425262728293031'                   13942000
+         SPACE 2                                                        13943000
+TIMETBL  DC    XL14'4021204B20204B202040C1D44040'                       13944000
+         SPACE 2                                                        13945000
+DATEPC   DC    CL26'ABC EF, 19GH    (12.456)'                           13946000
+         SPACE 2                                                        13947000
+CUMDAYS  DC    H'0,31,60,91,121,152,182,213,244,274,305,335,32000'      13948000
+         SPACE 2                                                        13949000
+MONTHS   DC    CL36'JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC'               13950000
+         EJECT                                                          13951000
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 13952000
+*                                                                     * 13953000
+*     THIS REENTRANT SUBROUTINE DETERMINES THE DAY OF THE             * 13954000
+*   WEEK FOR ANY GREGORIAN DATE FROM OCTOBER 15,1582, THROUGH         * 13955000
+*   FEBRUARY 28, 4000.                                                * 13956000
+*                                                                     * 13957000
+*         NOTE:  DATE IS THE ARGUMENT AND DAY IS THE ANSWER.          * 13958000
+*           THEY HAVE THE FOLLOWING FORMATS, RESPECTIVELY -           * 13959000
+*                                                                     * 13960000
+*TIMEDOUB DS   0ZL8     ARGUMENT                                      * 13961000
+*TIMEINYR DS   ZL4      YEAR - ANY VALUE 1582-4000                    * 13962000
+*TIMEINMT DS   ZL2      MONTH - ANY VALUE 01-12                       * 13963000
+*TIMEINDY DS   ZL2      DAY OF MONTH - ANY VALUE 01-31                * 13964000
+*TIMEWRKW DS   ZL1      DAY OF WEEK -  0 (SUNDAY) - 6 (SATURDAY)      * 13965000
+*                                                                     * 13966000
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 13967000
+         SPACE 1                                                        13968000
+WEEKDAY  ST    R14,R14SAVE                                              13969000
+         XC    TIMEDDAT(8),TIMEDDAT                                     13970000
+         PACK  TIMEDECC,TIMEINDY                                        13971000
+         CVB   R1,TIMEDDAT                                              13972000
+         PACK  TIMEDECM,TIMEINMT                                        13973000
+         CVB   R15,TIMEDDAT                                             13974000
+         IC    R15,FFTBL-1(R15)      FIND FUDGE FACTOR                  13975000
+         AR    R1,R15                   AND APPLY IT TO CORRECTION      13976000
+         PACK  TIMEDECC,TIMEINYR                                        13977000
+         SP    TIMEDECC,TIMELP3      ADJUST YEAR IF JANUARY OR FEBRUARY 13978000
+         OI    TIMEYRSG,15           LEGITIMIZE SIGN FOR ZAP            13979000
+         ZAP   TIMEDECC,TIMEDECY                                        13980000
+         CVB   R15,TIMEDDAT                                             13981000
+         SR    R14,R14                                                  13982000
+         LA    R0,3                  USED TO FIND CENTURY MOD 4         13983000
+         D     R14,=F'100'           FIND CENTURY                       13984000
+         NR    R15,R0                CENTURIES MOD 4                    13985000
+         NR    R0,R14                THIS MANY COMMON YEARS             13986000
+         SRA   R14,2                   AND                              13987000
+         AR    R15,R14                   THIS MANY LEAP YEARS           13988000
+         MH    R15,=H'5'                                                13989000
+         AR    R1,R15                                                   13990000
+         AR    R1,R0                                                    13991000
+         SR    R1-1,R1-1             PREPARE TO DIVIDE                  13992000
+         D     R1-1,TIMEL7                                              13993000
+         STC   R1-1,TIMEWRKW                                            13994000
+         OI    TIMEWRKW,X'F0'        ADD A ZONE FIELD                   13995000
+         L     R14,R14SAVE                                              13996000
+         BR    R14                   AND RETURN                         13997000
+         SPACE 1                                                        13998000
+FFTBL    DC    FL1'0,3,2,5,0,3,5,1,4,6,2,4'  FUDGE FACTORS              13999000
+TIMEL10  DC    F'10'                                                    14000000
+TIMEL7   DC    F'7'                                                     14001000
+TIMEL12A DC    X'12000000'                                              14002000
+TIMELFFC DC    X'FFFFFFFC'                                              14003000
+TIMELP3  DC    P'3'                                                     14004000

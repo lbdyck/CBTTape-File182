@@ -1,0 +1,33 @@
+         MACRO M$ERRST - OUTPUT AN ERROR/STATUS MESSAGE                 01184001
+&NAME    M$ERRST &MSG1,&MSG2                                            01185001
+         AIF   ('&MSG1' EQ '(1)' OR '&MSG1' EQ '(R1)').MSGDS            01186000
+         AIF   ('&MSG1'(1,1) EQ '(').RMSG1                              01187000
+         AIF   ('&MSG1' EQ 'MSGTEXT1' AND '&MSG2' EQ '').NOR1           01188000
+&NAME    LA    R1,&MSG1                                                 01189000
+         AGO   .MSG2                                                    01190000
+.NOR1    ANOP                                                           01191000
+&NAME    BAS   R14,MESSTXT1                                             01192000
+         MEXIT                                                          01193000
+.RMSG1   ANOP                                                           01194000
+&NAME    LR    R1,&MSG1(1)                                              01195000
+         AGO   .MSG2                                                    01196000
+.MSGDS   ANOP                                                           01197000
+         AIF   ('&MSG2' NE '').SECOND                                   01198000
+&NAME    BAS   R14,MESSAGE0                                             01199000
+         MEXIT                                                          01200000
+.SECOND  ANOP                                                           01201000
+&NAME    DS    0H                                                       01202000
+.MSG2    ANOP                                                           01203000
+         AIF   ('&MSG2' EQ '').NOMSG2 NO SECONDARY MESSAGE              01204000
+         AIF   ('&MSG2' EQ '(0)' OR '&MSG2' EQ '(R0)').CALL             01205000
+         AIF   ('&MSG2'(1,1) EQ '(').RMSG2                              01206000
+         LA    R0,&MSG2                                                 01207000
+         AGO   .CALL                                                    01208000
+.RMSG2   ANOP                                                           01209000
+         LR    R0,&MSG2(1)                                              01210000
+.CALL    ANOP                                                           01211000
+         BAS   R14,MESSAGE                                              01212000
+         AGO   .END                                                     01213000
+.NOMSG2  ANOP                                                           01214000
+         BAS   R14,MESSAGE0                                             01215000
+.END     MEND                                                           01216000

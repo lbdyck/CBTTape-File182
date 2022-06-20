@@ -1,0 +1,689 @@
+         TITLE 'ISPF - STACK   LV 1 SUBROUTINE'                SS NOV85 00020000
+*************************************************************  SS NOV85 00030000
+*      STACK TABLE PANEL INDEX                                 SS NOV85 00040000
+*      R1=0 THEN UNSTACK OR POP                                SS NOV85 00050000
+*      R1=INDEX VALUE THEN PUSH ON TOP                         SS NOV85 00060000
+*      R1=NEG INDEX VALUE THEN SWAP INDEX                      SS NOV85 00070000
+*************************************************************  SS NOV85 00080000
+         GBLC  &MEMLS1,&MEMLS2,&MEMLS3                        DRK NOV99 00080422
+         GBLC  &MEMLS1P,&MEMLS2P,&MEMLS3P                     DRK NOV99 00080522
+         GBLC  &MEMLL1,&MEMLL2,&MEMLL3                        DRK NOV99 00080622
+         GBLC  &MEMLL1P,&MEMLL2P,&MEMLL3P                     DRK NOV99 00080722
+         GBLC  &LISTF1,&LISTF2,&LISTF3                        DRK NOV99 00080822
+         GBLC  &LISTF1P,&LISTF2P,&LISTF3P                     DRK NOV99 00080922
+         GBLC  &LISTV1,&LISTV2,&LISTV3                        DRK NOV99 00081022
+         GBLC  &LISTV1P,&LISTV2P,&LISTV3P                     DRK NOV99 00081122
+         SPACE 2                                                        00081217
+         AIF   ('&MSSTART' EQ '2').MLS2                       DRK NOV99 00081317
+         AIF   ('&MSSTART' EQ '3').MLS3                       DRK NOV99 00081417
+         AGO   .MLS1         DEFAULT DISPLAY ORDER            DRK NOV99 00081512
+.MLS1    ANOP                1-2-3 MEMLIST SOURCE DISPLAY     DRK NOV99 00081617
+&MEMLS1  SETC   '5'          1ST PANEL SUFFIX                 DRK NOV99 00081712
+&MEMLS2  SETC   '6'          2ND PANEL SUFFIX                 DRK NOV99 00081812
+&MEMLS3  SETC   'S'          3RD PANEL SUFFIX                 DRK NOV99 00081912
+&MEMLS1P SETC   '5'          1ST PRINT INDEX                  DRK NOV99 00082012
+&MEMLS2P SETC   '6'          2ND PRINT INDEX                  DRK NOV99 00082112
+&MEMLS3P SETC   '28'         3RD PRINT INDEX                  DRK NOV99 00082212
+         AGO   .MLSDONE                                       DRK NOV99 00082312
+.MLS2    ANOP                2-3-1 MEMLIST SOURCE DISPLAY     DRK NOV99 00082417
+&MEMLS1  SETC   '6'          2ND PANEL SUFFIX                 DRK NOV99 00082512
+&MEMLS2  SETC   'S'          3RD PANEL SUFFIX                 DRK NOV99 00082612
+&MEMLS3  SETC   '5'          1ST PANEL SUFFIX                 DRK NOV99 00082712
+&MEMLS1P SETC   '6'          2ND PRINT INDEX                  DRK NOV99 00082812
+&MEMLS2P SETC   '28'         3RD PRINT INDEX                  DRK NOV99 00082912
+&MEMLS3P SETC   '5'          1ST PRINT INDEX                  DRK NOV99 00083012
+         AGO   .MLSDONE                                       DRK NOV99 00083112
+.MLS3    ANOP                3-1-2 MEMLIST SOURCE DISPLAY     DRK NOV99 00083217
+&MEMLS1  SETC   'S'          3RD PANEL SUFFIX                 DRK NOV99 00083312
+&MEMLS2  SETC   '5'          1ST PANEL SUFFIX                 DRK NOV99 00083412
+&MEMLS3  SETC   '6'          2ND PANEL SUFFIX                 DRK NOV99 00083512
+&MEMLS1P SETC   '28'         3RD PRINT INDEX                  DRK NOV99 00083612
+&MEMLS2P SETC   '5'          1ST PRINT INDEX                  DRK NOV99 00083712
+&MEMLS3P SETC   '6'          2ND PRINT INDEX                  DRK NOV99 00083812
+         AGO   .MLSDONE                                       DRK NOV99 00083912
+.MLSDONE ANOP                                                 DRK NOV99 00084012
+         SPACE 2                                                        00085017
+         AIF   ('&MLSTART' EQ '2').MLL2                       DRK NOV99 00086017
+         AIF   ('&MLSTART' EQ '3').MLL3                       DRK NOV99 00087017
+         AGO   .MLL1         DEFAULT DISPLAY ORDER            DRK NOV99 00088017
+.MLL1    ANOP                1-2-3 MEMLIST LOAD DISPLAY       DRK NOV99 00089017
+&MEMLL1  SETC   '7'          1ST PANEL SUFFIX                 DRK NOV99 00089117
+&MEMLL2  SETC   '8'          2ND PANEL SUFFIX                 DRK NOV99 00089217
+&MEMLL3  SETC   'D'          3RD PANEL SUFFIX                 DRK NOV99 00089317
+&MEMLL1P SETC   '7'          1ST PRINT INDEX                  DRK NOV99 00089417
+&MEMLL2P SETC   '8'          2ND PRINT INDEX                  DRK NOV99 00089517
+&MEMLL3P SETC   '13'         3RD PRINT INDEX                  DRK NOV99 00089617
+         AGO   .MLLDONE                                       DRK NOV99 00089717
+.MLL2    ANOP                2-3-1 MEMLIST LOAD DISPLAY       DRK NOV99 00089817
+&MEMLL1  SETC   '8'          2ND PANEL SUFFIX                 DRK NOV99 00089917
+&MEMLL2  SETC   'D'          3RD PANEL SUFFIX                 DRK NOV99 00090017
+&MEMLL3  SETC   '7'          1ST PANEL SUFFIX                 DRK NOV99 00090117
+&MEMLL1P SETC   '8'          2ND PRINT INDEX                  DRK NOV99 00090217
+&MEMLL2P SETC   '13'         3RD PRINT INDEX                  DRK NOV99 00090317
+&MEMLL3P SETC   '7'          1ST PRINT INDEX                  DRK NOV99 00090417
+         AGO   .MLLDONE                                       DRK NOV99 00090517
+.MLL3    ANOP                3-1-2 MEMLIST LOAD DISPLAY       DRK NOV99 00090617
+&MEMLL1  SETC   'D'          3RD PANEL SUFFIX                 DRK NOV99 00090717
+&MEMLL2  SETC   '7'          1ST PANEL SUFFIX                 DRK NOV99 00090817
+&MEMLL3  SETC   '8'          2ND PANEL SUFFIX                 DRK NOV99 00090917
+&MEMLL1P SETC   '13'         3RD PRINT INDEX                  DRK NOV99 00091017
+&MEMLL2P SETC   '7'          1ST PRINT INDEX                  DRK NOV99 00091117
+&MEMLL3P SETC   '8'          2ND PRINT INDEX                  DRK NOV99 00091217
+         AGO   .MLLDONE                                       DRK NOV99 00091317
+.MLLDONE ANOP                                                 DRK NOV99 00091417
+         SPACE 2                                                        00091517
+         AIF   ('&LFSTART' EQ '2').LF2                        DRK NOV99 00092017
+         AIF   ('&LFSTART' EQ '3').LF3                        DRK NOV99 00093017
+         AGO   .LF1          DEFAULT DISPLAY ORDER            DRK NOV99 00094017
+.LF1     ANOP                1-2-3 LISTF DISPLAY              DRK NOV99 00095017
+&LISTF1  SETC   'K'          1ST PANEL SUFFIX                 DRK NOV99 00096017
+&LISTF2  SETC   'L'          2ND PANEL SUFFIX                 DRK NOV99 00097017
+&LISTF3  SETC   'M'          3RD PANEL SUFFIX                 DRK NOV99 00098017
+&LISTF1P SETC   '20'         1ST PRINT INDEX                  DRK NOV99 00099017
+&LISTF2P SETC   '21'         2ND PRINT INDEX                  DRK NOV99 00099117
+&LISTF3P SETC   '22'         3RD PRINT INDEX                  DRK NOV99 00099217
+         AGO   .LFDONE                                        DRK NOV99 00099317
+.LF2     ANOP                2-3-1 LISTF DISPLAY              DRK NOV99 00099417
+&LISTF1  SETC   'L'          2ND PANEL SUFFIX                 DRK NOV99 00099517
+&LISTF2  SETC   'M'          3RD PANEL SUFFIX                 DRK NOV99 00099617
+&LISTF3  SETC   'K'          1ST PANEL SUFFIX                 DRK NOV99 00099717
+&LISTF1P SETC   '21'         2ND PRINT INDEX                  DRK NOV99 00099817
+&LISTF2P SETC   '22'         3RD PRINT INDEX                  DRK NOV99 00099917
+&LISTF3P SETC   '20'         1ST PRINT INDEX                  DRK NOV99 00100017
+         AGO   .LFDONE                                        DRK NOV99 00100117
+.LF3     ANOP                3-1-2 LISTF DISPLAY              DRK NOV99 00100217
+&LISTF1  SETC   'M'          3RD PANEL SUFFIX                 DRK NOV99 00100317
+&LISTF2  SETC   'L'          1ST PANEL SUFFIX                 DRK NOV99 00100417
+&LISTF3  SETC   'K'          2ND PANEL SUFFIX                 DRK NOV99 00100517
+&LISTF1P SETC   '22'         3RD PRINT INDEX                  DRK NOV99 00100617
+&LISTF2P SETC   '21'         1ST PRINT INDEX                  DRK NOV99 00100717
+&LISTF3P SETC   '20'         2ND PRINT INDEX                  DRK NOV99 00100817
+         AGO   .LFDONE                                        DRK NOV99 00100917
+.LFDONE  ANOP                                                 DRK NOV99 00101017
+         SPACE 2                                                        00101117
+         AIF   ('&LVSTART' EQ '2').LV2                        DRK NOV99 00101217
+         AIF   ('&LVSTART' EQ '3').LV3                        DRK NOV99 00101317
+         AGO   .LV1          DEFAULT DISPLAY ORDER            DRK NOV99 00101417
+.LV1     ANOP                1-2-3 LISTV DISPLAY              DRK NOV99 00101517
+&LISTV1  SETC   'H'          1ST PANEL SUFFIX                 DRK NOV99 00101617
+&LISTV2  SETC   'I'          2ND PANEL SUFFIX                 DRK NOV99 00101717
+&LISTV3  SETC   'R'          3RD PANEL SUFFIX                 DRK NOV99 00101817
+&LISTV1P SETC   '17'         1ST PRINT INDEX                  DRK NOV99 00101917
+&LISTV2P SETC   '18'         2ND PRINT INDEX                  DRK NOV99 00102017
+&LISTV3P SETC   '27'         3RD PRINT INDEX                  DRK NOV99 00102117
+         AGO   .LVDONE                                        DRK NOV99 00102217
+.LV2     ANOP                2-3-1 LISTV DISPLAY              DRK NOV99 00102317
+&LISTV1  SETC   'I'          2ND PANEL SUFFIX                 DRK NOV99 00102417
+&LISTV2  SETC   'R'          3RD PANEL SUFFIX                 DRK NOV99 00102517
+&LISTV3  SETC   'H'          1ST PANEL SUFFIX                 DRK NOV99 00102617
+&LISTV1P SETC   '18'         2ND PRINT INDEX                  DRK NOV99 00102717
+&LISTV2P SETC   '27'         3RD PRINT INDEX                  DRK NOV99 00102817
+&LISTV3P SETC   '17'         1ST PRINT INDEX                  DRK NOV99 00102917
+         AGO   .LVDONE                                        DRK NOV99 00103017
+.LV3     ANOP                3-1-2 LISTV DISPLAY              DRK NOV99 00103117
+&LISTV1  SETC   'R'          3RD PANEL SUFFIX                 DRK NOV99 00103217
+&LISTV2  SETC   'H'          1ST PANEL SUFFIX                 DRK NOV99 00103317
+&LISTV3  SETC   'I'          2ND PANEL SUFFIX                 DRK NOV99 00103417
+&LISTV1P SETC   '27'         3RD PRINT INDEX                  DRK NOV99 00103517
+&LISTV2P SETC   '17'         1ST PRINT INDEX                  DRK NOV99 00103617
+&LISTV3P SETC   '18'         2ND PRINT INDEX                  DRK NOV99 00103717
+         AGO   .LVDONE                                        DRK NOV99 00103817
+.LVDONE  ANOP                                                 DRK NOV99 00103917
+         SPACE 2                                                        00104017
+ISPSTACK DS    0H                                              SS NOV85 00105017
+         USING *,R4                                            SS NOV85 00110000
+         SPACE 1                                                        00120000
+         LTR   R1,R1                 ZERO                      SS NOV85 00130000
+         BM    ISPSTSW               NEG, SWAP                 SS NOV85 00140000
+         BNZ   ISPSTPU               NO, PUSH                  SS NOV85 00150000
+ISPSTPP  DS    0H                    POP STACK                 SS NOV85 00160000
+         CH    R1,SPFTBPI            SAME PANEL                SS AUG86 00170000
+         BE    ISPSTSV               YES, NO STACK, SAVE REQ   SS AUG86 00180000
+         L     R2,SPFPANCT           GET TOP OF STACK          SS NOV85 00190000
+         C     R2,SPFPANTT           AT TOP ALREADY            SS NOV85 00200000
+         BE    ISPSTTP               RETURN WITH RC=4          SS NOV85 00210000
+         LA    R1,2                  2 FOR SUBTRACT            SS NOV85 00220000
+         SR    R2,R1                 BACK UP                   SS NOV85 00230000
+         ST    R2,SPFPANCT           NET CURRENT TOP           SS NOV85 00240000
+         LH    R1,0(,R2)             GET INDEX                 SS NOV85 00250000
+         BCTR  R1,0                  INDEX TO ONE              SS NOV85 00260000
+         MH    R1,ISPSTHW            TIME LENGTH FOR OFFSET    SS NOV85 00270000
+         LA    R1,ISPIDX1(R1)        ADDRESS OF ENTRY          SS NOV85 00280000
+         MVC   SPFTBPI(SPFTBPLN),0(R1) COPY NEW TOP OF STACK   SS NOV85 00290000
+         B     ISPSTCK               CHECK FOR TABLE CHANGE    SS NOV85 00300000
+ISPSTSW  DS    0H                    SWAP                      SS NOV85 00310000
+         LPR   R1,R1                 MAKE POSITIVE             SS NOV85 00320000
+         CH    R1,ISPSTMX            MAX INDEX                 SS NOV85 00330000
+         BH    ISPSTEE               BAD INDEX FROM CALLER     SS NOV85 00340000
+         L     R2,SPFPANCT           CURRENT INDEX             SS NOV85 00350000
+         STH   R1,0(,R2)             STORE NEW INDEX           SS NOV85 00360000
+         BCTR  R1,0                  INDEX TO ONE              SS NOV85 00370000
+         MH    R1,ISPSTHW            TIME LENGTH FOR OFFSET    SS NOV85 00380000
+         LA    R1,ISPIDX1(R1)        ADDRESS OF ENTRY          SS NOV85 00390000
+         MVC   SPFTBPI(SPFTBPLN),0(R1) COPY NEW TOP OF STACK   SS NOV85 00400000
+         B     ISPSTCK               CHECK FOR TABLE CHANGE    SS NOV85 00410000
+ISPSTPU  DS    0H                    PUSH STACK                SS NOV85 00420000
+         CH    R1,ISPSTMX            MAX INDEX                 SS NOV85 00430000
+         BH    ISPSTEE               BAD INDEX FROM CALLER     SS NOV85 00440000
+         L     R2,SPFPANCT           CURRENT INDEX             SS NOV85 00450000
+         C     R2,SPFPANBT           AT BOTTOM                 SS NOV85 00460000
+         BE    ISPSTER               HELP                      SS NOV85 00470000
+         LA    R2,2(,R2)             NEXT ENTRY                SS NOV85 00480000
+         ST    R2,SPFPANCT           NEW TOP ENTRY             SS NOV85 00490000
+         STH   R1,0(,R2)             STORE NEW INDEX           SS NOV85 00500000
+         BCTR  R1,0                  INDEX TO ONE              SS NOV85 00510000
+         MH    R1,ISPSTHW            TIME LENGTH FOR OFFSET    SS NOV85 00520000
+         LA    R1,ISPIDX1(R1)        ADDRESS OF ENTRY          SS NOV85 00530000
+         MVC   SPFTBPI(SPFTBPLN),0(R1) COPY NEW TOP OF STACK   SS NOV85 00540000
+         B     ISPSTCK               CHECK FOR TABLE CHANGE    SS NOV85 00550000
+ISPSTSV  DS    0H                    REQUEST TO SAVE TB INFO   SS AUG86 00560000
+         L     R14,SPFTHOME          LOAD ADDRESS              SS NOV85 00570000
+         MVC   0(SPFTTLN,R14),SPFTBL PUT TABLE BACK            SS NOV85 00580000
+         B     ISPSTR0                                         SS AUG86 00590000
+ISPSTCK  DS    0H                                              SS NOV85 00600000
+         CLC   SPFTBPIX,SPFTBINX     SAME TABLE CONSTANTS      SS MAY89 00610000
+         BE    ISPSTR0               YES NO CHANGE             SS MAY89 00620000
+         LH    R1,SPFTBPIX              *                      SS MAY89 00630000
+         MH    R1,ISPSTHY            TIME LENGTH FOR OFFSET    SS MAY89 00640000
+         LA    R1,ISPTIX0(R1)        ADDRESS OF ENTRY          SS MAY89 00650000
+         MVC   SPFTBINX(SPFTBLN),0(R1) COPY NEW CONSTANTS      SS MAY89 00660000
+         LH    R15,SPFTBPHM          GET HOME OFFSET           SS NOV85 00670000
+         LA    R15,SPWRKC(R15)       CALC ADDRESS              SS NOV85 00680000
+         CL    R15,SPFTHOME          IS IT SAME TABLE          SS NOV85 00690000
+         BE    ISPSTR0               RETURN                    SS NOV85 00700000
+         L     R14,SPFTHOME          LOAD ADDRESS              SS NOV85 00710000
+         MVC   0(SPFTTLN,R14),SPFTBL PUT OLD TABLE BACK        SS NOV85 00720000
+         MVC   SPFTBL(SPFTTLN),0(R15) FETCH NEW TABLE          SS NOV85 00730000
+         ST    R15,SPFTHOME          NEW HOME ADDRESS          SS NOV85 00740000
+ISPSTR0  DS    0H                                              SS NOV85 00750000
+         SR    R15,R15               ZERO RETURN CODE          SS NOV85 00760000
+         BR    R3                    RETURN                    SS NOV85 00770000
+ISPSTTP  DS    0H                    AT TOP                    SS NOV85 00780000
+         LA    R15,4                 END OF STACK              SS NOV85 00790000
+         BR    R3                                              SS NOV85 00800000
+ISPSTER  DS    0H                    TABLE SIZE TO SMALL       SS NOV85 00810000
+         LA    R15,8                 RAN OUT OF STACK          SS NOV85 00820000
+         BR    R3                                              SS NOV85 00830000
+ISPSTEE  DS    0H                    CALLER ERROR              SS NOV85 00840000
+         LA    R15,12                BAD INDEX                 SS NOV85 00850000
+         BR    R3                                              SS NOV85 00860000
+         SPACE 2                                                        00870000
+* OPT VAR NAME FOR EACH TABLE                                  SS NOV85 00880000
+ISPSTOPT DC    CL8'MEMLOPT'   00                               SS NOV85 00890000
+         DC    CL8'PDSAOPT'   08                               SS NOV85 00900000
+         DC    CL8'PDSVOPT'   16                               SS NOV85 00910000
+         DC    CL8'PDSCOPT'   24                               SS OCT88 00920000
+         DC    CL8'PDSTOPT'   32                               SS OCT88 00930000
+         DC    CL8'PDSXOPT'   40                               SS OCT88 00940000
+         DC    CL8'PDSFOPT'   48                               SS OCT88 00950000
+         DC    CL8'PDSSOPT'   56                               SS OCT88 00960000
+ISPSTHW  DC    AL2(ISPFIDX2-ISPIDX1)   LENGTH  ENTRY           SS NOV85 00970000
+ISPSTHY  DC    AL2(ISPTIX1-ISPTIX0)    LENGTH  ENTRY           SS MAY89 00980000
+         DS    0F                                              SS NOV85 00990000
+         SPACE 3                                                        01000000
+*       FUNCTION TABLE INDEX  BY NUMBER                                 01010000
+*                                                                       01020000
+* NUM          FUN#   --------  -- USE DOCUMENTATION -----              01030000
+*   0           0     --------     VIEW                                 01040000
+*   1           4     --------     FUNCTION STATUS                      01050000
+*   2           0     --------     CHECK POINT LINE OUTPUT              01060000
+*   3           1     --------     MEMLIST SOURCE                       01070000
+*   4           1     --------     MEMLIST LOAD                         01080000
+*   5           0     --------     LINE PROMPT                          01090000
+*   6           2     --------     LISTA                                01100000
+*   7           3     --------     LISTV                                01110000
+*   8           5     --------     LISTC/LISTFILE                       01120000
+*   9           6     --------     TSO CMD TABLE (TCT)                  01130000
+*  10           7     --------     CATALOG X WORK (CAX)                 01140000
+*  11           8     --------     FILTER TABLE (FL)                    01150000
+*  12           9     --------     CSECTS TABLE                         01160000
+*   VIEW LOG                                                            01170000
+ISPTIX0  DC    AL2(0)                      TABLE CONT IX       SS AUG86 01180000
+         DC    AL1(SPFTLOG+SPFTPRI)        FLAGS              DRK DEC04 01181023
+*        DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 01190023
+         DC    X'00'                       FLAGS               SS AUG86 01200000
+         DC    A(ISP$TLI)                  CMD TABLE           SS NOV85 01210000
+         DC    A(0)                        LINE CMD TABLD      SS NOV85 01220000
+         DC    H'00',H'00'    LINE CMD FUNC , FIND INDEX       SS NOV85 01230000
+         DC    AL2(SPFLOGHM-SPWRKC) TABLE HOME OFFSET          SS NOV85 01240000
+         DC    AL2(0)               MSG/DATA FIELD OFFSET      SS NOV85 01250000
+         DC    AL2(0)               CMD SAVE OFFSET            SS NOV85 01260000
+         DC    AL2(0)               SORT INIT INDEX            SS OCT88 01270000
+         DC    A(0)           ADDRESS OF DEFAULT SORT PARM     SS NOV85 01280000
+         DC    AL2(0)               OPT FIELD OFFSET           SS NOV85 01290000
+         DC    H'00'                FUNCTION INDEX             SS AUG86 01300000
+         DC    A(0)           ADDR OF OPT VAR FOR LINE CMDS    SS NOV85 01310000
+*   FUNCTION STATUS                                                     01320000
+ISPTIX1  DC    AL2(1)                      TABLE CONT IX       SS AUG86 01330000
+         DC    AL1(0)                                          SS OCT88 01340000
+         DC    AL1(SPFTFUNC)               FUNCTION  STATUS    SS OCT88 01350000
+         DC    A(ISP$TLF)           FUNCTION COMMAND LIST      SS OCT88 01360000
+         DC    A(0)                                            SS OCT88 01370000
+         DC    H'00',H'00'                                     SS OCT88 01380000
+         DC    AL2(SPFLOGHM-SPWRKC) TABLE HOME OFFSET          SS OCT88 01390000
+         DC    AL2(0)               MSG/DATA FIELD OFFSET      SS OCT88 01400000
+         DC    AL2(0)                                          SS OCT88 01410000
+         DC    AL2(0)                                          SS OCT88 01420000
+         DC    A(0)                                            SS OCT88 01430000
+         DC    AL2(0)                                          SS OCT88 01440000
+         DC    H'04'                FUNCTION INDEX             SS OCT88 01450000
+         DC    A(0)                                            SS OCT88 01460000
+         SPACE 1                                                        01470000
+* CHECK POINT                           *                      SS AUG86 01480000
+         DC    AL2(2)                      TABLE CONT IX       SS AUG86 01490000
+         DC    AL1(SPFTLOG)                                    SS NOV85 01500000
+         DC    AL1(SPFTCKPT)               CHECKPOINT TABLE    SS OCT88 01510000
+         DC    A(ISP$TLC)                                      SS NOV85 01520000
+         DC    A(0)                                            SS NOV85 01530000
+         DC    H'00',H'00'                                     SS NOV85 01540000
+         DC    AL2(SPFLOGHM-SPWRKC) TABLE HOME OFFSET          SS NOV85 01550000
+         DC    AL2(0)               MSG/DATA FIELD OFFSET      SS NOV85 01560000
+         DC    AL2(0)                                          SS NOV85 01570000
+         DC    AL2(0)                                          SS NOV85 01580000
+         DC    A(0)                                            SS NOV85 01590000
+         DC    AL2(0)                                          SS NOV85 01600000
+         DC    H'00'                FUNCTION INDEX             SS AUG86 01610000
+         DC    A(0)                                            SS NOV85 01620000
+         SPACE 1                                                        01630000
+* MEMLIST SOURCE                        *                      SS AUG86 01640000
+         DC    AL2(3)                      TABLE CONT IX       SS AUG86 01650000
+         DC    AL1(SPFTLIN+SPFTMLX+SPFT1CD)                    SS NOV85 01660000
+         DC    X'00'                       FLAGS               SS AUG86 01670000
+         DC    A(ISP$TLM)                                      SS NOV85 01680000
+         DC    A(ISP$TLS)                                      SS NOV85 01690000
+         DC    H'64',H'04'                                     SS NOV85 01700000
+         DC    AL2(SPFMEMLH-SPWRKC) TABLE HOME OFFSET          SS NOV85 01710000
+         DC    AL2(MEMLDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS NOV85 01720000
+         DC    AL2(MEMLSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS NOV85 01730000
+         DC    H'03'                SORT INIT IX               SS OCT88 01740000
+         DC    A(0)                                            SS NOV85 01750000
+         DC    AL2(MEM2OPT-SPWRKC)  OPT FIELD OFFSET           SS NOV85 01760000
+         DC    H'01'                FUNCTION INDEX             SS AUG86 01770000
+         DC    A(ISPSTOPT+00)                                  SS NOV85 01780000
+         SPACE 1                                                        01790000
+* MEMLIST LOAD                          *                      SS AUG86 01800000
+         DC    AL2(4)                      TABLE CONT IX       SS AUG86 01810000
+         DC    AL1(SPFTLIN+SPFTMLX+SPFT2CD)                    SS NOV85 01820000
+         DC    X'00'                       FLAGS               SS AUG86 01830000
+         DC    A(ISP$TLM)                                      SS NOV85 01840000
+         DC    A(ISP$TLL)                                      SS NOV85 01850000
+         DC    H'64',H'08'                                     SS NOV85 01860000
+         DC    AL2(SPFMEMLH-SPWRKC) TABLE HOME OFFSET          SS NOV85 01870000
+         DC    AL2(MEMLDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS NOV85 01880000
+         DC    AL2(MEMLSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS NOV85 01890000
+         DC    H'06'                SORT INIT IX               SS OCT88 01900000
+         DC    A(0)                                            SS NOV85 01910000
+         DC    AL2(MEM2OPT-SPWRKC)  OPT FIELD OFFSET           SS NOV85 01920000
+         DC    H'01'                FUNCTION INDEX             SS AUG86 01930000
+         DC    A(ISPSTOPT+00)                                  SS NOV85 01940000
+         SPACE 1                                                        01950000
+* PROMPT                                *                      SS AUG86 01960000
+         DC    AL2(5)                      TABLE CONT IX       SS AUG86 01970000
+         DC    AL1(SPFTLOG)                                             01980000
+         DC    AL1(SPFTREP)             REPLY PANEL           ABL APR86 01990000
+         DC    A(ISP$TLR)                                      SS NOV85 02000000
+         DC    A(0)                                            SS NOV85 02010000
+         DC    H'00',H'00'                                     SS NOV85 02020000
+         DC    AL2(SPFLOGHM-SPWRKC) TABLE HOME OFFSET          SS NOV85 02030000
+         DC    AL2(0)                                          SS NOV85 02040000
+         DC    AL2(0)                                          SS NOV85 02050000
+         DC    AL2(0)                                          SS NOV85 02060000
+         DC    A(0)                                            SS NOV85 02070000
+         DC    AL2(0)                                          SS NOV85 02080000
+         DC    H'00'                FUNCTION INDEX             SS AUG86 02090000
+         DC    A(0)                                            SS NOV85 02100000
+         SPACE 1                                                        02110000
+*  LISTA                                *                      SS AUG86 02120000
+         DC    AL2(6)                      TABLE CONT IX       SS AUG86 02130000
+         DC    AL1(SPFTLIN)                                    SS NOV85 02140000
+         DC    X'00'                       FLAGS               SS AUG86 02150000
+         DC    A(ISP$TLAA)                                     SS NOV85 02160000
+         DC    A(ISP$TLAL)                                     SS NOV85 02170000
+         DC    H'152',H'12'                                    SS NOV85 02180000
+         DC    AL2(SPFLISTA-SPWRKC) TABLE HOME OFFSET          SS NOV85 02190000
+         DC    AL2(SPFADATA-SPWRKC) MSG/DATA FIELD OFFSET      SS NOV85 02200000
+         DC    AL2(SPFASAVZ-SPWRKC) SAVE ZCMD OFFSET           SS NOV85 02210000
+         DC    H'00'                                           SS OCT88 02220000
+         DC    A(0)                                            SS NOV85 02230000
+         DC    AL2(SPFAOPT-SPWRKC)  OPT FIELD OFFSET           SS NOV85 02240000
+         DC    H'02'                FUNCTION INDEX             SS AUG86 02250000
+         DC    A(ISPSTOPT+08)                                  SS NOV85 02260000
+         SPACE 1                                                        02270000
+* LISTV                                 *                      SS AUG86 02280000
+         DC    AL2(7)                      TABLE CONT IX       SS AUG86 02290000
+         DC    AL1(SPFTLIN)                                    SS NOV85 02300000
+         DC    X'00'                       FLAGS               SS AUG86 02310000
+         DC    A(ISP$TLVV)                                     SS NOV85 02320000
+         DC    A(ISP$TLVL)                                     SS NOV85 02330000
+         DC    H'152',H'16'                                    SS NOV85 02340000
+         DC    AL2(SPFLISTV-SPWRKC) TABLE HOME OFFSET          SS NOV85 02350000
+         DC    AL2(SPFVDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS NOV85 02360000
+         DC    AL2(SPFVSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS NOV85 02370000
+         DC    H'09'                SORT INIT IX               SS OCT88 02380000
+         DC    A(0)                                            SS NOV85 02390000
+         DC    AL2(SPFVOPT-SPWRKC)  OPT FIELD OFFSET           SS NOV85 02400000
+         DC    H'03'                FUNCTION INDEX             SS AUG86 02410000
+         DC    A(ISPSTOPT+16)                                  SS NOV85 02420000
+         SPACE 1                                                        02430000
+* LISTC/LISTFILE                        *                      SS AUG86 02440000
+         DC    AL2(8)                      TABLE CONT IX       SS AUG86 02450000
+         DC    AL1(SPFTLIN)                                    SS OCT88 02460000
+         DC    X'00'                       FLAGS               SS OCT88 02470000
+         DC    A(ISP$TLFA)                                     SS OCT88 02480000
+         DC    A(ISP$TLFL)                                     SS OCT88 02490000
+         DC    H'152',H'20'                                    SS OCT88 02500000
+         DC    AL2(SPFLISTF-SPWRKC) TABLE HOME OFFSET          SS OCT88 02510000
+         DC    AL2(SPFCDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS OCT88 02520000
+         DC    AL2(SPFCSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS OCT88 02530000
+         DC    H'15'                SORT INIT IX               SS OCT88 02540000
+         DC    A(0)                                            SS OCT88 02550000
+         DC    AL2(SPFCOPT-SPWRKC)  OPT FIELD OFFSET           SS OCT88 02560000
+         DC    H'05'                FUNCTION INDEX             SS OCT88 02570000
+         DC    A(ISPSTOPT+24)                                  SS OCT88 02580000
+         SPACE 3                                               SS OCT88 02590000
+* TCT                                   *                      SS AUG86 02600000
+         DC    AL2(9)                      TABLE CONT IX       SS AUG86 02610000
+         DC    AL1(SPFTLIN)                                    SS OCT88 02620000
+         DC    X'00'                       FLAGS               SS OCT88 02630000
+         DC    A(ISP$TTCA)                                     SS OCT88 02640000
+         DC    A(ISP$TTCL)                                     SS OCT88 02650000
+         DC    H'152',H'24'                                    SS OCT88 02660000
+         DC    AL2(SPFTCTHM-SPWRKC) TABLE HOME OFFSET          SS OCT88 02670000
+         DC    AL2(SPFTDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS OCT88 02680000
+         DC    AL2(SPFTSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS OCT88 02690000
+         DC    H'00'                SORT INIT IX               SS OCT88 02700000
+         DC    A(0)                                            SS OCT88 02710000
+         DC    AL2(SPFTOPT-SPWRKC)  OPT FIELD OFFSET           SS OCT88 02720000
+         DC    H'06'                FUNCTION INDEX             SS OCT88 02730000
+         DC    A(ISPSTOPT+32)                                  SS OCT88 02740000
+         SPACE 3                                               SS OCT88 02750000
+*   CAX                                 *                      SS AUG86 02760000
+         DC    AL2(10)                     TABLE CONT IX       SS AUG86 02770000
+         DC    AL1(SPFTLIN)                                    SS OCT88 02780000
+         DC    X'00'                       FLAGS               SS OCT88 02790000
+         DC    A(ISP$TCXA)                                     SS OCT88 02800000
+         DC    A(ISP$TCXL)                                     SS OCT88 02810000
+         DC    H'152',H'28'                                    SS OCT88 02820000
+         DC    AL2(SPFCAXHM-SPWRKC) TABLE HOME OFFSET          SS OCT88 02830000
+         DC    AL2(SPFXDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS OCT88 02840000
+         DC    AL2(SPFXSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS OCT88 02850000
+         DC    H'21'                SORT INIT IX               SS OCT88 02860000
+         DC    A(0)                                            SS OCT88 02870000
+         DC    AL2(SPFXOPT-SPWRKC)  OPT FIELD OFFSET           SS OCT88 02880000
+         DC    H'07'                FUNCTION INDEX             SS OCT88 02890000
+         DC    A(ISPSTOPT+40)                                  SS OCT88 02900000
+         SPACE 3                                               SS OCT88 02910000
+* FILTER                                *                      SS AUG86 02920000
+         DC    AL2(11)                     TABLE CONT IX       SS AUG86 02930000
+         DC    AL1(SPFTLIN)                                    SS OCT88 02940000
+         DC    X'00'                       FLAGS               SS OCT88 02950000
+         DC    A(ISP$TFLA)                                     SS OCT88 02960000
+         DC    A(ISP$TFLL)                                     SS OCT88 02970000
+         DC    H'152',H'32'                                    SS OCT88 02980000
+         DC    AL2(SPFFILTR-SPWRKC) TABLE HOME OFFSET          SS OCT88 02990000
+         DC    AL2(SPFFDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS OCT88 03000000
+         DC    AL2(SPFFSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS OCT88 03010000
+         DC    H'00'                SORT INIT IX               SS OCT88 03020000
+         DC    A(0)                                            SS OCT88 03030000
+         DC    AL2(SPFFOPT-SPWRKC)  OPT FIELD OFFSET           SS OCT88 03040000
+         DC    H'08'                FUNCTION INDEX             SS OCT88 03050000
+         DC    A(ISPSTOPT+48)                                  SS OCT88 03060000
+         SPACE 3                                               SS OCT88 03070000
+* CSECTS                                *                      SS AUG86 03080000
+         DC    AL2(12)                     TABLE CONT IX       SS AUG86 03090000
+         DC    AL1(SPFTLIN)                                    SS OCT88 03100000
+         DC    X'00'                       FLAGS               SS OCT88 03110000
+         DC    A(ISP$TCSA)                                     SS OCT88 03120000
+         DC    A(ISP$TCSL)                                     SS OCT88 03130000
+         DC    H'152',H'36'                                    SS OCT88 03140000
+         DC    AL2(SPFCSECH-SPWRKC) TABLE HOME OFFSET          SS OCT88 03150000
+         DC    AL2(SPFSDATA-SPWRKC) MSG/DATA FIELD OFFSET      SS OCT88 03160000
+         DC    AL2(SPFSSAVZ-SPWRKC) SAVE ZCMD OFFSET           SS OCT88 03170000
+         DC    H'18'                SORT INIT IX               SS OCT88 03180000
+         DC    A(0)                                            SS OCT88 03190000
+         DC    AL2(SPFSOPT-SPWRKC)  OPT FIELD OFFSET           SS OCT88 03200000
+         DC    H'09'                FUNCTION INDEX             SS OCT88 03210000
+         DC    A(ISPSTOPT+56)                                  SS OCT88 03220000
+         SPACE 3                                               SS OCT88 03230000
+*       FUNCTION TABLE PANELS BY NUMBER                                 03240000
+*                                                                       03250000
+* NUM    NEXT# FUN#   --------  -- USE DOCUMENTATION -----              03260000
+*   1     10    0     --------     VIEW LEFT                            03270000
+*   2     14    4     --------     FUNCTION STATUS                      03280000
+*   3      4    0     --------     CHECK POINT LINE OUTPUT LEFT         03290000
+*   4     12    0     --------     CHECK POINT LINE OUTPUT RIGHT        03300000
+*   5      6    1     --------     MEMLIST SOURCE                       03310000
+*   6     28    1     --------     MEMLIST SOURCE ALT                   03320007
+*   7      8    1     --------     MEMLIST LOAD                         03330000
+*   8     13    1     --------     MEMLIST LOAD   ALT                   03340000
+*   9     14    0     --------     LINE PROMPT LEFT                     03350000
+*  10-A   11    0     --------     VIEW RIGHT                           03360000
+*  11-B    1    0     --------     VIEW DUAL                            03370000
+*  12-C    3    0     --------     CHECK POINT LINE OUTPUT DUAL         03380000
+*  13-D    7    1     --------     MEMLIST LOAD DUAL                    03390000
+*  14-E   19    0     --------     LINE PROMPT RIGHT                    03400000
+*  15-F   16    2     --------     LISTA                                03410000
+*  16-G   15    2     --------     LISTA DUAL                           03420000
+*  17-H   18    3     --------     LISTV                                03430000
+*  18-I   27    3     --------     LISTV ALT                            03440000
+*  19-J    9    0     --------     LINE PROMPT DUAL                     03450000
+*  20-K   21    5     --------     LISTC/LISTFILE                       03460000
+*  21-L   22    5     --------     LISTC/LISTFILE ALT                   03470000
+*  22-M   20    5     --------     LISTC/LISTFILE DUAL (3 LINE)         03480000
+*  23-N    0    6     --------     TSO CMD TABLE (TCT)                  03490000
+*  24-O    0    7     --------     CATALOG X WORK (CAX)                 03500000
+*  25-P    0    8     --------     FILTER TABLE (FL)                    03510000
+*  26 Q    0    9     --------     CSECTS TABLE                         03520000
+*  27-R   17    3     --------     LISTV DUAL                           03521000
+*  28-S    5    1     --------     MEMLIST SOURCE DUAL                  03540007
+*  29-T    0    X     --------                                          03550000
+*                                                                       03560000
+*                                                                       03570000
+*         =1    ID   L/R   NEXT  P-GP   (ISPMODE PANEL 1)      SS NOV85 03580000
+ISPIDX1  DS    0H                                             DRK SEP05 03580125
+         AIF   ('&LOGWIDE' EQ 'YES').LOGW                     DRK SEP05 03581024
+         DC    H'01',H'10',H'10',H'01'                         SS NOV85 03590025
+         DC    CL8'&P.PN1'                 PANEL ID            SS NOV85 03600000
+         AGO   .LOGN                                          DRK SEP05 03600124
+.LOGW    ANOP                                                 DRK SEP05 03600224
+         DC    H'01',H'10',H'10',H'29'                        DRK SEP05 03600324
+         DC    CL8'&P.PN1W'                WIDTH(&ZSCREENW)   DRK SEP05 03600424
+.LOGN    ANOP                                                 DRK SEP05 03600524
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE               DRK DEC04 03601023
+*        DC    AL1(SPFTLOG+SPFTPRI)        FLAGS               SS NOV85 03610023
+         DC    X'00'                       FLAGS               SS AUG86 03620000
+         DC    AL2(0)                      TABLE CONT IX       SS MAY89 03630000
+         SPACE 1                                                        03640000
+*         =2    ID   L/R   NEXT  PRINT  (FUNCTION DISPLAY   )  SS OCT88 03650000
+*     FUNCTION STATUS                   *                      SS OCT88 03660000
+ISPFIDX2 DS    0H                                              SS OCT88 03670000
+         DC    H'02',H'00',H'00',H'01'                         SS OCT88 03680000
+         DC    CL8'&P.PN2'                                     SS OCT88 03690000
+         DC    AL1(0)                      TYPE                SS OCT88 03700000
+         DC    X'00'                       FLAGS               SS OCT88 03710000
+         DC    AL2(1)                      TABLE CONT IX       SS MAY89 03720000
+         SPACE 1                                                        03730000
+*ISPIDX3  =3    ID   L/R   NEXT  PRINT  (CHECKPOINT PANEL)     SS NOV85 03740000
+         DC    H'03',H'04',H'04',H'01'                         SS NOV85 03750000
+         DC    CL8'&P.PN3'                                     SS NOV85 03760000
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 03770000
+         DC    X'00'                       FLAGS               SS AUG86 03780000
+         DC    AL2(2)                      TABLE CONT IX       SS MAY89 03790000
+         SPACE 1                                                        03800000
+*ISPIDX4  =4    ID   L/R   NEXT  PRINT  (CHECKPOINT RIGHT )    SS NOV85 03810000
+         DC    H'04',H'03',H'12',H'04'                        ABL JAN89 03820000
+         DC    CL8'&P.PN4'                                     SS NOV85 03830000
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS AUG86 03840000
+         DC    AL1(0)                                          SS AUG86 03850000
+         DC    AL2(2)                      TABLE CONT IX       SS MAY89 03860000
+         SPACE 1                                                        03870000
+*ISPIDX5  =5    ID   L/R   NEXT  PRINT  (MEMLIST SOURCE 1)     SS NOV85 03880000
+         DC    H'05',H'06',H'06',H'&MEMLS1P'                  DRK NOV99 03890012
+         DC    CL8'&P.PN&MEMLS1&PNTS'                         DRK NOV99 03901012
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 03910000
+         DC    X'00'                       FLAGS               SS AUG86 03920000
+         DC    AL2(3)                      TABLE CONT IX       SS MAY89 03930000
+         SPACE 1                                                        03940000
+*ISPIDX6  =6    ID   L/R   NEXT  PRINT  (MEMLIST SOURCE 2)     SS NOV85 03950000
+         DC    H'06',H'05',H'28',H'&MEMLS2P'                  DRK NOV99 03960012
+         DC    CL8'&P.PN&MEMLS2&PNTS'                         DRK NOV99 03971012
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS AUG86 03980000
+         DC    X'00'                       FLAGS               SS AUG86 03990000
+         DC    AL2(3)                      TABLE CONT IX       SS MAY89 04000000
+         SPACE 1                                                        04010000
+*ISPIDX7  =7    ID   L/R   NEXT  PRINT  (MEMLIST LOAD 1)       SS NOV85 04020000
+         DC    H'07',H'08',H'08',H'&MEMLL1P'                  DRK NOV99 04030017
+         DC    CL8'&P.PN&MEMLL1&PNTS'                         DRK NOV99 04040017
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 04050000
+         DC    X'00'                       FLAGS               SS AUG86 04060000
+         DC    AL2(4)                      TABLE CONT IX       SS MAY89 04070000
+         SPACE 1                                                        04080000
+*ISPIDX8  =8    ID   L/R   NEXT  PRINT  (MEMLIST LOAD 2)       SS NOV85 04090000
+         DC    H'08',H'07',H'13',H'&MEMLL2P'                  DRK NOV99 04100017
+         DC    CL8'&P.PN&MEMLL2&PNTS'                         DRK NOV99 04110017
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS AUG86 04120000
+         DC    X'00'                       FLAGS               SS AUG86 04130000
+         DC    AL2(4)                      TABLE CONT IX       SS MAY89 04140000
+         SPACE 1                                                        04150000
+*ISPIDX9  =9    ID   L/R   NEXT  PRINT  (PDS YES/NO PROMPT)    SS NOV85 04160000
+         DC    H'09',H'14',H'14',H'01'                         SS OCT88 04170000
+         DC    CL8'&P.PN9'                                     SS NOV85 04180000
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 04190000
+         DC    X'00'                       FLAGS               SS AUG86 04200000
+         DC    AL2(5)                      TABLE CONT IX       SS MAY89 04210000
+         SPACE 1                                                        04220000
+*ISPIDX10 =A    ID   L/R   NEXT  PRINT  (ISPMODE PANEL 2)      SS NOV85 04230000
+         DC    H'10',H'01',H'11',H'04'                        ABL JAN89 04240000
+         DC    CL8'&P.PNA'                                     SS NOV85 04250000
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS OCT88 04260000
+         DC    X'00'                       FLAGS               SS AUG86 04270000
+         DC    AL2(0)                      TABLE CONT IX       SS MAY89 04280000
+         SPACE 1                                                        04290000
+*ISPIDX11 =B    ID   L/R   NEXT  PRINT  (ISPMODE PANEL DUAL)   SS OCT88 04300000
+         DC    H'11',H'00',H'01',H'11'                        ABL JAN89 04310000
+         DC    CL8'&P.PNB'                                              04320024
+         DC    AL1(SPFTBTYD)               TYPE                SS OCT88 04330000
+         DC    X'00'                       FLAGS               SS AUG86 04340000
+         DC    AL2(0)                      TABLE CONT IX       SS MAY89 04350000
+         SPACE 1                                                        04360000
+*ISPIDX12 =C    ID   L/R   NEXT  PRINT  (CHECKPOINT DUAL  )    SS NOV85 04370000
+         DC    H'12',H'00',H'03',H'11'                        ABL JAN89 04380000
+         DC    CL8'&P.PNC'                                     SS NOV85 04390000
+         DC    AL1(SPFTBTYD)               TYPE                SS AUG86 04400000
+         DC    X'00'                       FLAGS               SS AUG86 04410000
+         DC    AL2(2)                      TABLE CONT IX       SS MAY89 04420000
+         SPACE 1                                                        04430000
+*ISPIDX13 =D    ID   L/R   NEXT  PRINT  (MEMLIST LOAD 3)       SS NOV85 04440000
+         DC    H'13',H'00',H'07',H'&MEMLL3P'                  DRK NOV99 04450017
+         DC    CL8'&P.PN&MEMLL3&PNTS'                         DRK NOV99 04460017
+         DC    AL1(SPFTBTYD+SPFTBTYL)      TYPE                SS AUG86 04470000
+         DC    X'00'                       FLAGS               SS AUG86 04480000
+         DC    AL2(4)                      TABLE CONT IX       SS MAY89 04490000
+         SPACE 1                                                        04500000
+*ISPIDX14 =E    ID   L/R   NEXT  PRINT  (LINE PROMPT RIGHT  )  SS OCT88 04510000
+         DC    H'14',H'09',H'19',H'04'                        ABL JAN89 04520000
+         DC    CL8'&P.PNC'                                     SS AUG86 04530000
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS OCT88 04540000
+         DC    X'00'                       FLAGS               SS AUG86 04550000
+         DC    AL2(5)                      TABLE CONT IX       SS MAY89 04560000
+         SPACE 1                                                        04570000
+*ISPIDX15 =F    ID   L/R   NEXT  PRINT  (LISTA PANEL 1)        SS NOV85 04580000
+         DC    H'15',H'00',H'16',H'15'                        ABL APR86 04590000
+         DC    CL8'&P.PNF'                                     SS NOV85 04600000
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 04610000
+         DC    X'00'                       FLAGS               SS AUG86 04620000
+         DC    AL2(6)                      TABLE CONT IX       SS MAY89 04630000
+         SPACE 1                                                        04640000
+*ISPIDX16 =G    ID   L/R   NEXT  PRINT  (LISTA PANEL 2)        SS NOV85 04650000
+         DC    H'16',H'00',H'15',H'16'                        ABL APR86 04660000
+         DC    CL8'&P.PNG'                                     SS NOV85 04670000
+         DC    AL1(SPFTBTYD+SPFTBTYL)      TYPE                SS AUG86 04680000
+         DC    X'00'                       FLAGS               SS AUG86 04690000
+         DC    AL2(6)                      TABLE CONT IX       SS MAY89 04700000
+         SPACE 1                                                        04710000
+*ISPIDX17 =H    ID   L/R   NEXT  PRINT  (LISTV PANEL 1)        SS NOV85 04720000
+         DC    H'17',H'18',H'18',H'&LISTV1P'                  DRK NOV99 04730014
+         DC    CL8'&P.PN&LISTV1&PNTS'                         DRK NOV99 04740016
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS AUG86 04750000
+         DC    X'00'                       FLAGS               SS AUG86 04760000
+         DC    AL2(7)                      TABLE CONT IX       SS MAY89 04770000
+         SPACE 1                                                        04780000
+*ISPIDX18 =I    ID   L/R   NEXT  PRINT  (LISTV PANEL 2)        SS NOV85 04790000
+         DC    H'18',H'17',H'27',H'&LISTV2P'                  DRK NOV99 04800014
+         DC    CL8'&P.PN&LISTV2&PNTS'                         DRK NOV99 04810016
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS AUG86 04820000
+         DC    X'00'                       FLAGS               SS AUG86 04830000
+         DC    AL2(7)                      TABLE CONT IX       SS MAY89 04840000
+         SPACE 3                                               SS NOV85 04850000
+*ISPIDX19 =J    ID   L/R   NEXT  PRINT  (PDS PROMPT DUAL0      SS MAY89 04860000
+         DC    H'14',H'00',H'09',H'01'                         SS OCT88 04870000
+         DC    CL8'&P.PNJ'                                     SS OCT88 04880000
+         DC    AL1(SPFTBTYD)               TYPE                SS OCT88 04890000
+         DC    X'00'                       FLAGS               SS OCT88 04900000
+         DC    AL2(5)                      TABLE CONT IX       SS MAY89 04910000
+         SPACE 1                                                        04920000
+*ISPIDX20 =K    ID   L/R   NEXT  PRINT  (LISTF PANEL 1)        SS OCT88 04930017
+         DC    H'20',H'21',H'21',H'&LISTF1P'                  DRK NOV99 04940017
+         DC    CL8'&P.PN&LISTF1&PNTS'                         DRK NOV99 04950017
+         DC    AL1(SPFTBTYN+SPFTBTYL)      TYPE                SS OCT88 04960000
+         DC    X'00'                       FLAGS               SS OCT88 04970000
+         DC    AL2(8)                      TABLE CONT IX       SS MAY89 04980000
+         SPACE 3                                               SS OCT88 04990000
+*ISPIDX21 =L    ID   L/R   NEXT  PRINT  (LISTF PANEL 2)        SS OCT88 05000000
+         DC    H'21',H'20',H'22',H'&LISTF2P'                  DRK NOV99 05010017
+         DC    CL8'&P.PN&LISTF2&PNTS'                         DRK NOV99 05020017
+         DC    AL1(SPFTBTYA+SPFTBTYR)      TYPE                SS OCT88 05030000
+         DC    X'00'                       FLAGS               SS OCT88 05040000
+         DC    AL2(8)                      TABLE CONT IX       SS MAY89 05050000
+         SPACE 3                                               SS OCT88 05060000
+*ISPIDX22 =M    ID   L/R   NEXT  PRINT  (LISTF PANEL DUAL)     SS OCT88 05070000
+         DC    H'22',H'00',H'20',H'&LISTF3P'                  DRK NOV99 05080017
+         DC    CL8'&P.PN&LISTF3&PNTS'                         DRK NOV99 05090017
+         DC    AL1(SPFTBTYD)               TYPE                SS OCT88 05100000
+         DC    X'00'                       FLAGS               SS OCT88 05110000
+         DC    AL2(8)                      TABLE CONT IX       SS MAY89 05120000
+         SPACE 3                                               SS OCT88 05130000
+*ISPIDX23 =N    ID   L/R   NEXT  PRINT  (TCT)                  SS OCT88 05140000
+         DC    H'23',H'00',H'00',H'23'                        ABL JAN89 05150000
+         DC    CL8'&P.PNN'                                     SS OCT88 05160000
+         DC    AL1(SPFTBTYN)               TYPE                SS OCT88 05170000
+         DC    X'00'                       FLAGS               SS OCT88 05180000
+         DC    AL2(9)                      TABLE CONT IX       SS MAY89 05190000
+         SPACE 3                                               SS OCT88 05200000
+*ISPIDX24 =O    ID   L/R   NEXT  PRINT  (CAX )                 SS OCT88 05210000
+         DC    H'24',H'00',H'00',H'24'                        ABL JAN89 05220000
+         DC    CL8'&P.PNO&PNTS'                               DRK OCT98 05230004
+         DC    AL1(SPFTBTYN)               TYPE                SS OCT88 05240000
+         DC    X'00'                       FLAGS               SS OCT88 05250000
+         DC    AL2(10)                     TABLE CONT IX       SS MAY89 05260000
+         SPACE 3                                               SS OCT88 05270000
+*ISPIDX25 =P    ID   L/R   NEXT  PRINT  (FILTER)               SS OCT88 05280000
+         DC    H'25',H'00',H'00',H'00'                         SS OCT88 05290000
+         DC    CL8'&P.PNP'                                     SS OCT88 05300000
+         DC    AL1(SPFTBTYN)               TYPE                SS OCT88 05310000
+         DC    X'00'                       FLAGS               SS OCT88 05320000
+         DC    AL2(11)                     TABLE CONT IX       SS MAY89 05330000
+         SPACE 3                                               SS OCT88 05340000
+*ISPIDX26 =Q    ID   L/R   NEXT  PRINT  (CSECTS)               SS OCT88 05350000
+         DC    H'26',H'00',H'00',H'00'                         SS OCT88 05360000
+         DC    CL8'&P.PNQ'                                     SS OCT88 05370000
+         DC    AL1(SPFTBTYN)               TYPE                SS OCT88 05380000
+         DC    X'00'                       FLAGS               SS OCT88 05390000
+         DC    AL2(12)                     TABLE CONT IX       SS MAY89 05400000
+         SPACE 3                                               SS OCT88 05410000
+*ISPIDX27 =R    ID   L/R   NEXT  PRINT  (LISTV PANEL 3)       DRK AUG98 05411001
+         DC    H'27',H'00',H'17',H'&LISTV3P'                  DRK NOV99 05412014
+         DC    CL8'&P.PN&LISTV3&PNTS'                         DRK NOV99 05413016
+         DC    AL1(SPFTBTYD+SPFTBTYL)      TYPE               DRK AUG98 05414000
+         DC    X'00'                       FLAGS              DRK AUG98 05415000
+         DC    AL2(7)                      TABLE CONT IX      DRK AUG98 05416000
+         SPACE 3                                              DRK AUG98 05417000
+*ISPIDX28 =S    ID   L/R   NEXT  PRINT  (MEMLIST SOURCE 3)    DRK NOV99 05418007
+         DC    H'28',H'00',H'05',H'&MEMLS3P'                  DRK NOV99 05419013
+         DC    CL8'&P.PN&MEMLS3&PNTS'                         DRK NOV99 05419112
+         DC    AL1(SPFTBTYD+SPFTBTYL)      TYPE               DRK NOV99 05419208
+         DC    X'00'                       FLAGS              DRK NOV99 05419307
+         DC    AL2(3)                      TABLE CONT IX      DRK NOV99 05419407
+         SPACE 1                                              DRK NOV99 05419507
+ISPSTMX  DC    H'28'            MAX INDEX                     DRK NOV99 05420007
+         DROP  R4                                             DRK NOV98 05430005

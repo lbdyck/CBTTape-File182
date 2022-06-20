@@ -1,0 +1,695 @@
+         TITLE 'P D S  --  PDS GLOBAL VARIABLES              11/01/88'  00010010
+********************************************************************    00020000
+*   PDS GLOBALS SUBCOMMAND LISTING TABLE  -  S.GOLOB - 11/88       *    00030000
+*                                                                  *    00040000
+*                                                                  *    00050000
+* GENERAL DESCRIPTION:  SUPPORT OF A PDS SUBCOMMAND TO LIST        *    00060000
+*                        THE SETTINGS OF THE PDS GLOBAL VARIABLES  *    00070000
+*                        AT THE TIME OF ASSEMBLY.                  *    00080000
+*                                                                  *    00090000
+*                       SOME OF THESE VARIABLES CAN BE CHANGED     *    00100000
+*                        DURING PDS EXECUTION.  THOSE SETTINGS     *    00110000
+*                        CAN BE DISPLAYED WITH OTHER SUBCOMMANDS,  *    00120000
+*                        SUCH AS SETML, SETLOG, ETC.               *    00130000
+*                                                                  *    00140000
+*                                                                  *    00150000
+* TABLE STRUCTURE:                                                 *    00160000
+*                                                                  *    00170000
+*      EACH TABLE ENTRY HAS 64 BYTES, EXCEPT FOR END-OF-TABLE,     *    00180000
+*        WHICH CONSISTS OF 2 BYTES, X'FFFF'.                       *    00190000
+*                                                                  *    00200000
+*      EACH ENTRY IS DIVIDED INTO 4 PARTS.                         *    00210000
+*        A)  CL8   -  NAME OF THE GLOBAL VARIABLE.                 *    00220000
+*        B)  CL8   -  DEFAULT VALUE OF THE GLOBAL VARIABLE         *    00230000
+*        C)  CL40  -  SHORT ENGLISH DESCRIPTION OF WHAT THE        *    00240000
+*                         VARIABLE DOES, OR SETS.                  *    00250000
+*        D)  CL8   -  VALUE OF THE GLOBAL VARIABLE AT THE          *    00260000
+*                         TIME WHEN THIS PDS LOAD MODULE           *    00270000
+*                         WAS ASSEMBLED.                           *    00280000
+*                                                                  *    00290000
+*      THERE IS ONE SPECIAL TYPE OF HEADER ENTRY.                  *    00300000
+*        A)  HEADER ENTRIES - TWO TABLE ENTRIES AT LABEL           *    00310000
+*              "GLOBHDR", WHICH CONTAIN THE TITLE FOR THE          *    00320000
+*              DISPLAY.                                            *    00330000
+*                                                                  *    00340000
+*                                                                  *    00350000
+********************************************************************    00360000
+GLOBAL   CSECT                                                          00370006
+GLOBLIST DS    0D             TABLE OF PDS ASSEMBLER GLOBALS            00380000
+*                                                                       00390000
+GLOBHDR  DS    0X             TABLE HEADING                             00400000
+*                             -------------                             00410000
+         DC CL8'GLOBAL   ',CL8'DEFAULT '                                00420000
+ DC CL40'DESCRIPTION OF VARIABLE                 ',CL08'ASSEMBLY'       00430000
+         DC CL8'------   ',CL8'------- '                                00440000
+ DC CL40'-----------------------                 ',CL08'--------'       00450000
+*                                                                       00460000
+GLOBBODY DS    0X             TABLE ENTRIES                             00470000
+*                             -------------                             00480000
+         DC CL8'&&MVSLEV ',CL8'MVS724  '                      DRK AUG21 00490051
+ DC CL40'MVS724.6XX.510.410.310.220.13X.12X.038  ',CL08'&MVSLEV '       00500051
+         DC CL8'         ',CL8'        '                      DRK SEP10 00510031
+ DC CL40'zOS    390 ESA ESA ESA XA  SP  SP  MVS  ',CL08'        '       00520034
+         DC CL8'&&NAB1   ',CL8'        '                                00530000
+ DC CL40'DISALLOWED SUBCOMMAND #1                ',CL08'&NAB1   '       00540000
+         DC CL8'&&NAB2   ',CL8'        '                                00550000
+ DC CL40'DISALLOWED SUBCOMMAND #2                ',CL08'&NAB2   '       00560000
+         DC CL8'&&NAB3   ',CL8'        '                                00570000
+ DC CL40'DISALLOWED SUBCOMMAND #3                ',CL08'&NAB3   '       00580000
+         DC CL8'&&NATT   ',CL8'ATTRIB  '                                00590000
+ DC CL40'SUBCOMMAND FOR MEMBER ATTRIBUTES        ',CL08'&NATT   '       00600000
+         DC CL8'&&NALI   ',CL8'ALIAS   '                                00610000
+ DC CL40'SUBCOMMAND TO ASSIGN ALIASES            ',CL08'&NALI   '       00620000
+         DC CL8'&&NAMB   ',CL8'AMBLIST '                      DRK JUL09 00630023
+ DC CL40'SUBCOMMAND TO INVOKE THE AMBLIST PROGRAM',CL08'&NAMB   '       00640023
+         DC CL8'&&NABE   ',CL8'        '                                00650023
+ DC CL40'SUBCOMMAND TO EDIT USING ABE            ',CL08'&NABE   '       00660023
+         DC CL8'&&NANA   ',CL8'ANALYZE '                      DRK NOV07 00670023
+ DC CL40'UNDOCUMENTED -- ALIAS FOR COBANAL       ',CL08'&NANA   '       00680023
+         DC CL8'&&NBRO   ',CL8'BROWSE  '                                00690023
+ DC CL40'SUBCOMMAND TO INVOKE ISPF BROWSE        ',CL08'&NBRO   '       00700023
+         DC CL8'&&NBL5   ',CL8'BLK3350 '                                00710023
+ DC CL40'SUBCOMMAND TO INVOKE TSO BLK3350        ',CL08'&NBL5   '       00720023
+         DC CL8'&&NBL8   ',CL8'BLK3380 '                                00730023
+ DC CL40'SUBCOMMAND TO INVOKE TSO BLK3380        ',CL08'&NBL8   '       00740023
+         DC CL8'&&NBL9   ',CL8'BLK3390 '                                00750023
+ DC CL40'SUBCOMMAND TO INVOKE TSO BLK3390        ',CL08'&NBL9   '       00760023
+         DC CL8'&&NBL4   ',CL8'BLK9345 '                      DRK JUN06 00770023
+ DC CL40'SUBCOMMAND TO INVOKE TSO BLK9345        ',CL08'&NBL4   '       00780023
+         DC CL8'&&NCHA   ',CL8'CHANGE  '                                00790023
+ DC CL40'SUBCOMMAND TO CHANGE DATA SETS          ',CL08'&NCHA   '       00800023
+         DC CL8'&&NCOB   ',CL8'COBANAL '                      DRK NOV07 00810023
+ DC CL40'SUBCOMMAND TO ANALYZE COBOL LOAD MODULES',CL08'&NCOB   '       00820023
+         DC CL8'&&NCBN   ',CL8'COMBINE '                      DRK MAY06 00830023
+ DC CL40'UNDOCUMENTED -- ALIAS FOR OFFLOAD       ',CL08'&NCBN   '       00840023
+         DC CL8'&&NCAR   ',CL8'COMPARE '                                00850023
+ DC CL40'SUBCOMMAND TO COMPARE DATA              ',CL08'&NCAR   '       00860023
+         DC CL8'&&NCMX   ',CL8'COMPRESS'                                00870023
+ DC CL40'SUBCOMMAND TO COMPRESS A DATA SET       ',CL08'&NCMX   '       00880023
+         DC CL8'&&NCON   ',CL8'CONTROL '                                00890023
+ DC CL40'SUBCOMMAND FOR PDS CONTROL FUNCTIONS    ',CL08'&NCON   '       00900023
+         DC CL8'&&NCOP   ',CL8'COPY    '                                00910023
+ DC CL40'SUBCOMMAND TO COPY DATA TO A DATA SET   ',CL08'&NCOP   '       00920023
+         DC CL8'&&NCPK   ',CL8'CPKMAP  '                                00930023
+ DC CL40'SUBCOMMAND TO DISPLAY A VOLUME TRACK MAP',CL08'&NCPK   '       00940023
+         DC CL8'&&NDIS   ',CL8'DISPLAY '                                00950023
+ DC CL40'SUBCOMMAND TO DISPLAY MEMBERS           ',CL08'&NDIS   '       00960023
+         DC CL8'&&NDCF   ',CL8'DCF     '                                00970023
+ DC CL40'SUBCOMMAND TO INVOKE DCF SCRIPT         ',CL08'&NDCF   '       00980023
+         DC CL8'&&NDIR   ',CL8'DIRENTRY'                                00990023
+ DC CL40'SUBCOMMAND TO DISPLAY A DIRECTORY ENTRY ',CL08'&NDIR   '       01000023
+         DC CL8'&&NDEL   ',CL8'DELETE  '                                01010023
+ DC CL40'SUBCOMMAND TO DELETE A MEMBER           ',CL08'&NDEL   '       01020023
+         DC CL8'&&NDLN   ',CL8'DLINK   '                      DRK JAN06 01030023
+ DC CL40'SUBCOMMAND TO INVOKE THE DELINKI PROGRAM',CL08'&NDLN   '       01040023
+         DC CL8'&&NDSN   ',CL8'DSNAME  '                                01050023
+ DC CL40'**DO NOT NULLIFY** DISPLAY CURRENT ALLOC',CL08'&NDSN   '       01060023
+         DC CL8'&&NDSM   ',CL8'DISASM  '                      DRK DEC05 01070023
+ DC CL40'SUBCOMMAND TO INVOKE THE DISASM PROGRAM ',CL08'&NDSM   '       01080023
+         DC CL8'&&NDSP   ',CL8'DSPRINT '                                01090023
+ DC CL40'SUBCOMMAND TO INVOKE TSO DSPRINT        ',CL08'&NDSP   '       01100023
+         DC CL8'&&NDSA   ',CL8'DSAT    '                                01110023
+ DC CL40'SUBCOMMAND TO INVOKE TSO DSAT           ',CL08'&NDSA   '       01120023
+         DC CL8'&&NDVO   ',CL8'DVOL    '                                01130023
+ DC CL40'SUBCOMMAND TO INVOKE TSO DVOL           ',CL08'&NDVO   '       01140023
+         DC CL8'&&NEDI   ',CL8'EDIT    '                                01150023
+ DC CL40'SUBCOMMAND TO INVOKE ISPF EDIT          ',CL08'&NEDI   '       01160023
+         DC CL8'&&NEDR   ',CL8'EDREC   '                                01170023
+ DC CL40'SUBCOMMAND TO INVOKE ISPF EDIT RECOVERY ',CL08'&NEDR   '       01180023
+         DC CL8'&&NEND   ',CL8'END     '                                01190023
+ DC CL40'**DO NOT NULLIFY** TERMINATE PROCESSING ',CL08'&NEND   '       01200023
+         DC CL8'&&NEXE   ',CL8'EXEC    '                                01210023
+ DC CL40'SUBCOMMAND TO INVOKE TSO EXEC           ',CL08'&NEXE   '       01220023
+         DC CL8'&&NFIN   ',CL8'FIND    '                                01230023
+ DC CL40'SUBCOMMAND TO FIND DATA                 ',CL08'&NFIN   '       01240023
+         DC CL8'&&NFIX   ',CL8'FIXPDS  '                                01250023
+ DC CL40'SUBCOMMAND TO CHANGE DATA SET ATTRIBUTES',CL08'&NFIX   '       01260023
+         DC CL8'&&NFSE   ',CL8'FSE     '                                01270023
+ DC CL40'SUBCOMMAND TO INVOKE TSO FSE            ',CL08'&NFSE   '       01280023
+         DC CL8'&&NKLE   ',CL8'KLEAR   '                                01290023
+ DC CL40'UNDOCUMENTED -- CLEAR SCREEN SUBCOMMAND ',CL08'&NKLE   '       01300023
+         DC CL8'&&NHEL   ',CL8'HELP    '                                01310023
+ DC CL40'SUBCOMMAND TO INVOKE TSO HELP           ',CL08'&NHEL   '       01320023
+         DC CL8'&&NHIS   ',CL8'HISTORY '                                01330023
+ DC CL40'SUBCOMMAND TO LIST MEMBER HISTORY       ',CL08'&NHIS   '       01340023
+         DC CL8'&&NIFX   ',CL8'IF      '                                01350023
+ DC CL40'SUBCOMMAND TO TEST MEMBER ATTRIBUTES    ',CL08'&NIFX   '       01360023
+         DC CL8'&&NISP   ',CL8'ISPF    '                                01370023
+ DC CL40'SUBCOMMAND TO INVOKE ISPF               ',CL08'&NISP   '       01380023
+         DC CL8'&&NISM   ',CL8'ISPMODE '                                01390023
+ DC CL40'SUBCOMMAND TO INVOKE ISPMODE            ',CL08'&NISM   '       01400023
+         DC CL8'&&NISX   ',CL8'ISPXEQ  '                                01410023
+ DC CL40'SUBCOMMAND TO EXECUTE INITIAL FUNCTIONS ',CL08'&NISX   '       01420023
+         DC CL8'&&NLIS   ',CL8'LIST    '                                01430023
+ DC CL40'SUBCOMMAND TO LIST DATA                 ',CL08'&NLIS   '       01440023
+         DC CL8'&&NLMA   ',CL8'LMA     '                      DRK SEP06 01450023
+ DC CL40'SUBCOMMAND TO INVOKE THE EQALMA PROGRAM ',CL08'&NLMA   '       01460023
+         DC CL8'&&NMAP   ',CL8'MAP     '                                01470023
+ DC CL40'SUBCOMMAND TO MAP MODULE CSECTS         ',CL08'&NMAP   '       01480023
+         DC CL8'&&NMAT   ',CL8'MATCH   '                                01490028
+ DC CL40'SUBCOMMAND TO INVOKE PDSMATCH           ',CL08'&NMAT   '       01500028
+         DC CL8'&&NMEM   ',CL8'MEMBERS '                                01510028
+ DC CL40'SUBCOMMAND TO SET A NEW MEMBER GROUP    ',CL08'&NMEM   '       01520028
+         DC CL8'&&NMML   ',CL8'MEMLIST '                                01530028
+ DC CL40'SUBCOMMAND TO PROVIDE MEMBER LISTS      ',CL08'&NMML   '       01540028
+         DC CL8'&&NMXI   ',CL8'MXIBAT  '                      DRK DEC05 01550028
+ DC CL40'SUBCOMMAND TO INVOKE THE MXI PROGRAM    ',CL08'&NMXI   '       01560028
+         DC CL8'&&NOFF   ',CL8'OFFLOAD '                      DRK MAY06 01570028
+ DC CL40'SUBCOMMAND TO INVOKE THE OFFLOAD PROGRAM',CL08'&NOFF   '       01580028
+         DC CL8'&&NOPT   ',CL8'OPTIONS '                                01590028
+ DC CL40'SUBCOMMAND TO DISPLAY AVAILABLE OPTIONS ',CL08'&NOPT   '       01600028
+         DC CL8'&&NOUT   ',CL8'OUTCOPY '                                01610028
+ DC CL40'SUBCOMMAND TO PREPARE SELECT STATEMENTS ',CL08'&NOUT   '       01620028
+         DC CL8'&&NPAT   ',CL8'PATTERN '                                01630028
+ DC CL40'SUBCOMMAND TO DISPLAY MEMBER PATTERNS   ',CL08'&NPAT   '       01640028
+         DC CL8'&&NPDS   ',CL8'PDS86   '                                01650028
+ DC CL40'UNDOCUMENTED -- ALIAS FOR CHANGE        ',CL08'&NPDS   '       01660028
+         DC CL8'&&NPRI   ',CL8'PRINTOFF'                                01670028
+ DC CL40'SUBCOMMAND TO INVOKE TSO PRINTOFF       ',CL08'&NPRI   '       01680028
+         DC CL8'&&NPTS   ',CL8'PTSEXP  '                      DRK OCT09 01690028
+ DC CL40'SUBCOMMAND TO INVOKE THE PTSEXP PROGRAM ',CL08'&NPTS   '       01700028
+         DC CL8'&&NREC   ',CL8'RECALL  '                                01710028
+ DC CL40'SUBCOMMAND TO RECALL A PREVIOUS COMMAND ',CL08'&NREC   '       01720028
+         DC CL8'&&NRC2   ',CL8'RC      '                                01730028
+ DC CL40'ALTERNATE NAME FOR RECALL               ',CL08'&NRC2   '       01740028
+         DC CL8'&&NREN   ',CL8'RENAME  '                                01750028
+ DC CL40'SUBCOMMAND TO RENAME A MEMBER           ',CL08'&NREN   '       01760028
+         DC CL8'&&NREP   ',CL8'REPLACE '                                01770028
+ DC CL40'SUBCOMMAND TO UPDATE DATA IN PLACE      ',CL08'&NREP   '       01780028
+         DC CL8'&&NRPR   ',CL8'REPRO   '                                01790028
+ DC CL40'SUBCOMMAND TO REPRODUCE A MEMBER        ',CL08'&NRPR   '       01800028
+         DC CL8'&&NRES   ',CL8'RESTORE '                                01810028
+ DC CL40'SUBCOMMAND TO RESURRECT A DELETED MEMBER',CL08'&NRES   '       01820028
+         DC CL8'&&NREV   ',CL8'REVIEW  '                                01830028
+ DC CL40'SUBCOMMAND TO INVOKE TSO REVIEW         ',CL08'&NREV   '       01840028
+         DC CL8'&&NRXX   ',CL8'RX      '                                01850028
+ DC CL40'SUBCOMMAND TO INVOKE HEX/DEC CALCULATOR ',CL08'&NRXX   '       01860028
+         DC CL8'&&NQUI   ',CL8'QUIT    '                                01870028
+ DC CL40'SUBCOMMAND TO TERMINATE PDS             ',CL08'&NQUI   '       01880028
+         DC CL8'&&NSEA   ',CL8'SEARCH  '                      DRK APR06 01890028
+ DC CL40'UNDOCUMENTED -- ALIAS FOR SRCHFOR       ',CL08'&NSEA   '       01900028
+         DC CL8'&&NSPF   ',CL8'SPFEDIT '                                01910028
+ DC CL40'UNDOCUMENTED -- ALIAS FOR EDIT          ',CL08'&NSPF   '       01920028
+         DC CL8'&&NSRC   ',CL8'SRCHFOR '                      DRK DEC05 01930028
+ DC CL40'SUBCOMMAND TO INVOKE SUPERC SEARCH-FOR  ',CL08'&NSRC   '       01940028
+         DC CL8'&&NSUB   ',CL8'SUBMIT  '                                01950028
+ DC CL40'SUBCOMMAND TO INVOKE TSO SUBMIT         ',CL08'&NSUB   '       01960028
+         DC CL8'&&NSUL   ',CL8'SUBLIST '                                01970028
+ DC CL40'SUBCOMMAND TO DEFINE A MEMBER SUBSET    ',CL08'&NSUL   '       01980028
+         DC CL8'&&NSCR   ',CL8'SCRATCH '                                01990028
+ DC CL40'ALIAS FOR DELETE (NULLIFY IF NOT USED)  ',CL08'&NSCR   '       02000028
+         DC CL8'&&NTSO   ',CL8'TSO     '                                02010028
+ DC CL40'SUBCOMMAND TO INVOKE THE TSO FUNCTION   ',CL08'&NTSO   '       02020028
+         DC CL8'&&NTSE   ',CL8'TSOEDIT '                                02030028
+ DC CL40'SUBCOMMAND TO INVOKE TSO EDIT           ',CL08'&NTSE   '       02040028
+         DC CL8'&&NTSL   ',CL8'TSOLIST '                                02050028
+ DC CL40'SUBCOMMAND TO INVOKE TSO LIST           ',CL08'&NTSL   '       02060028
+         DC CL8'&&NUSA   ',CL8'USAGE   '                                02070028
+ DC CL40'SUBCOMMAND TO DISPLAY DATA SET STATS    ',CL08'&NUSA   '       02080028
+         DC CL8'&&NUT1   ',CL8'UT1     '                                02090028
+ DC CL40'UNDOCUMENTED -- UTILITIES FOR DATA SETS ',CL08'&NUT1   '       02100052
+         DC CL8'&&NUT2   ',CL8'UT2     '                                02110028
+ DC CL40'UNDOCUMENTED -- UTILITIES FOR MEMBERS   ',CL08'&NUT2   '       02120052
+         DC CL8'&&NVIE   ',CL8'VIEW    '                                02130028
+ DC CL40'SUBCOMMAND TO INVOKE ISPF VIEW          ',CL08'&NVIE   '       02140028
+         DC CL8'&&NVER   ',CL8'VERIFY  '                                02150028
+ DC CL40'SUBCOMMAND TO VALIDATE MEMBERS          ',CL08'&NVER   '       02160028
+         DC CL8'&&NVPS   ',CL8'VPSPRINT'                                02170028
+ DC CL40'SUBCOMMAND TO INVOKE TSO VPSPRINT       ',CL08'&NVPS   '       02180028
+         DC CL8'&&NVPE   ',CL8'VPDSE   '                      DRK MAR11 02190032
+ DC CL40'SUBCOMMAND TO INVOKE IEBPDSE PROGRAM    ',CL08'&NVPE   '       02200032
+         DC CL8'&&NVTO   ',CL8'VTOC    '                                02210032
+ DC CL40'SUBCOMMAND TO INVOKE TSO VTOC           ',CL08'&NVTO   '       02220032
+         DC CL8'&&NXMI   ',CL8'XMIT    '                      DRK APR06 02230032
+ DC CL40'SUBCOMMAND TO INVOKE TSO XMIT           ',CL08'&NXMI   '       02240032
+         DC CL8'&&NXS1   ',CL8'        '                                02250032
+ DC CL40'AVAILABLE -- USES THE PRINTOFF INTERFACE',CL08'&NXS1   '       02260032
+         DC CL8'&&NXS2   ',CL8'DPSPRINT'                                02270032
+ DC CL40'AVAILABLE -- USES THE PRINTOFF INTERFACE',CL08'&NXS2   '       02280032
+         DC CL8'&&NXS3   ',CL8'PCLIST  '                                02290032
+ DC CL40'AVAILABLE -- USES THE PRINTOFF INTERFACE',CL08'&NXS3   '       02300032
+         DC CL8'&&NOR1   ',CL8'CHANGE  '                                02310032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR1   '       02320032
+         DC CL8'&&NOR2   ',CL8'HELP    '                                02330032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR2   '       02340032
+         DC CL8'&&NOR3   ',CL8'KLEAR   '                                02350032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR3   '       02360032
+         DC CL8'&&NOR4   ',CL8'YES     '                                02370032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR4   '       02380032
+         DC CL8'&&NOR5   ',CL8'NO      '                                02390032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR5   '       02400032
+         DC CL8'&&NOR6   ',CL8'        '                                02410032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR6   '       02420032
+         DC CL8'&&NOR7   ',CL8'        '                                02430032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR7   '       02440032
+         DC CL8'&&NOR8   ',CL8'        '                                02450032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR8   '       02460032
+         DC CL8'&&NOR9   ',CL8'        '                                02470032
+ DC CL40'IGNORED BY RECALL                       ',CL08'&NOR9   '       02480032
+         DC CL8'&&NLO1   ',CL8'CHANGE  '                                02490032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO1   '       02500032
+         DC CL8'&&NLO2   ',CL8'SUBMIT  '                                02510032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO2   '       02520032
+         DC CL8'&&NLO3   ',CL8'COMPRESS'                                02530032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO3   '       02540032
+         DC CL8'&&NLO4   ',CL8'FIXPDS  '                                02550032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO4   '       02560032
+         DC CL8'&&NLO5   ',CL8'REPLACE '                                02570032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO5   '       02580032
+         DC CL8'&&NLO6   ',CL8'DELETE  '                                02590032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO6   '       02600032
+         DC CL8'&&NLO7   ',CL8'RENAME  '                                02610032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO7   '       02620032
+         DC CL8'&&NLO8   ',CL8'REPRO   '                                02630032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO8   '       02640032
+         DC CL8'&&NLO9   ',CL8'RESTORE '                                02650032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLO9   '       02660032
+         DC CL8'&&NLOA   ',CL8'COPY    '                      DRK AUG08 02670032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLOA   '       02680032
+         DC CL8'&&NLOB   ',CL8'XMIT    '                      DRK AUG08 02690032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLOB   '       02700032
+         DC CL8'&&NLOC   ',CL8'ALIAS   '                      DRK AUG08 02710032
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLOC   '       02720032
+         DC CL8'&&NLOD   ',CL8'LOAD    '                      DRK JUN12 02730033
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLOD   '       02740033
+         DC CL8'&&NLOE   ',CL8'OFFLOAD '                      DRK JUN12 02750033
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLOE   '       02760033
+         DC CL8'&&NLOF   ',CL8'ATTRIB  '                      DRK APR16 02770040
+ DC CL40'LOG SUBCOMMAND IN ISPF LOG              ',CL08'&NLOF   '       02780040
+         DC CL8'&&CABE   ',CL8'ABE     '                                02790040
+ DC CL40'NAME OF TSO "ABE" EDITOR                ',CL08'&CABE   '       02800040
+         DC CL8'&&CAMB   ',CL8'IKJEFTSR'                      DRK JUL09 02810040
+ DC CL40'NAME OF "AMBLIST" PROGRAM INTERFACE     ',CL08'&CAMB   '       02820040
+         DC CL8'&&CCOB   ',CL8'IKJEFTSR'                      DRK NOV07 02830040
+ DC CL40'NAME OF "COBANAL" PROGRAM INTERFACE     ',CL08'&CCOB   '       02840040
+         DC CL8'&&CCAR   ',CL8'COMPARE$'                                02850040
+ DC CL40'NAME OF TSO "COMPARE" COMMAND/CLIST     ',CL08'&CCAR   '       02860040
+         DC CL8'&&CCMX   ',CL8'IKJEFTSR'                                02870040
+ DC CL40'NAME OF "COMPRESS" PROGRAM INTERFACE    ',CL08'&CCMX   '       02880040
+         DC CL8'&&CCOP   ',CL8'IKJEFTSR'                                02890040
+ DC CL40'NAME OF "COPY" PROGRAM INTERFACE        ',CL08'&CCOP   '       02900040
+         DC CL8'&&CCPK   ',CL8'IKJEFTSR'                                02910040
+ DC CL40'NAME OF "CPKMAP" PROGRAM INTERFACE      ',CL08'&CCPK   '       02920040
+         DC CL8'&&COPYMOD',CL8'YES     '                                02930040
+ DC CL40'USE COPYMOD FOR LOAD MODULE REBLOCKING  ',CL08'&COPYMOD'       02940040
+         DC CL8'&&CDCF   ',CL8'SCRIPT  '                                02950040
+ DC CL40'NAME OF TSO "SCRIPT" PROGRAM/CLIST      ',CL08'&CDCF   '       02960040
+         DC CL8'&&CDLN   ',CL8'IKJEFTSR'                      DRK JAN06 02970040
+ DC CL40'NAME OF "DELINKI" PROGRAM INTERFACE     ',CL08'&CDLN   '       02980040
+         DC CL8'&&CDSM   ',CL8'IKJEFTSR'                      DRK DEC05 02990040
+ DC CL40'NAME OF "DISASM" PROGRAM INTERFACE      ',CL08'&CDSM   '       03000040
+         DC CL8'&&CDSP   ',CL8'DSPRINT '                                03010040
+ DC CL40'NAME OF TSO "DSPRINT" PROGRAM/CLIST     ',CL08'&CDSP   '       03020040
+         DC CL8'&&CFIX   ',CL8'RELEASE '                                03030040
+ DC CL40'NAME OF TSO DISK SPACE "RELEASE" COMMAND',CL08'&CFIX   '       03040040
+         DC CL8'&&CF296  ',CL8'YES     '                                03050040
+ DC CL40'SPACE RELEASE COMMAND FROM CBT/FILE 296 ',CL08'&CF296  '       03060040
+         DC CL8'&&CFSE   ',CL8'FSE     '                                03070040
+ DC CL40'NAME OF TSO FULLSCREEN EDITOR           ',CL08'&CFSE   '       03080040
+         DC CL8'&&CHEL   ',CL8'HELP    '                                03090040
+ DC CL40'TSO "HELP" - USE "HEL" FOR FULLSCREEN   ',CL08'&CHEL   '       03100040
+         DC CL8'&&CLMA   ',CL8'IKJEFTSR'                      DRK SEP06 03110040
+ DC CL40'NAME OF "EQALMA" PROGRAM INTERFACE      ',CL08'&CLMA   '       03120040
+         DC CL8'&&CMAT   ',CL8'IKJEFTSR'                      DRK JUN10 03130040
+ DC CL40'NAME OF "PDSMATCH" PROGRAM INTERFACE    ',CL08'&CMAT   '       03140040
+         DC CL8'&&CSEP   ',CL8'IKJEFTSR'                      DRK MAY09 03150040
+ DC CL40'NAME OF "PDSLOAD" PROGRAM INTERFACE     ',CL08'&CSEP   '       03160040
+         DC CL8'&&CMXI   ',CL8'IKJEFTSR'                      DRK DEC05 03170040
+ DC CL40'NAME OF "MXI" PROGRAM INTERFACE         ',CL08'&CMXI   '       03180040
+         DC CL8'&&COFF   ',CL8'IKJEFTSR'                      DRK MAY06 03190040
+ DC CL40'NAME OF "OFFLOAD" PROGRAM INTERFACE     ',CL08'&COFF   '       03200040
+         DC CL8'&&CPRI   ',CL8'PRINTOFF'                                03210040
+ DC CL40'NAME OF TSO "PRINTOFF" COMMAND/CLIST    ',CL08'&CPRI   '       03220040
+         DC CL8'&&CPTS   ',CL8'IKJEFTSR'                      DRK OCT09 03230040
+ DC CL40'NAME OF "PTSEXP" PROGRAM INTERFACE      ',CL08'&CPTS   '       03240040
+         DC CL8'&&CREV   ',CL8'REVIEW  '                                03250040
+ DC CL40'NAME OF TSO "REVIEW" COMMAND/CLIST      ',CL08'&CREV   '       03260040
+         DC CL8'&&CRXX   ',CL8'RX      '                                03270040
+ DC CL40'NAME OF TSO "RX" PROGRAMMER CALCULATOR  ',CL08'&CRXX   '       03280040
+         DC CL8'&&CSRC   ',CL8'IKJEFTSR'                      DRK DEC05 03290040
+ DC CL40'NAME OF "ISRSUPC" PROGRAM INTERFACE     ',CL08'&CSRC   '       03300040
+         DC CL8'&&CSUB   ',CL8'SUBMIT  '                                03310040
+ DC CL40'NAME OF TSO "SUBMIT" COMMAND/CLIST      ',CL08'&CSUB   '       03320040
+         DC CL8'&&CTSL   ',CL8'LIST    '                                03330040
+ DC CL40'NAME OF TSO "LIST" COMMAND/CLIST        ',CL08'&CTSL   '       03340040
+         DC CL8'&&CTSO   ',CL8'TSOEXEC '                                03350040
+ DC CL40'AUTOMATIC "TSO TSOEXEC" OR " NOTSO/E"   ',CL08'&CTSO   '       03360040
+         DC CL8'&&CTSE   ',CL8'EDIT    '                                03370040
+ DC CL40'NAME OF TSO "EDIT" COMMAND              ',CL08'&CTSE   '       03380040
+         DC CL8'&&CVPS   ',CL8'VPSPRINT'                                03390040
+ DC CL40'NAME OF TSO "VPSPRINT" COMMAND/CLIST    ',CL08'&CVPS   '       03400040
+         DC CL8'&&CVPE   ',CL8'IKJEFTSR'                      DRK MAR11 03410040
+ DC CL40'NAME OF "IEBPDSE" PROGRAM INTERFACE     ',CL08'&CVPE   '       03420040
+         DC CL8'&&CXMI   ',CL8'IKJEFTSR'                      DRK APR06 03430040
+ DC CL40'NAME OF "XMIT" PROGRAM INTERFACE        ',CL08'&CXMI   '       03440040
+         DC CL8'&&CXS1   ',CL8'COMMAND '                                03450040
+ DC CL40'NAME OF #1 ALIAS FOR PRINTOFF INTERFACE ',CL08'&CXS1   '       03460040
+         DC CL8'&&CXS2   ',CL8'DPSPRINT'                                03470040
+ DC CL40'NAME OF #2 ALIAS FOR PRINTOFF INTERFACE ',CL08'&CXS2   '       03480040
+         DC CL8'&&CXS3   ',CL8'%PCLIST1'                                03490040
+ DC CL40'NAME OF #3 ALIAS FOR PRINTOFF INTERFACE ',CL08'&CXS3   '       03500040
+         DC CL8'&&CBL5   ',CL8'BLK3350 '                                03510040
+ DC CL40'NAME OF TSO "BLK3350" COMMAND           ',CL08'&CBL5   '       03520040
+         DC CL8'&&CBL8   ',CL8'BLK3380 '                                03530040
+ DC CL40'NAME OF TSO "BLK3380" COMMAND           ',CL08'&CBL8   '       03540040
+         DC CL8'&&CBL9   ',CL8'BLK3390 '                                03550040
+ DC CL40'NAME OF TSO "BLK3390" COMMAND           ',CL08'&CBL9   '       03560040
+         DC CL8'&&CBL4   ',CL8'BLK9345 '                      DRK JUN06 03570040
+ DC CL40'NAME OF TSO "BLK9345" COMMAND           ',CL08'&CBL4   '       03580040
+         DC CL8'&&CDSA   ',CL8'DSAT    '                                03590040
+ DC CL40'NAME OF TSO "DSAT" COMMAND              ',CL08'&CDSA   '       03600040
+         DC CL8'&&CDVO   ',CL8'DVOL    '                                03610040
+ DC CL40'NAME OF TSO "DVOL" COMMAND              ',CL08'&CDVO   '       03620040
+         DC CL8'&&CVTO   ',CL8'VTOC    '                                03630040
+ DC CL40'NAME OF TSO "VTOC" COMMAND              ',CL08'&CVTO   '       03640040
+         DC CL8'&&IVIE   ',CL8'SHOW    '                                03650040
+ DC CL40'ISPM VIEW LOG FUNCTION                  ',CL08'&IVIE   '       03660040
+         DC CL8'&&ILTA   ',CL8'LISTA   '                                03670040
+ DC CL40'ISPM LIST ALLOC FUNCTION                ',CL08'&ILTA   '       03680040
+         DC CL8'&&ILAX   ',CL8'LA      '                                03690040
+ DC CL40'ISPM LIST ALLOC FUNCTION ABBREVIATION   ',CL08'&ILAX   '       03700040
+         DC CL8'&&ILTV   ',CL8'LISTV   '                                03710040
+ DC CL40'ISPM LIST VOLUMES FUNCTION              ',CL08'&ILTV   '       03720040
+         DC CL8'&&ILVX   ',CL8'LV      '                                03730040
+ DC CL40'ISPM LIST VOLUMES FUNCTION ABBREVIATION ',CL08'&ILVX   '       03740040
+         DC CL8'&&IMLX   ',CL8'ML      '                                03750040
+ DC CL40'ISPM MEMLIST FUNCTION ABBREVIATION      ',CL08'&IMLX   '       03760040
+         DC CL8'&&IGRP   ',CL8'*       '                                03770040
+ DC CL40'ISPM MEMLIST GROUP FUNCTION             ',CL08'&IGRP   '       03780040
+         DC CL8'&&IXSH   ',CL8'X       '                                03790040
+ DC CL40'ISPM EXCLUDE SHORT FORM                 ',CL08'&IXSH   '       03800040
+         DC CL8'&&IXLO   ',CL8'EXCLUDE '                                03810040
+ DC CL40'ISPM EXCLUDE LONG FORM                  ',CL08'&IXLO   '       03820040
+         DC CL8'&&ISTL   ',CL8'SETLOG  '                                03830040
+ DC CL40'ISPM SETLOG PRIMARY COMMAND             ',CL08'&ISTL   '       03840040
+         DC CL8'&&ISTM   ',CL8'SETML   '                                03850040
+ DC CL40'ISPM SETML PRIMARY COMMAND              ',CL08'&ISTM   '       03860040
+         DC CL8'&&ITOD   ',CL8'TODAY   '                                03870040
+ DC CL40'ISPM SOURCE MEMLIST MODIFIED TODAY      ',CL08'&ITOD   '       03880040
+         DC CL8'&&IFUN   ',CL8'FUNCTION'                                03890040
+ DC CL40'ISPM FUNCTION STATUS DISPLAY SERVICE    ',CL08'&IFUN   '       03900040
+         DC CL8'&&ISET   ',CL8'SETDEF  '                                03910040
+ DC CL40'ISPM SET DEFAULT SERVICE                ',CL08'&ISET   '       03920040
+         DC CL8'&&ISRT   ',CL8'SORT    '                                03930040
+ DC CL40'ISPM SORT SERVICE                       ',CL08'&ISRT   '       03940040
+         DC CL8'&&ILKD   ',CL8'LKED    '                                03950040
+ DC CL40'ISPM LINK EDIT DATE  .. MEMLIST LINE CMD',CL08'&ILKD   '       03960040
+         DC CL8'&&IFRE   ',CL8'FREE    '                                03970040
+ DC CL40'ISPM FREE ALLOCATION .. LISTA LINE CMD  ',CL08'&IFRE   '       03980040
+         DC CL8'&&IDCA   ',CL8'DCAT    '                                03990040
+ DC CL40'ISPM DECONCAT        .. LISTA LINE CMD  ',CL08'&IDCA   '       04000040
+         DC CL8'&&ISPC   ',CL8'SPACE   '                                04010040
+ DC CL40'ISPM REFRESH SPACE   .. LISTV LINE CMD  ',CL08'&ISPC   '       04020040
+         DC CL8'&&ISTA   ',CL8'STAT    '                                04030040
+ DC CL40'ISPM REFRESH STATUS  .. LISTV LINE CMD  ',CL08'&ISTA   '       04040040
+         DC CL8'&&IALL   ',CL8'ALLOC   '                                04050040
+ DC CL40'ISPM ALLOC VOLUME    .. LISTV LINE CMD  ',CL08'&IALL   '       04060040
+         DC CL8'&&IALC   ',CL8'ALOC    '                                04070040
+ DC CL40'ISPM ALLOC VOLUME    .. LISTV LINE CMD  ',CL08'&IALC   '       04080040
+         DC CL8'&&IALT   ',CL8'ALTERNAT'                                04090040
+ DC CL40'ISPM SELECT ALTERNATE PANEL             ',CL08'&IALT   '       04100040
+         DC CL8'&&INOR   ',CL8'NORMAL  '                                04110040
+ DC CL40'ISPM SELECT NORMAL PANEL                ',CL08'&INOR   '       04120040
+         DC CL8'&&IDUL   ',CL8'DUAL    '                                04130040
+ DC CL40'ISPM SELECT DUAL LINE PANEL             ',CL08'&IDUL   '       04140040
+         DC CL8'&&ILOG   ',CL8'LOG     '                                04150040
+ DC CL40'ISPM LOG TABLE LINE COMMAND             ',CL08'&ILOG   '       04160040
+         DC CL8'&&IACD   ',CL8'ALTCMD  '                                04170040
+ DC CL40'ISPM RECALL ALTERNATE COMMAND           ',CL08'&IACD   '       04180040
+         DC CL8'&&ISTC   ',CL8'SETALT  '                                04190040
+ DC CL40'ISPM SET ALTERNATE RECALLABLE COMMAND   ',CL08'&ISTC   '       04200040
+         DC CL8'&&ISTE   ',CL8'SETENV  '                                04210040
+ DC CL40'ISPM SETENV PRIMARY COMMAND             ',CL08'&ISTE   '       04220040
+         DC CL8'&&ISTS   ',CL8'SETSEL  '                                04230040
+ DC CL40'ISPM SETSEL PRIMARY COMMAND             ',CL08'&ISTS   '       04240040
+         DC CL8'&&ISTV   ',CL8'SETV    '                                04250040
+ DC CL40'ISPM SETV   PRIMARY COMMAND             ',CL08'&ISTV   '       04260040
+         DC CL8'&&ISTF   ',CL8'SETLF   '                                04270040
+ DC CL40'ISPM SETLF  PRIMARY COMMAND             ',CL08'&ISTF   '       04280040
+         DC CL8'&&ISTT   ',CL8'SETTRAP '                                04290040
+ DC CL40'ISPM SETTRAP PRIMARY COMMAND            ',CL08'&ISTT   '       04300040
+         DC CL8'&&IKIL   ',CL8'KILL    '                                04310040
+ DC CL40'ISPM KILL UNPROCESSED LINE COMMANDS     ',CL08'&IKIL   '       04320040
+         DC CL8'&&IWEK   ',CL8'WEEK    '                                04330040
+ DC CL40'ISPM MEMLIST MODIFIED THIS WEEK         ',CL08'&IWEK   '       04340040
+         DC CL8'&&ISEL   ',CL8'SELECT  '                                04350040
+ DC CL40'ISPM SELECT (S) LINE COMMAND            ',CL08'&ISEL   '       04360040
+         DC CL8'&&IBLK   ',CL8'60      '                                04370040
+ DC CL40'ISPM BLANK OUT LINE COMMAND IN HEX      ',CL08'&IBLK   '       04380040
+         DC CL8'&&IEQU   ',CL8'7E40    '                                04390040
+ DC CL40'ISPM REPEAT (EQUAL SIGN) LINE CMD IN HEX',CL08'&IEQU   '       04400040
+         DC CL8'&&IPMT   ',CL8'P       '                                04410040
+ DC CL40'ISPM PROMPT AFTER CHANGE (LISTA)        ',CL08'&IPMT   '       04420040
+         DC CL8'&&IZCO   ',CL8'Z       '                                04430040
+ DC CL40'ISPM COMPRESS DATASET    (LISTA)        ',CL08'&IZCO   '       04440040
+         DC CL8'&&IEDM   ',CL8'EEE     '                                04450040
+ DC CL40'ISPM PROMPT FOR EDIT MACRO              ',CL08'&IEDM   '       04460040
+         DC CL8'&&ILTC   ',CL8'LISTC   '                                04470040
+ DC CL40'LISTC COMMAND                           ',CL08'&ILTC   '       04480040
+         DC CL8'&&ILCX   ',CL8'LC      '                                04490040
+ DC CL40'LISTC COMMAND, SHORT FORM               ',CL08'&ILCX   '       04500040
+         DC CL8'&&ILTF   ',CL8'LISTFILE'                                04510040
+ DC CL40'LISTFILE COMMAND                        ',CL08'&ILTF   '       04520040
+         DC CL8'&&ILFX   ',CL8'LF      '                                04530040
+ DC CL40'LISTF COMMAND, SHORT FORM               ',CL08'&ILFX   '       04540040
+         DC CL8'&&ILFV   ',CL8'LFVT    '                                04550040
+ DC CL40'LISTV LINE COMMAND TO LF USING VTOC     ',CL08'&ILFV   '       04560040
+         DC CL8'&&ITCT   ',CL8'TCT     '                                04570040
+ DC CL40'TSO COMMAND TABLE COMMAND               ',CL08'&ITCT   '       04580040
+         DC CL8'&&ICAX   ',CL8'CAX     '                                04590040
+ DC CL40'ACTIVE CATALOG LIST COMMAND             ',CL08'&ICAX   '       04600040
+         DC CL8'&&IFLT   ',CL8'FILTER  '                                04610040
+ DC CL40'DATASET FILTER TABLE COMMAND            ',CL08'&IFLT   '       04620040
+         DC CL8'&&ICSE   ',CL8'CSECTS  '                                04630040
+ DC CL40'LIST CSECT TABLE COMMAND                ',CL08'&ICSE   '       04640040
+         DC CL8'&&ITRP   ',CL8'TRAP    '                                04650040
+ DC CL40'TRAP TSO COMMAND OUTPUT FOR LOG DISPLAY ',CL08'&ITRP   '       04660040
+         DC CL8'&&IEXP   ',CL8'EXPAND  '                                04670040
+ DC CL40'FIXPDS EXPAND -- SHORT FORM ENTRY       ',CL08'&IEXP   '       04680040
+         DC CL8'&&IRLS   ',CL8'RELEASE '                                04690040
+ DC CL40'FIXPDS RELEASE -- SHORT FORM ENTRY #1   ',CL08'&IRLS   '       04700040
+         DC CL8'&&IRLX   ',CL8'RLSE    '                                04710040
+ DC CL40'FIXPDS RELEASE -- SHORT FORM ENTRY #2   ',CL08'&IRLX   '       04720040
+         DC CL8'&&ICAN   ',CL8'CANCEL  '                                04730040
+ DC CL40'CANCEL PENDING LINE COMMANDS            ',CL08'&ICAN   '       04740040
+         DC CL8'&&IINS   ',CL8'INSERT  '                                04750040
+ DC CL40'INSERT BLANK LINES IN TCT               ',CL08'&IINS   '       04760040
+         DC CL8'&&IADD   ',CL8'ADD     '                                04770040
+ DC CL40'ADD BLANK LINES AT END OF TCT           ',CL08'&IADD   '       04780040
+         DC CL8'&&IEXC   ',CL8'EXEC    '                                04790040
+ DC CL40'EXECUTE TCT LINE COMMAND                ',CL08'&IEXC   '       04800040
+         DC CL8'&&INEX   ',CL8'NOEX    '                                04810040
+ DC CL40'DO NOT EXECUTE SELECTED TCT LINE COMMAND',CL08'&INEX   '       04820040
+         DC CL8'&&IVCM   ',CL8'VIEW    '                                04830040
+ DC CL40'VIEW AND NO EXECUTE TCT LINE COMMAND    ',CL08'&IVCM   '       04840040
+         DC CL8'&&IUPD   ',CL8'UPDATE  '                                04850040
+ DC CL40'VIEW, UPDATE AND EXEC TCT LINE COMMAND  ',CL08'&IUPD   '       04860040
+         DC CL8'&&IEQQ   ',CL8'7E7E    '                                04870040
+ DC CL40'ISPM BLOCK REPEAT (==) LINE CMD IN HEX  ',CL08'&IEQQ   '       04880040
+         DC CL8'&&IAAA   ',CL8'AA      '                                04890040
+ DC CL40'ISPM BLOCK ALTCMD                       ',CL08'&IAAA   '       04900040
+         DC CL8'&&IMAA   ',CL8'AA      '                                04910040
+ DC CL40'ISPM BLOCK ATTRIBUTE (FOR MEMLIST ONLY) ',CL08'&IMAA   '       04920040
+         DC CL8'&&IBBB   ',CL8'BB      '                                04930040
+ DC CL40'ISPM BLOCK BROWSE                       ',CL08'&IBBB   '       04940040
+         DC CL8'&&ICCC   ',CL8'CC      '                                04950040
+ DC CL40'ISPM BLOCK CHANGE                       ',CL08'&ICCC   '       04960040
+         DC CL8'&&IMDD   ',CL8'DD      '                                04970040
+ DC CL40'ISPM BLOCK DIRECTORY (FOR MEMLIST ONLY) ',CL08'&IMDD   '       04980040
+         DC CL8'&&IEEE   ',CL8'EE      '                                04990040
+ DC CL40'ISPM BLOCK EDIT                         ',CL08'&IEEE   '       05000040
+         DC CL8'&&ITEE   ',CL8'EE      '                                05010040
+ DC CL40'TCT BLOCK EXEC                          ',CL08'&ITEE   '       05020040
+         DC CL8'&&ILHH   ',CL8'HH      '                                05030040
+ DC CL40'ISPM BLOCK HISTORY (FOR LOAD LIBS ONLY) ',CL08'&ILHH   '       05040040
+         DC CL8'&&ILLL   ',CL8'LL      '                                05050040
+ DC CL40'ISPM BLOCK LOG                          ',CL08'&ILLL   '       05060040
+         DC CL8'&&IMLL   ',CL8'LL      '                                05070040
+ DC CL40'ISPM BLOCK LIST (FOR MEMLIST ONLY)      ',CL08'&IMLL   '       05080040
+         DC CL8'&&IMMM   ',CL8'MM      '                                05090040
+ DC CL40'ISPM BLOCK MEMLIST                      ',CL08'&IMMM   '       05100040
+         DC CL8'&&ILMM   ',CL8'MM      '                                05110040
+ DC CL40'ISPM BLOCK MAP (FOR LOAD LIBS ONLY)     ',CL08'&ILMM   '       05120040
+         DC CL8'&&ITNN   ',CL8'NN      '                                05130040
+ DC CL40'TCT BLOCK NOEX                          ',CL08'&ITNN   '       05140040
+         DC CL8'&&IAPP   ',CL8'PP      '                                05150040
+ DC CL40'ISPM BLOCK PROMPT (FOR LISTA ONLY)      ',CL08'&IAPP   '       05160040
+         DC CL8'&&IMPP   ',CL8'PP      '                                05170040
+ DC CL40'ISPM BLOCK PRINT                        ',CL08'&IMPP   '       05180040
+         DC CL8'&&ISSS   ',CL8'SS      '                                05190040
+ DC CL40'ISPM BLOCK SELECT                       ',CL08'&ISSS   '       05200040
+         DC CL8'&&IUUU   ',CL8'UU      '                                05210040
+ DC CL40'ISPM BLOCK USAGE (FOR LISTA ONLY)       ',CL08'&IUUU   '       05220040
+         DC CL8'&&ITUU   ',CL8'UU      '                                05230040
+ DC CL40'TCT BLOCK UPDATE                        ',CL08'&ITUU   '       05240040
+         DC CL8'&&IVVV   ',CL8'VV      '                                05250040
+ DC CL40'ISPM BLOCK VIEW                         ',CL08'&IVVV   '       05260040
+         DC CL8'&&IMVV   ',CL8'        '                                05270040
+ DC CL40'ISPM BLOCK VERIFY (FOR MEMLIST ONLY)    ',CL08'&IMVV   '       05280040
+         DC CL8'&&ITVV   ',CL8'VV      '                                05290040
+ DC CL40'TCT BLOCK VIEW                          ',CL08'&ITVV   '       05300040
+         DC CL8'&&IZZZ   ',CL8'ZZ      '                                05310040
+ DC CL40'ISPM BLOCK COMPRESS (FOR LISTA ONLY)    ',CL08'&IZZZ   '       05320040
+         DC CL8'&&TRAP   ',CL8'YES     '                                05330040
+ DC CL40'TRAP TSO COMMAND OUTPUT FOR LOG DISPLAY ',CL08'&TRAP   '       05340040
+         DC CL8'&&CONVTAM',CL8'VTAMONLY'                                05350040
+ DC CL40'VTAM, TCAM, OR MIXTURE                  ',CL08'&CONVTAM'       05360040
+         DC CL8'&&CONDRNG',CL8'N       '                                05370040
+ DC CL40'SHOULD RANGE BE LIMITED ON UPPER END    ',CL08'&CONDRNG'       05380040
+         DC CL8'&&ISPOPT ',CL8'ISPMODE '                                05390040
+ DC CL40'AUTOMATIC ISPMODE OR XISPMODE           ',CL08'&ISPOPT '       05400040
+         DC CL8'&&CONADEF',CL8'FDSNMSG '                                05410040
+ DC CL40'DATASET INFO FORMAT:  MSG, TSO, JCL     ',CL08'&CONADEF'       05420040
+         DC CL8'&&RETURNX',CL8'YES     '                                05430040
+ DC CL40'REISSUE EDIT OR BROWSE AFTER RETURN     ',CL08'&RETURNX'       05440040
+         DC CL8'&&COMPLST',CL8'1       '                                05450040
+ DC CL40'COMPRESS DEFAULT: 1-SUMMARY, 2-LIST     ',CL08'&COMPLST'       05460040
+         DC CL8'&&COPYLST',CL8'2       '                                05470040
+ DC CL40'COPY DEFAULT: 1-SUMMARY, 2-LIST         ',CL08'&COPYLST'       05480040
+         DC CL8'&&COPYSHR',CL8'2       '                                05490040
+ DC CL40'COPY ALLOC DEFAULT: 1-OLD, 2-SHR        ',CL08'&COPYSHR'       05500040
+         DC CL8'&&COPYALI',CL8'2       '                      DRK JAN99 05510040
+ DC CL40'COPY ALIAS DEFAULT: 1-ALIAS, 2-NOALIAS  ',CL08'&COPYALI'       05520040
+         DC CL8'&&TUNIT  ',CL8'SYSALLDA'                      DRK MAR01 05530040
+ DC CL40'COPY TEMPORARY //SYSUT4 UNIT NAME       ',CL08'&TUNIT  '       05540040
+         DC CL8'&&PUNIT  ',CL8'SYSALLDA'                                05550040
+ DC CL40'COPY PERMANENT UNIT NAME, BLANK-UADS    ',CL08'&PUNIT  '       05560040
+         DC CL8'&&CONGLBL',CL8'FTRANCON'                                05570040
+ DC CL40'CONTROL COMMAND DEFAULT OPTIONS         ',CL08'&CONGLBL'       05580040
+         DC CL8'&&UN23051',CL8'2305-1  '                                05590040
+ DC CL40'2305-1  DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN23051'       05600040
+         DC CL8'&&UN23052',CL8'2305-2  '                                05610040
+ DC CL40'2305-2  DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN23052'       05620040
+         DC CL8'&&UN2314 ',CL8'2314    '                                05630040
+ DC CL40'2314    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN2314 '       05640040
+         DC CL8'&&UN3330 ',CL8'3330    '                                05650040
+ DC CL40'3330-1  DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN3330 '       05660040
+         DC CL8'&&UN33301',CL8'3330-1  '                                05670040
+ DC CL40'3330-11 DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN33301'       05680040
+         DC CL8'&&UN3340 ',CL8'3340    '                                05690040
+ DC CL40'3340    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN3340 '       05700040
+         DC CL8'&&UN3350 ',CL8'3350    '                                05710040
+ DC CL40'3350    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN3350 '       05720040
+         DC CL8'&&UN3375 ',CL8'3375    '                                05730040
+ DC CL40'3375    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN3375 '       05740040
+         DC CL8'&&UN3380 ',CL8'3380    '                                05750040
+ DC CL40'3380    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN3380 '       05760040
+         DC CL8'&&UN3390 ',CL8'3390    '                      Y2K AUG97 05770040
+ DC CL40'3390    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN3390 '       05780040
+         DC CL8'&&UN9345 ',CL8'9345    '                      DRK NOV99 05790040
+ DC CL40'9345    DSNAME UNITNAME (DO NOT NULLIFY)',CL08'&UN9345 '       05800040
+         DC CL8'&&DB23051',CL8'DOUBLE  '                                05810040
+ DC CL40'2305-1  EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB23051'       05820040
+         DC CL8'&&DB23052',CL8'DOUBLE  '                                05830040
+ DC CL40'2305-2  EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB23052'       05840040
+         DC CL8'&&DB2314 ',CL8'DOUBLE  '                                05850040
+ DC CL40'2314    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB2314 '       05860040
+         DC CL8'&&DB3330 ',CL8'DOUBLE  '                                05870040
+ DC CL40'3330-1  EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB3330 '       05880040
+         DC CL8'&&DB33301',CL8'DOUBLE  '                                05890040
+ DC CL40'3330-11 EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB33301'       05900040
+         DC CL8'&&DB3340 ',CL8'MULTIPLE'                                05910040
+ DC CL40'3340    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB3340 '       05920040
+         DC CL8'&&DB3350 ',CL8'MULTIPLE'                      DRK OCT02 05930040
+ DC CL40'3350    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB3350 '       05940040
+         DC CL8'&&DB3375 ',CL8'MULTIPLE'                                05950040
+ DC CL40'3375    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB3375 '       05960040
+         DC CL8'&&DB3380 ',CL8'MULTIPLE'                                05970040
+ DC CL40'3380    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB3380 '       05980040
+         DC CL8'&&DB3390 ',CL8'MULTIPLE'                      Y2K AUG97 05990040
+ DC CL40'3390    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB3390 '       06000040
+         DC CL8'&&DB9345 ',CL8'MULTIPLE'                      DRK NOV99 06010040
+ DC CL40'9345    EXCP BUFFERING (DO NOT NULLIFY) ',CL08'&DB9345 '       06020040
+         DC CL8'&&CEXE   ',CL8'EXEC    '                                06030040
+ DC CL40'TSO COMMAND INVOKED FOR CLIST PROCESSING',CL08'&CEXE   '       06040040
+         DC CL8'&&CISP   ',CL8'ISPFV2  '                                06050040
+ DC CL40'ISPF LEVEL: ISPFV2, ISPF(V1), SPF, NULL ',CL08'&CISP   '       06060040
+         DC CL8'&&P      ',CL8'P86     '                      Y2K AUG97 06070040
+ DC CL40'&P.XXXX IS THE PANEL NAME FORMAT        ',CL08'&P      '       06080040
+         DC CL8'&&M      ',CL8'M86     '                      Y2K AUG97 06090040
+ DC CL40'PDS&M.X IS THE MESSAGE NAME FORMAT      ',CL08'&M      '       06100040
+         DC CL8'&&CUT1   ',CL8'&P.VUT1 '                                06110040
+ DC CL40'NAME OF PANEL INVOKED BY UT1            ',CL08'&CUT1   '       06120040
+         DC CL8'&&CUT2   ',CL8'&P.VUT2 '                                06130040
+ DC CL40'NAME OF PANEL INVOKED BY UT2            ',CL08'&CUT2   '       06140040
+         DC CL8'&&SPFSIZE',CL8'500000  '                                06150049
+ DC CL40'DEFAULT SIZE OF DIALOG DISPLAY TABLE    ',CL08'&SPFSIZE'       06160040
+         DC CL8'&&SPFMAX ',CL8'50000   '                                06170050
+ DC CL40'DEFAULT MAXIMUM LINES FOR A SUBCOMMAND  ',CL08'&SPFMAX'        06180040
+         DC CL8'&&SPFCKPT',CL8'5000    '                                06190049
+ DC CL40'DEFAULT LINES BETWEEN CHECKPOINTS       ',CL08'&SPFCKPT'       06200040
+         DC CL8'&&SWAP   ',CL8'NO      '                                06210040
+ DC CL40'LEFT AND RIGHT PFK - CYCLE OR NOT       ',CL08'&SWAP   '       06220040
+         DC CL8'&&LKEDDAT',CL8'YES     '                                06230040
+ DC CL40'DEFAULT LKEDDATE IN MEMLIST             ',CL08'&LKEDDAT'       06240040
+         DC CL8'&&ALICHK ',CL8'NO      '                                06250040
+ DC CL40'AUTOMATICALLY INCLUDE ALIASES IN MEMLIST',CL08'&ALICHK '       06260040
+         DC CL8'&&SPFTDEL',CL8'Y       '                                06270040
+ DC CL40'DROP DELETED ENTRIES FROM A MEMLIST     ',CL08'&SPFTDEL'       06280040
+         DC CL8'&&SPFTOLD',CL8'Y       '                                06290040
+ DC CL40'DROP RENAMED ENTRIES FROM A MEMLIST     ',CL08'&SPFTOLD'       06300040
+         DC CL8'&&EDUPDT ',CL8'NO      '                                06310040
+ DC CL40'SCAN AFTER EDIT FOR UPDATED MEMBERS     ',CL08'&EDUPDT '       06320040
+         DC CL8'&&ISCSEL ',CL8'E       '                                06330040
+ DC CL40'S LINE COMMAND - IN MEMLIST SOURCE LIB  ',CL08'&ISCSEL '       06340040
+         DC CL8'&&ILDSEL ',CL8'B       '                                06350040
+ DC CL40'S LINE COMMAND - IN MEMLIST LOAD LIB    ',CL08'&ILDSEL '       06360040
+         DC CL8'&&ILASEL ',CL8'C       '                                06370040
+ DC CL40'S LINE COMMAND - IN LISTA TABLE         ',CL08'&ILASEL '       06380040
+         DC CL8'&&ILVSEL ',CL8'SP      '                                06390040
+ DC CL40'S LINE COMMAND - IN LISTV TABLE         ',CL08'&ILVSEL '       06400040
+         DC CL8'&&ILCSEL ',CL8'C       '                                06410040
+ DC CL40'S LINE COMMAND - IN LISTC TABLE         ',CL08'&ILCSEL '       06420040
+         DC CL8'&&ITTSEL ',CL8'E       '                                06430040
+ DC CL40'S LINE COMMAND - IN TCT TABLE           ',CL08'&ITTSEL '       06440040
+         DC CL8'&&ICXSEL ',CL8'UT      '                                06450040
+ DC CL40'S LINE COMMAND - IN CAX TABLE           ',CL08'&ICXSEL '       06460040
+         DC CL8'&&IFLSEL ',CL8'O       '                                06470040
+ DC CL40'S LINE COMMAND - IN FILTER TABLE        ',CL08'&IFLSEL '       06480040
+         DC CL8'&&ICSSEL ',CL8'O       '                                06490040
+ DC CL40'S LINE COMMAND - IN CSECTS TABLE        ',CL08'&ICSSEL '       06500040
+         DC CL8'&&PDSMAIN',CL8'NO      '                                06510040
+ DC CL40'DO NOT MODIFY--FOR #MDSECT EXPANSION    ',CL08'&PDSMAIN'       06520040
+         DC CL8'&&PDSPRT ',CL8'OFF     '                                06530040
+ DC CL40'DEFAULT TO PRINT #MDSECT                ',CL08'&PDSPRT '       06540040
+         DC CL8'&&WIN19XX',CL8'66      '                      Y2K AUG97 06550040
+ DC CL40'START OF 19XX DATE WINDOW               ',CL08'&WIN19XX'       06560040
+         DC CL8'&&MAXDASD',CL8'4094    '                      DRK JUN99 06570045
+ DC CL40'DEFAULT NUMBER OF DASD FOR LISTV GENERIC',CL08'&MAXDASD'       06580040
+         DC CL8'&&PNTS   ',CL8'PS      '                      DRK OCT98 06590040
+ DC CL40'DIALOG POINT AND SHOOT PANEL SUFFIX     ',CL08'&PNTS   '       06600040
+         DC CL8'&&MDRDT  ',CL8'MXI     '                      DRK NOV98 06610040
+ DC CL40'STYLE OF DASD MODEL DISPLAY IN LISTV    ',CL08'&MDRDT  '       06620040
+         DC CL8'&&MSSTART',CL8'1       '                      DRK NOV99 06630040
+ DC CL40'1ST MEMLIST SOURCE PANEL (1=5, 2=6, 3=S)',CL08'&MSSTART'       06640040
+         DC CL8'&&MLSTART',CL8'1       '                      DRK NOV99 06650040
+ DC CL40'1ST MEMLIST LOAD PANEL   (1=7, 2=8, 3=D)',CL08'&MLSTART'       06660040
+         DC CL8'&&LFSTART',CL8'1       '                      DRK NOV99 06670040
+ DC CL40'1ST LISTF PANEL          (1=K, 2=L, 3=M)',CL08'&LFSTART'       06680040
+         DC CL8'&&LVSTART',CL8'1       '                      DRK NOV99 06690040
+ DC CL40'1ST LISTV PANEL          (1=H, 2=I, 3=R)',CL08'&LVSTART'       06700040
+         DC CL8'&&ISODT  ',CL8'NO      '                      DRK NOV01 06710040
+ DC CL40'USE ISO ALTERNATIVE DATE FORMAT YY/MM/DD',CL08'&ISODT  '       06720040
+         DC CL8'&&DSLIST ',CL8'YES     '                      DRK NOV02 06730040
+ DC CL40'USE VOLSER FROM DSLIST TABLE            ',CL08'&DSLIST '       06740040
+         DC CL8'&&FNDCASE',CL8'CAPS    '                      DRK NOV02 06750040
+ DC CL40'DEFAULT FIND/REPLACE STRING SEARCH      ',CL08'&FNDCASE'       06760040
+         DC CL8'&&FINDMSG',CL8'PDS241I '                      DRK MAY04 06770040
+ DC CL40'FIND/REPLACE NO MATCH MESSAGE           ',CL08'&FINDMSG'       06780040
+         DC CL8'&&LOGWIDE',CL8'NO      '                      DRK JUL04 06790040
+ DC CL40'ISPM LOG PANEL 1 WIDTH(&&ZSCREENW)      ',CL08'&LOGWIDE'       06800040
+         DC CL8'&&SRCHOPT',CL8'ANYC    '                      DRK DEC05 06810040
+ DC CL40'IBM SUPERC SEARCH-FOR PROCESS OPTIONS   ',CL08'&SRCHOPT'       06820040
+         DC CL8'&&STOWI  ',CL8'YES     '                      DRK FEB06 06830040
+ DC CL40'APAR OA13224 "DISP=SHR FOR STOW INIT" ON',CL08'&STOWI  '       06840040
+         DC CL8'&&MIGVOL ',CL8'MIGRAT  '                      DRK SEP07 06850040
+ DC CL40'NAME OF HSM MIGRATED DATASET VOLSER     ',CL08'&MIGVOL '       06860040
+         DC CL8'&&MLRESET',CL8'NORESET '                      DRK OCT07 06870040
+ DC CL40'DEFAULT RESET ACTION FOR MEMLIST SUBCMDS',CL08'&MLRESET'       06880015
+         DC CL8'&&MAPPGM ',CL8'FDRCPK  '                      DRK JAN16 06890039
+ DC CL40'DEFAULT DISK MAPPING PROGRAM            ',CL08'&MAPPGM '       06900039
+         DC CL8'&&ASMPGM ',CL8'DISASM  '                      DRK JAN16 06910039
+ DC CL40'DEFAULT DISASSEMBLER PROGRAM            ',CL08'&ASMPGM '       06920039
+         DC CL8'&&MXIPGM ',CL8'MXI     '                      DRK DEC16 06930042
+ DC CL40'DEFAULT MXI PROGRAM                     ',CL08'&MXIPGM '       06940042
+         DC X'FFFF'      END OF TABLE                                   06950000

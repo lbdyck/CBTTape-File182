@@ -1,0 +1,35 @@
+         TITLE 'P D S  --  PDS CHANGE                        09/28/88'  02122000
+*********************************************************************** 02123000
+***      CHANGE SUBCOMMAND                                          *** 02124000
+*********************************************************************** 02125000
+*                                                                       02126000
+         SPACE 1                                                        02127000
+CHANGE   CSECT                                                          02128001
+         USING *,R8                                                     02129000
+         L     R1,=A(DSNAMES)           ALLOCATION STATUS ROUTINE       02130000
+         ST    R1,##ADRCMD              EXECUTED AFTER OPEN OF DATA SET 02131000
+         MVI   ##ADRCM#,CONTINUE        FLAG TO CONTINUE                02132000
+         SPACE 2                                                        02133000
+CHANGE2  L     R8,=A(CHANGE)            BASE REGISTER                   02134000
+         OI    FLAGSJJ,FCHANGEB         CHANGE DATA SET BUFFERING       02135000
+         NI    FLAGSFF,FF-FCHANGE       DATA SET WAS CHANGED            02136000
+         LA    R0,RESTART0              ABEND RECOVERY ADDRESS          02137000
+         ST    R0,RECOVER                                               02138000
+         OI    SPFLAG3,SPFCHN           SIGNAL ISPMODE         SS SEP84 02139000
+         BAS   R2,SHUTSTW2              DELETE ANY DATA SET ENQUEUES    02140000
+         BAS   R2,CLOSEIT               CLOSE THE DATA SET              02141000
+         BAS   R2,DEALLDCB              FREE THE DATA SET               02142000
+         TM    FLAGSHH,FOPTIONS         ANY OPERANDS?                   02143000
+         BO    RESTART0                 YES, BRANCH                     02144000
+         SPACE 2                                                        02145000
+         OI    FLAGSBB,FNOTFILE         NO FILE NAME NOW                02146000
+         CLI   SAVDSN+1+2,0             ANY OTHER DSNAME?               02147000
+         BE    RESTART0                 NO, DONE                        02148000
+         SPACE 2                                                        02149000
+         XC    SAVDSN+1(SAVLEN),DSNLEN  EXCHANGE                        02150000
+         XC    DSNLEN(SAVLEN),SAVDSN+1          OLD AND NEW             02151000
+         XC    SAVDSN+1(SAVLEN),DSNLEN                     DSNAMES      02152000
+         MVC   DSPALLOC,SAVDSN          GET PREVIOUS DISPOSITION        02153000
+         MVC   SAVDSN(1),DSPREQST       SAVE REQUESTED DISPOSITION      02154000
+         MVC   DSPREQST,DSPALLOC        GET PREVIOUS DISPOSITION        02155000
+         B     RESTART0                 BRANCH TO REALLOCATE            02156000

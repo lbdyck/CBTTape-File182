@@ -1,0 +1,742 @@
+         TITLE 'ISPF - PARSE LEVEL 1 SUBROUTINE'               SS NOV85 27290000
+*                                                              SS MAR85 27300000
+*   PARSE SUBROUTINE  R3 = RETURN                              SS MAR85 27310000
+*                     R1 = PARSE LIST                          SS MAR85 27320000
+*                     R14= LENGTH OF INPUT LINE                SS MAR85 27330000
+*                     R15= INPUT LINE ADDRESS                  SS MAR85 27340000
+*         EACH PARSE ENTRY IN LIST  (MUST BE ON WORD BOUNDARY) SS FEB88 27350008
+*-- X'NN' ENTRY TYPE/LEN                                       SS FEB88 27360000
+*   X'80' POSITIONAL STRING .. MUST BE FIRST                   SS FEB88 27370000
+*   X'10' WITH POSITIONAL STR  LENGTH CHECK                    SS OCT88 27380000
+*   X'01' WITH POSITIONAL STR  DO NOT CUT FROM THE LIST        SS OCT88 27390000
+*   X'08' WITH POSITIONAL STR  CONDITIONAL ON DELIMITER        SS OCT88 27400000
+*   X'04' WITH POSITIONAL STR  CONDITIONAL ON LENGTH           SS OCT88 27410000
+*   X'40' NUMBER.. SELF DEFINING KEY WORK                      SS FEB88 27420000
+*   X'50' DO RANGE CHECK ON NUMBER                             SS FEB88 27430000
+*         ZERO, ONE, OR TWO NUMBERS MAY BE USED                SS FEB88 27440000
+*         THESE MUST BE FIRST AFTER POSITIONAL STRING          SS FEB88 27450000
+*         IF SPECIFIED.  ANY NUMERIC VALUES ENTERED BY         SS FEB88 27460007
+*         THE USER WILL BE SAVED IN THE ORDER FOUND            SS FEB88 27470000
+*   X'20' KEY WORD                                             SS FEB88 27480000
+*   X'30' KEY WORD MAY BE ABBREVIATED BY ONE CHARACTER         SS FEB88 27490000
+*   X'07' LENGTH OF KEYWORD-1, VALUES 0-7 (ABBREVIATION LEN)   SS FEB88 27500000
+*-- X'NNNNNN'   ENTRY ID (BIT PATTERN ORED INTO RETURN FLAGS   SS FEB88 27510000
+*   X'800000'   IF ON AND USED WITH POSITIONAL STRING, THEN    SS FEB88 27520000
+*               THE CHARACTERS * / : ARE NOT DELIMITERS        SS FEB88 27530000
+*-- H'NNNNN',XL6'00'  LENGTH OF STRING -1 (CONDITIONAL OR MAX) SS OCT88 27540000
+*   CL8'KKK'    KEY WORD NAME                                  SS OCT88 27550000
+*   F'LLLL',F'HHHH'  LOW AND HI RANGE NUMBERS (MAY BE +/-)     SS FEB88 27560000
+ISPPELN  EQU   12    LENGTH OF EACH ENTRY                      SS NOV85 27570000
+ISPPKW   EQU   4     OFFSET TO KEY WORD IN ENTRY               SS NOV85 27580000
+*                                                              SS NOV85 27590000
+ISPPARSE DS    0H                                              SS MAR85 27600000
+         USING *,R4                                            SS MAR85 27610000
+         MVI   SPFPRRC,0    SET RC ZERO                        SS MAR85 27620000
+         MVI   SPFPRFG,0    ZERO PROCESS FLAG                  SS NOV85 27630000
+         XC    SPFPRBI,SPFPRBI ZERO PARM BITS                  SS NOV85 27640000
+         SR    R0,R0                                           SS NOV85 27650000
+         ST    R0,SPFPRNU                                      SS NOV85 27660000
+         ST    R0,SPFPRNU2                                     SS NOV85 27670000
+         BAS   R2,ISPCKBLK  POSITION AT FIRST NON BLANK        SS MAR85 27680000
+         LTR   R15,R15      ANY                                SS MAR85 27690000
+         BZ    ISPPARE8     NO  STRING FOUND                   SS MAR85 27700000
+         ST    R1,SPFPRAD   SAVE PARSE LIST                    SS MAR85 27710000
+         TM    0(R1),X'80'  STRING REQUEST                     SS MAR85 27720000
+         BZ    ISPPAR50     NO TRY OTHER                       SS MAR85 27730000
+ISPPAR01 DS    0H                       *                      SS OCT88 27740000
+         CLI   0(R15),X'8B' BRACKET                            SS MAR85 27750000
+         BE    ISPPAR05     YES USE A DELIMITER                SS MAR85 27760000
+         CLI   0(R15),X'80' ALPHA (UPPER OR LOWER)             SS MAR85 27770000
+         BH    ISPPAR10     YES, USE BLANK AS DELIMITER        SS MAR85 27780000
+         CLI   0(R15),C'$'  NATIONAL CHAR                      SS MAR85 27790000
+         BE    ISPPAR10     YES, USE BLANK AS DELIMITER        SS MAR85 27800000
+         CLI   0(R15),C'@'  NATIONAL CHAR                      SS MAR85 27810000
+         BE    ISPPAR10     YES, USE BLANK AS DELIMITER        SS MAR85 27820000
+         CLI   0(R15),C'#'  NATIONAL CHAR                      SS MAR85 27830000
+         BE    ISPPAR10     YES, USE BLANK AS DELIMITER        SS MAR85 27840000
+         TM    1(R1),X'80'  FIND COMMAND?                     ABL JUN85 27850000
+         BZ    ISPPAR02     YES, USE CHARACTER AS DELIMITER   ABL JUN85 27860000
+         CLI   0(R15),C'*'  RECALL GROUP                       SS MAR85 27870000
+         BE    ISPPAR10     YES, USE BLANK AS DELIMITER        SS MAR85 27880000
+         CLI   0(R15),C':'  GROUP                              SS MAR85 27890000
+         BE    ISPPAR10     YES, USE BLANK AS DELIMITER        SS MAR85 27900000
+         CLI   0(R15),C'/'  PATTERN?                          ABL JUN85 27910000
+         BE    ISPPAR10     YES, USE BLANK AS DELIMITER?      ABL JUN85 27920000
+ISPPAR02 DS    0H                                             ABL JUN85 27930000
+ISPPAR05 DS    0H                                              SS MAR85 27940000
+         IC    R1,0(R15)    INSERT COMPARE CHAR                SS MAR85 27950000
+         LA    R15,1(,R15)  START AT NEXT CHAR                 SS MAR85 27960000
+         OI    SPFPRFG,SPFPRDEL  DELIMITED STRING              SS OCT88 27970000
+         B     ISPPAR15     CONTINUE                           SS MAR85 27980000
+ISPPAR10 DS    0H                                              SS MAR85 27990000
+         NI    SPFPRFG,255-SPFPRDEL NO DELIMITER               SS OCT88 28000000
+         LA    R1,C' '      USE BLANK                          SS MAR85 28010000
+ISPPAR15 DS    0H                                              SS MAR85 28020000
+         ST    R15,SPFPRSV  START OF STRING                    SS MAR85 28030000
+         BAS   R2,ISPCLI                                       SS MAR85 28040000
+         LTR   R15,R15                                         SS MAR85 28050000
+         BZ    ISPPAREL     RC 12 ERROR IN LENGTH OF STRING    SS MAR85 28060000
+         LR    R0,R15                                          SS MAR85 28070000
+         SL    R0,SPFPRSV   CALCULATE FIRST LENGTH             SS MAR85 28080000
+         BCTR  R0,0         LESS ON                            SS MAR85 28090000
+         L     R1,SPFPRAD   GET ADDRESS OF PARM                SS OCT88 28100000
+         TM    0(R1),X'08'  CONDITIONAL ON DELIMITER           SS OCT88 28110000
+         BZ    ISPPAR16     NO, SKIP    *                      SS OCT88 28120000
+         TM    SPFPRFG,SPFPRDEL  USING A DELIMITER             SS OCT88 28130000
+         BO    ISPPAR19     YES, GOOD ONE                      SS OCT88 28140000
+         B     ISPPAR21     NO,  SKIP IT                       SS OCT88 28150000
+ISPPAR16 DS    0H                       *                      SS OCT88 28160000
+         TM    0(R1),X'04'  CONDITIONAL ON LENGTH              SS OCT88 28170000
+         BZ    ISPPAR17     NO, SKIP    *                      SS OCT88 28180000
+         CH    R0,4(R1)     TO LONG                            SS OCT88 28190000
+         BNH   ISPPAR19     NO, GOOD ONE                       SS OCT88 28200000
+         B     ISPPAR21     YES, SKIP IT                       SS OCT88 28210000
+ISPPAR17 DS    0H                       *                      SS OCT88 28220000
+         TM    0(R1),X'10'  MAX LENGTH CHECK                   SS OCT88 28230000
+         BZ    ISPPAR19     NO, SKIP    *                      SS OCT88 28240000
+         CH    R0,4(R1)     TO LONG                            SS OCT88 28250000
+         BNH   ISPPAR19     NO, GOOD ONE                       SS OCT88 28260000
+         B     ISPPAREL     YES, LENGTH ERROR                  SS OCT88 28270000
+ISPPAR19 STH   R0,SPFPRLN                                      SS OCT88 28280000
+         MVC   SPFPRSR,SPFPRSV  SAVE STRING ADDRESS            SS OCT88 28290000
+         L     R1,SPFPRAD   GET ADDRESS OF PARM                SS MAR85 28300000
+         OC    SPFPRBI,1(R1) OR IN PARM BIT                    SS MAR85 28310000
+         CLI   0(R15),C' '  WE AT BLANK                        SS MAR85 28320000
+         BE    ISPPAR20     YES                                SS MAR85 28330000
+         LA    R15,1(,R15)  SKIP OVER DELIMITER                SS MAR85 28340000
+ISPPAR20 DS    0H                                              SS MAR85 28350000
+         BAS   R2,ISPCKBLK  FIND NEXT PARM                     SS MAR85 28360000
+         LTR   R15,R15      ANY FOUND                          SS MAR85 28370000
+         BZR   R3           NO DONE                            SS MAR85 28380000
+         B     ISPPAR22                 *                      SS OCT88 28390000
+ISPPAR21 DS    0H                       *                      SS OCT88 28400000
+         L     R15,SPFPRSV  BACKUP TO START OF STRING          SS OCT88 28410000
+         L     R1,SPFPRAD   GET ADDRESS OF PARM                SS MAR85 28420000
+ISPPAR22 DS    0H                       *                      SS OCT88 28430000
+         TM    0(R1),X'01'  ARE WE DONE WITH STRINGS           SS OCT88 28440000
+         BZ    ISPPAR25     NO, SKIP    *                      SS OCT88 28450000
+         LA    R1,ISPPELN(,R1) SET TO NEXT PARSE ENTRY         SS MAR85 28460000
+         B     ISPPAR70     LOOK FOR MORE KEYWORDS             SS OCT88 28470000
+ISPPAR25 DS    0H                       *                      SS OCT88 28480000
+         LA    R1,ISPPELN(,R1) SET TO NEXT PARSE ENTRY         SS MAR85 28490000
+         ST    R1,SPFPRAD                                      SS MAR85 28500000
+ISPPAR50 DS    0H                                              SS MAR85 28510000
+         MVI   SPFPRRC,24   IN CASE INVALID KEY                SS MAY85 28520037
+         ST    R14,SPFPRLL  SAVE IT                            SS MAR85 28530000
+         L     R1,SPFPRAD   GET ADDRESS                        SS MAR85 28540000
+         CLI   0(R1),X'FF'  END OF TABLE                       SS MAR85 28550000
+         BE    ISPPAR90     DONE, SETUP RC                     SS MAR85 28560000
+         CLI   0(R15),C'-'  IS IT NUMERIC (NEGATIVE)           SS MAR85 28570000
+         BE    ISPPAR60     YES                                SS MAR85 28580000
+         CLI   0(R15),C'0'  IS IT NUMERIC                      SS MAR85 28590000
+         BNL   ISPPAR62     YES                                SS MAR85 28600000
+         TM    0(R1),X'40'  NUMERIC PARM                       SS MAR85 28610000
+         BZ    ISPPAR70     NO                                 SS MAR85 28620000
+         LA    R1,ISPPELN(,R1) NEXT ENTRY                      SS MAR85 28630000
+         TM    0(R1),X'40'  NUMERIC SECOND PARM                SS NOV85 28640000
+         BZ    ISPPAR70     NO                                 SS NOV85 28650000
+         LA    R1,ISPPELN(,R1) NEXT ENTRY                      SS NOV85 28660000
+         B     ISPPAR70     TRY KEYWORDS                       SS MAR85 28670000
+ISPPAR60 DS    0H                                              SS MAR85 28680000
+         OI    SPFPRRC,X'80' SAY NEGATIVE VALUE                SS MAR85 28690000
+         LA    R15,1(,R15)  SKIP OVER - SIGN                   SS MAR85 28700000
+         BCT   R14,ISPPAR61                                    SS MAR85 28710000
+         B     ISPPARES     NO NUMBERS                         SS MAR85 28720000
+ISPPAR61 CLI   0(R15),C'0'  CHECK NUMERIC FOR SURE             SS MAR85 28730000
+         BL    ISPPARES     NO NUMBERS                         SS MAR85 28740000
+ISPPAR62 DS    0H                                              SS MAR85 28750000
+         TM    0(R1),X'40'  WE LOOKING FOR NUMERIC             SS MAR85 28760000
+         BZ    ISPPARES     NO NUMBERS ALLOWED                 SS MAR85 28770000
+         ST    R15,SPFPRSV  SAVE LOCATION                      SS MAR85 28780000
+ISPPAR63 CLI   0(R15),C'0'  FIND ALL THE NUMBERS               SS MAR85 28790000
+         BL    ISPPAR65     END OF NUMBERS                     SS MAR85 28800000
+         LA    R15,1(,R15)  NEXT                               SS MAR85 28810000
+         BCT   R14,ISPPAR63 CONTINUE                           SS MAR85 28820000
+ISPPAR65 ST    R14,SPFPRLL  SAVE                               SS MAR85 28830000
+         L     R14,SPFPRSV  GET ADDRESS NUMBER                 SS MAR85 28840000
+         LR    R1,R15                                          SS MAR85 28850000
+         SLR   R1,R14       CALCULATE LENGTH                   SS MAR85 28860000
+         BCTR  R1,0         ON LESS FOR PACK                   SS MAR85 28870000
+         EX    R1,ISPPAR95  DO PACK                            SS MAR85 28880000
+         TM    SPFPRRC,X'80'  WAS IT NEG                       SS MAR85 28890000
+         BZ    ISPPAR66                                        SS MAR85 28900000
+         NI    WORKTBL+7,X'FD' MAKE NEG DECIMAL                SS MAR85 28910000
+ISPPAR66 DS    0H                                              SS MAR85 28920000
+         CVB   R14,WORKTBL                                     SS MAR85 28930000
+         TM    SPFPRFG,SPFPRN1  WE HAVE FIRST NUMBER           SS NOV85 28940000
+         BO    ISPPAR6A                                        SS NOV85 28950000
+         ST    R14,SPFPRNU  SAVE VALUE                         SS MAR85 28960000
+         B     ISPPAR6B                                        SS NOV85 28970000
+ISPPAR6A ST    R14,SPFPRNU2                                    SS NOV85 28980000
+ISPPAR6B OI    SPFPRFG,SPFPRN1 GOT FIRST NUMBER                SS NOV85 28990000
+         L     R1,SPFPRAD   GET ADDRESS OF PARM                SS MAR85 29000000
+         TM    0(R1),X'10'  CHECK RANGE REQUIRED               SS MAY85 29010000
+         BZ    ISPPAR67     NO                                 SS MAY85 29020000
+         C     R14,4(,R1)   LOWER RANGE                       ABL MAR86 29030000
+         BL    ISPPARER     LOWER IS ERROR                     SS MAY85 29040000
+         C     R14,8(,R1)   UPPER RANGE                       ABL MAR86 29050000
+         BH    ISPPARER     UPPER IS ERROR                     SS MAY85 29060000
+ISPPAR67 DS    0H                                              SS MAY85 29070000
+         MVI   SPFPRRC,0    GOOD SO FAR                        SS MAY85 29080000
+         OC    SPFPRBI,1(R1) OR IN PARM BIT                    SS MAR85 29090000
+         LA    R1,ISPPELN(,R1) BUMP TO NEXT PARSE ENTRY        SS NOV85 29100000
+         ST    R1,SPFPRAD                                      SS NOV85 29110000
+         B     ISPPAR80     CONTINUE LOOKING FOR OTHER PARMS   SS MAR85 29120000
+ISPPAR95 PACK  WORKTBL(8),0(0,R14)   <<EXECUTED>>              SS MAR85 29130000
+ISPPAR70 DS    0H                                              SS MAR85 29140000
+         CLI   0(R1),X'FF'  END OF TABLE                       SS MAR85 29150000
+         BE    ISPPAREK     DONE, SETUP RC                     SS MAR85 29160000
+         TM    0(R1),X'81'  IS IT A NO CUT STRING              SS OCT88 29170000
+         BO    ISPPAR01     YES, CHECK IT OUT                  SS OCT88 29180000
+         TM    0(R1),X'20'  IS IT KEYWORD                      SS MAR85 29190000
+         BZ    ISPPAREP     INVALID PARSE PARM RC=16           SS MAR85 29200000
+         TM    0(R1),X'10'  SINGLE CHAR CHECK                  SS MAY85 29210000
+         BZ    ISPPAR72     NO                                 SS MAY85 29220000
+         CLI   1(R15),C' '  ONLY ONE CHAR                      SS MAY85 29230000
+         BNE   ISPPAR72     NO                                 SS MAY85 29240000
+         OC    0(1,R15),ISPBLK8 MAKE UPPER CASE                SS MAR85 29250000
+         CLC   0(1,R15),ISPPKW(R1) COMP PARM TO KEYWORD       ABL APR86 29260000
+         BNE   ISPPAR75     TRY NEXT KEYWORD                   SS MAR85 29270000
+         B     ISPPAR73     GOOD KEY                           SS MAR85 29280000
+ISPPAR72 DS    0H                                              SS MAY85 29290000
+         IC    R14,0(R1)    GET COMPARE LENGTH                 SS MAR85 29300000
+         N     R14,ISPPAR97 AND OUT OTHER BITS                 SS MAR85 29310000
+         OC    0(8,R15),ISPBLK8 MAKE UPPER CASE                SS MAR85 29320000
+         EX    R14,ISPPAR98 COMPARE KEYWORD                    SS MAR85 29330000
+         BNE   ISPPAR75     TRY NEXT KEYWORD                   SS MAR85 29340000
+ISPPAR73 DS    0H                                              SS MAY85 29350000
+         MVI   SPFPRRC,0    GOOD KEY                           SS MAY85 29360000
+         OC    SPFPRBI,1(R1) FOUND THIS KEYWORD                SS MAR85 29370000
+         B     ISPPAR80     SETUP FOR NEXT PARM                SS MAR85 29380000
+ISPPAR75 DS    0H                                              SS MAR85 29390000
+         LA    R1,ISPPELN(,R1) NEXT ENTRY                      SS MAR85 29400000
+         B     ISPPAR70     CONTINUE                           SS MAR85 29410000
+         DS    0F                                             ABL APR85 29420000
+ISPPAR97 DC    X'00000007'  MASK LAST 3 BITS                   SS MAR85 29430000
+ISPPAR98 CLC   0(0,R15),ISPPKW(R1) COMP PARM TO KEYWORD        SS NOV85 29440000
+ISPPAR80 DS    0H                                              SS MAR85 29450000
+         L     R14,SPFPRLL  GET LENGTH                         SS MAR85 29460000
+         LTR   R14,R14      ANY MORE                           SS MAR85 29470000
+         BZ    ISPPAR90     SETUP RC                           SS MAR85 29480000
+         LA    R1,C' '      FIND NEXT BLANK                    SS MAR85 29490000
+         BAS   R2,ISPCLI                                       SS MAR85 29500000
+         LTR   R15,R15                                         SS MAY85 29510000
+         BZ    ISPPAR90     END OF INPUT                       SS MAY85 29520000
+         BAS   R2,ISPCKBLK  FIND NEXT PARM                     SS MAY85 29530000
+         LTR   R15,R15                                         SS MAY85 29540000
+         BZ    ISPPAR90     END OF INPUT                       SS MAY85 29550000
+         B     ISPPAR50     VERIFY THIS PARM                   SS MAR85 29560000
+ISPPARE8 MVI   SPFPRRC,8    NO STRING PARM                     SS MAY85 29570000
+         B     ISPPAR90                                        SS MAY85 29580000
+ISPPAREL MVI   SPFPRRC,12   STRING PARM TO LONG                SS MAY85 29590000
+         MVC   SPFMSGID,ISPPDSM SETUP MESSAGE                  SS MAY85 29600000
+         MVI   SPFMSGID+7,C'A'                                 SS MAY85 29610000
+         MVI   SPFMSGID+6,C'3'                                 SS MAY85 29620000
+         B     ISPPAR90                                        SS MAY85 29630000
+ISPPARES MVI   SPFPRRC,16   SYNTAX ERROR IN NUMERIC            SS MAY85 29640000
+         MVC   SPFMSGID,ISPPDSM SETUP MESSAGE                  SS MAY85 29650000
+         MVI   SPFMSGID+7,C'A'                                 SS MAY85 29660000
+         MVI   SPFMSGID+6,C'4'                                 SS MAY85 29670000
+         B     ISPPAR90                                        SS MAY85 29680000
+ISPPARER MVI   SPFPRRC,20   RANGE  ERROR IN NUMERIC            SS MAY85 29690000
+         MVC   SPFMSGID,ISPPDSM SETUP MESSAGE                  SS MAY85 29700000
+         MVI   SPFMSGID+7,C'A'                                 SS MAY85 29710000
+         MVI   SPFMSGID+6,C'5'                                 SS MAY85 29720000
+         B     ISPPAR90                                        SS MAY85 29730000
+ISPPAREK MVI   SPFPRRC,24   INVALID KEY                        SS MAY85 29740000
+         MVC   SPFMSGID,ISPPDSM SETUP MESSAGE                  SS MAY85 29750000
+         MVI   SPFMSGID+7,C'A'                                 SS MAY85 29760000
+         MVI   SPFMSGID+6,C'6'                                 SS MAY85 29770000
+         B     ISPPAR90                                        SS MAY85 29780000
+ISPPAREP MVI   SPFPRRC,32   INVALID PARSE LIST                 SS MAY85 29790000
+         DC    H'0'         TEST .. FORCE  0C1                 SS MAY85 29800000
+         B     ISPPAR90                                        SS MAY85 29810000
+ISPPAR90 DS    0H                                              SS MAR85 29820000
+         SR    R15,R15                                         SS MAR85 29830000
+         IC    R15,SPFPRRC                                     SS MAR85 29840000
+         BR    R3                                              SS MAR85 29850000
+         DROP  R4                                              SS MAR85 29860000
+         TITLE  'ISPF - FIND SUBCMD VERB IN TABLE'             SS AUG86 29870000
+         SPACE 2                                               SS NOV85 29880000
+*                                                              SS NOV85 29890000
+*  FIND SUBCMD VERB IN TABLE                                   SS NOV85 29900000
+*                                                              SS NOV85 29910000
+         USING *,R4                                            SS MAR85 29920000
+ISPVER11 DS    0H                                              SS MAR85 29930000
+         LR    R2,R3                                           SS NOV85 29940000
+         CLI   0(R1),C' '     SCAN FIRST NON BLANK             SS NOV84 29950000
+         BNE   ISPVER2                                         SS SEP84 29960000
+         LA    R1,1(,R1)      NEXT CHAR                        SS SEP84 29970000
+         BCT   R15,ISPVER11                                    SS NOV84 29980000
+ISPVER16 DS    0H            BLANK INPUT                       SS NOV84 29990000
+         ST    R1,SPFVERB    SAVE ADDRESS                      SS NOV84 30000000
+         LA    R3,1(,R1)     RESUME SCAN AT NEXT CHAR          SS SEP84 30010000
+         ST    R3,SPFOPER    SAVE ADDRESS                      SS NOV84 30020000
+         SR    R3,R3         LENGTH 0                          SS NOV84 30030000
+         MVI   SPFNAMEH,ISPBLKC BLANK OUT CMD                  SS NOV84 30040000
+         B     ISPVER5                                         SS NOV84 30050000
+ISPVER2  LA    R15,8         EXPAND SCAN                       SS SEP84 30060000
+         ST    R1,SPFVERB    SAVE ADDRESS                      SS NOV84 30070000
+         LA    R3,1(,R1)     RESUME SCAN AT NEXT CHAR          SS SEP84 30080000
+ISPVER3  CLI   0(R3),C' '    SCAN NEXT BLANK                   SS SEP84 30090000
+         BE    ISPVER4                                         SS SEP84 30100000
+         CLI   0(R3),C'.'    SCAN NEXT PERIOD (PANEL SUPPORT)  SS NOV84 30110000
+         BE    ISPVER4                                         SS NOV84 30120000
+         LA    R3,1(,R3)     NEXT CHAR                         SS SEP84 30130000
+         BCT   R15,ISPVER3                                     SS SEP84 30140000
+ISPVER20 LA    R15,20        INVALID SYNTAX                    SS SEP84 30150000
+ISPVER4  DS    0H                                              SS SEP84 30160000
+         ST    R3,SPFOPER    SAVE ADDRESS                      SS NOV84 30170000
+         SR    R3,R1         LENGTH                            SS SEP84 30180000
+         BCTR  R3,0          LESS ONE FOR CLC                  SS SEP84 30190000
+         MVC   SPFNAMEH,0(R1)   SAVE THE SUBCOMMAND NAME      ABL OCT84 30200000
+         OC    SPFNAMEH,ISPBLK8 UPPER CASE THE NAME           ABL OCT84 30210000
+ISPVER5  DS    0H                                                       30220016
+         TM    $TLF1(R14),#E END OF TABLE                      SS NOV84 30221016
+         BO    ISPVER12      NOT VALID                         SS NOV84 30230000
+         LA    R15,$TLCM(R14) POINT TO VALUE IN ENTRY          SS JUL85 30240000
+ISPVER7  DS    0H                                              SS SEP84 30250000
+         CLC   0(0,R15),SPFNAMEH  MATCH TABLE AND SUBCOMMAND  ABL OCT84 30260000
+         EX    R3,*-6        FOR LENGTH OF CMD                 SS SEP84 30270000
+         BE    ISPVER8       MATCH                             SS SEP84 30280000
+         LA    R14,ISPTEL(,R14)  NEXT ENTRY                    SS SEP84 30290000
+         B     ISPVER5                                         SS SEP84 30300000
+ISPVER8  DS    0H                                              SS SEP84 30310000
+         ST    R14,SPFVTPT   SAVE TABLE ENTRY ADDR             SS NOV85 30320000
+         TM    $TLF1(R14),#K FORCE MEMLIST INACTIVE            SS SEP84 30330000
+         BO    ISPVER04                                        SS SEP84 30340000
+         SR    R15,R15       GOOD CMD                          SS SEP84 30350000
+         BR    R2                                              SS SEP84 30360000
+ISPVER04 LA    R15,04        FORCE MEMLIST INACTIVE            SS SEP84 30370000
+         BR    R2                                              SS SEP84 30380000
+ISPVER08 LA    R15,08        NOT USED                          SS AUG86 30390000
+         BR    R2                                              SS SEP84 30400000
+ISPVER12 LA    R15,12        NOT FOUND                         SS SEP84 30410000
+         ST    R14,SPFVTPT   SAVE TABLE ENTRY ADDR             SS NOV84 30420000
+         BR    R2                                              SS SEP84 30430000
+         DROP  R4                                              SS MAR85 30440000
+         TITLE 'COMMAND PROCESSING'                            SS NOV85 30450000
+ISPCMDCK DS    0H                   CHECK FOR A PDS COMMAND    SS NOV84 30460000
+         USING *,R4                                            SS NOV85 30470000
+         LA    R1,SPFINPUT                                     SS NOV85 30480000
+         SR    R15,R15                                         SS NOV85 30490000
+         L     R14,SPFVTPT          RELOAD R14                 SS NOV85 30500000
+         IC    R15,$TLEX(R14)       GET ANY EXTEND CODE        SS NOV85 30510000
+         TM    $TLF2(R14),#C        COMMAND TABLE IN EXTEND    SS NOV85 30520000
+         BO    *+8                  YES, USE IT                SS NOV85 30530000
+         LA    R15,0                NO, USE PRIMARY            SS NOV85 30540000
+         L     R14,ISPCMDTT(R15)    INDEX TO TABLE             SS NOV85 30550000
+         BAS   R2,ISPVERG                                      SS NOV84 30560000
+         C     R15,ISPL8                                       SS NOV84 30570000
+         BE    ISPCMDIV                                        SS NOV84 30580000
+         CH    R15,ISPH12           INVALID COMMAND?           SS NOV84 30590000
+         BNE   ISPCMDC1             NO, BRANCH                ABL DEC84 30600000
+         CLI   SPFNAMEH,C'?'        QUESTION MARK?            ABL DEC84 30610000
+         BE    ISPCMDC0             YES, ALLOW IT             ABL DEC84 30620000
+         CLI   SPFNAMEH,C'.'        . OF .?                   ABL DEC84 30630000
+         BE    ISPCMDC0             YES, ALLOW IT             ABL DEC84 30640000
+         CLI   SPFNAMEH,C'%'        IMPLIED CLIST?            ABL DEC84 30650000
+         BE    ISPCMDC0             YES ALLOW IT               SS NOV86 30660000
+         TM    $TLF2(R14),#T        INTERNAL PROCESSOR ON #E   SS NOV86 30670000
+         BO    ISPCMDC3             GO FOR IT                  SS NOV86 30680000
+         B     ISPCMDIV             NO, MUST BE INCORRECT      SS NOV86 30690000
+*        BNE   ISPCMDIV             YES, INCORRECT            ABL DEC84 30700000
+ISPCMDC0 L     R14,ISPEXECA         ADDRESS OF EXEC           ABL DEC84 30710000
+         ST    R14,SPFVTPT          SAVE THE ADDRESS           SS NOV85 30720000
+ISPCMDC1 DS    0H                                             ABL DEC84 30730000
+         TM    $TLF1(R14),#S        SOURCE ONLY?               SS NOV84 30740000
+         BZ    ISPCMDC2             NO, BRANCH                 SS NOV84 30750000
+         TM    FLAGSCC,RECFMU       LOAD LIBRARY?              SS NOV84 30760000
+         BO    ISPCMDIV             YES, BAD                   SS NOV84 30770000
+         B     ISPCMDC3                                        SS NOV84 30780000
+ISPCMDC2 DS    0H                                              SS NOV84 30790000
+         TM    $TLF1(R14),#U        LOAD LIBRARY ONLY?         SS NOV84 30800000
+         BZ    ISPCMDC3             NO, BRANCH                 SS NOV84 30810000
+         TM    FLAGSCC,RECFMU       LOAD LIBRARY?              SS NOV84 30820000
+         BZ    ISPCMDIV             NO, BAD                    SS NOV84 30830000
+ISPCMDC3 DS    0H                                              SS NOV84 30840000
+         TM    $TLF2(R14),#T         COMMAND PROCESS PROVIDED  SS MAR85 30850000
+         BZ    ISPCMDC7              NO, BRANCH                SS MAR85 30860000
+         SR    R15,R15                                         SS NOV85 30870000
+         IC    R15,$TLFU(R14)        GET FUNCTION CODE         SS NOV85 30880000
+         BR    R3                    RETURN TO ROUTER          SS NOV85 30890000
+ISPCMDIV DS    0H                                              SS NOV85 30900000
+         LA    R15,28                ROUTE TO INVALID          SS NOV85 30910000
+         BR    R3                    RETURN TO ROUTER          SS NOV85 30920000
+ISPCMDC7 DS    0H                                             ABL DEC84 30930000
+         LA    R15,20                ROUTE TO CONTINUE         SS AUG86 30940000
+         BR    R3                    RETURN TO ROUTER          SS AUG86 30950000
+         DROP  R4                                             DRK NOV98 30951001
+         TITLE 'COMMAND PROCESSING CONTINUED'                  SS AUG86 30960000
+ISPCMDCC DS    0H                   CHECK FOR A PDS COMMAND    SS NOV84 30970000
+         USING *,R4                                            SS NOV85 30980000
+         L     R14,SPFVTPT          RESTORE POINTER           ABL JAN87 30990000
+         CLI   SPFFUNST+1,C'I'      MEMLIST ACTIVE             SS AUG86 31000000
+         BE    ISPCMDC4             NO, SKIP                   SS AUG86 31010000
+         TM    SPFTBPF1,SPFTLIN     THIS MEMLIST PANEL         SS AUG86 31020000
+         BZ    ISPCMDCO             NO, SKIP                   SS AUG86 31030000
+         CLC   0(8,R14),$SUL        SUBLIST?                  ABL APR86 31040000
+         BNE   ISPCMDCO             NO, BRANCH                ABL APR86 31050000
+         TM    SPFLAG0,SPFVIEW      VIEW MODE?                ABL APR86 31060000
+         BO    ISPCMDCO             YES, IGNORE = OPERAND     ABL APR86 31070000
+         L     R15,SPFOPER          GET BLANK AFTER COMMAND   ABL APR86 31080000
+         LA    R14,20               LOOK THIS FAR             ABL APR86 31090000
+         BAS   R2,ISPCKBLK          FIND NON-BLANK OPERAND    ABL APR86 31100000
+         CLI   0(R15),C'='          OPERAND "="?              ABL APR86 31110000
+         BNE   ISPCMDCO             NO, BRANCH                ABL APR86 31120000
+         BAS   R2,ISPQUERY          CHECK IF ANY ENTRIES       SS AUG86 31130000
+         L     R14,SPFVTPT          RESTORE POINTER            SS AUG86 31140000
+         ICM   R2,15,SPFTSIZE       GET SIZE                   SS AUG86 31150000
+         SR    R0,R0                NORMAL FUNCTION            SS NOV88 31160000
+         LA    R15,88               FUNCTION CODE FOR SUBLIST ABL APR86 31170000
+         BR    R3                   RETURN TO ROUTER          ABL APR86 31180000
+ISPCMDCO DS    0H                                             ABL APR86 31190000
+         L     R14,SPFVTPT          RESTORE POINTER           DRK NOV07 31191010
+         TM    $TLF1(R14),#K        INACTIVATE MEMLIST?        SS MAR85 31200000
+         BZ    ISPCMDCZ             NO, BRANCH                 SS MAR85 31210000
+         BAS   R2,ISPUSTKM        UNSTACK, KILL, SET NEXT P ID SS AUG86 31220000
+         B     ISPCMD                                          SS AUG86 31230000
+ISPCMDCZ DS    0H                                              SS MAR85 31240000
+         TM    $TLF2(R14),#M         COULD CHANGE STATS        SS MAR85 31250000
+         BZ    ISPCMDC4                                        SS MAR85 31260000
+         MVI   SPFPOST1,136         CMD POST PROCESS NUM 8     SS NOV85 31270000
+         OI    SPFLAG4,SPFCPOST     SET POST PROC FLAG         SS MAR85 31280000
+         CLI   SPFEDUP,C'Y'         FULL UPDATE REQUEST        SS JUL87 31290000
+         BNE   ISPCMDC4                 *                      SS JUL87 31300000
+         TIME  DEC                      *                      SS JUL87 31310000
+         ST    R1,SPFDAY                STORE TODAYS DATE      SS JUL87 31320000
+         ST    R0,SPFTIME               STORE TIME OF DAY      SS JUL87 31330000
+ISPCMDC4 DS    0H                                              SS NOV84 31340000
+         NI    SPFLAG3,255-SPFCONV           CLEAR SCAN FLAGS ABL JAN87 31350000
+         NI    SPFLAG0,255-SPFCKER-SPFMSGER  CLEAR SCAN FLAGS ABL JAN87 31360000
+* MEMLIST FUNCTION DOES ALL PANEL UNSTACKING AND SWAPPING      SS AUG86 31370005
+* HIERARCHICAL SUPPORT REMOVED                                 SS OCT88 31380000
+         CLI   SPFTBPFI+1,0          LOG TABLE                 SS AUG86 31390000
+         BE    ISPCMD                YES, NO CHANGE            SS AUG86 31400000
+         TM    $TLF1(R14),#E         NO MATCH                  SS NOV84 31410000
+         BO    ISPCMDIN              INVALID MSG               SS AUG86 31420000
+         TM    $TLF1(R14),#V         VIEW MODE                 SS NOV85 31430000
+         BZ    ISPCMDCY              NO                        SS NOV85 31440000
+ISPCMDCV DS    0H                       *                      SS AUG86 31450000
+         LH    R1,SPFFUNLP+0         LOG PANEL ID              SS AUG86 31460000
+         LNR   R1,R1                 SET FOR SWAP              SS AUG86 31470000
+         BAS   R2,ISPSTKI            STACK ROUTINE             SS NOV85 31480000
+         B     ISPCMD                                          SS NOV85 31490000
+ISPCMDIN DS    0H                                              SS AUG86 31500000
+         LA    R15,28                ROUTE TO INVALID          SS NOV85 31510000
+         BR    R3                    RETURN TO ROUTER          SS NOV85 31520000
+ISPCMDCY DS    0H                                              SS NOV85 31530000
+         OI    SPFLAG0,SPFCKER       CHECK FOR PDS ERROR MSGS  SS NOV84 31540000
+         OI    SPFLAG3,SPFCONV       CONVERT ERROR --> VIEW    SS NOV84 31550000
+ISPCMD   DS    0H                                              SS NOV84 31560000
+         LH    R15,PUTGETBF       GET LENG                     SS NOV84 31570000
+         BCTR  R15,0              LESS 1 MVC                   SS NOV84 31580000
+         L     R14,SPFVTPT        REFRESH R14                  SS NOV85 31590000
+         LA    R2,ISPCMDNO        IGNORE TABLE                ABL APR86 31600000
+         LA    R1,9               9 ENTRIES                   ABL MAR86 31610000
+ISPCMDNL DS    0H                                              SS NOV85 31620000
+         CLC   0(8,R14),0(R2)     COMPARE TO TABLE             SS NOV85 31630000
+         BE    ISPCMDM3           SKIP SAVE                    SS NOV85 31640000
+         LA    R2,8(,R2)          NEXT ENTRY                   SS NOV85 31650000
+         BCT   R1,ISPCMDNL        TRY ALL 9                    SS NOV85 31660000
+         CLI   SPFNAMEH,C'.'      . OF .?                     ABL FEB87 31670000
+         BE    ISPCMDM3           YES, BRANCH                 ABL FEB87 31680000
+         CLI   SPFNAMEH,C'?'      QUESTION MARK?              ABL FEB87 31690000
+         BE    ISPCMDM3           YES, BRANCH                 ABL FEB87 31700000
+ISPCMDM  MVC   SPFZSAV(0),PUTGETBF                             SS NOV84 31710000
+         EX    R15,ISPCMDM        SAVE CMD FOR RECALL          SS NOV84 31720000
+ISPCMDM3 DS    0H                                              SS NOV85 31730000
+         OI    SPFLAG3,SPFLOGM    LOG THE COMMAND              SS DEC84 31740000
+         LA    R15,112              ROUTE TO ISPCMDC           SS NOV85 31750000
+         BR    R3                                              SS NOV85 31760000
+         DROP  R4                                              SS MAR85 31770000
+ISPCMDTT DS    0F                                              SS NOV85 31780000
+         DC    A(ISP$TL2)   0   MAIN COMMAND TABLE             SS NOV85 31790000
+         DC    A(ISP$TL3)   4   DISPLAY ONLY COMMANDS          SS NOV85 31800000
+         DC    A(ISP$TL3)   8   PAD                            SS NOV85 31810000
+ISPCMDNO DS    0F                                              SS NOV85 31820000
+         DC    CL8'&NOR1',CL8'&NOR2',CL8'&NOR3'                SS NOV85 31830000
+         DC    CL8'&NOR4',CL8'&NOR5',CL8'&NOR6'                SS NOV85 31840000
+         DC    CL8'&NOR7',CL8'&NOR8',CL8'&NOR9'                SS NOV85 31850000
+         TITLE 'COMMAND SETUP FOR PDS'                         SS NOV85 31860000
+*                                                              SS NOV85 31870000
+*   SETUP COMMAND FOR PDS PROCESSING                           SS NOV85 31880000
+*                                                              SS NOV85 31890000
+ISPCMDC  DS    0H                                              SS NOV84 31900000
+         USING *,R4                                            SS NOV85 31910000
+         MVC   SPFTTPT,SPFVTPT      GOOD CMD, SAVE             SS NOV85 31920000
+         MVC   SPFSAVPT,SPFVTPT     SAVE POINTER               SS NOV85 31930000
+         NI    SPFLAG4,255-SPF38XA  NOT PROMPTING NOW         ABL DEC84 31940000
+         LA    R1,3                 POINT AT CKP PANEL         SS NOV85 31950000
+         BAS   R2,ISPSTKI            STACK                     SS NOV85 31960000
+         BAS   R2,ISPBOTM            GO TO BOTTOM              SS NOV85 31970000
+         BAS   R2,ISPQUERY                                     SS NOV85 31980000
+         L     R15,SPFLAST          SAVE INFO                  SS JUL84 31990000
+         ST    R15,SPFSTART                                    SS JUL84 32000000
+         LA    R1,PUTGETBF                                    ABL OCT84 32010000
+         ST    R1,SPFSAV1                                     ABL OCT84 32020000
+         TM    SPFLAG3,SPFLOGM    TO BE LOGGED?               ABL OCT84 32030000
+         BNO   ISPNOLOG           NO, BRANCH                  ABL OCT84 32040000
+         BAS   R2,ISPLOGCD        SPECIAL CODE TO LOG          SS NOV85 32050000
+ISPNOLOG DS    0H                                             ABL NOV84 32060000
+         TM    FLAGSFF,FLOGWRT    LOGGING TO A DATA SET?      ABL NOV84 32070000
+         BNO   ISPNOLDS           NO, BRANCH                  ABL NOV84 32080000
+         LA    R1,PUTGETBF        POINT TO THE DATA LINE      ABL NOV84 32090000
+         L     R2,VLOGDATA        GET VCON ADDRESS             SS JUL85 32100000
+         BASR  R14,R2             LOG TO THE DATA SET          SS JUL85 32110000
+ISPNOLDS DS    0H                                             ABL NOV84 32120000
+         L     R14,SPFVTPT        REFRESH R14                 ABL FEB87 32130000
+         LA    R2,ISPNOLD9        LOG TABLE                   ABL FEB87 32140000
+         LA    R1,15              15 ENTRIES                  DRK JUN12 32150027
+         TM    FLAGSZZ,LOG#CMDS   LOG ALL TO ISPLOG?          DRK APR16 32150126
+         BO    ISPNOLD4           YES                         DRK APR16 32150333
+         LA    R15,@4K                     BASE FOR TSOUID    DRK JAN18 32150434
+         CLC   TSOUID-@4K(6,R15),SYSPROG   JANKO?             DRK JAN18 32150536
+         BE    ISPNOLD4                    YES, LOG ALL       DRK JAN18 32150735
+         SPACE 1                                                        32153826
+ISPNOLD2 DS    0H                                             ABL FEB87 32160000
+         CLC   0(8,R14),0(R2)     COMPARE TO TABLE            ABL FEB87 32170000
+         BE    ISPNOLD4           LOG COMMAND                 DRK APR06 32180009
+         LA    R2,8(,R2)          NEXT ENTRY                  ABL FEB87 32190000
+         BCT   R1,ISPNOLD2        TRY ALL 15                  DRK AUG08 32200027
+         B     ISPNOLD8           NOT FOUND EXIT              ABL FEB87 32210000
+ISPNOLD4 CLI   0(R2),X'40'        MATCH ON BLANK?             ABL FEB87 32220000
+         BE    ISPNOLD8           YES, IGNORE THIS ENTRY      ABL FEB87 32230000
+         MVI   SPFMLIN2,X'40'     BLANK THE ERROR MESSAGE     ABL FEB87 32240000
+         MVC   SPFMLIN2+1(78),SPFMLIN2                        ABL FEB87 32250000
+         LA    R1,PUTGETBF        PDS SUBCOMMAND              ABL FEB87 32260000
+         LH    R14,0(R1)          LENGTH                      ABL FEB87 32270000
+         SH    R14,ISPH5          -4 FOR HEADER -1 FOR MVC    ABL FEB87 32280000
+         CH    R14,ISPH78         MAX LENGTH                  ABL FEB87 32290000
+         BNH   ISPNOLD6           OK                          ABL FEB87 32300000
+         LH    R14,ISPH78         TRUNCATE                    ABL FEB87 32310000
+ISPNOLD6 MVC   SPFMLIN2(0),4(R1)  MOVE TO DIALOG VARIABLE     ABL FEB87 32320000
+         EX    R14,*-6                                        ABL FEB87 32330000
+         LA    R14,ISPLOG         LOG FUNCTION                ABL FEB87 32340000
+         LA    R15,ISPL1C         MESSAGE NUMBER              DRK AUG08 32350012
+         STM   R14,R15,PARMLIST                               ABL FEB87 32360000
+         OI    PARMLIST+08,X'80'                              ABL FEB87 32370000
+         BAS   R2,ISPSXEQ8                                    ABL FEB87 32380000
+ISPNOLD8 DS    0H                                             ABL FEB87 32390000
+         LA    R14,0                                           SS JUL84 32400000
+         ST    R14,SPFCKPT                                     SS JUL84 32410000
+*            CODE TO DELETE OLD OUTPUT IF OVER TABLE SIZE      SS JUL84 32420000
+         L     R14,SPFLAST        CURRENT SIZE                 SS JUL84 32430000
+         C     R14,SPFCSIZE       SIZE LIMIT                   SS OCT88 32440000
+         BNH   ISPSZOK            NOT TO BIG                   SS JUL84 32450000
+         S     R14,SPFCSIZE       CALC DELETE AMOUNT           SS OCT88 32460000
+         ST    R14,SPFFIXED       SAVE DELETE COUNT            SS JUL84 32470000
+         L     R14,SPFCSIZE       TABLE SIZE                   SS OCT88 32480000
+         LNR   R14,R14                NEGATIVE                 SS JUL84 32490000
+         ST    R14,SPFFIXE2       SAVE SKIP COUNT              SS JUL84 32500000
+         BAS   R2,ISPDEL          GO DELETE                    SS JUL84 32510000
+         BAS   R2,ISPQUERY       GET NEW SIZE                  SS JUL84 32520000
+         L     R15,SPFLAST        SAVE INFO                    SS JUL84 32530000
+         ST    R15,SPFSTART                                    SS JUL84 32540000
+ISPSZOK  DS    0H                                              SS NOV84 32550000
+         B     ISPEXIT                                         SS NOV84 32560000
+ISPNOLD9 DS    0H                                             ABL FEB87 32570000
+         DC    CL8'&NLO1',CL8'&NLO2',CL8'&NLO3'               ABL FEB87 32580000
+         DC    CL8'&NLO4',CL8'&NLO5',CL8'&NLO6'               ABL FEB87 32590000
+         DC    CL8'&NLO7',CL8'&NLO8',CL8'&NLO9'               ABL FEB87 32600000
+         DC    CL8'&NLOA',CL8'&NLOB',CL8'&NLOC'               DRK AUG08 32601011
+         DC    CL8'&NLOD',CL8'&NLOE',CL8'&NLOF'               DRK APR16 32602027
+SYSPROG  DC    CL6'TRIDJK'                                    DRK JAN18 32603034
+         DROP  R4                                              SS MAR85 32610000
+         TITLE 'ISPF - COMMAND OPTION FIND ROUTINE  '          SS MAY88 32620000
+ISPOPTT  DS    0H                                              SS MAY88 32630000
+         USING ISPOPTT,R4                                      SS MAY88 32640000
+         L     R14,SPFTBPCD       LOAD COMMAND TABLE ADDR      SS NOV85 32650000
+         LA    R1,SPFINPUT        POINT TO INPUT               SS NOV84 32660000
+         BAS   R2,ISPVERG         CHECK IT                     SS NOV84 32670000
+         C     R15,ISPL8                                       SS NOV84 32680000
+         BE    ISPOPTE            TOO LONG                     SS MAY88 32690000
+         CH    R15,ISPH12                                      SS NOV84 32700000
+         BE    ISPOPT3            SHOULD BE A COMMAND          SS NOV84 32710000
+         C     R15,ISPL4                                       SS NOV84 32720000
+         BNE   ISPOPT4                                         SS NOV84 32730000
+         BAS   R2,ISPUSTKM        UNSTACK AND KILL MEMLIST     SS NOV85 32740000
+         L     R14,SPFVTPT                                     SS NOV85 32750000
+ISPOPT4  DS    0H                                              SS NOV84 32760000
+         L     R15,SPFOPER                                     SS NOV84 32770000
+         CLI   0(R15),C'.'        DOT                          SS NOV84 32780000
+         BNE   ISPFUNC                                         SS NOV84 32790000
+         L     R1,SPFSEC4A        BASE                         SS OCT88 32800000
+         MVC   SPFLSAVZ-SPFSEC4K(250,R1),SPFINPUT              SS OCT88 32810000
+*                                 SAVE FOR REPROCESSING        SS OCT88 32820000
+         OI    SPFLAG4,SPFMCMD         FOR MULTIPLE COMMANDS   SS NOV84 32830006
+         B     ISPFUNC                                         SS NOV84 32840000
+ISPOPT3  DS    0H                                              SS NOV84 32850000
+         CLI   SPFNAMEH,C'0'      NUMERIC?                    ABL DEC84 32860000
+         BL    ISPFUNC            NO, MUST BE A COMMAND        SS NOV84 32870000
+         TM    SPFLAG4,SPF38XA    PROMPTING FOR PDS3..A?      ABL NOV87 32880000
+         BO    ISPFUNC            YES, ALLOW IT               ABL NOV87 32890000
+ISPOPTE  DS    0H                       *                      SS MAY88 32900000
+         LA    R15,28             ISPOPTIV                     SS MAY88 32910000
+         BR    R3                 ROUT TO IT                   SS MAY88 32920000
+*        B     ISPOPTIV           MUST BE INVALID              SS NOV84 32930000
+         SPACE 2                                               SS JUL87 32940000
+ISPFUNC  DS    0H                                              SS NOV84 32950000
+         L     R14,SPFVTPT                                     SS NOV85 32960000
+         SR    R15,R15                                         SS NOV84 32970000
+         IC    R15,$TLFU(R14)                                  SS JUL85 32980000
+         SR    R0,R0              ZERO SUB FUNCTION ASSUMED    SS MAY88 32990004
+         BR    R3                       *                      SS MAY88 33000000
+         DROP  R4                                              SS NOV85 33010000
+         SPACE 4                                               SS NOV85 33020000
+         TITLE 'ISPF - INVALID OR OTHER ERROR PROMPT'          SS DEC87 33030000
+* PROMPT FOR CORRECTED COMMAND                                 SS DEC87 33040000
+ISPVERR  DS    0H          ****   ERROR ******                 SS DEC87 33050000
+         USING ISPVERR,R4                                      SS DEC87 33060000
+         ST    R0,SPFTSV1          SAVE PANEL ADDRESS          SS OCT88 33070000
+         BAS   R2,ISPSETVI                                     SS DEC87 33080000
+         MVC   SPFVZCMD(250),SPFINPUT  GET INVALID COMMAND     SS DEC87 33090000
+         L     R15,SPFTSV1         GET PANEL ADDRESS           SS OCT88 33100000
+         LTR   R15,R15             DEFAULT PANEL REQUEST       SS OCT88 33110000
+         BNZ   *+8                 NO, USE PASSED PANEL ADDR   SS OCT88 33120000
+         LA    R15,ISPVERRP        ADDRESS                     SS DEC87 33130000
+         LA    R1,SPFMSGID         NO MESSAGE                  SS DEC87 33140000
+         BAS   R2,ISPSINGI         DISPLAY THIS PANEL          SS DEC87 33150000
+         LTR   R15,R15             NO END KEY                  SS DEC87 33160000
+         BNZ   ISPVERRE            END KEY.. NO EXECUTE        SS DEC87 33170000
+         MVC   SPFINPUT(250),SPFZSEL                           SS DEC87 33180000
+         MVC   PUTGETBF(4),ISPLEN2                             SS DEC87 33190000
+         LA    R15,104              ISPOPTT                    SS DEC87 33200000
+         BR    R3                   RETURN TO ROUTER           SS DEC87 33210000
+ISPVERRE DS    0H                       *                      SS DEC87 33220000
+         LA    R15,100              RETURN TO NORMAL PANEL     SS DEC87 33230000
+         BR    R3                   RETURN TO ROUTER           SS DEC87 33240000
+ISPVERRP DC    CL8'&P.VERR'             *                      SS DEC87 33250000
+         DROP  R4                                              SS DEC87 33260000
+         TITLE 'ISPF - PUTGET ROUTINE           '              SS NOV85 33270000
+ISPPTGT0 DS    0H                                              SS MAY88 33280000
+         USING ISPPTGT0,R4                                     SS MAY88 33290000
+         MVC   SPFVTPT,SPFSAVPT       RESTORE   POINTER        SS NOV85 33300000
+*        LA    R1,3                 PANEL 3                    SS NOV85 33310000
+*        CH    R1,SPFTBPI           THE SAME                   SS NOV85 33320000
+*        BNE   ISPPTGT9             NO                         SS NOV85 33330000
+         TM    SPFTBPF2,SPFTCKPT    CHECKPOINT TABLE           SS OCT88 33340000
+         BZ    ISPPTGT9             NO                         SS OCT88 33350000
+         LA    R1,0                 POP IT                     SS NOV85 33360000
+         BAS   R2,ISPSTKI           DO IT                      SS NOV85 33370000
+ISPPTGT9 DS    0H                                              SS NOV85 33380000
+         NI    MEMFLAG2,255-MEMLTMCK-MEMLTMPR-MEMLTMLK RESET   SS AUG86 33390000
+         NI    MEMFLAG2,255-MEMLTMED-MEMLALED          RESET   SS NOV88 33400000
+         CLI   SPFALCK,C'Y'         DO ALIAS IS DEFAULT        SS AUG86 33410000
+         BNE   ISPPTGTN             NO                         SS AUG86 33420000
+         TM    MEMFLAG2,MEMLNTBL    NEW TABLE                  SS AUG86 33430000
+         BZ    ISPPTGTN             NO                         SS AUG86 33440000
+         OI    SPFLAG4,SPFCPOST     SET UP TO GO TO            SS AUG86 33450000
+         MVI   SPFPOST1,80              ALIAS CHECK            SS AUG86 33460000
+         B     ISPPTGTO             CONTINUE                   SS AUG86 33470000
+         SPACE 2                                                        33480000
+ISPPTGTN DS    0H                       *                      SS AUG86 33490000
+         NI    MEMFLAG2,255-MEMLNTBL-MEMLNALL  RESET NEW MEML  SS AUG86 33500000
+ISPPTGTO DS    0H                       *                      SS AUG86 33510000
+         LA    R1,PUTGETBF            SETUP BUFFER             SS JUL84 33520000
+         ST    R1,ADDRCBUF                        ADDRESS      SS JUL84 33530000
+         L     R1,SPFSAV1         OUTPUT BUFFER                SS AUG84 33540000
+         NI    SPFLAG2,255-SPFUPDA  CLEANUP                    SS AUG86 33550000
+         NI    SPFLAG4,255-SPF38XA  CLEAR PROMPTING FLAG      ABL DEC84 33560000
+         CLI   10(R1),C'A'          POSSIBLE ACTION MESSAGE?  ABL DEC84 33570000
+         BNE   ISPPTGT1             NO, BRANCH                ABL DEC84 33580000
+         CLC   4(4,R1),ISP300A      PDS3...?                  ABL DEC84 33590000
+         BNE   ISPPTGT1             NO, BRANCH                ABL DEC84 33600000
+         CLI   8(R1),C'8'           PDS38.. OR PDS39..?       ABL DEC84 33610000
+         BL    ISPPTGT1             NO, BRANCH                ABL DEC84 33620000
+         TM    9(R1),X'F0'          PDS38X. OR PDS39X.?       ABL DEC84 33630000
+         BNO   ISPPTGT1             NO, BRANCH                ABL DEC84 33640000
+         OI    SPFLAG4,SPF38XA      YES, SET A FLAG FOR LATER ABL DEC84 33650000
+         CLC   4+3(3,R1),ISPDSNPC  DSN PROMPT                  SS NOV88 33660000
+         BNE   ISPPTGTC             NO, CONTINUE               SS NOV88 33670000
+         MVC   SPFMLIN2,SPFLIN1     GET PREVIOUS MSG FROM LOG  SS NOV88 33680000
+         LA    R1,9               PANEL 9                      SS NOV88 33690000
+         BAS   R2,ISPSTKI         STACK IT                     SS NOV88 33700000
+         MVC   SPFMSGID,ISPPDSM   SET MESSAGE ID               SS NOV88 33710000
+         MVI   SPFMSGID+6,C'1'    MODIFY MSG  TO PDSM..1R      SS NOV88 33720000
+         MVI   SPFMSGID+7,C'A'                                 SS NOV88 33730000
+         BAS   R2,ISPADDLN        ADD DSN MSG TO LOG           SS NOV88 33740000
+         B     ISPDSNP            DSN PROMPT PANEL             SS NOV88 33750000
+ISPPTGTC DS    0H                       *                      SS NOV88 33760000
+         MVI   SPFMLIN2,C' '        CLEAR OUTPUT LINE         ABL MAR86 33770000
+         MVC   SPFMLIN2+1(78),SPFMLIN2                        ABL MAR86 33780000
+         LH    R14,0(R1)         LENGTH                       ABL MAR86 33790000
+         SH    R14,ISPH5         -4 FOR HEADER -1 FOR MVC     ABL MAR86 33800000
+         CH    R14,ISPH78        MAX LENGTH                   ABL MAR86 33810000
+         BNH   ISPPTGTM          OK                           ABL MAR86 33820000
+         LH    R14,ISPH78        TRUNCATE                     ABL MAR86 33830000
+ISPPTGTM MVC   SPFMLIN2(0),4(R1) MOVE TO DIALOG VARIABLE      ABL MAR86 33840000
+         EX    R14,*-6                                         SS JUL84 33850000
+         LA    R1,9               PANEL 9                      SS NOV85 33860000
+         BAS   R2,ISPSTKI         STACK IT                     SS NOV85 33870000
+         MVC   SPFMSGID,ISPPDSM   SET MESSAGE ID              ABL JUN85 33880000
+         MVI   SPFMSGID+6,C'1'    MODIFY MSG  TO PDSM..1R     ABL JUN85 33890000
+         MVI   SPFMSGID+7,C'R'                                ABL JUN85 33900000
+ISPPTGT1 DS    0H                                             ABL DEC84 33910000
+         TM    SPFLAG3,SPFCHN     HAS CHANGE DSN BEEN DONE     SS SEP84 33920000
+         BZ    ISPPTGT2           NO, SKIP                     SS AUG84 33930000
+         NI    SPFLAG3,255-SPFCHN-SPF300A CLEAR                SS SEP84 33940000
+         BAS   R2,ISPUSTKM        UNSTACK                      SS NOV85 33950000
+         L     R1,SPFSAV1         OUTPUT BUFFER                SS AUG84 33960000
+ISPPTGT2 DS    0H                                              SS SEP84 33970000
+         CLC   4(7,R1),ISP300A    SAME OLD MSG                 SS AUG84 33980000
+         BE    ISPPTGT3           YES, CHECK                   SS AUG84 33990000
+         BAS   R2,ISPADDLN        NO, DISPLAY IT               SS AUG84 34000000
+         B     ISPDISPL                                        SS SEP84 34010000
+ISPPTGT3 DS    0H                                              SS SEP84 34020000
+         TM    SPFLAG3,SPF300A    HAS 300A OUTPUT ONCE         SS SEP84 34030000
+         BO    ISPDISPL           YES, SKIP                    SS SEP84 34040000
+         OI    SPFLAG3,SPF300A    NOW 300A OUTPUT ONCE         SS SEP84 34050000
+         BAS   R2,ISPADDLN        DISPLAY IT                   SS AUG84 34060000
+ISPDISPL DS    0H                                              SS JUL84 34070000
+         TM    SPFLAG4,SPF38XA    NEED A REPLY                 SS NOV85 34080000
+         BO    ISPDISP4           YES                          SS NOV85 34090000
+         TM    SPFTFLG1,SPFTLPOS  POST PROCESSING REQUIRED     SS NOV85 34100000
+         BZ    ISPNPOST           NO                           SS NOV85 34110000
+         LH    R15,SPFTBPLF       GET FUNCTION CODE            SS NOV85 34120000
+         BR    R3                                              SS MAY88 34130000
+ISPNPOST DS    0H                                              SS NOV85 34140000
+         TM    SPFLAG3,SPFCONV    CONVERT AN ERROR TO VIEW?   ABL OCT84 34150000
+         BZ    ISPDISP5           NO, BRANCH                   SS NOV85 34160000
+         TM    SPFLAG0,SPFMSGER   ANY ERRORS?                  SS NOV85 34170000
+         BZ    ISPDISP5           YES, DISPLAY NOW             SS MAY88 34180000
+         LH    R1,SPFFUNLP+0         LOG PANEL ID              SS AUG86 34190000
+         LNR   R1,R1                 SET FOR SWAP              SS AUG86 34200000
+         BAS   R2,ISPSTKI         STACK PANEL                  SS NOV85 34210000
+         NI    SPFLAG4,255-SPFCPOST-SPFMCMD TERMINATE OTHERS   SS NOV85 34220000
+         NI    SPFLAG5,255-SPFICMD                             SS JUL87 34230000
+ISPDISP4 DS    0H                                              SS MAY88 34240000
+         LA    R15,100            ROUTE TO PANEL DISPLAY       SS MAY88 34250000
+         BR    R3                 ROUTE SUPPORT                SS MAY88 34260000
+ISPDISP5 DS    0H                       *                      SS MAY88 34270000
+         LA    R15,40             ROUTE TO ISPDISP6            SS MAY88 34280000
+         BR    R3                 ROUTE SUPPORT                SS MAY88 34290000
+* PROMPT FOR DATASET NAME                                      SS JUL87 34300000
+ISPDSNP  DS    0H                                              SS MAY88 34310000
+         MVI   SPFVZCMD,C' '                                   SS JUL87 34320000
+         MVC   SPFVZCMD+1(249),SPFVZCMD                        SS JUL87 34330000
+         L     R1,SPFSEC4A         GET  BASE                   SS MAY88 34340000
+         LA    R1,SPFCHSV-SPFSEC4K(,R1)  POINT TO SPFCHSV      SS MAY88 34350000
+         MVC   SPFVZCMD(128),0(R1)  SET  CHANGE COMMAND        SS MAY88 34360000
+         BAS   R2,ISPSETVI                                     SS JUL87 34370000
+         SR    R15,R15                                         SS JUL87 34380000
+         LA    R15,ISPDSNPP        ADDRESS                     SS JUL87 34390000
+         LA    R1,SPFMSGID         SET MESG ID                 SS NOV88 34400000
+         BAS   R2,ISPSINGI         DISPLAY THIS PANEL          SS JUL87 34410000
+         LTR   R15,R15             NO END KEY                  SS JUL87 34420000
+         BNZ   ISPDSNPE            END KEY.. NO EXECUTE        SS JUL87 34430000
+         L     R1,SPFSEC4A         GET  BASE                   SS MAY88 34440000
+         LA    R1,SPFCHSV-SPFSEC4K(,R1)  POINT TO SPFCHSV      SS MAY88 34450000
+         CLI   SPFZSEL,C'?'        USER QUESTION               SS NOV88 34460000
+         BE    ISPDISP4            YES, DISPLAY LOG            SS NOV88 34470000
+         MVC   0(128,R1),SPFZSEL   NEW DSN USER TRYING         SS MAY88 34480000
+         MVC   SPFINPUT(250),SPFZSEL                           SS JUL87 34490000
+         MVC   PUTGETBF(4),ISPLEN2                             SS JUL87 34500000
+         LA    R15,104              ISPOPTT                    SS JUL87 34510000
+         BR    R3                   RETURN TO ROUTER           SS JUL87 34520000
+ISPDSNPE DS    0H                       *                      SS JUL87 34530000
+         SR    R15,R15              ZERO FUNCTION CODE (END)   SS JUL87 34540000
+         BR    R3                   RETURN TO ROUTER           SS JUL87 34550000
+ISPDSNPP DC    CL8'&P.DSNP'             *                      SS JUL87 34560000
+ISPDSNPC DC    C'381'               PDS381A MSG NUMBER         SS JUL87 34570000
+         DROP  R4                                              SS JUL87 34580000

@@ -1,0 +1,70 @@
+./ ADD NAME=CBTFTP   0146-93347-99305-1116-00035-00008-00000-TRIDJK     00003000
+/* Rexx */                                                              00004003
+                                                                        00005003
+Address ISPEXEC                                                         00006003
+"Addpop Row(5) Column(10)"                                              00007003
+"Display Panel(CBTFTPP)"                                                00008007
+If rc = 8 Then                                                          00009003
+  Exit                                                                  00010003
+                                                                        00020003
+Address TSO                                                             00030003
+"Newstack"                                                              00040003
+                                                                        00050003
+"DELETE XMIT.OUTDSN"                                                    00060003
+                                                                        00070003
+"ALLOC F(XMIT) DA(XMIT.OUTDSN) NEW REUSE UNIT(SYSALLDA)",               00080003
+  "SPACE(15 5) CYLINDERS RECFM(F B) LRECL(80) BLKSIZE(3120)"            00090005
+                                                                        00100003
+"XMIT WLMPNJE."SYSVAR('SYSUID')" DSNAME('"gdsn"')",                     00110005
+  "OUTDSNAME(XMIT.OUTDSN) SYSOUT(Z)"                                    00120003
+                                                                        00130003
+Parse Value gdsn With hilevel "." cbtfile "." rest                      00140003
+                                                                        00150003
+If gftpuser <> "" Then                                                  00160003
+  Queue gftpuser                                                        00170003
+If gftppass <> "" Then                                                  00180003
+  Queue gftppass                                                        00190003
+Queue "cd /"                                                            00200005
+Queue "pwd"                                                             00210003
+Queue "sendsite"                                                        00211005
+Queue "binary"                                                          00220003
+Queue "put xmit.outdsn "cbtfile".xmi"                                   00230003
+Queue "quit"                                                            00240003
+                                                                        00250003
+"FTP "gnode                                                             00260003
+                                                                        00270003
+"Delstack"                                                              00280003
+Address TSO                                                             00281005
+"FREE F(XMIT)"                                                          00282005
+                                                                        00283005
+Exit                                                                    00290003
+/* J. Kalinich               */                                         00300006
+/* XMIT/FTP CBT file to PC                               */             00310003
+./ ADD NAME=CBTFTPP  0145-89172-99305-0922-00027-00014-00000-TRIDJK     00320007
+)ATTR                                                                   00330007
+  ^   TYPE(INPUT) INTENS(NON)  CAPS(OFF) JUST(LEFT)                     00340007
+  $   TYPE(INPUT) INTENS(HIGH) CAPS(OFF) JUST(LEFT)                     00350007
+)BODY WINDOW(60,8)                                                      00360007
+%COMMAND ===>_ZCMD                                         +            00370007
++                                                                       00380007
++FTP Command Parameters:                                                00390007
++   Node        %===>$GNODE                                +            00400007
++   User        %===>$GFTPUSER +                                        00410007
++   Password    %===>^GFTPPASS +                                        00420007
++   Dataset Name%===>$GDSNW                                +            00430007
++                                                                       00440007
+)INIT                                                                   00450007
+  .CURSOR = GNODE                                                       00460007
+  &ZWINTTL = 'XMIT/FTP CBT file to PC'                                  00470007
+  &ZCMD=' '                                                             00480007
+)PROC                                                                   00490007
+  VER (&GNODE,NB)                                                       00500007
+  &W = TRUNC(&GDSNW,1)                                                  00510007
+  IF (&W = '''')                                                        00520007
+     &GDSN = .TRAIL                                                     00530007
+     &GDSN = TRUNC (&GDSN,'''')                                         00540007
+  ELSE                                                                  00550007
+     &GDSN = '&ZUSER..&GDSNW'                                           00560007
+  VER (&GDSN,NB)                                                        00570007
+  VPUT (GNODE GFTPUSER GFTPPASS GDSNW) PROFILE                          00580007
+)END                                                                    00590007

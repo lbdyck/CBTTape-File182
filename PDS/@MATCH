@@ -1,0 +1,563 @@
+         TITLE 'P D S  --  PDSMATCH INTERFACE                 5/25/10'  00003399
+*********************************************************************** 00003416
+***      MATCH SUBCOMMAND  ADDED BY JOHN KALINICH -- MAY., 2010     *** 00003599
+*********************************************************************** 00004016
+*                                                                       00050000
+MATCH    CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         SPACE 1                                                        00120000
+*  FREE SYSLIB1, SYSLIB2, AND SYSPRINT DATASETS                         00120199
+         LA    R1,SYSLIB1A              SYSLIB1 DDNAME                  00120499
+         BAS   R2,MAT8580               FREE THIS DATA SET              00120599
+         LA    R1,SYSLIB2A              SYSLIB2 DDNAME                  00120699
+         BAS   R2,MAT8580               FREE THIS DATA SET              00120799
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120899
+         BAS   R2,MAT8580               FREE THIS DATA SET              00120999
+*  ALLOCATE MATCH //SYSLIB2 DATA SET    INPUT PDS2 DSN                  00121099
+*  REMOVE QUOTES OR ADD PREFIX TO DSNAME                                00121199
+         SPACE 1                                                        00121299
+         MVC   MSGDS1(46),BLANK128               CLEAR DSNAME AREA      00121399
+         LA    R2,MSGDS1-1                                              00121499
+         LA    R1,MSGDS2                         INPUT PDS2 DSN         00121599
+         LA    R0,46                                                    00121699
+         CLI   0(R1),C''''                       QUOTED?                00121799
+         BE    MAT0010                           YES, BRANCH            00121899
+         SR    R14,R14                           NO                     00121999
+         L     R15,ADDRUPT                       START OF THE UPT       00122099
+* 8-CHAR PREFIX                                               DRK JUL17 00122199
+         TM    FLAGSZZ,TSO#8                     8-CHAR ID/PREFIX?    " 00122299
+         BNO   MAT7PRE                           NO                   " 00122399
+MAT8PRE  DS    0H                                YES                  " 00122499
+         ICM   R14,B'0001',UPTPRF8L-UPT(R15)     PREFIX LENGTH ZERO?  " 00122599
+         BZ    MAT0010+4                         YES, BRANCH          " 00122699
+         MVC   1(8,R2),UPTPREF8-UPT(R15)         DSNAME PREFIX        " 00122799
+         B     MATCONT                                                " 00122899
+MAT7PRE  DS    0H                                                     " 00122999
+         ICM   R14,B'0001',UPTPREFL-UPT(R15)     PREFIX LENGTH ZERO?  " 00123099
+         BZ    MAT0010+4                         YES, BRANCH          " 00123199
+         MVC   1(7,R2),UPTPREFX-UPT(R15)         DSNAME PREFIX        " 00123299
+MATCONT  DS    0H                                             DRK JUL17 00123399
+         AR    R2,R14                            POSITION FOR PERIOD    00123499
+         SR    R0,R14                                                   00123599
+         MVI   1(R2),C'.'                                               00123699
+         BCTR  R0,0                                                     00123799
+         BCTR  R1,0                                                     00123899
+         LA    R2,1(,R2)                                                00123999
+         SPACE 1                                                        00124099
+MAT0010  LA    R1,1(,R1)                         NEXT INPUT BYTE        00124199
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       00124299
+         CLI   0(R1),C''''                       END OF DSNAME?         00124399
+         BE    MAT0020                           YES, BRANCH            00124499
+         CLI   0(R1),X'40'                       BLANK?                 00124599
+         BE    MAT0020                           YES, BRANCH            00124699
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  00124799
+         BCT   R0,MAT0010                                               00124899
+         B     MAT0020                                                  00124999
+         SPACE 1                                                        00125099
+MAT0020  DS    0H                                                       00125199
+*  LOCATE INPUT PDS2 DSN                                                00125299
+         MVC   WORKTMP(44),MSGDS1       COPY DSNAME                     00125499
+         CLI   #MATVOL,0                ANY VOLUME SERIAL?    DRK DEC15 00125599
+         BNE   MAT0025                  YES, SKIP LOCATE AND OBTAIN   " 00125699
+         L     R14,LOCATE6                                              00125799
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00125899
+         SR    R0,R0                    NO CVOL VALUE                   00125999
+         LA    R1,MSGTEXT1              LOCATE WORK AREA                00126099
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00126199
+         LOCATE PARMLIST                                                00126299
+         LTR   15,15                    SUCCESSFUL LOCATE?              00126399
+         BNZ   MATNODSN                 NO, ERROR                       00126499
+         SPACE 1                                                        00126599
+*  OBTAIN DSCB                                                          00126699
+         L     R14,OBTAIN6              OBTAIN FLAGS                    00126799
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00126899
+         MVC   LOCVOL(6),MSGTEXT1+6     SAVE VOLUME SERIAL (LOCATE)     00126999
+         LA    R0,MSGTEXT1+6            VOLUME SERIAL (FROM LOCATE)     00127099
+         LA    R1,MSGTEXT2              OUTPUT START ADDRESS            00127199
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00127299
+         OBTAIN PARMLIST                GET THE FORMAT 1 DSCB           00127399
+         LTR   R15,R15                  SUCCESSFUL?                     00127499
+         BZ    MATDSCB                  YES, BRANCH                     00127599
+         M$MSG L830                     NO DSCB FOUND MESSAGE           00127699
+         B     NEWCMD                                                   00127799
+MATNODSN MVI   MTLEN,44                 LENGTH OF INSERT                00127899
+         MVC   INSERT#1(44),WORKTMP     DSNAME                          00127999
+         M$MSG L844$1                                                   00128099
+         B     NEWCMD                                                   00128199
+MATDSCB  DS    0H                                                       00128299
+*                                                                       00128399
+*        USE DIFFERENT MESSAGE THAN THE LOAD PDS521W                    00128499
+*                                                                       00128599
+         LA    R1,L534          ASSUME A NON-PARTITIONED DATA SET       00128699
+         TM    MSGTEXT2+DS1DSORG-DS1FMTID,DS1DSGPO  DSORG=PO?           00128799
+         BZ    MSGNEW                   NO, BRANCH                      00128899
+MAT0025  DS    0H                                                       00128999
+         SPACE 1                                                        00129099
+         MVC   MSGDS1(44),WORKTMP       RESTORE DSNAME                  00129199
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00129299
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00129399
+         USING S99RBP,R1                                                00129499
+         SPACE 1                                                        00129599
+         LA    R4,M99RB                                                 00129699
+         USING S99RB,R4                                                 00129799
+         ST    R4,S99RBPTR                                              00129899
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00129999
+         SPACE 1                                                        00130099
+         LA    R5,M99TUPL                                               00130199
+         USING S99TUPL,R5                                               00130299
+         MVI   S99RBLN,20               LENGTH 20                       00130399
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00130499
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00130599
+         LA    R3,WORKTBL                        START OF TEXT          00130699
+         SPACE 1                                                        00130799
+         MVC   0(L'MATDDNL2+7,R3),MATDDNL2       SPECIFY DDNAME TEXT    00130899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00130999
+         LA    R3,L'MATDDNL2+7(,R3)              START OF NEXT TEXT     00131099
+         SPACE 1                                                        00131199
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00131299
+         MVC   0(L'MATDSNAM,R3),MATDSNAM         SPECIFY DSNAME TEXT    00131399
+         MVC   6(44,R3),MSGDS1                   MOVE IN DSNAME TEXT    00131499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00131599
+         LA    R3,L'MATDSNAM+44(,R3)             START OF NEXT TEXT     00131699
+         SPACE 1                                                        00131799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00131899
+         MVC   0(L'MATALLOC,R3),MATALLOC         SPECIFY DISP TEXT      00131999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00132099
+         LA    R3,L'MATALLOC(,R3)                START OF NEXT TEXT     00132199
+         SPACE 1                                                        00132299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00132399
+         MVC   0(L'MATNORM,R3),MATNORM           SPECIFY NORMAL TEXT    00132499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00132599
+         LA    R3,L'MATNORM(,R3)                 START OF NEXT TEXT     00132699
+         SPACE 1                                                        00132799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00132899
+         MVC   0(L'MATANORM,R3),MATANORM         SPECIFY ABNORMAL TEXT  00132999
+         SPACE 1                                                        00133099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00133199
+         LA    R3,L'MATANORM(,R3)                START OF NEXT TEXT     00133299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00133399
+         MVC   0(L'MATUNIT+8,R3),MATUNIT         SPECIFY UNIT TEXT      00133499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00133599
+         LA    R3,L'MATUNIT+8(,R3)               START OF NEXT TEXT     00133699
+         SPACE 1                                                        00133799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00133899
+         MVC   0(L'MATVOLSR,R3),MATVOLSR         SPECIFY VOLSER TEXT    00133999
+         MVC   6(6,R3),LOCVOL                    LOCATE MACRO DEFAULT   00134099
+         CLI   #MATVOL,0                         VOLUME SERIAL PARM?    00134199
+         BE    MAT0030                           NO, BRANCH             00134299
+         MVC   6(6,R3),#MATVOL                   YES, VOLUME SERIAL     00134399
+MAT0030  DS    0H                                                       00134499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00134599
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00134699
+         SPACE 1                                                        00134799
+         DYNALLOC                                                       00134899
+         SPACE 2                                                        00134999
+         DROP  R1,R4,R5                                                 00135099
+         LTR   R15,R15                       SUCCESSFUL?                00135199
+         BNZ   MATERROR                      NO, BRANCH                 00135299
+         SPACE 2                                                        00135399
+*  ALLOCATE MATCH //SYSLIB1 DATA SET    INPUT PDS1 DSN                  00135499
+         SPACE 1                                                        00135599
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00135699
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00135799
+         USING S99RBP,R1                                                00135899
+         SPACE 1                                                        00135999
+         LA    R4,M99RB                                                 00136099
+         USING S99RB,R4                                                 00136199
+         ST    R4,S99RBPTR                                              00136299
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00136399
+         SPACE 1                                                        00136499
+         LA    R5,M99TUPL                                               00136599
+         USING S99TUPL,R5                                               00136699
+         MVI   S99RBLN,20               LENGTH 20                       00136799
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00136899
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00136999
+         LA    R3,WORKTBL                        START OF TEXT          00137099
+         SPACE 1                                                        00137199
+         MVC   0(L'MATDDNL1+7,R3),MATDDNL1       SPECIFY DDNAME TEXT    00137299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00137399
+         LA    R3,L'MATDDNL1+7(,R3)              START OF NEXT TEXT     00137499
+         SPACE 1                                                        00137599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00137699
+         MVC   0(L'MATDSNAM,R3),MATDSNAM         SPECIFY DSNAME TEXT    00137799
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00137899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00137999
+         LA    R3,L'MATDSNAM+44(,R3)             START OF NEXT TEXT     00138099
+         SPACE 1                                                        00141599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00142699
+         MVC   0(L'MATALLOC,R3),MATALLOC         SPECIFY DISP TEXT      00142799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00142899
+         LA    R3,L'MATALLOC(,R3)                START OF NEXT TEXT     00142999
+         SPACE 1                                                        00143099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00143199
+         MVC   0(L'MATNORM,R3),MATNORM           SPECIFY NORMAL TEXT    00143299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00143399
+         LA    R3,L'MATNORM(,R3)                 START OF NEXT TEXT     00143499
+         SPACE 1                                                        00143599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00143699
+         MVC   0(L'MATANORM,R3),MATANORM         SPECIFY ABNORMAL TEXT  00143799
+* ADD UNIT AND VOLUME FOR DUPLICATE DSN'S                               00143899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00143999
+         LA    R3,L'MATANORM(,R3)                START OF NEXT TEXT     00144099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00144199
+         MVC   0(L'MATUNIT+8,R3),MATUNIT         SPECIFY UNIT TEXT      00144299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00144399
+         LA    R3,L'MATUNIT+8(,R3)               START OF NEXT TEXT     00144499
+         SPACE 1                                                        00144599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00144699
+         MVC   0(L'MATVOLSR,R3),MATVOLSR         SPECIFY VOLSER TEXT    00144799
+         MVC   6(6,R3),VOLALLOC                  VOLUME SERIAL          00144899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00145599
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00145699
+         SPACE 1                                                        00145799
+         DYNALLOC                                                       00145899
+         SPACE 2                                                        00145999
+         DROP  R1,R4,R5                                                 00146099
+         LTR   R15,R15                       SUCCESSFUL?                00146199
+         BNZ   MATERROR                      NO, BRANCH                 00146299
+         SPACE 2                                                        00147099
+*  ALLOCATE MATCH //SYSPRINT DATA SET                                   02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),MATDDNPR      SYSPRINT DDNAME               02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),MATSYSPR    ADD OTHER LIST ELEMENTS       02360099
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   MATERROR                   NO, BRANCH                    02570099
+         B     MAT2100                                                  02580099
+         SPACE 2                                                        08580000
+MATERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    MAT8550                    NO, BRANCH                    08700099
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     MAT8550                                                  08780099
+         SPACE 3                                                        08790000
+MAT2100  DS    0H                                                       08790199
+         MVC   #MATPARM+2(8),BLANK128   CLEAR PARM AREA                 08790299
+         LA    R5,#MATPARM+2            PT AT PARM VALUE FIELD          08790399
+         SPACE 1                                                        08790499
+         CLI   #MATCHG,1                CHANGED SPECIFIED?              08790699
+         BE    MAT2100A                 YES                             08790799
+         CLI   #MATCHG,2                NOCHANGED SPECIFIED?            08790899
+         BE    MAT2100B                 YES                             08790999
+         CLI   #MATCHG,3                DIRCHANGE SPECIFIED?            08791099
+         BE    MAT2100C                 YES                             08791199
+         CLI   #MATCHG,4                NODIRCHANGE SPECIFIED?          08791299
+         BE    MAT2100D                 YES                             08791399
+         B     MAT2110                  NO                              08791499
+MAT2100A DS    0H                                                       08791599
+         MVC   0(8,R5),MCHG             CHANGED = NEO,DATA              08791699
+         LA    R5,8                                                     08791799
+         B     MAT2700                                                  08791899
+MAT2100B DS    0H                                                       08791999
+         MVC   0(8,R5),MNCHG            NOCHANGED = EQO,DATA            08792099
+         LA    R5,8                                                     08792199
+         B     MAT2700                                                  08792299
+MAT2100C DS    0H                                                       08792399
+         MVC   0(8,R5),MDIRC            DIRCHANGE = NEO,USER            08792499
+         LA    R5,8                                                     08792599
+         B     MAT2700                                                  08792699
+MAT2100D DS    0H                                                       08792799
+         MVC   0(8,R5),MNDIRC           NODIRCHANGE = EQO,USER          08792899
+         LA    R5,8                                                     08792999
+         B     MAT2700                                                  08793099
+         SPACE 1                                                        08793299
+MAT2110  DS    0H                                                       08793399
+         CLI   #MATONLY,1               ONLY SPECIFIED?                 08793499
+         BNL   MAT2200                  YES                             08793599
+         MVC   0(3,R5),NEONLY           NO, DEFAULT TO NEO              08793699
+         LA    R5,3(,R5)                                                08793799
+         MVI   0(R5),C','                                               08793899
+         LA    R5,1(,R5)                                                08793999
+         B     MAT2400                                                  08794099
+MAT2200  DS    0H                                                       08794199
+         CLI   #MATONLY,1               NEONLY?                         08794299
+         BNE   MAT2300                  NO, BRANCH                      08794399
+         MVC   0(3,R5),NEONLY                                           08794499
+         LA    R5,3(,R5)                                                08794599
+         MVI   0(R5),C','                                               08794699
+         LA    R5,1(,R5)                                                08794799
+         B     MAT2400                                                  08794899
+MAT2300  DS    0H                                                       08794999
+         CLI   #MATONLY,2               EQONLY?                         08795099
+         BNE   MAT2400                  NO, BRANCH                      08795199
+         MVC   0(3,R5),EQONLY                                           08795299
+         LA    R5,3(,R5)                                                08795399
+         MVI   0(R5),C','                                               08795499
+         LA    R5,1(,R5)                                                08795599
+MAT2400  DS    0H                                                       08795699
+         CLI   #MATCOMP,1               DATA?                           08795799
+         BNE   MAT2500                  NO, BRANCH                      08795899
+         MVC   0(4,R5),MATDATA                                          08795999
+         LA    R5,4(,R5)                                                08796099
+         MVI   0(R5),C','                                               08796199
+         LA    R5,1(,R5)                                                08796299
+         B     MAT2600                                                  08796399
+MAT2500  DS    0H                                                       08796499
+         CLI   #MATCOMP,2               USERDATA?                       08796599
+         BNE   MAT2600                  NO, BRANCH                      08796699
+         MVC   0(4,R5),MATUSER                                          08796799
+         LA    R5,4(,R5)                                                08796899
+         MVI   0(R5),C','                                               08796999
+         LA    R5,1(,R5)                                                08797099
+MAT2600  DS    0H                                                       08797199
+         LA    R15,#MATPARM+2           START OF PARM                   08797299
+         SR    R5,R15                   PARM LENGTH                     08797399
+         BZ    MAT2700                  ZERO                            08797499
+         BCTR  R5,0                     NO, SHIFT OUT COMMA             08797599
+MAT2700  DS    0H                                                       08797699
+         STCM  R5,B'0011',#MATPARM                                      08798099
+         SPACE 2                                                        10590169
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590299
+         STAX  MATANULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X10590699
+               OBUF=(MAT484W,MAT484WL),MF=(E,STAXPARM)                  10590799
+*        LA    R1,MATPARM                 PARM='XXX,YYYY'               10830099
+         LA    R1,#MATPARM                PARM=VALUE                    10831099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,MATPGM               2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950024
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,MAT7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),MATEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   MATNLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+MATNLNK  BAS   R2,ATTACH                  PDSLOAD                       11440099
+         SPACE 3                                                        11490000
+MAT7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        11820000
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE              11820199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?            11820299
+         BNE   MAT8000                    NO                            11820399
+         MVC   INSERT#1(8),MATPGM         YES, ERROR                    11820499
+         M$MSG L859$1                     NOT FOUND MESSAGE             11820599
+         B     MAT8550                                                  11820699
+         SPACE 1                                                        11830099
+MAT8000  DS    0H                                                       12310099
+         SPACE 1                                                        12310399
+         MVC   BAMDCB(MATDL),MATDCB         GET MODEL DCB               12311099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSPRINT'                 12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350099
+         BO    MAT8010                      YES, BRANCH                 12360099
+         LA    R1,MAT865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     MAT8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS SYSPRINT RECORDS                                             12400099
+MAT8010  GET   BAMDCB                     GET LIST RECORD               12420099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(120),1(R1)      ADD THE PDSLOAD MESSAGE       12570099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     MAT8010                                                  12650099
+         SPACE 3                                                        12660000
+MAT8500  DS    0H                                                       12660199
+         CLI   #MATSAML,1               SAMLIST/SUBLIST?      DRK NOV15 12660399
+         BNE   MAT8510                  NO, CLOSE DOWN        DRK NOV15 12660499
+         COPY  @SAMLIST                 BUILD SUBLIST FROM    DRK NOV15 12660699
+         SPACE 1                        <UNEQUAL>/LIBRARY1 ONLY       " 12660799
+MAT8510  DS    0H                                                       12660899
+         CLC   ##SUBCAL(8),MATEFTSR       INVOKE IKJEFTSR?              12660999
+         BNE   MAT8540                    NO, BRANCH                    12661099
+         CLI   #SUBHOLD+28+11,1           RC:1                          12661199
+         BL    MAT8540                    YES, VALID PDSMATCH           12661299
+         MVI   MTLEN+4,11                                               12661385
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    12661499
+         SR    R15,R15                                                  12661585
+         ICM   R15,B'0001',#SUBHOLD+28+11                               12661699
+         CVD   R15,DOUBLE                                               12661785
+         MVC   INSERT#1(8),##SUBCOM                                     12661885
+         MVC   INSERT#2(4),=X'40202120'                                 12661985
+         ED    INSERT#2(4),DOUBLE+6                                     12662085
+         MVI   INSERT#2,C'='              RETURN CODE                   12662185
+         SPACE 1                                                        12662285
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12662399
+         BNE   MAT8530                    NO, SKIP MESSAGE              12662499
+         SPACE 1                                                        12662599
+         L     R0,#SUBHOLD+28+16        ABEND CODE                      12662699
+         SRDL  R0,12                    SHIFT USER ABEND TO R1          12662799
+         ST    R0,FULLWORD              SYSTEM ABEND CODE               12662899
+         MVC   INSERT#2+4(7),=C' ABEND='                                12662999
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                             12663099
+         TR    INSERT#2+11(4),TRTABLE                                   12663199
+         MVI   INSERT#2+11,C'S'         S000                            12663299
+         MVI   INSERT#2+11+4,X'40'                                      12663399
+         SPACE 1                                                        12663499
+         SRL   R1,20                    USER ABEND                      12663599
+         CVD   R1,DOUBLE                                                12663699
+         UNPK  DOUBLE(5),DOUBLE+5(3)                                    12663799
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE                  12663899
+         MVI   INSERT#2+11+5,C'U'       U0000                           12663999
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND                 12664099
+         SPACE 1                                                        12664199
+MAT8530  DS    0H                                                       12665099
+         M$MSG L171$2                                                   12670085
+MAT8540  DS    0H                                                       12830099
+         MVI   OPENLIST,X'80'                                           12840000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE       12850099
+         LA    R1,BAMDCB                                                12860000
+         FREEPOOL (1)                                                   12870000
+         SPACE 2                                                        12880000
+MAT8550  M$ERRST MSGBLANK                                               12890099
+         LA    R1,=CL8'SYSPRINT'          SYSPRINT DNAME                12900099
+         BAS   R2,MAT8580                 FREE THIS DATA SET            12910099
+         LA    R1,SYSLIB1A                SYSLIB1 DDNAME                12911099
+         BAS   R2,MAT8580                 FREE THIS DATA SET            12912099
+         LA    R1,SYSLIB2A                SYSLIB2 DDNAME                12912199
+         BAS   R2,MAT8580                 FREE THIS DATA SET            12912299
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+MAT8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),MATFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,MATUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+MATANULL BR    R14                                                      13252099
+         SPACE 2                                                        13260000
+*  MATCH CONSTANTS                                                      13460099
+         PRINT NOGEN                                                    13470000
+MATDCB   DCB   DSORG=PS,DDNAME=MAT,MACRF=(GL,PM),EODAD=MAT8500          13480099
+MATDL    EQU   *-MATDCB                                                 13480199
+MATDCB2  DCB   DSORG=PS,DDNAME=MAT,MACRF=(GL,PM),EODAD=MAS900           13481099
+MATDL2   EQU   *-MATDCB2                                                13482099
+         PRINT NOGEN                                                    13550138
+MAT484W  DC    C'PDS484W MATCH SHOULD NOT BE INTERRUPTED'               13550399
+MAT484WL EQU   *-MAT484W                                                13550499
+MAT865E  M$TX  'PDS865E THE MATCH OUTPUT CAN NOT BE OPENED'             13550599
+         PRINT GEN                                                      13551038
+MATEFTSR DC    CL8'IKJEFTSR'                                            13710099
+MATPGM   DC    CL8'PDSMATCH'                     PDSMATCH               13720099
+MATPARM  DC    AL2(MATPARML-2)                   PARM LENGTH            13721099
+         DC    C'NEO,DATA'                       CBT STANDARD PARM      13721199
+MATPARML EQU   *-MATPARM                                                13721299
+NEONLY   DC    CL3'NEO'                                                 13721399
+EQONLY   DC    CL3'EQO'                                                 13721499
+MATDATA  DC    CL4'DATA'                                                13721599
+MATUSER  DC    CL4'USER'                                                13721699
+MCHG     DC    CL8'NEO,DATA'     CHANGED                                13721799
+MNCHG    DC    CL8'EQO,DATA'     NOCHANGED                              13721899
+MDIRC    DC    CL8'NEO,USER'     DIRCHANGE                              13721999
+MNDIRC   DC    CL8'EQO,USER'     NODIRCHANGE                            13722099
+MATDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722199
+MATDDNL1 DC    X'000100010007',C'SYSLIB1'        SYSLIB1  DDNAME        13722399
+MATDDNL2 DC    X'000100010007',C'SYSLIB2'        SYSLIB2  DDNAME        13722499
+MATDSNAM DC    X'00020001002C'                   DSNAME                 13722599
+MATALLOC DC    X'00040001000108'                 DISP=SHR               13722799
+MATNORM  DC    X'00050001000108'                 DISP=(,KEEP)           13722899
+MATANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13722999
+MATUNIT  DC    X'001500010008',CL8'&PUNIT'       UNIT=SYSALLDA          13723099
+MATVOLSR DC    X'001000010006404040404040'       VOL=SER=               13723199
+MATDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13724099
+MATFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+MATNEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+MATDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+MATCAT   DC    X'00050001000102'                 DISP=(,CATLG)          13791099
+MATCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+MATPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+MATUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+         SPACE 2                                                        13840000
+MATPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+MATPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860099
+MATPRTIN DC    X'000900010003',AL3(27951)        SPACE=(27951)          13870099
+         SPACE 1                                                        13920000
+MATPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          13930099
+MATPRTLR DC    X'004200010002',AL2(121)          DCB=LRECL=121          13940099
+MATPRTBL DC    X'003000010002',AL2(27951)        DCB=BLKSIZE=27951      13950099
+         SPACE 2                                                        14000000
+MATSYSPR DC    A(MATPRTFI,MATPRTSE,MATPRTIN)                            14080099
+         DC    A(MATPRTRE,MATPRTLR,MATPRTBL)                            14090099
+         DC    A(MATNEW,MATDEL,MATCDEL),X'80',AL3(MATPERM)              14100099
+SYSLIB1A DC    CL8'SYSLIB1'                                             14150199
+SYSLIB2A DC    CL8'SYSLIB2'                                             14150299
+         SPACE 3                                                        14150799
+OBTAIN6  CAMLST SEARCH,0,0,0                                            14150899
+         ORG   OBTAIN6+4                                                14150999
+         SPACE 3                                                        14151099
+LOCATE6  CAMLST NAME,0,,0                                               14151199
+         ORG   LOCATE6+4                                                14152099
+         SPACE 3                                                        14160099

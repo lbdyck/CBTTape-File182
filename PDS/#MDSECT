@@ -1,0 +1,1069 @@
+         TITLE 'P D S  --  PDS DYNAMIC AREA                    3/04/87' 00010099
+         PRINT &PDSPRT                                                  00020000
+WORKAREA DSECT                                                          00030000
+MAINSAVE DS    18A                                                      00040000
+VALSAVE  DS    0A             SAVE AREA FOR VALIDITY CHECKING ROUTINES  00050000
+ESDIDRSV DS    18A            SAVE AREA FOR READESD AND READIDR         00060000
+R14SAVE  DS    A              FIRST LEVEL SAVE AREA                     00070000
+R6SAVE   DS    A              BASE REGISTER SAVE AREA         DRK AUG05 00080046
+R8PARSE  DS    A              BASE REGISTER SAVE AREA                   00090000
+R14PARSE DS    A              SECOND LEVEL SAVE AREA                    00100000
+R14PUTT  DS    A              THIRD LEVEL SAVE AREA                     00110000
+R14PUTM  DS    A              THIRD LEVEL SAVE AREA                     00120000
+R14PUTL  DS    A              THIRD LEVEL SAVE AREA                     00130000
+R14PUTL2 DS    4A             SECONDARY SAVE AREA FOR LOGDATA           00140000
+R14PTGT  DS    A              THIRD LEVEL SAVE AREA                     00150000
+R14EXCP  DS    A              THIRD LEVEL SAVE AREA                     00160000
+R8EXCP   DS    A              EXCP ROUTINE BASE SAVE                    00170000
+R148EXCP DS    11A            SAVE AREA FOR EXCP ROUTINE                00180000
+R14READD DS    A              THIRD LEVEL SAVE AREA                     00190000
+BASES    DS    4A             PROGRAM BASE ADDRESSES                    00200000
+ADDRCBU2 DS    A              ORIGINAL CBUF ADDRESS                     00210000
+         SPACE 1                                                        00220000
+***      NOTE: KEEP THE FOLLOWING STATEMENTS TOGETHER AND IN THE        00230000
+***            SAME PHYSICAL ORDER (FOR STM INSTRUCTIONS).              00240000
+ADDRTEXT DS    A        * *    ADDRESS OF TEXT PASSED                   00250000
+ADDRUPT  DS    A        * *    ADDRESS OF THE UPT                       00260000
+ADDRPSCB DS    A        * *    ADDRESS OF THE PSCB                      00270000
+ADDRECT  DS    A        * *    ADDRESS OF THE ECT                       00280000
+ADDRCBUF DS    A        * *    ADDRESS OF THE COMMAND BUFFER            00290000
+ADDRCPPL DS    A        * *    ADDRESS OF THE CPPL                      00300000
+ADDRPUTL DS    A        * *    ADDRESS OF IKJPUTL                       00310000
+ADDRPARS DS    A        * *    ADDRESS OF IKJPARS                       00320000
+ADDRPTGT DS    A        * *    ADDRESS OF IKJPTGT                       00330000
+ADDRGETL DS    A        * *    ADDRESS OF IKJGETL                       00340000
+ADDRSCAN DS    A        * *    ADDRESS OF IKJSCAN                       00350000
+ADDRSTCK DS    A        * *    ADDRESS OF IKJSTCK                       00360000
+ADDRDEFT DS    A        * *    ADDRESS OF IKJEHDEF                      00370000
+ADDRFF02 DS    A        * *    ADDRESS OF IKJEFF02                      00380000
+ADDRCNVT DS    A        * *    TTR --> MBBCCHHR CONVERT ROUTINE         00390000
+ADDRRLTV DS    A        * *    MBBCCHHR --> TTR CONVERT ROUTINE         00400000
+***                                                                     00410000
+         SPACE 1                                                        00420000
+ADDRANSR DS    A                                                        00430000
+OPENLIST DS    2A                                                       00440000
+PARMLIST DS    12A            GENERAL PARAMETER LIST                    00450000
+PUTLPARM DS    4A             M$PUTLIN PARAMETER AREA                   00460000
+PTGTPARM DS    4A             M$PUTGT PARAMETER AREA                    00470000
+YESNOSV  DS    A              SAVED MESSAGE ADDRESS FOR YES/NO PROMPTS  00480000
+SCANANSR DS    XL8                                                      00490000
+PUTOLD1  DS    3F                                                       00500000
+PAGESIZE DS    F              LINES/SCREEN                              00510000
+LINESIZE DS    F              CHARACTERS/LINE                           00520000
+         EJECT                                                          00530000
+SUBCMNDP DS    A              SUBCOMMAND ENTERED ON PRIMARY LINE        00540000
+ATTNECB  DS    F                                                        00550000
+SUBSECB  DS    F                                                        00560000
+SUBSTCB  DS    F                                                        00570000
+RECOVER  DS    A                                                        00580000
+ADDRSUMR DS    A              ADDRESS OF A SUMMARY ROUTINE LIKE VERIFY  00590000
+SPFECB   DS    F                                                        00600000
+SPFTCB   DS    A                                                        00610000
+ISPLINK  DS    A              ADDRESS OF THE SPF INTERFACE ROUTINE      00620000
+DAIRRC   DS    F              DAIR RETURN CODE FROM REGISTER 15         00630000
+RETURNCD DS    F              PROGRAM RETURN CODE                       00640000
+OUTMEMBS DS    A              SUBPOOL 22 ROOT OF DUPL MEMBER NAME LIST  00650037
+SUBPDIAL DS    A              SUBPOOL 78 TSO CONTROL BLOCK DATA         00660037
+         SPACE 1                                                        00670000
+UCBADDR  DS    A                                                        00680000
+EXCPBUFF DS    A                  ADDRESS OF LAST RECORD READ           00690000
+TOTUSEDX DS    F                                                        00700000
+TOTALLOX DS    F                                                        00710000
+SUBLIST1 DS    C              SUBPOOL 23 DATA GETMAINED BEFORE SPF      00720000
+SUBLIST2 DS    C              SUBPOOL 24 DATA GETMAINED AFTER  SPF      00730037
+         SPACE 1                                                        00740000
+TOTBLOCK DS    F        **  --   THIS AREA IS CLEARED                   00750000
+TOTUSED  DS    F        **  --     VIA AN XC INSTRUCTION                00760000
+TOTMEMR  DS    F        **  --     (LENGTH IS LTOT).                    00770000
+TOTMEMA  DS    F        **  --                                          00780000
+***MAXM  DS    F        **  --                                          00790000
+***THISM DS    F        **  --                                          00800000
+TOTTRKS  DS    F        **  --                                          00810000
+TOTCCHH  DS    XL4      **  --                                          00820000
+LTOT     EQU   *-TOTBLOCK        LENGTH OF XC AREA                      00830000
+DSNTOTAL DS    F                                                        00840000
+DSNEMPTY DS    F                                                        00850000
+NUMEXT   DS    H              NUMBER OF EXTENTS                         00860000
+BYTEUCB  DS    H              UCB TYPE IS THE SECOND BYTE               00870000
+         SPACE 1                                                        00880000
+LMEMBER1 DS    H              LENGTH OF MEMBER NAME ONE                 00890000
+MEMBER1  DS    CL8            FIRST MEMBER NAME   *** TOGETHER (RENAME) 00900000
+MEMBER2  DS    CL8            SECOND MEMBER NAME  *** TOGETHER (RENAME) 00910000
+LMEMBER2 DS    H              LENGTH OF MEMBER NAME TWO                 00920000
+         SPACE 1                                                        00930000
+MEMBERD  DS    XL1,XL2,CL8,CL8,XL2                                      00940000
+***      SAVE  FLAGSAA,LMEMBER1,MEMBER1,MEMBER2,LMEMBER2 FOR (GROUP)    00950000
+MEMBERP  DS    XL1,XL2,CL8,CL8,XL2                                      00960000
+***      SAVE  FLAGSAA,LMEMBER1,MEMBER1,MEMBER2,LMEMBER2 FOR PATTERN    00970000
+         SPACE 1                                                        00980000
+ERRORMSG DS    5CL3           HOLD AREA FOR ERROR MESSAGE IDENTIFIERS   00990000
+OPTCD    DS    X              CURRENT DATA SET OPTCD                    01000000
+DSPALLOC DS    X              CURRENT DISPOSITION (SHARE OR OLD)        01010000
+DSPREQST DS    X              INITIAL DISPOSITION (SHARE OR OLD)        01020000
+RECFM    DS    X              DCBRECFM FOR THIS DATA SET                01030000
+SUBPOOLT DS    X              SUBPOOL 21 (TEMP) FOR A PDS SUBCOMMAND    01040037
+RESERVET DS    X              "R" WHEN A SPDSN RESERVE IS OUTSTANDING   01050000
+TESTABEC DS    X              TESTABEND USE                             01060000
+CVDG     DS    D              FOR CVD GRANDE                  DRK AUG09 01070099
+DOUBLE   DS    D                                                        01071099
+         DS    XL1            BYTE OVERRUN BY UNPK INSTRUCTION          01080000
+         TITLE 'P D S  --  PDS DYNAMIC AREA -- CONTROL FLAGS   3/04/87' 01090000
+FLAGSAA  DS    XL1   FLAG BYTE 1 (CLEARED FOR EACH SUBCOMMAND)          01100000
+FAINUPD  EQU   X'80'          WRITE ISSUED TO BPAM INDCB       GP AUG05 01110049
+FAIOERR  EQU   X'40'          I/O ERROR ENCOUNTERED BY CHECK   GP AUG05 01120049
+FADSDIR  EQU   X'20'          READDIR CALLED BY DISPLAY        GP SEP05 01130052
+FMEMASTR EQU   X'10'          ASTERISK PARTIAL MEMBER NAME              01140000
+FMEMBER1 EQU   X'08'          FIRST MEMBER FLAG                         01150000
+FMEMBER2 EQU   X'04'          SECOND MEMBER FLAG                        01160000
+FMEMRANG EQU   X'02'          MEMBER RANGE DESIRED                      01170000
+FMEM#MEM EQU   X'01'          MEMBER GROUP IS IN PROGRESS               01180000
+         SPACE 1                                                        01190000
+FLAGSBB  DS    XL1   FLAG BYTE 2                                        01200000
+FNOTFILE EQU   X'80'          FILE(FILENAME) NOT ENTERED                01210000
+FONESHOT EQU   X'40'          SUBCOMMAND ENTERED FROM PRIMARY LINE      01220000
+FLINESET EQU   X'20'          OUTPUT LINE IN PROGRESS                   01230000
+FEXIST   EQU   X'10'          MEMBERS EXIST IN DATA SET                 01240000
+FRANPAT  EQU   X'08'          MEMBERS EXIST IN RANGE OR PATTERN         01250000
+FCMD     EQU   X'04'          SUBCOMMAND BUFFER AVAILABLE               01260000
+FQUOTE   EQU   X'02'          DATA SET NAME IS QUOTED                   01270000
+FNULL    EQU   X'01'          NULL LINE ENTERED                         01280000
+         SPACE 1                                                        01290000
+FLAGSCC  DS    XL1   FLAG BYTE 3                                        01300000
+FPERMDS  EQU   X'80'          "PERM" DATA SET                           01310000
+FUPDATE  EQU   X'40'          THIS MEMBER IS OPEN FOR UPDATE            01320000
+FIDR     EQU   X'20'          IDR RECORDS EXIST                         01330000
+F1IDR    EQU   X'10'          IDR TITLE PROCESSED                       01340000
+FVOLSET  EQU   X'08'          VOLSET IGNORE IN PROCESS                  01350000
+RECFMU   EQU   X'04'          RECORD FORMAT U                           01360000
+RECFMV   EQU   X'02'          RECORD FORMAT V                           01370000
+RECFMF   EQU   X'01'          RECORD FORMAT F                           01380000
+         SPACE 1                                                        01390000
+FLAGSDD  DS    XL1   FLAG BYTE 4                                        01400000
+OVERLAP  EQU   X'80'          OUTPUT THE NEXT LINE (OVERLAPPED STRING)  01410000
+DONONUM  EQU   X'40'          NUM --> NONUM FOR THE REST OF THE MEMBER  01420000
+DUMP     EQU   X'20'          ** DUMP OUTPUT FORMAT                     01430000
+BLOCK    EQU   X'10'          ** BLOCK OUTPUT FORMAT                    01440000
+LDUMP    EQU   X'08'          ** LDUMP OUTPUT FORMAT                    01450000
+LBLOCK   EQU   X'04'          ** LBLOCK OUTPUT FORMAT                   01460000
+SNUM     EQU   X'02'          ** SNUM OUTPUT FORMAT                     01470000
+NONUM    EQU   X'01'          ** NONUM OUTPUT FORMAT                    01480000
+*NUM     EQU   X'00'          ** NUM (DEFAULT) IF NOT SNUM, NONUM,      01490000
+*                                    LBLOCK, LDUMP, BLOCK OR DUMP       01500000
+         SPACE 1                                                        01510000
+FLAGSEE  DS    XL1   FLAG BYTE 5                                        01520000
+FDOUBCON EQU   X'80'          NODOUBLE                                  01530000
+FFULLTRK EQU   X'40'          FULLTRACK                                 01540000
+FMEMGRP  EQU   X'20'          MEMBER GROUP IS BEING DEFINED             01550000
+FEDREC   EQU   X'10'          EDIT RECOVERY HAS BEEN ATTEMPTED          01560000
+FBKGRND  EQU   X'08'          PDS IS EXECUTING IN BACKGROUND MODE       01570000
+FNOTTERM EQU   X'04'          LAST RESPONSE WAS NOT FROM THE TERMINAL   01580000
+FOUTASS  EQU   X'02'          SET ON TO GET ASSOCIATE MEMBERS TOO       01590000
+FDIREND  EQU   X'01'          END OF MEMBERS IN DIRECTORY REACHED       01600000
+***  X'C0' IS SINGLE                                                    01610000
+***  X'40' IS DOUBLE                                                    01620000
+***  X'00' IS MULTIPLE                                                  01630000
+         EJECT                                                          01640000
+FLAGSFF  DS    XL1   FLAG BYTE 6                                        01650000
+FSPFDIAL EQU   X'80'          PDS WAS INVOKED BY SPF AS A DIALOG        01660000
+FSPFERR  EQU   X'40'          SPF INITIALIZATION FAILED                 01670000
+FSPFOPT6 EQU   X'20'          EXECUTING UNDER SPF OPTION 6              01680000
+FSPFCALL EQU   X'10'          SET AFTER SPF HAS BEEN CALLED ONCE        01690000
+FCHANGE  EQU   X'08'          SET OFF WHEN DATA SET IS CHANGED          01700000
+FNOECHO  EQU   X'04'          SET ON TO TERMINATE ECHO MODE IN OUTCOPY  01710000
+FLOGWRT  EQU   X'02'          SET ON TO LOG PDS MESSAGES                01720000
+FIEBUPDT EQU   X'01'          SET ON FORMAT OUTCOPY DATA FOR IEBUPDTE   01730000
+         SPACE 2                                                        01740000
+FLAGSGG  DS    XL1   FLAG BYTE 7                                        01750000
+FALINCON EQU   X'80'          NOALIASINFO (ATTRIB AND MAP)              01760000
+FTRANCON EQU   X'40'          NOTRANSLATOR (HISTORY)                    01770000
+FLKEDCON EQU   X'20'          NOLKEDDATE (ATTRIB)                       01780000
+FPROMCON EQU   X'10'          NOPROMPT                                  01790000
+FRECVCON EQU   X'08'          NORECOVER                                 01800000
+FOUTSOME EQU   X'04'          OUTPUT GENERATED FOR THIS SUBCOMMAND      01810000
+FOUTSUB  EQU   X'02'          SUBCOMMAND GAINED CONTROL                 01820000
+FISPMODE EQU   X'01'          ISPMODE IS TO GAIN CONTROL ON ENTRY       01830000
+         SPACE 2                                                        01840000
+FLAGSHH  DS    XL1   FLAG BYTE 8 (CLEARED FOR EACH SUBCOMMAND)          01850000
+FOPTIONS EQU   X'80'          OPTIONS PRESENT WITH COMMAND              01860000
+FDELAYM  EQU   X'40'          DELAYMSG MESSAGE IS AVAILABLE             01870000
+FMEMSTAR EQU   X'20'          * NOTATION USED FOR THE MEMBER NAME       01880000
+FHEAD    EQU   X'10'          HEADER HAS BEEN WRITTEN                   01890000
+FLKEDYES EQU   X'08'          LKED DATE IS DESIRED                      01900000
+FLKEDNO  EQU   X'04'          LKED DATE IS NOT DESIRED                  01910000
+FMEMALLM EQU   X'02'          : NOTATION USED FOR THE MEMBER NAME       01920000
+FHPGMOBJ EQU   X'01'          KNOWN TO BE PDSE PROGRAM LIBRARY GP SEP05 01921053
+         SPACE 2                                                        01930000
+FLAGSII  DS    XL1   FLAG BYTE 9 (CLEARED FOR EACH SUBCOMMAND)          01940000
+FDIRGRP  EQU   X'80'          DIRECTORY READ FOR GROUP OPERATIONS       01950000
+FSINGLE  EQU   X'40'          FORCE SINGLE BUFFERING FOR SUBCOMMAND     01960000
+FNOTDOUB EQU   X'20'          FORCE SINGLE OR MULTIPLE FOR RESTORE SCAN 01970000
+FSUBLIST EQU   X'10'          IF/FIND THEN/ELSE(SUBLIST)                01980000
+FATTNPRO EQU   X'08'          SET FOR ATTENTION PROCESSING              01990000
+FMEMBERS EQU   X'04'          IF/FIND THEN/ELSE(MEMBERS) OR (SUBMIT)    02000000
+FMEMLIST EQU   X'02'          IF/FIND THEN/ELSE(MEMLIST)                02010000
+FMEMFRST EQU   X'01'          FIRST ELEMENT OF THE LIST IS INPUT        02020000
+         SPACE 2                                                        02030000
+FLAGSJJ  DS    XL1   FLAG BYTE 10                                       02040000
+FTSOCMD  EQU   X'80'          VERIFY TSO COMMAND                        02050000
+FSUBCMD  EQU   X'40'          VERIFY SUBCOMMAND                         02060000
+FCHANGEB EQU   X'20'          CHANGE DATA SET BUFFERING                 02070000
+FNOREAD  EQU   X'10'          EXCP CALLED FOR REOPEN ONLY               02080000
+FSTACKED EQU   X'08'          STACKED DATA WAS INPUT                    02090000
+FDSNMSG  EQU   X'03'          DSN SUBCOMMAND USES MSG (OR TABLE) FORMAT 02100000
+FDSNTSO  EQU   X'02'          DSN SUBCOMMAND USES TSO FORMAT            02110000
+FDSNJCL  EQU   X'01'          DSN SUBCOMMAND USES JCL FORMAT            02120000
+         SPACE 2                                                        02130000
+FLAGSSS  DS    XL1   FLAG BYTE 11 (MAINTAINED TO RE-INVOKE SPF SERVICE) 02140000
+HFLAGSDD DS    XL1   FLAG BYTE 12 (HOLD AREA FOR FLAGSDD)               02150000
+         SPACE 2                                                        02160023
+FLAGSZZ  DS    XL1   FLAG BYTE 13 (USED FOR DSLIST ZDLVOL RETRIEVAL)    02170024
+FALLOCI  EQU   X'80'          INITIAL ALLOCATION FLAG         DRK NOV02 02180029
+LIST#MSG EQU   X'40'          REPLACE NOWRITE MESSAGE         DRK NOV06 02181092
+LOG#CMDS EQU   X'20'          LOG ALL COMMANDS TOGGLE SWITCH  DRK APR16 02182099
+ATT#MSG  EQU   X'10'          PDS397 ATTRIB MESSAGE           DRK APR16 02183099
+MBR#VAL  EQU   X'08'          VALIDATE MBR NAME TOGGLE SWITCH DRK APR16 02184099
+TSO#8    EQU   X'04'          8-CHARACTER TSO USERID          DRK JUL17 02185099
+ML#RES   EQU   X'02'          MEMLIST RESET TOGGLE SWITCH     DRK JAN18 02186099
+         TITLE 'P D S  --  PDS DYNAMIC AREA                    3/04/87' 02190000
+DSNLEN   DS    H                                                        02200000
+DSNAME   DS    CL44                                                     02210000
+DSNMEMQ  DS    CL8                                                      02220000
+PASSWORD DS    CL8                                                      02230000
+VOLUME   DS    CL8                                                      02240000
+SAVLEN   EQU   *-DSNLEN                                                 02250000
+         SPACE 1                                                        02260000
+SAVDSN   DS    XL1,XL2,XL44,XL8,XL8,XL8                                 02270000
+*        DSN DISPOSITION, DSN LENGTH, DSN, ENQ MEMBER, PASSWORD, VOLUME 02280000
+         SPACE 1                                                        02290000
+VOLSET   DS    CL8                                                      02300000
+PDSNAME  DS    CL8                      PDS ACTUAL COMMAND NAME         02310000
+DDNAME   DS    CL8                                                      02320000
+DDNAMEH  DS    CL8                      DDNAME HOLD                     02330000
+DSNAMEH  DS    CL4                      FIRST FOUR DSNAME CHARACTERS    02340000
+VOLALLOC DS    CL6                      ALLOCATED DISK VOLUME NAME      02350000
+MODESAVE DS    CL1                      RMODE/AMODE WORK AREA           02360000
+SHIFTSSI DS    CL1                      # SHIFTS FOR "IF GENSSI"        02370000
+MSGENTDA DS    F                        ADDRESS OF ENTER OPTION MESSAGE 02380000
+MSGENTPT DS    F                        WHERE MEM=... GOES              02390000
+ATTRCNT2 DS    F                        ACCUMULATED ENTRIES             02400000
+ATTRCNTA DS    F                        ACCUMULATED ENTRIES             02410000
+ATTRTOT2 DS    CL8                      ACCUMULATED LENGTH              02420000
+ATTRTOTA DS    CL8                      ACCUMULATED LENGTH              02430000
+SETPROF  DS    XL8                      EDIT DEFAULT PROFILE NAME       02440000
+SETMACRO DS    XL8                      EDIT DEFAULT INITIAL MACRO      02450000
+         SPACE 1                                                        02460000
+         DS    0D                                                       02470000
+MSGTEXT1 DS    XL124,XL136       4 BYTE COUNT AND 256 BYTE DISPLAY      02480000
+MSGTEXT2 DS    XL124,XL12                                               02490000
+         SPACE 1                                                        02500000
+INSERT#1 EQU   MSGTEXT1+8,40     FIRST INSERT AREA                      02510000
+INSERT#2 EQU   MSGTEXT1+64,40    SECOND INSERT AREA                     02520000
+MSGLINE  EQU   MSGTEXT1+136,256  256 BYTES +4 BYTE LENGTH FIELD         02530000
+MSGDS1   EQU   MSGLINE+100,64    OFFSET 1 FOR COMPARE                   02540000
+MSGDS2   EQU   MSGLINE+164,64    OFFSET 2 FOR COMPARE                   02550000
+MSGLAST  DS    XL80              PUTLINE AND PUTGET RECORD I/O BUFFER   02560000
+         SPACE 2                                                        02570000
+FULLWORD DS    0D,F                                                     02580000
+ISPFTEXT DC    C'ISPF    PGM(12345678)    PARM(++12345678) NEWAPPL(ISR)X02590000
+                    '      COULD ZAP TO CHANGE "NEWAPPL(ISR)" OR "TEST" 02600000
+         SPACE 1                                                        02610000
+         ORG   ISPFTEXT+12                                              02620000
+WORKTBL  DS    XL256  ***      TRT TABLE (FIND FIRST BYTE) & WORK AREA  02630000
+M99RBPTR DS    A      ***      REQUEST BLOCK POINTER                    02640000
+M99RB    DS    5A     ***      DYNALLOC REQUEST BLOCK                   02650000
+M99TUPL  DS    A      ***      TEXT UNIT POINTER                        02660000
+M99TUNIT DS    3A     ***      TEXT UNIT (MAY OVERFLOW BY 50)           02670000
+WORKTMP  DS    XL50   ***      WORKAREA FOR RESTART PROCESSING          02680000
+DAYTABLE DS    XL12                                                     02690000
+DELAYMSG DS    CL38                                                     02700000
+RLDCOUNT DS    X               RLD/CONTROL RECORDS AFTER FIRST TEXT     02710000
+         SPACE 2                                                        02720000
+         ORG   WORKTBL                                                  02730000
+TIMEWRKW DS    F                                                        02740000
+TIMEDOUB DS    0D                                                       02750000
+TIMEINYR DS    0ZL6,ZL4             WEEKDAY ARGUMENT                    02760000
+TIMEINMT DS    ZL2                                                      02770000
+TIMEINDY DS    ZL2                                                      02780000
+TIMEDDAT DS    0D,XL4               BUCKET FOR PACKED DATE              02790000
+TIMEDECC DS    0PL4                 MONTH AND YEAR 0YYYYMMS             02800000
+TIMEDECY DS    PL3                  YEAR 0YYYYS                         02810000
+         ORG   TIMEDECY+2                                               02820000
+TIMEDECM DS    0PL2                 MONTH 0MMS                          02830000
+TIMEYRSG DS    PL1,PL1                                                  02840000
+         ORG   ,                                                        02850000
+         SPACE 1                                                        02860000
+LASTMOD# DS    C               LAST MODULE(NAME) LENGTH                 02870000
+LASTMOD  DS    CL8             LAST MODULE(NAME)                        02880000
+FINDLTH  DS    H               ACTUAL STRING LENGTH                     02890000
+FINDSTR  DS    CL32            ACTUAL FIND STRING                       02900000
+REPLTH   DS    H               ACTUAL STRING LENGTH                     02910000
+REPLSTR  DS    CL32            ACTUAL REPLACEMENT STRING                02920000
+PUTGETBF DS    XL256           M$PUTGT INPUT LINE STORAGE               02930000
+CONTFORM DS    XL6             FORM HOLD AREA FOR CONTROL               02940000
+CONTDEST DS    XL10            DEST HOLD AREA FOR CONTROL               02950000
+CONTSYS  DS    XL1             SYSOUT HOLD AREA FOR CONTROL             02960000
+CONTOPTN DS    XL1             CONTROL OPTION IN EFFECT                 02970000
+DSORG    DS    H                                                        02980000
+LRECL    DS    H                                                        02990000
+BLKSI    DS    H                                                        03000000
+LABLRECL DS    H                                                        03010000
+CONCATNM DS    H                                                        03020000
+DIRTRACK DS    F              NUMBER OF DIRECTORY BLOCKS PER TRACK      03030000
+PDSENTRY DS    H              NUMBER OF ENTRIES TO PDS AFTER FIRST      03040000
+DDNAMEN  DS    C              CURRENT DDNAME NUMBER                     03050000
+DDNAMEM  DS    C              MAXIMUM DDNAME NUMBER                     03060000
+         SPACE 3                                                        03070000
+         COPY  #SPWRKA         FIRST ISPMODE, MEMLIST WRK AREA SS JUL85 03080000
+         SPACE 2                                                        03090000
+*  ALL EXLST REMOVED FROM DCBS IN THIS DSECT                   SS JUL85 03100000
+SSIMASK  DS    CL4            USED FOR "IF ... SSI(123456)              03110000
+         DS    CL4            RESERVED FOR BACK-LEVEL DCB MACROS        03120000
+         AIF   ('&MVSLEV' LT 'MVS710').NOEAVD1                DRK JAN13 03120199
+INDCB    DCB   DEVD=DA,DDNAME=X,MACRF=E,DCBE=*-*               JH DEC12 03121099
+.NOEAVD1 ANOP                                                 DRK JAN13 03122099
+         AIF   ('&MVSLEV' GE 'MVS710').EAVD1                  DRK JAN13 03123099
+INDCB    DCB   DEVD=DA,DDNAME=X,MACRF=E                                 03130000
+.EAVD1   ANOP                                                 DRK JAN13 03131099
+         ORG   INDCB                                           GP AUG05 03140049
+         DCB   DSORG=PO,DEVD=DA,DDNAME=X,MACRF=(R,W)           GP AUG05 03150049
+         ORG                                                            03160047
+STOWDCB  DCB   DSORG=PO,DEVD=DA,DDNAME=X,MACRF=(R,W)                    03170000
+         DS    CL8            OVERFLOW FROM CMXDCB                      03180000
+BAMDCB   DCB   DDNAME=RESET,DSORG=PS,RECFM=FB,LRECL=256,BLKSIZE=256,   X03190000
+               MACRF=(W),KEYLEN=8,DEVD=DA                               03200000
+QAMDCB   DCB   DSORG=PS,DDNAME=PDSOUT,MACRF=(PM)                        03210000
+LOGDCB   DCB   DSORG=PS,DDNAME=PDSLOG,MACRF=(PM)                        03220000
+EXLSTX   DS    A                                                        03230000
+         TITLE 'P D S  --  PDS DYNAMIC AREA - POST-PROCESSING  3/04/87' 03240000
+##SUBCOM DS    0F,CL8    ***  CURRENT FULL SUBCOMMAND NAME              03250000
+         SPACE 1                                                        03260000
+##ADRCM# EQU   *,1            OFFSET FOR SUB OPERANDS, FLAGS            03270000
+CONTINUE EQU   X'80'          SUBCOMMAND CONTINUES AFTER DATA SET OPEN  03280000
+FIXOPEN  EQU   X'40'          SUBCOMMAND IS FIXPDS (SPECIAL OPEN FLAG)  03290000
+EDITOR   EQU   X'20'          SUBCOMMAND - EDIT, BROWSE, TSOEDIT OR FSE 03300000
+EXTERNAL EQU   X'10'          SUBCOMMAND IS EXTERNAL TO PDS             03310000
+FABEND   EQU   X'01'          CONTINUE IS NOT CLEARED IN STAE           03320000
+FATTRHDR EQU   X'0F'          HEADER FLAG FOR ATTRIB SUBCOMMAND         03330000
+##ADRCMD DS    A         ***  SUBCOMMAND PROCESSING ROUTINE             03340000
+         SPACE 1                                                        03350000
+##ADRPC# EQU   *,1            SUBCOMMAND FLAGS                          03360000
+@W       EQU   X'80'     GROUP HEADER DELAYED FLAG                      03370000
+@I       EQU   X'40'+@W  BROWSE, EDIT, AND VERIFY CHECK FOR :           03380000
+@N       EQU   X'20'     OPERAND IS IGNORED IF PRESENT                  03390000
+@R       EQU   X'10'     OPERAND REQUIRED, PARSE IS ALWAYS CALLED       03400000
+@S       EQU   X'08'     SUBCOMMAND WORKS FOR NON-PARTITIONED DATA SETS 03410000
+@G       EQU   X'04'     MEMBER GROUP AND MEMBER DEFAULT ALLOWED        03420000
+@B       EQU   X'02'     BLDL REQUIRED TO VERIFY FIRST MEMBER EXISTS    03430000
+@C       EQU   X'01'     SUBCOMMAND INVALIDATES BLDL                    03440000
+@2       EQU   @S+@W     FOR COPY SUBCOMMAND                            03450000
+         SPACE 1                                                        03460000
+##ADRPCL DS    A         ***  PCL FOR THE SUBCOMMAND PARSE              03470000
+         SPACE 1                                                        03480000
+##ADRPA# EQU   *,1            ADDITIONAL SUBCOMMAND FLAGS               03490000
+$F       EQU   X'80'          FINDLIST -- CONVERTS TO LIST AFTER FIND   03500000
+$D       EQU   X'40'          SUPPRESS DEFAULT MEMBER MESSAGE           03510000
+$Q       EQU   X'20'          QUIET MODE PROCESSING FLAG                03520000
+$M       EQU   X'10'          DISPLAY OR PATTERN SUBCOMMAND             03530000
+$A       EQU   X'08'          DO NOT ACCEPT ATTENTIONS                  03540000
+$W       EQU   X'04'          DEFAULT MEMBER HEADER DELAYED FLAG        03550000
+$P       EQU   X'02'          SPF PANEL NAME IN ##SUBCAL       SS NOV84 03560000
+$J       EQU   X'01'+$P       SPF PANEL PARSE WITH NO MEMBERS  SS NOV84 03570000
+##ADRPAR DS    A         ***  POST-PARSE PROCESSING ROUTINE             03580000
+         SPACE 2                                                        03590000
+##SUBCAL DS    CL8       ***  EXTERNAL TSO PROCESSOR TO ATTACH          03600000
+         SPACE 2                                                        03610000
+##HELOFF DS    AL2       ***  OFFSET TO HELP MESSAGE  (USED BY LIST)    03620000
+         DS    AL2       ***  AVAILABLE               (USED BY LIST)    03630000
+         SPACE 2                                                        03640000
+##ANSWER DS    XL132          PARSE CSECT WORKAREA                      03650000
+         EJECT                                                          03660000
+** ALIAS, COMPRESS, CONTROL, COPY, DELETE, ISPMODE                      03670000
+**        OUT, PRINTOFF, REPRO, RESTORE, SPFEDIT                        03680076
+**        SRCHFOR, XMIT, OFFLOAD, SMPGEN, LOAD AREA:                    03681099
+#OUT     EQU   ##ANSWER+0,80    OUT: LOGICAL RECORD AREA                03690000
+#CMXFLAG EQU   ##ANSWER+0,1     COMPRESS, COPY: SUMMARY/LIST/NOLIST     03700000
+#DELFLAG EQU   ##ANSWER+0,1     DELETE: ALIAS/NOALIAS                   03710000
+#RESFLAG EQU   ##ANSWER+0,1     RESTORE: REPEAT/DISPLAY/PROMPT          03720000
+#DELSAVE EQU   ##ANSWER+1,1     DELETE, COPY: SAVE AREA FOR FLAGSAA     03730000
+#MEMFLAG EQU   ##ANSWER+2,1     MEMBERS: BIT FLAGS                      03740000
+#CMXSHR  EQU   ##ANSWER+2,1     COMPRESS, COPY: SHR/OLD/NEW             03750000
+#RESTERR EQU   ##ANSWER+2,2     RESTORE CONSECUTIVE I/O ERRORS          03751071
+#COPREP  EQU   ##ANSWER+3,1     COPY: REPLACE/NOREPLACE                 03760000
+#XMIOUT  EQU   ##ANSWER+3,1     XMIT: SYSOUT CLASS                      03763063
+#SRCTYP  EQU   ##ANSWER+3,1     SRCHFOR: PREFIX/SUFFIX/WORD             03764067
+#SULREV  EQU   ##ANSWER+3,1     SUBLIST: REVERSE              DRK MAY16 03765099
+#COPALI  EQU   ##ANSWER+4,1     COPY: ALIAS/NOALIAS                     03770000
+#XMIALI  EQU   ##ANSWER+4,1     XMIT: ALIAS/NOALIAS                     03771060
+#SRCALI  EQU   ##ANSWER+4,1     SRCHFOR: ALIAS/NOALIAS                  03772067
+#OFLALI  EQU   ##ANSWER+4,1     OFFLOAD: ALIAS/NOALIAS                  03772172
+#SMPALI  EQU   ##ANSWER+4,1     SMPGEN:  ALIAS/NOALIAS                  03772273
+#LMAALI  EQU   ##ANSWER+4,1     LMA:     ALIAS/NOALIAS                  03772381
+#COBALI  EQU   ##ANSWER+4,1     COBANAL: ALIAS/NOALIAS                  03772499
+#MATONLY EQU   ##ANSWER+4,1     MATCH: NEONLY/EQONLY                    03772799
+#RESTTST EQU   ##ANSWER+4,1     RESTORE: TEST                           03773071
+#COPTO#  EQU   ##ANSWER+5,1     COPY: TO(NAME) TEXT LENGTH              03780000
+#XMINOT  EQU   ##ANSWER+5,1     XMIT: NOTIFY/NONOTIFY                   03781061
+#SMPMAC  EQU   ##ANSWER+5,1     SMPGEN: MAC                             03781174
+#LMALOUD EQU   ##ANSWER+5,1     LMA: LOUD                               03781282
+#AMBLOUT EQU   ##ANSWER+5,1     AMBLIST: XREF/BOTH                      03781399
+#COBLIST EQU   ##ANSWER+5,1     COBANAL: LIST/NOLIST                    03781499
+#SRCHEX  EQU   ##ANSWER+5,1     SRCHFOR: HEX                            03782067
+#OFLDISP EQU   ##ANSWER+5,1     OFFLOAD: OLD/SHR/MOD/NEW                03782299
+#PTSDISP EQU   ##ANSWER+5,1     PTSEXP:  OLD/SHR/MOD/NEW                03782699
+#SEPDISP EQU   ##ANSWER+5,1     LOAD:    OLD/SHR/XXX/NEW                03782799
+#VPELIST EQU   ##ANSWER+5,1     VPDSE: LIST/NOLIST                      03783399
+#MATCOMP EQU   ##ANSWER+5,1     MATCH: DATA/USER                        03784099
+#COPNCAL EQU   ##ANSWER+6,1     COPY: CALL/NOCALL                       03790000
+#SEPLIST EQU   ##ANSWER+6,1     LOAD: LIST/NOLIST                       03790199
+#VPEPPD  EQU   ##ANSWER+6,1     VPDSE: PERFORMPENDINGDELETE             03790299
+#XMILOG  EQU   ##ANSWER+6,1     XMIT: LOG/NOLOG                         03791061
+#SMPSRC  EQU   ##ANSWER+6,1     SMPGEN: SRC                             03791174
+#LMASHOW EQU   ##ANSWER+6,1     LMA: SHOWLIB                            03791282
+#COBSUMM EQU   ##ANSWER+6,1     COBANAL: SUMMARY/NOSUMMARY              03791399
+#SRCLST  EQU   ##ANSWER+6,1     SRCHFOR: SLIST/NOSLIST                  03792076
+#OFLSEP  EQU   ##ANSWER+6,1     OFFLOAD: IEBUPDTE/NOSEP                 03792199
+#PTSLIST EQU   ##ANSWER+6,1     PTSEXP: LIST/NOLIST                     03792299
+#MATPARM EQU   ##ANSWER+6,10    MATCH: PARM                             03793099
+#REPADD  EQU   ##ANSWER+6,1     REPRO: ADDZAP/NOADDZAP                  03800000
+#VPEMSG  EQU   ##ANSWER+6,3     VPDSE: IEBPDSE MESSAGE NUMBER           03801099
+#COPTRCY EQU   ##ANSWER+7,1     COPY: TRK/CYL                           03810000
+#OFLTRCY EQU   ##ANSWER+7,1     OFFLOAD: TRK/CYL                        03810199
+#PTSTRCY EQU   ##ANSWER+7,1     PTSEXP: TRK/CYL                         03810399
+#SEPTRCY EQU   ##ANSWER+7,1     LOAD: TRK/CYL                           03810499
+#XMIWARN EQU   ##ANSWER+7,1     XMIT: WARN/NOWARN                       03810699
+#SMPMACU EQU   ##ANSWER+7,1     SMPGEN: MACUPD                          03811075
+#LMAOSVS EQU   ##ANSWER+7,1     LMA: OSVSONLY                           03812082
+#SRCPAK  EQU   ##ANSWER+7,1     SRCHFOR: CKPACKL                        03813099
+#COPEXST EQU   ##ANSWER+8,1     COPY: EXIST/NOEXIST/NOBLDL              03820000
+#SMPSRCU EQU   ##ANSWER+8,1     SMPGEN: SRCUPD                          03820175
+#LMAFPRS EQU   ##ANSWER+8,1     LMA: CKVOLFPRS                          03820282
+#SRCCOB  EQU   ##ANSWER+8,1     SRCHFOR: COBOL                          03820399
+#XMIDSNL EQU   ##ANSWER+8,2     XMIT: OUTDSNAME LENGTH                  03821066
+#RESTNAM EQU   ##ANSWER+8,8     RESTORE: MODULE NAME                    03830000
+#DSMNAME EQU   ##ANSWER+8,8     DISASM: MEMBER NAME           DRK FEB21 03831099
+#ISPLIST EQU   ##ANSWER+9,1     ISPMODE: LIST KEYWORD                   03840000
+#MEMCNTK EQU   ##ANSWER+9,1     MEMBERS: COUNT KEYWORD                  03850000
+#SMPINLN EQU   ##ANSWER+9,1     SMPGEN: INLINE                          03851076
+#LMAINFO EQU   ##ANSWER+9,1     LMA: LEINFO                             03852085
+#SRCSEQ  EQU   ##ANSWER+9,1     SRCHFOR: SEQ/NOSEQ                      03853099
+#COPGENS EQU   ##ANSWER+9,1     COPY: GENS                    DRK MAY21 03854099
+#COPVOL  EQU   ##ANSWER+10,6    COPY: VOLUME(VOLSER)                    03860000
+#OFLVOL  EQU   ##ANSWER+10,6    OFFLOAD: VOLUME(VOLSER)                 03860199
+#PTSVOL  EQU   ##ANSWER+10,6    PTSEXP: VOLUME(VOLSER)                  03860299
+#SEPVOL  EQU   ##ANSWER+10,6    LOAD: VOLUME(VOLSER)                    03860399
+#CPKVOL  EQU   ##ANSWER+10,6    CPKMAP: VOLSER                          03860499
+#LMASCAN EQU   ##ANSWER+10,1    LMA: LESCAN                             03861085
+#SRCLPF  EQU   ##ANSWER+10,1    SRCHFOR: LPSF                           03861199
+#LMALD   EQU   ##ANSWER+11,1    LMA: LISTLD                             03862085
+#MEMCNTM EQU   ##ANSWER+12,4    MEMBERS: COUNT OF MEMBERS               03870000
+#COPTON  EQU   ##ANSWER+16,8    COPY: TO(NAME) TEXT                     03880000
+#XMIDDN  EQU   ##ANSWER+16,8    XMIT: OUTDDNAME                         03881063
+#RESTNUM EQU   ##ANSWER+16,4    RESTORE: COUNT OF DISPLAY RECORDS       03890000
+#DSMCSCT EQU   ##ANSWER+16,8    DISASM: CSECT NAME            DRK FEB21 03890199
+#MATSAML EQU   ##ANSWER+20,1    MATCH: SAMLIST/SUBLIST        DRK NOV15 03891099
+#MATVOL  EQU   ##ANSWER+21,6    MATCH: VOLUME(VOLSER)         DRK DEC15 03892099
+#MATCHG  EQU   ##ANSWER+27,1    MATCH: CHANGED/DIRCHANGE/..   DRK JAN16 03893099
+#CMXSYS3 EQU   ##ANSWER+32,14   COMPRESS: REQUEST A DDNAME              03900000
+#CMXLIST EQU   ##ANSWER+32,8    COMPRESS: IEBCOPY PARM LIST             03910000
+#RESTAPF EQU   ##ANSWER+34,1    RESTORE: APF DATA FROM LIKE             03920000
+#RESTDIR EQU   ##ANSWER+35,33   RESTORE: DIRECTORY USER DATA            03930000
+#CMXDDNA EQU   ##ANSWER+42,2    COMPRESS: LENGTH OF DDNAME LIST         03940000
+#COPDIR# EQU   ##ANSWER+48,4    COPY: DIR(NUM)                          03950000
+#SEPDIR# EQU   ##ANSWER+48,4    LOAD: DIR(NUM)                          03950199
+#SMPREGS EQU   ##ANSWER+48,12   SMPGEN: REGISTER R3:R5 SAVE AREA        03950278
+#XMIADD  EQU   ##ANSWER+48,20   XMIT: ADDRESSEE LIST                    03951063
+#SRCSTR  EQU   ##ANSWER+48,50   SRCHFOR: STRING                         03952067
+#LMADATE EQU   ##ANSWER+48,8    LMA: DATEFMT                            03953082
+#COBPARM EQU   ##ANSWER+48,10   COBANAL: PARM                           03954099
+#COPSPAC EQU   ##ANSWER+52,4    COPY: SPACE(PRIMARY,SECONDARY)          03960000
+#OFLSPAC EQU   ##ANSWER+52,4    OFFLOAD: SPACE(PRIMARY,SECONDARY)       03961099
+#PTSSPAC EQU   ##ANSWER+52,4    PTSEXP: SPACE(PRIMARY,SECONDARY)        03962099
+#SEPSPAC EQU   ##ANSWER+52,4    LOAD: SPACE(PRIMARY,SECONDARY)          03963099
+#COPCONC EQU   ##ANSWER+56,4    COPY: CONCAT(NUMBER)                    03970000
+#COPTYPE EQU   ##ANSWER+60,8    COPY: DSNTYPE(LIBRARY/PDS)              03970199
+#LMASORT EQU   ##ANSWER+56,8    LMA: SORTBY                             03971082
+#LMASRTL EQU   ##ANSWER+64,2    LMA: SORTBY LENGTH                      03972084
+#REPRMAX EQU   ##ANSWER+64,4    REPRO: MAXIMUM BLOCKSIZE                03980000
+#LMAPARM EQU   ##ANSWER+66,62   LMA: PARM                               03981084
+#REPRBLK EQU   ##ANSWER+68,4    COPY/REPRO: MAXBLK(SIZE)                03992099
+#RESTSSI EQU   ##ANSWER+68,4    RESTORE: LOAD MODULE SSI DATA           04000000
+#XMIDSN  EQU   ##ANSWER+68,46   XMIT: OUTDSNAME                         04001063
+#XMIMSG  EQU   ##ANSWER+114,1   XMIT: MESSAGE                 DRK AUG19 04001199
+#USADSN  EQU   ##ANSWER+68,46   USAGE: QUOTED DSNAME FOR DSINFO         04001299
+#SMPDIST EQU   ##ANSWER+68,8    SMPGEN: DISTLIB                         04002074
+#COPMAXG EQU   ##ANSWER+72,4    COPY: MAXGENS(NUMBER)         DRK MAY18 04002199
+#SMPSYSL EQU   ##ANSWER+76,8    SMPGEN: SYSLIB                          04004199
+#SMPTXL  EQU   ##ANSWER+84,8    SMPGEN: TXLIB                           04004299
+#SMPDMOD EQU   ##ANSWER+92,8    SMPGEN: DISTMOD                         04005074
+#SMPREL  EQU   ##ANSWER+100,8   SMPGEN: RELFILE                         04006074
+#SMPTYPE EQU   ##ANSWER+108,8   SMPGEN: TYPE                            04007074
+#SMPSSI  EQU   ##ANSWER+116,8   SMPGEN: SSI                             04008076
+#SMPDISP EQU   ##ANSWER+124,1   SMPGEN: OLD/SHR                         04009099
+#RESTLIK EQU   ##ANSWER+72,8    RESTORE: LIKE MODEL MEMBER NAME         04010000
+#SPFMACR EQU   ##ANSWER+72,8    SPFEDIT: MACRO NAME                     04020000
+#REPRLEN EQU   ##ANSWER+72,4    REPRO: CURRENT BUFFER LENGTH            04030000
+#REPRBUF EQU   ##ANSWER+76,4    REPRO: BUFFER START                     04040000
+#COMMDSZ EQU   ##ANSWER+76,2    EXTERNAL SUBCOMMAND OPERAND LENGTH      04050000
+#CMXDDIN EQU   ##ANSWER+76,8    COMPRESS: SYSIN DDNAME                  04060000
+#SPFPROF EQU   ##ANSWER+80,8    SPFEDIT: PROFILE NAME                   04070000
+#OUTREGS EQU   ##ANSWER+80,28   OUTCOPY REGISTER R2:R8 SAVE AREA        04080000
+#RESTSEQ EQU   ##ANSWER+80,4    SEQUENTIAL MEMBER NAME COUNT            04090000
+#RESTLEN EQU   ##ANSWER+84,4    MACHINE LENGTH OF ENTERED NAME          04100000
+#CMXDDPR EQU   ##ANSWER+84,8    COMPRESS: SYSPRINT DDNAME               04110000
+#RESTNA# EQU   ##ANSWER+88,1    RESTORE: MODULE NAME LENGTH             04120000
+#ALIAESD EQU   ##ANSWER+89,1    ALIAS   MVS/XA RMODE/AMODE ESD FLAGS    04130000
+#RESTESD EQU   ##ANSWER+90,1    RESTORE MVS/XA RMODE/AMODE ESD FLAGS    04140000
+#RESTMOD EQU   ##ANSWER+91,1    RESTORE MVS/XA RMODE ESD SUMMARY AREA   04150000
+#RESTSTR EQU   ##ANSWER+98,2+32 RESTORE: STRING LENGTH AND STRING       04160000
+#SRCSTRL EQU   ##ANSWER+98,2    SRCHFOR: STRING LENGTH                  04160167
+#CMXDDT1 EQU   ##ANSWER+100,8   COMPRESS: SYSUT1 DDNAME                 04170000
+#SRCCOLL EQU   ##ANSWER+100,2   SRCHFOR: COLUMN LENGTH                  04172067
+#SRCCOL  EQU   ##ANSWER+102,7   SRCHFOR: COLUMN                         04173067
+#CMXDDT2 EQU   ##ANSWER+108,8   COMPRESS: SYSUT2 DDNAME                 04180000
+#CMXDDT3 EQU   ##ANSWER+116,8   COMPRESS: SYSUT3 DDNAME                 04190000
+#CMXDDT4 EQU   ##ANSWER+124,8   COMPRESS: SYSUT4 DDNAME                 04200000
+#OUTOPTN EQU   ##ANSWER+131,1   OUTCOPY TEXT/NOTEXT                     04210000
+         EJECT                                                          04220000
+** DIRENTRY, FIND, LIST AND REPLACE AREA:                               04230000
+#IGNCASE EQU   ##ANSWER+0,1     FIND: IGNORE CASE                       04240034
+#DIRSTAT EQU   ##ANSWER+0,1     DIRENTRY: ISPF/DEBUG                    04241099
+#REPFLAG EQU   ##ANSWER+1,1     UPDATE: REPLACE/NOREPLACE               04250032
+#REPCNT  EQU   ##ANSWER+2,2     UPDATE: COUNT OF RECORDS UPDATED        04260000
+#LISTIDU EQU   ##ANSWER+4,2     UPDATE: ESDID FIRST UPDATED             04270000
+#LISTWD  EQU   ##ANSWER+6,2     WIDTH (16 OR 64)                        04280000
+#LISTMFF EQU   ##ANSWER+8,4     LIST MODULE AND OFFSET TOGETHER         04290000
+#LISTN0  EQU   ##ANSWER+12,4    LIST: NEXT MEMBER DISPLACEMENT          04300000
+#LISTN1  EQU   ##ANSWER+16,4    LIST: DISPLACEMENT IN LOAD MODULE       04310000
+#LISTN2  EQU   ##ANSWER+20,4    LIST: DISPLACEMENT IN CSECT             04320000
+*#ESDPTR  EQU  ##ANSWER+24,4    ADDRESS OF ESD DATA CHAIN               04330000
+#LISTE1  EQU   ##ANSWER+28,4    LIST: END OF CSECT OR EXTERNAL SYMBOL   04340000
+*#ACTIONT EQU  ##ANSWER+32,4    ACTION AFTER A SUCCESSFUL FIND          04350000
+*#ACTIONE EQU  ##ANSWER+36,4    ACTION AFTER AN UNSUCCESSFUL FIND       04360000
+#LFSAVE2 EQU   ##ANSWER+40,8    LIST/FIND SAVE AREA FOR R14 AND R15     04370000
+#LFSAVE4 EQU   ##ANSWER+48,16   LIST/FIND SAVE AREA FOR R3, R4, R5 & R6 04380000
+#SKIPCOL EQU   ##ANSWER+64,2    COLUMNS TO SKIP FOR EACH RECORD         04390000
+#REPINCR EQU   ##ANSWER+66,2    FIND/REPLACE INCREMENT (0,1,3,7,15,79)  04400000
+#SKIPREC EQU   ##ANSWER+68,4    RECORDS TO SKIP AT THE BEGINNING        04410000
+#BLKCNT  EQU   ##ANSWER+72,4    LIST RECORD/BLOCK COUNTER               04420000
+#LISTOFF EQU   ##ANSWER+76,4    LIST OFFSET                             04430000
+#LISTBUF EQU   ##ANSWER+84,4    LIST: UPDATE READ BUFFER                04440000
+#LISTFLG EQU   ##ANSWER+88,1    LIST CSECT FLAG                         04450000
+#DIRSHOR EQU   ##ANSWER+89,1    DIRENTRY: SHORT/LONG                    04460000
+#LISTID  EQU   ##ANSWER+90,2    LIST ESDID                              04470000
+#LISTVIR EQU   ##ANSWER+92,4    VIRTUAL LOAD MODULE START ADDRESS       04480000
+#LISTENT EQU   ##ANSWER+96,4    CURRENT ESD ENTRY                       04490000
+#LUSAVE4 EQU   ##ANSWER+100,16  LIST: SAVE AREA FOR R14:R1              04500000
+#MAXLEN  EQU   ##ANSWER+116,4   MAXIMUM RECORD LENGTH                   04510000
+#MAXFIND EQU   ##ANSWER+120,4   MAXIMUM RECORD LENGTH                   04520000
+#MAXIN   EQU   ##ANSWER+124,4   MAXIMUM RECORDS TO READ                 04530000
+#MAXOUT  EQU   ##ANSWER+128,4   MAXIMUM DATA LINES TO OUTPUT            04540000
+         EJECT                                                          04550000
+** ATTRIB, IF, HISTORY AND MAP SUBCOMMAND AREA:                         04560000
+#ZAPOPT  EQU   ##ANSWER+0,1  ** ZAP(PARTNAME)             (LOAD ONLY)   04570000
+#USEROPT EQU   ##ANSWER+1,1  ** USERDATA(PARTNAME)        (LOAD ONLY)   04580000
+#TRANOPT EQU   ##ANSWER+2,1  ** TRANS(PARTNAME)           (LOAD ONLY)   04590000
+#LKEDOPT EQU   ##ANSWER+3,1  ** LKED(PARTNAME)            (LOAD ONLY)   04600000
+#MODOPT  EQU   ##ANSWER+4,1  ** MODULE(PARTNAME)          (LOAD ONLY)   04610000
+#RLDERR  EQU   ##ANSWER+5,1  ** RLDERR/NORLDERR           (LOAD ONLY)   04620000
+#ATTRYES EQU   ##ANSWER+6,2  ** BITS ON FOR ATTR/IF       (LOAD ONLY)   04630000
+#ATTRNO  EQU   ##ANSWER+8,2  ** BITS OFF FOR ATTR/IF      (LOAD ONLY)   04640000
+#AUTHOPT EQU   ##ANSWER+10,1 ** AUTH/NOAUTH               (LOAD ONLY)   04650000
+#PAGEOPT EQU   ##ANSWER+11,1 ** PAGE/NOPAGE               (LOAD ONLY)   04660000
+#RMODE   EQU   ##ANSWER+12,1 ** RMODE24/RMODEANY          (LOAD ONLY)   04670000
+#AMODE   EQU   ##ANSWER+13,1 ** AMODE24/AMODE31/AMODEANY  (LOAD ONLY)   04680000
+#VSLKED  EQU   ##ANSWER+14,1 ** VSLKED/NOVSLKED           (LOAD ONLY)   04690000
+#LOADERR EQU   ##ANSWER+15,1 ** LOADERR/NOLOADERR         (LOAD ONLY)   04700000
+#LKEDERR EQU   ##ANSWER+16,1 ** CONFLICT/NOCONFLICT       (LOAD ONLY)   04710000
+#RLD0    EQU   ##ANSWER+17,1 ** RLDZERO/NORLDZERO         (LOAD ONLY)   04720000
+#APFERR  EQU   ##ANSWER+18,1 ** APFERR/NOAPFERR           (LOAD ONLY)   04730000
+#MODLEN  EQU   ##ANSWER+19,1    PARTNAME LENGTH FOR MODULE(..           04740000
+#PACKED  EQU   ##ANSWER+19,1    IF: PACKED/NOPACKED           DRK APR18 04741099
+#MAPOPT  EQU   ##ANSWER+20,1    SHORT/FULL/ENTRY                        04750000
+#LONGOPT EQU   ##ANSWER+20,1    ATTRIB: LONG                            04751099
+#XSTATS  EQU   ##ANSWER+20,1    IF: XSTATS/NOXSTATS (SPF XSTATS)        04752099
+#MAPMCS  EQU   ##ANSWER+21,1    MAP: MCS                                04753099
+#ALIAOPT EQU   ##ANSWER+21,1    ALIAS/NOALIAS                           04760000
+#USERIDO EQU   ##ANSWER+22,1    ID(PUSER)/NOTID(PUSER)/NOID             04770000
+#OPTOPT  EQU   ##ANSWER+23,1    PROCESSING OPTIONS SUMMARY              04780000
+#ESDPTR  EQU   ##ANSWER+24,4    ADDRESS OF ESD DATA CHAIN               04790000
+#IDRPTR  EQU   ##ANSWER+28,4    ADDRESS OF IDR DATA CHAIN               04800000
+#ACTIONT EQU   ##ANSWER+32,4    ACTION AFTER A SUCCESSFUL FIND          04810000
+#ACTIONE EQU   ##ANSWER+36,4    ACTION AFTER AN UNSUCCESSFUL FIND       04820000
+#ATTRLO  EQU   ##ANSWER+40,3    LOWER TTR LIMIT FROM TTR(LOW:HIGH)      04830000
+#ATTRHI  EQU   ##ANSWER+43,3    UPPER TTR LIMIT FROM TTR(LOW:HIGH)      04840000
+#ZAPLEN  EQU   ##ANSWER+46,1 ** PARTNAME LENGTH FOR ZAP(..              04850000
+#USERLEN EQU   ##ANSWER+47,1 ** PARTNAME LENGTH FOR USERDATA(..         04860000
+#TRANLEN EQU   ##ANSWER+48,1 ** PARTNAME LENGTH FOR TRANS(..            04870000
+#LKEDLEN EQU   ##ANSWER+49,1    PARTNAME LENGTH FOR LKED(..             04880000
+#USERIDL EQU   ##ANSWER+50,1    ID(NAME) LENGTH                         04890000
+#UNALIAS EQU   ##ANSWER+50,1    ATTRIB: UNALIAS KEYWORD                 04900000
+#SSIOPT  EQU   ##ANSWER+51,1    SSI/NOSSI                               04910000
+#ADDSTAT EQU   ##ANSWER+52,1    ATTRIB: NONE/ADDSTATS                   04920000
+#EXTEND  EQU   ##ANSWER+53,1    ATTRIB: NOEXTEND/EXTEND (SPF STATS)     04921099
+#IFABOVE EQU   ##ANSWER+52,4 ** ABOVE(COUNT)           (MAYBE READ)     04930000
+#IFBELOW EQU   ##ANSWER+56,4 ** BELOW(COUNT)           (MAYBE READ)     04940000
+#IOERROR EQU   ##ANSWER+60,1 ** IOERROR/NOIOERROR      (IMPLIES READ)   04950000
+#BLOCKER EQU   ##ANSWER+61,1 ** BLOCKERR/NOBLOCKERR    (IMPLIES READ)   04960000
+#LRECLER EQU   ##ANSWER+62,1 ** LRECLERR/NOLRECLERR    (IMPLIES READ)   04970000
+#NULL    EQU   ##ANSWER+63,1 ** NULL/NONULL            (IMPLIES READ)   04980000
+#AALIAS  EQU   ##ANSWER+64,1    APPARENTALIAS/NOAPPARENTALIAS           04990000
+#ORPHAN  EQU   ##ANSWER+65,1    ORPHAN/NOORPHAN                         05000000
+#SPFEDIT EQU   ##ANSWER+66,1    SPFEDIT/NOSPFEDIT                       05010000
+#NAMEERR EQU   ##ANSWER+67,1    NAMEERR/NONAMEERR                       05020000
+#LKEDTXT EQU   ##ANSWER+68,10   LKED(NAME) TEXT                         05030000
+#IFLEN   EQU   ##ANSWER+68,4    LENGTH OF MODULE OR NUMBER OF LINES     05040000
+#TRANTXT EQU   ##ANSWER+78,10   TRAN(NAME) TEXT                         05050000
+#HASALIA EQU   ##ANSWER+88,1    HASALIAS/NOHASALIAS  (1 -- AVAILABLE)   05060000
+#MAXBLKI EQU   ##ANSWER+90,2    IF: MAXBLK(SIZE)                        05070000
+#SSITEXT EQU   ##ANSWER+92,4    SSI(ABCDABCD) CONVERTED TEXT            05080000
+#MODTXT  EQU   ##ANSWER+96,8    MODULE(NAME) TEXT                       05090000
+#IFMODIF EQU   ##ANSWER+104,6   IF CHANGED(84047:84050)                 05100000
+#IFCREIF EQU   ##ANSWER+110,6   IF CREATED(84047:84050)                 05110000
+#ZAPTXT  EQU   ##ANSWER+116,8   ZAP(NAME) TEXT                          05120000
+#ATTROPT EQU   ##ANSWER+116,1   ATTRIB OPTIONS FOR SOURCE TEXT          05130000
+#ATTRVER EQU   ##ANSWER+117,1   ATTRIB: VER NUMBER                      05140000
+#ATTRMOD EQU   ##ANSWER+118,1   ATTRIB: MOD NUMBER                      05150000
+#ATTRTIM EQU   ##ANSWER+90,2    ATTRIB: CHANGED TIME          DRK FEB01 05160000
+#ATTRSEC EQU   ##ANSWER+88,1    ATTRIB: CHANGED TIME SECONDS  DRK FEB01 05170000
+#USERTXT EQU   ##ANSWER+124,8   USERDATA(NAME)/ID(USERID7) TEXT         05180000
+         EJECT                                                          05190000
+** EDIT, FIXPDS, FSE, RENAME, SPFEDIT AND VERIFY SUBCOMMAND AREA:       05200000
+#FIXOPT  EQU   ##ANSWER+0,1     FIXPDS DCB/RESET/INITDIR/EXPAND/FREEDIR 05210000
+#EDITOLD EQU   ##ANSWER+0,1     TSOEDIT OLD/NEW                         05220000
+#SPFOLD  EQU   ##ANSWER+0,1     EDIT    OLD/NEW                         05230000
+#VERLOAD EQU   ##ANSWER+0,1     VERIFY  LOAD/NOLOAD                     05240000
+#FIXOPT2 EQU   ##ANSWER+1,1     FIXPDS  RELEASE/RESERVE                 05250000
+#VERUPDT EQU   ##ANSWER+1,1     VERIFY  UPDATE/NOUPDATE                 05260000
+#EDITNON EQU   ##ANSWER+1,1     EDIT    NONUM                           05270000
+#EDITASI EQU   ##ANSWER+2,1     EDIT    ASIS                            05280000
+#VERREAD EQU   ##ANSWER+2,1     VERIFY  READ/NOREAD                     05300000
+#FIXCHK  EQU   ##ANSWER+2,1     FIXPDS  CHECK/NOCHECK                   05310000
+#VERSTND EQU   ##ANSWER+3,1     VERIFY  STANDARD/NOSTANDARD             05320000
+#FIXRES  EQU   ##ANSWER+4,4     FIXPDS  RESERVE QUANTITY                05330000
+#VERSTAT EQU   ##ANSWER+4,1     VERIFY  STATS/NOSTATS                   05340000
+#EDITTYP EQU   ##ANSWER+4,4     EDIT    TYPE (CNTL, ASM, OR ...)        05350000
+#VERNLKD EQU   ##ANSWER+5,1     VERIFY  LKED/NOLKED                     05360000
+#VERSIZE EQU   ##ANSWER+6,1     VERIFY  SIZE/NOSIZE                     05370000
+#VERMBR  EQU   ##ANSWER+8,8     VERIFY  MEMBER NAME                     05380000
+#RECFM   EQU   ##ANSWER+8,4     RECORD FORMAT DESIRED FOR FIXPDS        05390000
+#LRECL   EQU   ##ANSWER+12,4    LRECL DESIRED FOR FIXPDS                05400000
+#BLKSI   EQU   ##ANSWER+16,4    BLKSIZE DESIRED FOR FIXPDS              05410000
+#MAXBLKV EQU   ##ANSWER+16,2    VERIFY: MAXBLK(SIZE)                    05420000
+#RENREP  EQU   ##ANSWER+16,8    RENAME REPBY NAME                       05430000
+#NEWDIR  EQU   ##ANSWER+20,4    DIRECTORY BLOCKS DESIRED FOR FIXPDS     05440000
+#MEMPTR  EQU   ##ANSWER+24,4    BASE FOR THE MEMBER NAME LIST           05450000
+#MEMLAST EQU   ##ANSWER+28,4    END OF MEMBER LIST POINTER              05460000
+#NOTEPTR EQU   ##ANSWER+28,4    BASE FOR THE NOTELIST                   05470000
+#RENSWAP EQU   ##ANSWER+28,1    SWAP/NOSWAP FOR RENAME                  05480000
+#RENRANG EQU   ##ANSWER+29,1    GROUP/NOGROUP FOR RENAME                05490000
+#RENDEFT EQU   ##ANSWER+30,21   FLAGS, L1, M1, M2, L2 FOR RENAME        05500000
+#MEMCNT  EQU   ##ANSWER+32,4    COUNT OF RECORDS IN THIS MEMBER         05510000
+#FINDTTR EQU   ##ANSWER+32,4    LAST MEMBER TTR                         05520000
+#OPTCD   EQU   ##ANSWER+36,4    OPTCD DESIRED FOR FIXPDS                05530000
+#SAVEREG EQU   ##ANSWER+36,4*7  REGISTER SAVE AREA                      05540000
+#FIXTTRI EQU   ##ANSWER+36,4    LAST INPUT TTR                          05550000
+#FIXTTRO EQU   ##ANSWER+40,4    LAST OUTPUT TTR                         05560000
+#EOF1TTR EQU   ##ANSWER+44,4    TTR OF ORIGINAL DIRECTORY EOF           05570000
+#EOF2TT  EQU   ##ANSWER+48,4    TT OF NEW DIRECTORY EOF                 05580000
+#DIRFIX  EQU   ##ANSWER+52,12   TEMPORARY STOW AND DELETE MEMBER        05590000
+#DIRBTRK EQU   ##ANSWER+64,4    NUMBER OF DIRECTORY BLOCKS PER TRACK    05600000
+#VERCREC EQU   ##ANSWER+64,4    VERIFY COMPRESS TRACK RECORD NUMBER     05610000
+#VERCTRK EQU   ##ANSWER+68,4    VERIFY COMPRESS TRACK NUMBER            05620000
+#FIXOPT3 EQU   ##ANSWER+68,4    FIXPDS ADDTRK/ADDCYL AND NUMBER TO ADD  05630000
+#VERCBAL EQU   ##ANSWER+72,4    VERIFY COMPRESS TRACK BALANCE           05640000
+#VERCREG EQU   ##ANSWER+76,4    VERIFY COMPRESS REGISTER SAVE           05650000
+#VERCLOG EQU   ##ANSWER+80,4    VERIFY COUNT LOGICAL RECORDS            05660000
+#VERCBLK EQU   ##ANSWER+84,4    VERIFY COUNT PHYSICAL BLOCKS            05670000
+#VERCBLC EQU   ##ANSWER+88,4    VERIFY COUNT PHYSICAL CHARACTERS        05680000
+#VERMEM  EQU   ##ANSWER+92,8    VERIFY LAST MEMBER NAME CHANGED         05690000
+#VERMAX  EQU   ##ANSWER+100,4   VERIFY MAXIMUM BLOCKSIZE READ           05700000
+#VERR4   EQU   ##ANSWER+104,16  VERIFY WORK AREA                        05710094
+#RTYPE   EQU   ##ANSWER+120,1   FIXPDS DATA TYPE (LOAD/OBJECT/ ET AL)   05711057
+#VERMAXV EQU   ##ANSWER+120,4   VERIFY MAXIMUM RECFM=V LRECL SIZE       05712096
+##THEEND EQU   ##ANSWER         END OF PARSE WORKAREA EQUATES DRK JUN18 05713099
+         SPACE 1                                                        05720000
+#LSUB    EQU   *-##SUBCOM     RESET LENGTH FOR SUBCOMMANDS              05730000
+         SPACE 1                                                        05740000
+#SUBHOLD DS    CL8,3AL4,CL8,2AL2,CL132  RESET SAVE AREA FOR SUBCOMMANDS 05750000
+         TITLE 'P D S  --  PDS DYNAMIC AREA                    3/04/87' 05760000
+CCWS     DS    0D                                                       05770000
+CCW1A    CCW   X'31',IOBSEEK-IOBSEEK+3,X'60',5  SEARCH ID EQUAL (CCHHR) 05780000
+CCW2A    CCW   X'08',*-8-(*-8),X'60',1          TIC                     05790000
+CCW3A    CCW   X'92',IOBSEEK-IOBSEEK+3,X'20',8  MT READ NEXT COUNT      05800000
+*                                                                       05810000
+CCW0     CCW   X'23',SNO-SNO,X'60',1            SET SECTOR              05820000
+CCW1     CCW   X'31',IOBSEEK-IOBSEEK+3,X'60',5  SEARCH ID EQUAL (CCHHR) 05830000
+CCW2     CCW   X'08',*-8-(*-8),X'60',1          TIC                     05840000
+CCW3     CCW   X'0E',*-*,X'60',32768            READ KEY AND DATA       05850000
+CCW4     CCW   X'08',*+8-(*+8),X'60',1          TIC (OR MT READ CKD)    05860000
+CCW5     CCW   X'92',IOBSEEK-IOBSEEK+3,X'60',8  MT READ NEXT COUNT      05870000
+CCW6     CCW   X'22',SNO-SNO,X'20',1            READ SECTOR NUMBER      05880000
+LCCWINIT EQU   *-CCWS                                                   05890000
+         SPACE 2                                                        05900000
+IOB      DC    X'C2000000'                                              05910000
+IOBECB   DC    A(IOECB)                                                 05920000
+IOBCSW   DC    2A(0)                                                    05930000
+IOBCCW   DC    A(CCW0)                                                  05940000
+IOBDCB   DC    A(INDCB)                                                 05950000
+         DC    2A(0)                                                    05960000
+IOBSEEK  DC    2A(0)       *** NEXT MBBCCHHR ADDRESS                    05970000
+KEYLN    DS    X           *** NEXT KEYLENGTH                           05980000
+DATALN   DS    2X          *** NEXT RECORD LENGTH                       05990000
+SNO      DS    X           *** NEXT SECTOR NUMBER                       06000000
+IOECB    DS    F           *** ECB FOR EXCP                             06010000
+CUREXT   DS    F           *** CURRENT DATA SET EXTENT                  06020000
+LIOBDIR  EQU   *-IOBSEEK                                                06030000
+         SPACE 2                                                        06040000
+IODIR1   DS    A,12C,2A        PRIMARY DIRECTORY GROUP INPUT CONTROL    06050000
+IODIR2   DS    A 12C,2A********SECONDARY DIRECTORY GROUP INPUT CONTROL  06060000
+IOBUFF1  DS    A,12C,2A        PRIMARY INPUT BUFFER CONTROL             06070000
+IOBUFF2  DS    A 12C,2A********SECONDARY INPUT BUFFER CONTROL CONTROL   06080000
+         SPACE 1                                                        06090000
+DIRPTRS  DS    3A              READDIR DIRECTORY POINTERS               06100000
+DIRPTRS2 DS    3A              READDIR DIRECTORY POINTERS FOR GROUPS    06110000
+EXCPWRK  DS    CL12            WORK AREA FOR EXCP ROUTINE               06120000
+CURMBB   DS    XL8             CURRENT MBBCCHHR ADDRESS                 06130000
+CURDIR   DS    XL8             LAST DIRECTORY ADDRESS FOR A GROUP       06140000
+LSTARMBB DS    XL8             DS1LSTAR IN MBBCCHHR FORMAT              06150000
+EXCPCCWI DS    A               INITIAL CCW (CCW0 OR CCW1)               06160000
+STARTTR  DS    F               INITIAL TTR TO READ                      06170000
+LS       DS    F               CURRENT RECORD LENGTH                    06180000
+         EJECT                                                          06190000
+***      KEEP THE NEXT THREE STATEMENTS TOGETHER    ***                 06200000
+IBUFPTR  DS    F  **********   POINTER TO CURRENT I/O CONTROL BLOCK     06210000
+ISAVSEEK DS    F  **********   POINTER TO IODIR1+4 OR IOBUFF1+4         06220000
+ICONTROL DS    F  **********   POINTER TO IODIRCUR OR IOBUFCUR          06230000
+IODIRCUR DS    F               CURRENT LOGICAL INPUT RECORD             06240000
+IODIRADD DS    F               CURRENT CCHH ADDRESS                     06250000
+IOBUFCUR DS    F               CURRENT LOGICAL INPUT RECORD             06260000
+IOBUFADD DS    F               CURRENT CCHH ADDRESS                     06270000
+IBUFSAV  DS    3F              SAVEAREA FOR IBUFPTR, ISAVSEEK, ICONTROL 06280000
+INUMSAV  DS    H               NUMBER OF ELEMENTS TO SAVE (1 TO 20)     06290000
+INXTSAV  DS    H               NEXT AVAILABLE SAVE ELEMENT (1 TO 20)    06300000
+         SPACE 2                                                        06310000
+MEMNAME  DS    CL8            DIRECTORY NAME FOR READDIR                06320000
+MEMTTR   DS    XL3            TTR ADDRESS FOR READDIR                   06330000
+MEMFLAG  DS    X              FLAG BYTE FOR READDIR                     06340000
+         SPACE 2                                                        06350000
+PMEMMIN  DS    F              FIRST MEMBER LIST POINTER                 06360000
+PMEMCURR DS    F              CURRENT MEMBER LIST POINTER               06370000
+PMEMMAX  DS    F              LAST MEMBER LIST POINTER                  06380000
+         SPACE 1                                                        06390000
+MMEMMIN  DS    F              SUBLIST: FIRST MEMBER LIST POINTER        06400000
+MMEMCURR DS    F              CURRENT MEMBER LIST POINTER               06410000
+MMEMMAX  DS    F              LAST MEMBER LIST POINTER                  06420000
+         SPACE 1                                                        06430000
+PMEMHOLD DS    F              MEMBER PROCESSING HOLD FOR ATTENTION      06440000
+MMEMBERD DS    XL1,XL2,CL8,CL8,XL2,XL3                                  06450000
+         SPACE 2                                                        06460000
+ENTRYPT  DS    CL8            MODULE ENTRY POINT NAME                   06470000
+LKEDDATE DS    XL3                                                      06480000
+LKEDTIME DS    XL4            LKED TIMESTAMP (APAR OW29593)   DRK MAY99 06490000
+LKEDNAME DS    XL10                                                     06500000
+LKEDVVMM DS    XL4                                                      06510000
+COBTIME  DS    XL4            COBOL MVS, OS/390 TIMESTAMP     DRK MAY99 06520000
+COBDATE  DS    XL6            COBOL MVS, OS/390 TIMESTAMP     DRK DEC02 06530035
+         SPACE 3                                                        06540000
+IODONE   DS    H             **  INPUT ROUTINE ENTRIES                  06550000
+IODONEW  DS    H             **  NUMBER OF TTR CHANGES                  06560000
+IOLOGUSE DS    H             **  INITIATED SECOND BUFFER USES           06570000
+IOPHYTRK DS    H             **  NUMBER OF READ MULTIPLES               06580000
+IOEDIR   DS    H             **  NUMBER OF PDSE DIRECTORY BLKS          06581055
+         SPACE 3                                                        06590000
+DEVTYPE  DS    F             **  UCBTYPE INFORMATION                    06600000
+DEVTBLK  DS    F             **  MAXIMUM BLOCKSIZE                      06610000
+         DS    H             **  PHYSICAL CYLINDERS                     06620000
+DEVTTRKS DS    H             **  TRACKS/CYLINDER                        06630000
+DEVTMAXT DS    H             **  MAXIMUM TRACK LENGTH                   06640000
+         DS    H             **  BLOCK OVERHEAD                         06650000
+         DS    F             **  BLOCK OVERHEAD                         06660000
+DEVRPS   DS    F             **  RPS DATA                               06670000
+         TITLE 'P D S  --  PDS DYNAMIC AREA -- MF=L MACROS     3/04/87' 06680000
+         PRINT GEN                                                      06690000
+STAEPARM ESTAE *-*,CT,PARAM=*-*,TERM=YES,MF=L                           06700000
+         SPACE 1                                                        06710000
+STAXPARM STAX  *-*,REPLACE=YES,IBUF=0,OBUF=0,MF=L                       06720000
+         SPACE 1                                                        06730000
+         WRITE FIXPDSD,SF,*-*,*-*,'S',MF=L                              06740000
+         SPACE 1                                                        06750000
+         WRITE FIXPDS2,SF,*-*,*-*,'S',MF=L                              06760000
+         SPACE 1                                                        06770000
+*INKSFL  LINK   EPLOC=*-*,SF=L                                          06780000
+         AIF   ('&PDSMAIN' EQ 'YES').PDSMAIN                            06790000
+* THE FOLLOWING BRANCH TO PDSMAIN USING THE SAME TARGET NAME            06800000
+$TMSGRT  DS    A     1    ** KEEP THESE IN SYNC WITH PDSINIT            06810000
+MESSAGE0 DS    A     2    ** KEEP THESE IN SYNC WITH PDSINIT            06820000
+MESSTXT1 DS    A     3    ** KEEP THESE IN SYNC WITH PDSINIT            06830000
+ATTACH   DS    A     4    ** KEEP THESE IN SYNC WITH PDSINIT            06840000
+READDIR  DS    A     5    ** KEEP THESE IN SYNC WITH PDSINIT            06850000
+NEWSTAX  DS    A     6    ** KEEP THESE IN SYNC WITH PDSINIT            06860000
+NEWCMD   DS    A     7    ** KEEP THESE IN SYNC WITH PDSINIT            06870000
+RESTART0 DS    A     8    ** KEEP THESE IN SYNC WITH PDSINIT            06880000
+DEFGROUP DS    A     9    ** KEEP THESE IN SYNC WITH PDSINIT            06890000
+EXIT8N   DS    A    10    ** KEEP THESE IN SYNC WITH PDSINIT            06900000
+EXIT8M   DS    A    11    ** KEEP THESE IN SYNC WITH PDSINIT            06910000
+M$PUTGT  DS    A    12    ** KEEP THESE IN SYNC WITH PDSINIT            06920000
+CONVDATE DS    A    13    ** KEEP THESE IN SYNC WITH PDSINIT            06930000
+SHUTSTW2 DS    A    14    ** KEEP THESE IN SYNC WITH PDSINIT            06940000
+SHUTSTOW DS    A    15    ** KEEP THESE IN SYNC WITH PDSINIT            06950000
+OPENSTOW DS    A    16    ** KEEP THESE IN SYNC WITH PDSINIT            06960000
+ENQMTEST DS    A    17    ** KEEP THESE IN SYNC WITH PDSINIT            06970000
+SPFRECUR DS    A    18    ** KEEP THESE IN SYNC WITH PDSINIT            06980000
+CLOSEIT  DS    A    19    ** KEEP THESE IN SYNC WITH PDSINIT            06990000
+RESTART2 DS    A    20    ** KEEP THESE IN SYNC WITH PDSINIT            07000000
+M$PUTLIN DS    A    21    ** KEEP THESE IN SYNC WITH PDSINIT            07010000
+DEALLDCB DS    A    22    ** KEEP THESE IN SYNC WITH PDSINIT            07020000
+RESERVE  DS    A    23    ** KEEP THESE IN SYNC WITH PDSINIT            07030000
+DEQ      DS    A    24    ** KEEP THESE IN SYNC WITH PDSINIT            07040000
+ABEND0C1 DS    A    25    ** KEEP THESE IN SYNC WITH PDSINIT            07050000
+YESNO    DS    A    26    ** KEEP THESE IN SYNC WITH PDSINIT            07060000
+MEMSNEXT DS    A    27    ** KEEP THESE IN SYNC WITH PDSINIT            07070000
+EXIT12O  DS    A    28    ** KEEP THESE IN SYNC WITH PDSINIT            07080000
+DEALLOCZ DS    A    29    ** KEEP THESE IN SYNC WITH PDSINIT            07090000
+CALLCMDZ DS    A    30    ** KEEP THESE IN SYNC WITH PDSINIT            07100000
+YESNO1   DS    A    31    ** KEEP THESE IN SYNC WITH PDSINIT            07110000
+ATTACH2  DS    A    32    ** KEEP THESE IN SYNC WITH PDSINIT            07120000
+MFILTER  DS    A    33    ** KEEP THESE IN SYNC WITH PDSINIT            07130000
+         AGO   .PDSSUBR                                                 07140000
+.PDSMAIN ANOP                                                           07150000
+COMMENTR DS    33A        ** NOTE CORRESPONDING NUMBER                  07160000
+.PDSSUBR ANOP                                                           07170000
+DIRHOLD  DS    CL8        ** HIGHEST NAME ENCOUNTERED FOR DELETE        07180000
+         TITLE 'P D S  --  PDS DYNAMIC AREA                    3/04/87' 07190000
+DIRLINK  DS    0F             ***   DIRECTORY AREA MAPPING  ***         07200000
+BLDLLIST DS    XL4                                                      07210000
+DIRNAME  DS    CL8                                                      07220000
+DIRTTR   DS    XL3                                                      07230000
+DIRFLAG  DS    X                                                        07240000
+DIRALIAS EQU   X'80'          MEMBER IS AN ALIAS                        07250000
+DIR2TTR  EQU   X'40'          TWO TTR'S TO UPDATE                       07260000
+DIR1TTR  EQU   X'20'          ONE TTR TO UPDATE                         07270000
+DIRUSER  DS    XL62                                                     07280000
+         ORG   DIRUSER  FOLLOWING FOR LOAD MODULES                      07290000
+DIRSTART DS    XL4            TTR OF FIRST TEXT BLOCK                   07300000
+DIRNOTE  DS    XL3            TTR OF NOTELIST                           07310000
+DIRNOTE# DS    X              NUMBER OF NOTELIST ENTRIES                07320000
+DIRATTR  DS    XL2            MEMBER ATTRIBUTES                         07330000
+DIRSTORE DS    XL3            SIZE OF LOAD MODULE                       07340000
+DIRTEXTL DS    XL2            LENGTH OF 1ST TEXT RECORD                 07350000
+DIREPA   DS    XL3            ENTRY POINT ADDRESS                       07360000
+DIRATTR2 DS    X          ADDITIONAL ATTRIBUTE BYTES:                   07370000
+DIRAOSLE EQU   X'80'          VS LINKAGE EDITOR CREATED THIS MODULE     07380000
+DIR2BIG  EQU   X'40'          REQUIRES 16M OR MORE OF VIRTUAL STORAGE   07381080
+DIR2PAGA EQU   X'20'          PAGE ALIGNMENT REQUIRED FOR THIS MODULE   07390000
+DIR2SSI  EQU   X'10'          SSI INFORMATION IS PRESENT FOR MODULE     07400000
+DIRAPFLG EQU   X'08'          APF INFORMATION FOR THIS MODULE IS VALID  07410000
+DIR2LFMT EQU   X'04'          MODULE IS IN PROGRAM OBJECT FORMAT        07411080
+DIRATTR3 DS    X          ADDITIONAL ATTRIBUTE BYTES:                   07420000
+DIRRMANY EQU   X'10'          RMODE=ANY                                 07430000
+DIRRM64  EQU   X'20'          RMODE=64                        DRK APR18 07431099
+DIRAA31  EQU   X'08'          AMODE=31 (ALIAS ENTRY)                    07440000
+DIRAA64  EQU   X'04'          AMODE=64 (ALIAS ENTRY)          DRK OCT02 07450020
+DIRAA24  EQU   X'00'          AMODE=24 (ALIAS ENTRY)          DRK OCT02 07460021
+DIRAM31  EQU   X'02'          AMODE=31 (MAIN ENTRY)                     07470000
+DIRAM64  EQU   X'01'          AMODE=64 (MAIN ENTRY)           DRK OCT02 07480020
+DIRAM24  EQU   X'00'          AMODE=24 (MAIN ENTRY)           DRK OCT02 07490021
+DIRATTR4 DS    X              COUNT OF RLD ENTRIES AFTER FIRST TEXT     07500000
+         SPACE 1                                                        07510000
+DIRAPF   DS    0XL2           APF (IF NOT SCAT, SSI OR ALIAS)           07520000
+DIREP    DS    XL3            ENTRY POINT (MAIN MEMBER)                 07530000
+DIRREAL  DS    CL8            REAL NAME OF MEMBER                       07540000
+DIRAPF2  DS    XL2            APF INFORMATION (ALIAS, NO SCAT OR SSI)   07550000
+DIREND2  DS    0X             END OF ALIAS SECTION                      07560000
+         ORG   DIRAPF    FOLLOWING FOR SCATTER LOADED MEMBERS           07570000
+DIRSCLL  DS    XL2            LENGTH OF SCATTER LIST                    07580000
+DIRSCTL  DS    XL2            LENGTH OF TRANSLATE TABLE                 07590000
+DIRSCET  DS    XL2            ESDID OF FIRST TEXT RECORD                07600000
+DIRSCEP  DS    XL2            ESDID OF ENTRY POINT                      07610000
+DIRAPF3  DS    0XL2           APF (IF SCAT, NO SSI AND NO ALIAS)        07620000
+DIREPSC  DS    XL3            ENTRY POINT (MAIN MEMBER)                 07630000
+DIRREALS DS    CL8            REAL NAME OF MEMBER                       07640000
+DIRAPF4  DS    XL2            APF INFORMATION (SCAT, NO SSI AND ALIAS)  07650000
+DIREND3  DS    0X             END OF SCATTER, ALIAS SECTION             07660000
+*                                                                       07670000
+         ORG   DIRUSER   FOLLOWING FOR MODULES SAVED BY SPF EDIT        07680000
+DIRSPFV  DS    XL1            VERSION NUMBER IN BINARY                  07690000
+DIRSPFR  DS    XL1            REVISION NUMBER IN BINARY                 07700000
+DIRSPFZ  DS    0XL2           NOT CURRENTLY USED                        07710099
+DIRSPFFL DS    XL1            FLAGS                                     07711099
+DIRSPFSC EQU   X'80'          SCLM                                      07712099
+DIRSPFXS EQU   X'20'          EXTENDED STATS                            07712199
+DIRSPFCS DS    XL1            LAST CHANGE TIME IN FORMAT SS             07713099
+*                                                                       07714099
+DIRSPFCR DS    XL4            CREATION DATE IN FORMAT 00YYDDDF          07720000
+DIRSPFCD DS    XL4            LAST CHANGE DATE IN FORMAT 00YYDDDF       07730000
+DIRSPFCT DS    XL2            LAST CHANGE TIME IN FORMAT HHMM           07740000
+DIRSPFSI DS    XL2            CURRENT SIZE IN BINARY                    07750000
+DIRSPFIN DS    XL2            INITIAL SIZE IN BINARY                    07760000
+DIRSPFMD DS    XL2            MODIFIED LINES IN BINARY                  07770000
+DIRSPFID DS    CL8            ID OF LAST PERSON TO UPDATE               07780000
+DIRSPXSI DS    XL4            CURRENT SIZE IN BINARY - EXTENDED STATS   07781299
+DIRSPXIN DS    XL4            INITIAL SIZE IN BINARY - EXTENDED STATS   07781399
+DIRSPXMD DS    XL4            MODIFIED LINES IN BINARY - EXTENDED STATS 07781499
+*                             END OF SPF SECTION                        07790000
+         ORG   ,                                                        07800000
+DIREND   DS    0X             END OF DIRECTORY INFORMATION              07810000
+         DS    XL2 (74 BYTES)  PADDING FOR:    MVC    DIRFLAG,DIRFLAG+2 07820000
+         SPACE 3                                                        07830000
+         IKJEFFMT                                                       07840000
+         SPACE 3                                                        07850000
+         DS    0F             ***   FORMAT 1 DSCB  ***                  07860000
+         ORG   *-44                                                     07870000
+         IECSDSL1 (1)         FORMAT 1 DSCB                             07880000
+         ORG   ,                                                        07890000
+         SPACE 2                                                        07900000
+         AGO   .NMVS12B                                       DRK JUN01 07910015
+         AIF ('&MVSLEV' GT 'MVS12X').NMVS12B                            07920015
+DS1DSGIS EQU   X'80'          ISAM                                      07930000
+DS1DSGPS EQU   X'40'          SEQUENTIAL                                07940000
+DS1DSGDA EQU   X'20'          DIRECT                                    07950000
+DS1DSGPO EQU   X'02'          PARTITIONED                               07960000
+DS1DSGU  EQU   X'01'          UNMOVEABLE                                07970000
+DS1ACBM  EQU   X'08'          VSAM                                      07980000
+.NMVS12B ANOP                                                           07990000
+         TITLE 'P D S  --  PDS DYNAMIC AREA -- GENERAL FAIL    3/04/87' 08000000
+GFPARMP  DS    F              POINTER TO START OF GENERAL FAIL PARMS    08010000
+         IKJEFFGF                                                       08020000
+         TITLE 'P D S  --  PDS DYNAMIC AREA -- DEFAULT RTN.    3/04/87' 08030000
+PARMPARS DS    F     AD.XDC.XDCCMDS(PDS86)PARAMETERS (OVERLAY DFPARMS)  08040099
+         IKJEFFDF                                                       08050000
+         ORG   DFBUFS         NO CALLER-SUPPLIED BUFFERS NEEDED         08060000
+         SPACE 3                                                        08070000
+PARMSTAK DS    F              START CURRENT GETLINE STACK ADDRESS       08080000
+DEVLISTP DS    A              SUBPOOL 25 EDTINFO DEVICE LIST  DRK JUN98 08090038
+*XMITBUF DS    A              SUBPOOL 26 XMIT COMMAND BUFFER  DRK APR06 08091064
+*PDSEDIR DS    A              SUBPOOL 19 QSAM GET PDSE BUFFER  GP SEP05 08092099
+*DESERVB DS    A              SUBPOOL 18 DESERV GET_ALL BUFFER GP JUL10 08092199
+*BINDAPI DS    A              SUBPOOL 21 BINDER API WORK AREA  GP SEP05 08092299
+NUMDASD  EQU   &MAXDASD       MAX NUM OF DASD FOR LV GENERIC  DRK JUN98 08100000
+DEVLISTH EQU   8              DEVICE NUMBER LIST HEADER       DRK JUN98 08110000
+DEVLISTL EQU   NUMDASD*4+DEVLISTH  LENGTH OF DEVICE LIST AREA DRK JUN98 08120000
+GENERIC  DS    CL8            EDTINFO UNITNAME                DRK JUN98 08130000
+#CONDLVL DS    CL1            CONDEND LEVEL WARNINGS/ERRORS   DRK APR08 08131099
+#CONDRC  DS    CL1            CONDEND RC    4=WARN, 8=ERR     DRK APR08 08132099
+SWEPAPTR DS    A              POINTER TO SWAREQ EPA           DRK AUG99 08140090
+EPA      DS    CL28           SWAREQ EXTERNAL PARAMETER AREA  DRK AUG99 08141099
+XSIZE    EQU   SWEPAPTR,6     EXTENDED SPF STATS WORKAREA     DRK AUG09 08142099
+XSORTKEY EQU   SWEPAPTR+6,1   EXTENDED SPF STATS SORTKEY      DRK AUG09 08142199
+DIRSAVE  EQU   SWEPAPTR,30    REGULAR  SPF STATS SAVEAREA     DRK SEP09 08142399
+COBVERS  EQU   SWEPAPTR       LE-COMPLIANT COBOL VERSION/RLSE DRK NOV18 08142499
+XMIBUFFP EQU   SWEPAPTR       XMIT COMMAND BUFFER             DRK APR06 08142599
+HHMMSS   EQU   SWEPAPTR       IPL TIME                        DRK NOV06 08143091
+PAGEUSED EQU   SWEPAPTR,26    PDSE PAGES USED, PCT USED       DRK FEB07 08145099
+PDSEFORM EQU   SWEPAPTR,20    PDSE VERSION, MAXGENS           DRK JUN16 08146099
+PACK     EQU   SWEPAPTR,7     FIELDS TO CONVERT TIME AND DATE THG MAR06 08151199
+UNPACK   EQU   SWEPAPTR+7,13   FOR LCS COMMAND                THG MAR06 08151299
+NUMTSU   EQU   1024           NUMBER OF TSO USERS FOR GETMAIN DRK FEB10 08151399
+TSUADDR  EQU   SWEPAPTR,4     SUBPOOL 27 TSO USERS TABLE      DRK FEB10 08151499
+TSUWIDTH EQU   SWEPAPTR+4,4                                   DRK FEB10 08151599
+TSUEND   EQU   SWEPAPTR+8,4                                   DRK FEB10 08151699
+FAMSADDR EQU   SWEPAPTR,4     SUBPOOL 28 FAMS WORK AREA       DRK SEP10 08151799
+SAVELSTC EQU   SWEPAPTR,12    SAVEAREA FOR LISTC SUBRTN       DRK SEP10 08151899
+LOCVOL   EQU   SWEPAPTR,6     VOLSER RETURNED FROM LOCATE     DRK DEC15 08151999
+#DSMPGM  EQU   SWEPAPTR,8     RESOURCE PGM NEEDED FOR PDSE    DRK JAN16 08152099
+IEWBIND  DS    A              ADDRESS OF IEWBIND               GP APR18 08152199
+FIRST4K  DS    CL(WORKAREA+4096-DFBUFS)   *** RESERVED TO 4K BOUNDARY   08160000
+**NOTE: IF YOU HAVE ADDED STORAGE IN THE DYNAMIC AREA AND YOU RECEIVE   08170000
+**      AN ERROR ON THE ABOVE STATEMENT, IT INDICATES THAT YOU HAVE     08180000
+**      ADDED MORE STORAGE THAN CAN BE ACCOMMODATED IN THE FIRST 4K OF  08190039
+**      STORAGE.  CONSIDER RELOCATING SOME PROGRAM VARIABLES INTO THE   08200000
+**      FOLLOWING AREA AFTER LABEL $TMSGWRK.                            08210000
+         SPACE 3                                                        08220000
+PDSEDCB  DCB   DSORG=PS,RECFM=F,LRECL=256,BLKSIZE=256,DDNAME=X,        X08230043
+               MACRF=(GL),DEVD=DA                             DRK AUG05 08231099
+         SPACE 3                                                        08250042
+DMEMAREA DS    2CL28          SPACE FOR 2 MEMBER LIST ENTRIES           08260000
+         SPACE 3                                                        08270000
+$TMSGWRK DS    CL124          MESSAGE WORK AREA                         08280000
+         SPACE 3                                                        08290000
+         AIF   ('&MVSLEV' LT 'MVS710').NOEAVD2                DRK JAN13 08290199
+         DS    0D                                              JH DEC12 08290399
+INDCBE   DS    XL(C_DCBEL)     DCBE AREA                       JH DEC12 08291099
+.NOEAVD2 ANOP                                                 DRK JAN13 08292099
+MSGENTDS DS    CL115           ENTER OPTION MESSAGE                     08300000
+SPFDSNMG EQU   MSGENTDS+26,79  PORTION BEGINNING:  -  DSN=...           08310000
+RECALLST DS    XL256           RECALL TEXT AREA                         08320000
+RECALLDS DS    XL132           RECALL TEXT AREA                         08330000
+ATTNSAVE DS    18A             SAVE AREA FOR ATTENTION EXIT             08340000
+STAESAVE DS    18A             SAVE AREA FOR ESTAE EXIT                 08350000
+SPFMAIN  DS    18A             SECONDARY SAVE AREA FOR SPF              08360000
+CONTDSN  DS    XL60            DSNAME FORMATTED AREA FOR CONTROL        08370000
+LOGREGS  DS    XL44            REGISTERS R14:R8 SAVED FOR LOGDATA       08380000
+SAVEOUT  DS    XL40            SAVE TEXT FOR OUTCOPY                    08390000
+PUTGETST DS    XL256           M$PUTGT STORAGE FOR STACKED DATA         08400000
+PMSGDS2  DS    XL64            SAVED DATA SET NAME AND LENGTH           08410000
+         SPACE 1                                                        08420000
+@4K      EQU   FIRST4K                                        DRK NOV02 08430030
+TSOUID   DS    CL8                                            DRK JUL17 08430199
+TSOUIDL  DS    XL1                                            DRK JUL17 08431099
+*LISTGRP  DS    CL256          IKJIDENT LIST  (A,B,C,D)       DRK APR18 08432099
+CSIFIELD DS    0F             CSI SELECTION CRITERIA FIELDS             08440030
+CSIFILTK DC    CL44' '        GENERIC FILTER KEY                        08450030
+CSICATNM DC    CL44' '        CATALOG NAME OR BLANKS                    08460030
+CSIRESNM DC    CL44' '        RESUME NAME OR BLANKS                     08470030
+CSIDTYPS DS    0CL16' '       ENTRY TYPES                               08480030
+CSISTYPS DC    16CL1' '       ENTRY TYPES TO BE RETURNED                08490030
+CSIOPTS  DC    0CL4' '        CSI OPTIONS                               08500030
+CSICLDI  DC    CL1' '         RETURN DATA OR INDEX, Y OR BLANK          08510030
+CSIRESUM DC    CL1' '         RESUME, Y OR BLANK                        08520030
+CSIS1CAT DC    CL1' '         SEARCH 1 CATALOG ONLY, Y OR BLANK         08530030
+CSIOPTNS DC    CL1' '         OPTION FLAG FIELD                         08540030
+CSINUMEN DC    X'0000'        NUMBER OF ENTRIES IN TABLE                08550030
+CSIFLDNM DC    CL8'STORCLAS'  UP TO 100 FIELD NAMES                     08560030
+         DC    CL8'MGMTCLAS'                                            08570030
+         DC    CL8'DATACLAS'                                            08580030
+*                                                                       08590030
+         DS    0F                                                       08600031
+CSIRSN   DC    XL4'00'        REASON CODES FROM CSI CALL                08610030
+         DS    0F                                                       08620031
+CSIWORK  DS    1024C          CSI WORK AREA                             08630030
+         ORG   CSIWORK+0                                                08640030
+CAIUSRLN DS    F'0'       TOTAL LENGTH WORK AREA                        08650030
+CSIREQLN DS    F'0'       MINIMUM REQUIRED LENGTH                       08660030
+CDIUSDLN DS    F'0'       TOTAL LENGTH USED RETURNING ENTRIES           08670030
+CSINUMFD DS    H'0'       NUMBER OF FIELD NAMES + 1                     08680030
+CSICFLG  DS    X'00'      CATALOG FLAG INFORMATION                      08690030
+CSINTICF EQU   X'80'      NON-ICF CATALOG                               08700030
+CSINOENT EQU   X'40'      NO ENTRY FOUND FOR THIS CATALOG               08710030
+CSINTCMP EQU   X'20'      DATA GOTTEN NOT COMPLETE                      08720030
+CSICERR  EQU   X'10'      WHOLE CATALOG NOT PROCESSED                   08730030
+CSICERRP EQU   X'08'      CATALOG PARTIALLY PROCESSED                   08740030
+*                                                                       08750030
+CSICTYPE DS    X'00'      CATALOG TYPE - X'F0'                          08760030
+CSICNAME DS    CL44' '    CATALOG NAME                                  08770030
+CSICRETM DS    2X'00'     CATALOG RETURN MODULE ID                      08780030
+CSICRETR DS    X'00'      CATALOG RETURN REASON CODE                    08790030
+CSICRETC DS    X'00'      CATALOG RETURN CODE                           08800030
+*                                                                       08810030
+CSIEFLAG DS    X'00'                                                    08820030
+CSIPMENT EQU   X'80'      PRIMARY ENTRY                                 08830030
+CSIENTER EQU   X'40'      ERROR INDICATOR                               08840030
+CSIEDATA EQU   X'20'      DATA IS RETURNED FOR THIS ENTRY               08850030
+CSIETYPE DS    C' '       ENTRY TYPE - SEE DOC FOR VALUES               08860030
+CSIENAME DS    CL44' '    ENTRY NAME                                    08870030
+CSIERETM DS    2X'00'     ENTRY RETURN MODULE ID                        08880030
+CSIERETR DS    X'00'      ENTRY RETURN REASON CODE                      08890030
+CSIERETC DS    X'00'      ENTRY RETURN CODE                             08900030
+         ORG   CSIERETM                                                 08910030
+CSITOTLN DS    H'0'       TOTAL LENGTH OF RETURNED INFO                 08920030
+         DS    H'0'       RESERVED                                      08930030
+         ORG   ,                                                        08940030
+         SPACE 1                                                        08950030
+ATTACHS1 ATTACH EPLOC=*-*,ECB=*-*,SZERO=NO,SHSPV=78,SF=L                08960000
+         SPACE 1                                                        08970000
+ATTACHS2 ATTACH EPLOC=*-*,ECB=*-*,SZERO=NO,SHSPV=78,                  XX08980000
+               TERM=YES,ESTAI=(*-*,*-*),SF=L                            08990000
+         SPACE 3                                                        09000000
+**NOTE: KEEP THE VARIABLES BETWEEN IOBUFN AND IOBUFEND TOGETHER;        09010000
+**      IOBUF99 MUST START WITHIN 4096 BYTES OF FIRST4K                 09020000
+IOBUFN   DS    A       ***     POINTER TO ASSOCIATED BUFFER             09030000
+IOBUFCN  DS    A       ***     CURRENT LOGICAL INPUT ADDRESS            09040000
+IOBUFAN  DS    A       ***     CURRENT CCHH ADDRESS                     09050000
+IOBUFSN  DS    XL8     ***     NEXT IOBSEEK ADDRESS                     09060000
+IOBUFRM  DS    XL8     ***     KEYLN, DATALN, SNO, IOECB                09070000
+IOBUFXT  DS    XL4     ***     CUREXT (CURRENT EXTENT POINTER)          09080000
+IOBUF99  DS    99XL32  ***     OTHER 99 ELEMENTS                        09090000
+IOBUFEND DS    0H      ***     END OF INPUT TRACK CONTROLS              09100000
+         SPACE 3                                                        09110000
+LENWORK  EQU   *-WORKAREA                                               09120000
+         PRINT ON                                                       09130000

@@ -1,0 +1,19 @@
+         MACRO M$PUTGT -  OUTPUT A DATA LINE AND GET RESPONSE           01115000
+&NAME    M$PUTGT  &LINE,&ATTN=                                          01116001
+         AIF   ('&LINE' EQ '(1)' OR '&LINE' EQ '(R1)').CALL             01117000
+         AIF   ('&LINE'(1,1) EQ '(').R                                  01118000
+&NAME    LA    R1,&LINE                                                 01119000
+         BAS   R14,M$PUTGT                                              01120000
+         AGO   .ATTN                                                    01121000
+.R       ANOP                                                           01122000
+&NAME    LR    R1,&LINE(1)                                              01123000
+         BAS   R14,M$PUTGT                                              01124000
+         AGO   .ATTN                                                    01125000
+.CALL    ANOP                                                           01126000
+&NAME    BAS   R14,M$PUTGT                                              01127000
+.ATTN    ANOP                                                           01128000
+         AIF   ('&ATTN' EQ '').NOATTN                                   01129000
+         B     &ATTN                         EXIT IF ATTENTION OCCURRED 01130000
+         AGO   .END                                                     01131000
+.NOATTN  NOP   0(,R0)                        IGNORE ATTENTIONS          01132001
+.END     MEND                                                           01133000

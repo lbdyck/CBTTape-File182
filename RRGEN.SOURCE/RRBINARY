@@ -1,0 +1,227 @@
+BINARY01  CSECT                                                         00000010
+R1       EQU        1                                                   00000020
+R2       EQU        2                                                   00000030
+R3       EQU        3                                                   00000040
+R4       EQU        4                                                   00000050
+R5       EQU        5                                                   00000060
+R6       EQU        6                                                   00000070
+R7       EQU        7                                                   00000080
+R8       EQU        8                                                   00000090
+R9       EQU        9                                                   00000100
+R10      EQU        10                                                  00000110
+R11      EQU        11                                                  00000120
+R12      EQU        12                                                  00000130
+R13      EQU        13                                                  00000140
+R14      EQU        14                                                  00000150
+R15      EQU        15                                                  00000160
+EP1      SAVE      (14,12)                                              00000170
+         BALR       12,0                                                00000180
+         USING      *,12                                                00000190
+         ST         R13,SAVE+4                                          00000200
+         LR         R6,R13                                              00000210
+         LA         R13,SAVE                                            00000220
+         ST         R13,8(R6)                                           00000230
+         CLI       12(R1),X'80'    INSURE A COMPLETE PARM LIST.         00000240
+         BNE       ATEND                                                00000250
+         CLI       0(R1),X'80'      HAVE I CKED THIS PARM BEFORE        00000260
+         BE        LOADEM          YES SET UP FOR A SEARCH              00000270
+EP2      XR         R9,R9                                               00000280
+         LA         R10,PARM            LOOK  THRU MY PARM LIST         00000290
+LOOK     L          R11,0(R10)           IF REG 14 HAS BEEN SAVED       00000300
+         L          R15,0(R11)           IN IT- THEN I ASSUME THIS      00000310
+         CR         R9,R15                                              00000320
+         BE         INSERT                                              00000330
+         CLI        0(R10),X'80'         THIS IS A BUILD & EDIT.        00000340
+         BE        ATEND                                                00000350
+         LA         R10,4(R10)                                          00000360
+         B          LOOK                                                00000370
+LOADEM   LA        R14,14(R14)       SET UP 14 FOR RETURN TO RRGEN      00000380
+         L         R11,0(R1)                                            00000390
+         ST        R14,12(R6)           PUT R14 IN HIS SAVE FOR ME      00000400
+****    LOAD MY REGISTERS HERE........                                  00000410
+         LM         R2,R10,4(R11)       ONLY 4 DIFFERENT SEARCHES CAN   00000420
+*                                       CALL THIS MODULE AT ONE TIME-   00000430
+         MVC       COMP(6),40(R11)      FOR I BUILD IN HOLD AND ONLY    00000440
+         B          INCR                RESTORE REG & COMP FOR A SEARCH 00000450
+INSERT   L          R3,0(R1)            BUILD 4 HOLD AREAS HERE:        00000460
+         L          R6,4(R1)           * R3 = INQUIRY ADR               00000470
+         L          R2,4(R1)           * R2,R6,R5,HAVE LHE OF TABLE ADR 00000480
+         L          R5,4(R1)           * R4 = LENGTH OF EACH ENTRY      00000490
+         ST          R1,0(R11)         * R7 = RHE OF TABLE-1 ENTRY      00000500
+         ST        R11,0(R1)                                            00000510
+         MVI       0(R1),X'80'                                          00000520
+         MVC       36(4,R11),8(R1)        INDEX ADR                     00000530
+******     WHAT WE HANDLE IN THIS RTN. LOOKS LIKE THIS.                 00000540
+*********                    (0012,005,000,002)                         00000550
+**********                   (12,5,0,2)                                 00000560
+**********                   (12,5,,2)                                  00000570
+**********           THE DEFAULT IS ZERO.                               00000580
+         L         R8,12(R1)       SET 8 AT TBL DESCP.                  00000590
+         LA        R7,WRK1            SET  7 AT RECEIVE FIELD           00000600
+         CLI       0(R8),X'4D'           FIRST MUST BE A (.             00000610
+         BNE       ATEND          ITS AN ERROR BYE.                     00000620
+INCRR8   LA        R8,1(R8)        BUMP R8 BY ONE.                      00000630
+         ST        R8,REGHLD        SAVE R8 FOR LATER USE.              00000640
+         LA        R4,WRK5        SET 5 AT A WOKR AREA.                 00000650
+COMMA    CLI       0(R8),X'6B'       IS A COMMA HERE.                   00000660
+         BE        GOTONE           YES IT IS.                          00000670
+         CLI       0(R8),X'5D'          IS A ). RHE                     00000680
+         BE        GOTONE       YES IT IS.                              00000690
+         C         R4,LOOKAT4         HAVE WE EXCEEDED RHE              00000700
+         BH        ATEND          YES ITS AN ERROR.                     00000710
+         MVC       0(1,R4),0(R8)        MOVE A CHAR IN WRK5.            00000720
+         LA        R4,1(R4)      INCR WRK5 ADR                          00000730
+         LA        R8,1(R8)          BUMP THRU TBL DESCP.               00000740
+         B         COMMA        GO LOOK SOME MORE.                      00000750
+GOTONE   ST        R8,RHLD          SAVE 8 FOR LATER USE.               00000760
+         S         R8,REGHLD     HOW MANY DID I MOVE 0-4.               00000770
+         CL        R8,CON4      WAS IT MORE THAN 4.                     00000780
+         BH        ATEND        YES ITS A USER ERROR.                   00000790
+         L         R4,CON32      MAX NR OF BITS IN A REG IS 32.         00000800
+         LR        R9,R8          FOR THE MPY                           00000810
+         M         R8,CON8    NR MOVED X 8 = NR BITS MOVED.             00000820
+         SR        R4,R9       MINUS MAX NR BITS = EXCESS BITS.         00000830
+         STC       R4,SRL1+3   PUT EM IN SHIFT INST.                    00000840
+         L         R8,WRK5        WHO GETS IT.                          00000850
+SRL1     SRL       R8,0(0)         SHIFT IT OVER.                       00000860
+         ST        R8,0(R7)     STORE IT IN WRK1-4                      00000870
+         MVZ       0(4,R7),HIVAL        ALL F ZONE.                     00000880
+         LA        R7,4(R7)    INCR 7 TO NEXT WRK AREA.                 00000890
+         L         R8,RHLD        RESTORE 8 TO THE COMMA                00000900
+         CLI       0(R8),X'5D'     WAS A ).  RHE                        00000910
+         BE        OUT       YES GET OUT OF HERE.                       00000920
+         CL        R7,ENDOF                                             00000930
+         BH        ATEND   WE ARE OUT OF THE WRK AREA.                  00000940
+         B         INCRR8      GO LOOK SOME MORE.                       00000950
+********        DO SOME EDITING HERE.                                   00000960
+OUT      CLC       WRK4(4),CON255     REL KEY POS CANNOT EXCEED 255.    00000970
+         BH        ATEND                                                00000980
+         CLC       WRK3(4),CON256   LENGTH OF KEY NOT 256               00000990
+         BH        ATEND        YES ITS GREATER SORRY.                  00001000
+         CLC       WRK3(4),WRK2    KEYLEN CANNOT BE GREATER THAN THE    00001010
+         BH        ATEND           SIZE OF AN ENTRY.                    00001020
+         CLC       WRK2(4),ZERO      SIZE CANNOT BE ZERO.               00001030
+         BE        ATEND                                                00001040
+         CLC       WRK1(4),ZERO      NR OF ENTRIES CANNOT BE ZERO.      00001050
+         BE        ATEND                                                00001060
+         CLC       WRK3(4),ZERO      KEYLEN CANNOT BE ZERO.             00001070
+         BE        ATEND                                                00001080
+         CLC       WRK4(4),WRK2     REL KEY POS CANNOT BE GREATER       00001090
+         BH        ATEND             THAN THE SIZE.                     00001100
+         PACK       DBLWRD(8),WRK1(4)                                   00001110
+         CVB        R7,DBLWRD                                           00001120
+         PACK       DBLWRD(8),WRK2(4)                                   00001130
+         CVB        R4,DBLWRD                                           00001140
+         PACK       DBLWRD(8),WRK4(4)                                   00001150
+         CVB       R9,DBLWRD                                            00001160
+         STC       R9,COMP+3        REL KEY POS IN COMPARE DISP.        00001170
+         PACK       DBLWRD(8),WRK3(4)                                   00001180
+         CVB        R8,DBLWRD                                           00001190
+         AR        R9,R8       REL POS + KEYLEN                         00001200
+         CLR       R9,R4         CANNOT BE GREATER THAN THE SIZE.       00001210
+         BH        ATEND                                                00001220
+         S         R8,ONE       DECR BY ONE FOR COMP SIZE INST.         00001230
+         STC        R8,COMP+1              SIZE OF COMP                 00001240
+         S          R7,ONE                                              00001250
+         LR        R9,R7                                                00001260
+         MR         R8,R4                NR ENTRIES-1 X SIZE OF ENTRY   00001270
+         LR         R7,R6               PLUS LHE ADR = RHE ADR.         00001280
+         AR        R7,R9                                                00001290
+         MVC       40(6,R11),COMP                                       00001300
+         STM        R2,R7,4(R11)       STORE REG INTO HOLD AREA.        00001310
+*  CHANGE 14 TO GO BACK +14 WHEN TESTING IS DONE.                       00001320
+*   EXCEPT WHEN RRGEN CALLS,DONT GO BACK WHERE 14 POINTS.               00001330
+GOBACK   L          R13,SAVE+4                                          00001340
+         RETURN     (14,12),T,RC=0                                      00001350
+ATEND    L          R13,SAVE+4                                          00001360
+         RETURN     (14,12),T,RC=1                                      00001370
+*****  THIS IS THE SEARCH ROUTINE.  IT WORKS ON AN ADDRESS PRINCIPLE.   00001380
+*****  THE COMPARE IS HERE. SIZE AND DISPLACEMENT CHANGES WITH EACH     00001390
+*****  SEARCH.                                                          00001400
+COMP     CLC        0(1,R2),0(R3)                                       00001410
+         BE         POSHIT                                              00001420
+         BL        LOOKUP                                               00001430
+         SR         R2,R4                                               00001440
+         LR         R7,R2                                               00001450
+         B          GOON                                                00001460
+LOOKUP   AR         R2,R4                                               00001470
+         LR         R6,R2                                               00001480
+GOON     CLR        R6,R7                                               00001490
+         BH         ATEND                                               00001500
+         LR         R9,R4                                               00001510
+         AR         R9,R7                                               00001520
+         SR         R9,R6                                               00001530
+         SR         R8,R8                                               00001540
+         DR         R8,R4                                               00001550
+         LR        R8,R9                                                00001560
+         SRL        R8,1(0)                                             00001570
+         SLL        R8,1(0)                                             00001580
+         CLR        R8,R9                                               00001590
+         LR         R2,R7                                               00001600
+         BNE        INCR                                                00001610
+         SR         R2,R4                                               00001620
+***** ADD THE TWO ADRESSES TOGETHER AND DIVIDE BY 2 TO GET THE NEXT     00001630
+*****   LOOK IN THE TABLE.                                              00001640
+INCR     AR         R2,R6                                               00001650
+         SLL       R2,8(0)                                              00001660
+         SRL       R2,9(0)                                              00001670
+         B          COMP                                                00001680
+POSHIT   SR         R2,R5                                               00001690
+         CVD       R2,DBLWRD                                            00001700
+         UNPK      WRK4(4),DBLWRD+5(3)                                  00001710
+         MVZ       WRK4+3(1),WRK4+2                                     00001720
+         MVC       0(4,R10),WRK4                                        00001730
+         CR         R2,R2                                               00001740
+         B          GOBACK                                              00001750
+SAVE     DC         18F'0'                                              00001760
+PARM     DC         AL4(HOLD1)                                          00001770
+         DC         AL4(HOLD2)                                          00001780
+         DC         AL4(HOLD3)                                          00001790
+         DC        AL4(HOLD4)                                           00001800
+         DC        AL4(HOLD5)                                           00001810
+         DC        AL4(HOLD6)                                           00001820
+         DC        AL4(HOLD7)                                           00001830
+         DC        AL4(HOLD8)                                           00001840
+         DC        AL4(HOLD9)                                           00001850
+         DC         X'80'                                               00001860
+         DC        AL3(HOLD10)                                          00001870
+WRK      DS        0F                                                   00001880
+WRK1     DC        1F'0'                                                00001890
+WRK2     DC        1F'0'                                                00001900
+WRK3     DC        1F'0'                                                00001910
+WRK4     DC        1F'0'                                                00001920
+WRK5     DC        1F'0'                                                00001930
+ENDOF    DC        AL4(WRK4)                                            00001940
+LOOKAT4  DC        AL4(WRK5+4)                                          00001950
+REGHLD   DC        1F'0'                                                00001960
+RHLD     DC        1F'0'                                                00001970
+HIVAL    DC        XL4'FFFFFFFF'                                        00001980
+ZERO     DC        CL4'0000'                                            00001990
+ONE      DC         XL4'00000001'                                       00002000
+CON4     DC        XL4'00000004'                                        00002010
+CON8     DC        XL4'00000008'                                        00002020
+CON32    DC        XL4'00000020'                                        00002030
+CON255   DC        CL4'0255'                                            00002040
+CON256   DC        CL4'0256'                                            00002050
+DBLWRD   DC        1D'0'                                                00002060
+HOLD1    DC        1F'0'           H    HOLD  R14                       00002070
+         DC        1F'0'           H    LHETBL  R2                      00002080
+         DC        1F'0'                INQUIRY R3                      00002090
+         DC        1F'0'                ENTLEN  R4                      00002100
+         DC        1F'0'                LHETBL  R5                      00002110
+         DC        1F'0'                LHETBL  R6                      00002120
+         DC        1F'0'                RHETBL  R7                      00002130
+         DC        1F'0'               ZERO FOR R8                      00002140
+         DC        1F'0'               ZERO FOR R9                      00002150
+         DC        1F'0'           H    INDEX ADR   R10                 00002160
+         DC        1D'0'               CLC  HOLD                        00002170
+HOLD2    DC        12F'0'               SAME AS HOLD1                   00002180
+HOLD3    DC        12F'0'               SAME AS HOLD1                   00002190
+HOLD4    DC        12F'0'               SAME AS HOLD1                   00002200
+HOLD5    DC        12F'0'               SAME AS HOLD1                   00002210
+HOLD6    DC        12F'0'               SAME AS HOLD1                   00002220
+HOLD7    DC        12F'0'               SAME AS HOLD1                   00002230
+HOLD8    DC        12F'0'               SAME AS HOLD1                   00002240
+HOLD9    DC        12F'0'               SAME AS HOLD1                   00002250
+HOLD10   DC        12F'0'               SAME AS HOLD1                   00002260
+         END                                                            00002270

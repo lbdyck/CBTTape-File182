@@ -1,0 +1,705 @@
+         TITLE 'P D S  --  SMP GENERATION                    06/20/06'  00000100
+*********************************************************************** 00000200
+***      SMPGEN SUBCOMMAND    ADDED BY JOHN KALINICH -- JUN., 2006  *** 00000300
+*********************************************************************** 00000400
+*                                                                       00000500
+SMPGEN   CSECT                                                          00000700
+         USING *,R8                                                     00000800
+         CLI   MSGDS2,C' '              OUTDSN() SPECIFIED?             00000900
+         BE    SMP2100                  NO                              00001000
+         LA    R1,#SMPGEN               YES                             00001100
+         BAS   R2,SMP9990               FREE THIS DATA SET              00001200
+         SPACE 2                                                        00001300
+*  ALLOCATE //SMPGEN OUTPUT DATA SET    OUTPUT SEQ DSN                  00001400
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00001500
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00001600
+         USING S99RBP,R1                                                00001700
+         SPACE 1                                                        00001800
+         LA    R4,M99RB                                                 00001900
+         USING S99RB,R4                                                 00002000
+         ST    R4,S99RBPTR                                              00002100
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00002200
+         SPACE 1                                                        00002300
+         LA    R5,M99TUPL                                               00002400
+         USING S99TUPL,R5                                               00002500
+         MVI   S99RBLN,20               LENGTH 20                       00002600
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00002700
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00002800
+         LA    R3,WORKTBL                        START OF TEXT          00002900
+         SPACE 1                                                        00003000
+         MVC   0(L'SMPDDNAM+6,R3),SMPDDNAM       SPECIFY DDNAME TEXT    00003100
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00003200
+         LA    R3,L'SMPDDNAM+6(,R3)              START OF NEXT TEXT     00003300
+         SPACE 1                                                        00003400
+SMP0000  DS    0H                                                       00003500
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00003600
+         MVC   0(L'SMPDSNAM,R3),SMPDSNAM         SPECIFY DSNAME TEXT    00003700
+*        MVC   6(44,R3),MSGDS2                   MOVE IN DSNAME TEXT    00003800
+         SPACE 1                                                        00003900
+         LA    R2,5(,R3)                         WHERE TO STORE OUTPUT  00004000
+         MVC   6(44,R3),BLANK128                 CLEAR DSNAME AREA      00004100
+         MVC   DOUBLE(8),BLANK128                CLEAR MEMBER AREA      00004200
+         LA    R1,MSGDS2                         DSN OR DSN(MBR)        00004300
+         LA    R0,44                                                    00004400
+         CLI   0(R1),C''''                       QUOTED?                00004500
+         BE    SMP0010                           YES, BRANCH            00004600
+         SR    R14,R14                           NO                     00004700
+         L     R15,ADDRUPT                       START OF THE UPT       00004800
+* 8-CHAR PREFIX                                               DRK JUL17 00004999
+         TM    FLAGSZZ,TSO#8                     8-CHAR ID/PREFIX?    " 00005099
+         BNO   SMP7PRE                           NO                   " 00005199
+SMP8PRE  DS    0H                                YES                  " 00005299
+         ICM   R14,B'0001',UPTPRF8L-UPT(R15)     PREFIX LENGTH ZERO?  " 00005399
+         BZ    SMP0010+4                         YES, BRANCH          " 00005499
+         MVC   6(8,R3),UPTPREF8-UPT(R15)         DSNAME PREFIX        " 00005599
+         B     SMPCONT                                                " 00005699
+SMP7PRE  DS    0H                                                     " 00005799
+         ICM   R14,B'0001',UPTPREFL-UPT(R15)     PREFIX LENGTH ZERO?  " 00005899
+         BZ    SMP0010+4                         YES, BRANCH          " 00005999
+         MVC   6(7,R3),UPTPREFX-UPT(R15)         DSNAME PREFIX        " 00006099
+SMPCONT  DS    0H                                             DRK JUL17 00006199
+         AR    R2,R14                            POSITION FOR PERIOD    00006200
+         SR    R0,R14                                                   00006300
+         MVI   1(R2),C'.'                                               00006400
+         BCTR  R0,0                                                     00006500
+         BCTR  R1,0                                                     00006600
+         LA    R2,1(,R2)                                                00006700
+         SPACE 1                                                        00006800
+SMP0010  LA    R1,1(,R1)                         NEXT INPUT BYTE        00006900
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       00007000
+         CLI   0(R1),C''''                       END OF DSNAME?         00007100
+         BE    SMP0050                           YES, BRANCH            00007200
+         CLI   0(R1),C'('                        PARENTHESIS?           00007300
+         BE    SMP0020                           YES, BRANCH            00007400
+         CLI   0(R1),X'40'                       BLANK?                 00007500
+         BE    SMP0050                           YES, BRANCH            00007600
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  00007700
+         BCT   R0,SMP0010                                               00007800
+         B     SMP0050                                                  00007900
+         SPACE 1                                                        00008000
+SMP0020  MVC   DOUBLE(8),BLANK128                MEMBER NAME            00008100
+         LA    R0,8                                                     00008200
+         LA    R2,DOUBLE-1                                              00008300
+         SPACE 1                                                        00008400
+SMP0030  LA    R1,1(,R1)                         NEXT INPUT BYTE        00008500
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       00008600
+         CLI   0(R1),C''''                       END OF DSNAME?         00008700
+         BE    SMP0050                           YES, BRANCH            00008800
+         CLI   0(R1),C')'                        PARENTHESIS?           00008900
+         BE    SMP0050                           YES, BRANCH            00009000
+         CLI   0(R1),X'40'                       BLANK?                 00009100
+         BE    SMP0050                           YES, BRANCH            00009200
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  00009300
+         BCT   R0,SMP0030                                               00009400
+SMP0050  DS    0H                                                       00009500
+         LA    R1,M99RBPTR                       RESET R1               00009600
+         MVC   MSGDS2(44),6(R3)                  RESET THE DSNAME       00009700
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00009800
+         LA    R3,L'SMPDSNAM+44(,R3)             START OF NEXT TEXT     00009900
+SMP0060  DS    0H                                                       00010000
+         SPACE 1                                                        00010100
+* LOCATE OUTPUT DSNAME                                                  00010200
+         ST    R1,#SAVEREG              SAVE R1                         00010300
+         MVC   WORKTMP(44),MSGDS2       COPY DSNAME                     00010400
+         L     R14,LOCATE3                                              00010500
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00010600
+         SR    R0,R0                    NO CVOL VALUE                   00010700
+         LA    R1,MSGTEXT1              LOCATE WORK AREA                00010800
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00010900
+         LOCATE PARMLIST                                                00011000
+         LTR   15,15                    SUCCESSFUL LOCATE?              00011100
+         BNZ   SMPNODSN                 NO, ERROR                       00011200
+         SPACE 1                                                        00011300
+* OBTAIN DSCB                                                           00011400
+         L     R14,OBTAIN3              OBTAIN FLAGS                    00011500
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00011600
+         LA    R0,MSGTEXT1+6            VOLUME SERIAL (FROM LOCATE)     00011700
+         LA    R1,MSGTEXT2              OUTPUT START ADDRESS            00011800
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00011900
+         OBTAIN PARMLIST                GET THE FORMAT 1 DSCB           00012000
+         LTR   R15,R15                  SUCCESSFUL?                     00012100
+         BZ    SMPDSCB                  YES, BRANCH                     00012200
+         M$MSG L830                     NO DSCB FOUND MESSAGE           00012300
+         MVC   PMEMCURR,=XL4'00'        CURRENT MEMBER POINTER          00012499
+         NI    FLAGSAA,FF-FMEM#MEM      TURN OFF MEMBER GROUP           00012599
+         NI    FLAGSII,FF-FDIRGRP       NORMAL INPUT NOW                00012699
+         B     NEWCMD                                                   00012799
+SMPNODSN MVI   MTLEN,44                 LENGTH OF INSERT                00012899
+         MVC   INSERT#1(44),MSGDS2      DSNAME                          00012999
+         M$MSG L844$1                                                   00013099
+         MVC   PMEMCURR,=XL4'00'        CURRENT MEMBER POINTER          00013199
+         NI    FLAGSAA,FF-FMEM#MEM      TURN OFF MEMBER GROUP           00013299
+         NI    FLAGSII,FF-FDIRGRP       NORMAL INPUT NOW                00013399
+         B     NEWCMD                                                   00013499
+SMPDSCB  DS    0H                                                       00013599
+         CLI   MSGTEXT2+X'26',X'02'     DSORG PARTITIONED?              00013699
+         BNE   SMP0065                  NO                              00013799
+         CLI   DOUBLE,C' '              YES, MEMBER SPECIFIED?          00013899
+         BNE   SMP0065                       YES                        00013999
+         MVC   DOUBLE(8),$SMPGEN             NO, GENERATE NAME          00014099
+SMP0065  DS    0H                                                       00014199
+         SPACE 1                                                        00014299
+         L     R1,#SAVEREG                       RESTORE R1             00014399
+         CLI   DOUBLE,C' '                       MEMBER NAME?           00014499
+         BE    SMP0070                           NO                     00014599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00014699
+         MVC   0(L'SMPDSMBR,R3),SMPDSMBR         SPECIFY MEMBER TEXT    00014799
+         MVC   6(8,R3),DOUBLE                    MOVE IN MEMBER TEXT    00014899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00014999
+         LA    R3,L'SMPDSMBR+8(,R3)              START OF NEXT TEXT     00015099
+SMP0070  DS    0H                                                       00015199
+         SPACE 1                                                        00015299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00015399
+         MVC   0(L'SMPALLOC,R3),SMPALLOC         SPECIFY DISP TEXT      00015499
+         CLI   #SMPDISP,1                        DISP=OLD?    DRK FEB14 00015599
+         BNE   *+4+4                             NO                   " 00015699
+         MVI   6(R3),X'01'                       YES, OVERRIDE SHR    " 00015799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00015899
+         LA    R3,L'SMPALLOC(,R3)                START OF NEXT TEXT     00015999
+         SPACE 1                                                        00016099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00016199
+         MVC   0(L'SMPNORM,R3),SMPNORM           SPECIFY NORMAL TEXT    00016299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00016399
+         LA    R3,L'SMPNORM(,R3)                 START OF NEXT TEXT     00016499
+         SPACE 1                                                        00016599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00016699
+         MVC   0(L'SMPANORM,R3),SMPANORM         SPECIFY ABNORMAL TEXT  00016799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00016899
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00016999
+         SPACE 1                                                        00017099
+         DYNALLOC                                                       00017199
+         SPACE 2                                                        00017299
+         DROP  R1,R4,R5                                                 00017399
+         LTR   R15,R15                       SUCCESSFUL?                00017499
+         BNZ   SMPERROR                      NO, BRANCH                 00017599
+         B     SMP2100                                                  00017699
+         SPACE 1                                                        00017799
+SMPERROR ST    R15,DAIRRC                 SAVE RETURN CODE              00017899
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       00017999
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        00018099
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        00018199
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    00018299
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           00018399
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   00018499
+*                                           DFJEFF02, DFIDP AND DFCPPLP 00018599
+         SPACE 1                                                        00018699
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               00018799
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        00018899
+         BZ    SMP2100                    NO, BRANCH          DRK FEB14 00018999
+         SPACE 1                                                        00019099
+         CVD   R15,DOUBLE                                               00019199
+         MVI   MTLEN,4                                                  00019299
+         MVC   INSERT#1(4),=X'40202120'                                 00019399
+         ED    INSERT#1(4),DOUBLE+6                                     00019499
+         MVI   INSERT#1,C'='                                            00019599
+         M$MSG L835$1                                                   00019600
+         SPACE 2                                                        00019700
+SMP2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      00019800
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       00019900
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      00020000
+         BO    SMP2200               YES, BRANCH                        00020100
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00020200
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00020300
+         BO    SMP2110               YES, BRANCH                        00020400
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00020500
+         BO    SMP2200               YES, BRANCH                        00020600
+SMP2110  TM    #SMPALI,#SMPASS2      ASSOCIATES TOO?                    00020700
+         BO    SMP2200               YES, BRANCH                        00020800
+         SPACE 1                                                        00020900
+SMP2120  DS    0H                                                       00021000
+         TM    #SMPALI,#SMPASS2+2    ALIAS/NOALIAS SPECIFIED?           00021100
+         BM    SMP2130               YES                                00021200
+*        OI    #SMPALI,&SMPGALI      USE THE DEFAULT                    00021300
+         OI    #SMPALI,2             USE THE DEFAULT                    00021400
+         TM    #SMPALI,#SMPASS2      ASSOCIATES TOO?                    00021500
+         BO    SMP2200               YES                                00021600
+         SPACE 3                                                        00021700
+SMP2130  DS    0H                                                       00021800
+         OI    #SMPALI,#SMPONE       ONLY A SINGLE MEMBER/DATA SET      00021900
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           00022000
+         MVC   0(8,R4),DIRNAME                                          00022100
+         MVC   8(3,R4),DIRTTR                                           00022200
+         ST    R4,#MEMPTR                                               00022300
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             00022400
+         B     SMP2900                                                  00022500
+SMP2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        00022600
+         TM    #SMPALI,#SMPASS2+2    ALIAS/NOALIAS SPECIFIED?           00022700
+         BM    *+8                   YES                                00022800
+*        OI    #SMPALI,&SMPGALI      NO, USE THE DEFAULT                00022900
+         OI    #SMPALI,2             NO, USE THE DEFAULT                00023000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         00023100
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    00023200
+         LA    R5,256/2              256 MEMBERS INITIALLY              00023300
+         SPACE 1                                                        00023400
+SMP2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            00023500
+         LR    R3,R5                                                    00023600
+         LR    R0,R5                                                    00023700
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              00023800
+         ICM   R0,B'1000',SUBPOOLT                                      00023900
+         GETMAIN R,LV=(0)                                               00024000
+         LR    R4,R1                 NEW TABLE ADDRESS                  00024100
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              00024200
+         BNZ   SMP2220               YES, BRANCH                        00024300
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             00024400
+         B     SMP2500                                                  00024500
+         SPACE 1                                                        00024600
+SMP2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   00024700
+         LR    R14,R4                NEW TABLE START ADDRESS            00024800
+         LR    R15,R5                                                   00024900
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           00025000
+         LR    R2,R15                START OF NEW PART                  00025100
+         LR    R1,R15                                                   00025200
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             00025300
+         L     R1,#MEMPTR                                               00025400
+         LR    R0,R2                 LENGTH TO FREE                     00025500
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    00025600
+         FREEMAIN R,LV=(0),A=(1)                                        00025700
+         ST    R4,#MEMPTR            START OF NEW TABLE                 00025800
+         AR    R4,R2                 WHERE TO ADD MEMBERS               00025900
+         SPACE 3                                                        00026000
+SMP2300  TM    #SMPALI,#SMPASSP      ASSOCIATES PHASE?                  00026100
+         BO    SMP2320               YES, BRANCH                        00026200
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00026300
+         BO    SMP2320               YES, BRANCH                        00026400
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              00026500
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00026600
+         BNO   SMP2500               NO, BRANCH                         00026700
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00026800
+         BO    SMP2605               YES, BRANCH                        00026900
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00027000
+         BNO   SMP2605               NO, BRANCH                         00027100
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               00027200
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   00027300
+         BNO   SMP2605               NO, END OF LIST                    00027400
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              00027500
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       00027600
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               00027700
+         ST    R1,PMEMCURR                                              00027800
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         00027900
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  00028000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              00028100
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00028200
+         BO    SMP2319               YES, BRANCH                        00028300
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00028400
+         MVC   DIRNAME,MEMBER1       MOVE TO BLDLLIST                   00028500
+         SPACE 2                                                        00028600
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           00028700
+         B     *+4(R15)                PROCESS RETURN CODE              00028800
+         B     SMP2315                   00 - SUCCESSFUL                00028900
+         B     SMP2310                   04 - MEMBER NOT FOUND          00029000
+         B     IOERROR                   08 - I/O ERROR                 00029100
+         SPACE 1                                                        00029200
+SMP2310  MVC   INSERT#1(8),DIRNAME                                      00029300
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           00029400
+         B     SMP2300                                                  00029500
+         SPACE 1                                                        00029600
+SMP2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  00029700
+         B     SMP2500                                                  00029800
+         SPACE 1                                                        00029900
+SMP2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               00030000
+         SPACE 1                                                        00030100
+SMP2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           00030200
+         B     SMP2600               END OF MEMBERS -- BRANCH           00030300
+         SPACE 1                                                        00030400
+         TM    #SMPALI,#SMPASSP      ASSOCIATES PHASE?                  00030500
+         BO    SMP2400               YES, BRANCH                        00030600
+         SPACE 1                                                        00030700
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 00030800
+         B     SMP2600                 00 - SIMULATE DIRECTORY END      00030900
+         B     SMP2300                 04 - MEMBER FAILED FILTERING     00031000
+         B     SMP2500                 08 - MEMBER PASSED FILTERING     00031100
+         SPACE 3                                                        00031200
+SMP2400  L     R1,#MEMPTR            START OF MEMBER LIST               00031300
+         B     SMP2410+4             SKIP FIRST ADD                     00031400
+SMP2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   00031500
+         CR    R1,R4                 END OF TABLE?                      00031600
+         BNL   SMP2300               YES, IGNORE THIS ENTRY             00031700
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      00031800
+         BNE   SMP2410               NO, BRANCH                         00031900
+         SPACE 3                                                        00032000
+SMP2500  L     R1,#MEMPTR            START OF MEMBER LIST               00032100
+         B     SMP2510+4             SKIP FIRST ADD                     00032200
+SMP2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   00032300
+         CR    R1,R4                 END OF TABLE?                      00032400
+         BNL   SMP2580               YES, ADD THIS ENTRY                00032500
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       00032600
+         BE    SMP2300               YES, IGNORE THIS ENTRY             00032700
+         B     SMP2510               NO, CONTINUE SEARCHING             00032800
+         SPACE 2                                                        00032900
+SMP2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   00033000
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               00033100
+         S     R3,=F'1'              ANY MORE FIT?                      00033200
+         BNP   SMP2210               NO, BRANCH                         00033300
+         B     SMP2300               YES, GET NEXT MEMBER               00033400
+         SPACE 3                                                        00033500
+SMP2600  TM    #SMPALI,#SMPASSP      ASSOCIATED MEMBERS?                00033600
+         BO    SMP2605               YES, BRANCH                        00033700
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         00033800
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00033900
+         BO    SMP2605               YES, BRANCH                        00034000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00034100
+         BO    SMP2300               YES, BRANCH                        00034200
+         SPACE 1                                                        00034300
+SMP2605  TM    #SMPALI,#SMPASSP      ASSOCIATES PHASE STARTED?          00034400
+         BO    SMP2700               YES, BRANCH                        00034500
+         TM    #SMPALI,#SMPASS2      ASSOCIATE MEMBERS TOO?             00034600
+         BNO   SMP2700               NO, BRANCH                         00034700
+         OI    #SMPALI,#SMPASSP      YES, ASSOCIATES PHASE STARTED      00034800
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   00034900
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    00035000
+         B     SMP2300               DO ANY ASSOCIATED MEMBERS          00035100
+         SPACE 3                                                        00035200
+SMP2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   00035300
+         SPACE 3                                                        00035400
+SMP2900  DS    0H                    ONE MEMBER                         00035500
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           00035600
+*  OPEN SMPGEN DATA SET                                                 00035700
+SMP6000  DS    0H                                                       00035800
+         CLI   MSGDS2,C' '           OUTDSN() SPECIFIED?                00035900
+         BE    SMP6010               NO                                 00036000
+         MVC   BAMDCB(SMPDL),SMPDCB            GET MODEL DCB            00036100
+         MVI   OPENLIST,X'80'                                           00036200
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SMPGEN              00036300
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         00036400
+         BO    SMP6010                         YES, BRANCH              00036500
+         LA    R1,SMP865E                      NO STATUS AVAILABLE      00036600
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       00036700
+         B     SMP9950X                        EXIT                     00036800
+         SPACE 2                                                        00036900
+SMP6010  DS    0H                                                       00037000
+         L     R3,#MEMPTR                 FIRST MEMBER POINTER          00037100
+         L     R4,#MEMLAST                LAST MEMBER POINTER           00037200
+         SPACE 1                                                        00037300
+SMP6530  CR    R3,R4                      END OF MEMBER TABLE?          00037400
+         BNL   SMP7000                    YES                           00037500
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        00037600
+         LA    R5,MSGTEXT1+4                                            00037700
+         CLC   #SMPMAC(4),##TYPE          MAC/SRC/MACUPD/SRCUPD?        00037800
+         BNE   *+4+4                      YES, AT LEAST 1 SPECIFIED     00037900
+         MVI   #SMPMAC,1                  NO, DEFAULT TO MAC            00038000
+         MVC   0(5,R5),##MAC              ++MAC IS DEFAULT              00038100
+         CLI   #SMPSRC,1                  ++SRC?                        00038200
+         BNE   SMP6530A                   NO                            00038300
+         MVC   0(5,R5),##SRC              YES                           00038400
+         B     SMP6540                                                  00038500
+SMP6530A DS    0H                                                       00038600
+         CLI   #SMPSRCU,1                 ++SRCUPD?                     00038700
+         BNE   SMP6530B                   NO                            00038800
+         MVC   0(8,R5),##SRCUPD           YES                           00038900
+         LA    R5,3(,R5)                  UPD                           00039000
+         B     SMP6540                                                  00039100
+SMP6530B DS    0H                                                       00039200
+         CLI   #SMPMACU,1                 ++MACUPD?                     00039300
+         BNE   SMP6532                    NO                            00039400
+         MVC   0(8,R5),##MACUPD           YES                           00039500
+         LA    R5,3(,R5)                  UPD                           00039600
+         B     SMP6540                                                  00039700
+SMP6532  DS    0H                                                       00039800
+         CLC   #SMPTYPE(8),BLANKS         TYPE SPECIFIED?               00039900
+         BE    SMP6540                    NO                            00040000
+         MVC   0(2,R5),##MAC              YES, ++                       00040100
+         LA    R5,2(,R5)                                                00040200
+         LA    R15,#SMPTYPE                                             00040300
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00040400
+         B     SMP6542                                                  00040500
+SMP6540  DS    0H                                                       00040600
+         LA    R5,5(,R5)                  ++MAC/SRC                     00040700
+SMP6542  DS    0H                                                       00040800
+         MVC   0(10,R5),##MBR             PARENS                        00040900
+         MVC   1(8,R5),0(R3)              MEMBER NAME                   00041000
+         LA    R5,11(,R5)                                               00041100
+         SPACE 1                                                        00041200
+         CLC   #SMPDIST(8),BLANKS         DISTLIB?                      00041300
+         BNE   SMP6544                    YES                           00041400
+         MVC   #SMPDIST(7),##DIST         NO, DEFAULT TO DISTLIB        00041500
+SMP6544  DS    0H                                                       00041600
+         MVC   0(8,R5),##DIST                                           00041700
+         LA    R5,8(,R5)                                                00041800
+         LA    R15,#SMPDIST                                             00041900
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00042000
+         MVI   0(R5),C')'                                               00042100
+         LA    R5,2(,R5)                                                00042200
+SMP6550  DS    0H                                                       00042300
+         CLC   #SMPSYSL(8),BLANKS         SYSLIB?                       00042400
+         BE    SMP6560                    NO                            00042500
+         MVC   0(7,R5),##SYSL             YES                           00042600
+         LA    R5,7(,R5)                                                00042700
+         LA    R15,#SMPSYSL                                             00042800
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00042900
+         MVI   0(R5),C')'                                               00043000
+         LA    R5,2(,R5)                                                00043100
+SMP6560  DS    0H                                                       00043200
+         CLI   MSGDS2,C' '                OUTDSN() SPECIFIED?           00043300
+         BE    SMP6560@                   NO                            00043400
+         PUT   BAMDCB,MSGTEXT1+4          YES, WRITE TO OUTDSN          00043500
+         B     SMP6560@+4                                               00043600
+SMP6560@ DS    0H                                                       00043700
+         M$ERRST MSGTEXT1                 OUTPUT LINE 1                 00043800
+         SPACE 1                                                        00043900
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        00044000
+         LA    R5,MSGTEXT1+4+2                                          00044100
+         CLC   #SMPTXL(8),BLANKS          TXLIB?                        00044200
+         BE    SMP6570                    NO                            00044300
+         MVC   0(6,R5),##TXL              YES                           00044400
+         CLC   #SMPTYPE(7),##PGM          TYPE(PROGRAM)?      DRK APR19 00045099
+         BNE   *+4+6                      NO                  DRK APR19 00045199
+         MVC   0(6,R5),##LKL              YES, LKLIB          DRK APR19 00045299
+         LA    R5,6(,R5)                                                00045599
+         LA    R15,#SMPTXL                                              00045699
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00045799
+         MVI   0(R5),C')'                                               00045899
+         LA    R5,2(,R5)                                                00045999
+SMP6570  DS    0H                                                       00046099
+         CLC   #SMPREL(8),BLANKS          RELFILE?                      00046199
+         BE    SMP6580                    NO                            00046299
+         MVC   0(8,R5),##RELF             YES                           00046399
+         LA    R5,8(,R5)                                                00046499
+         LA    R15,#SMPREL                                              00046599
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00046699
+         MVI   0(R5),C')'                                               00046799
+         LA    R5,2(,R5)                                                00046899
+SMP6580  DS    0H                                                       00046999
+         CLI   #SMPSRC,1                  ++SRC?                        00047099
+         BE    SMP6580A                   YES                           00047199
+         CLI   #SMPSRCU,1                 ++SRCUPD?                     00047299
+         BNE   SMP6580B                   NO                            00047399
+         SPACE 1                                                        00047499
+SMP6580A DS    0H                                                       00047599
+         CLC   #SMPDMOD(8),BLANKS         DISTMOD?                      00047699
+         BE    SMP6580B                   NO                            00047799
+         MVC   0(8,R5),##DMOD             YES                           00047899
+         LA    R5,8(,R5)                                                00047999
+         LA    R15,#SMPDMOD                                             00048099
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00048199
+         MVI   0(R5),C')'                                               00048299
+         LA    R5,2(,R5)                                                00048399
+         SPACE 1                                                        00048499
+SMP6580B DS    0H                                                       00048599
+         CLC   #SMPTXL(8),BLANKS          TXLIB?                        00048699
+         BNE   SMP6580C                   YES                           00048799
+         CLC   #SMPREL(8),BLANKS          RELFILE?                      00048899
+         BNE   SMP6580C                   YES                           00048999
+         MVI   #SMPINLN,1                 NO, DEFAULT TO INLINE         00049099
+SMP6580C DS    0H                                                       00049199
+         CLC   #SMPSSI(8),BLANKS          SSI?                          00049299
+         BE    SMP6590                    NO                            00049399
+         CLI   #SMPSRC,1                  ++SRC?                        00049499
+         BE    SMP6580D                   YES                           00049599
+         CLI   #SMPMAC,1                  ++MAC?                        00049699
+         BE    SMP6580D                   YES                           00049799
+         B     SMP6590                    NO                            00049899
+SMP6580D DS    0H                                                       00049999
+         CLI   #SMPINLN,1                 INLINE?                       00050099
+         BNE   SMP6590                    NO                            00050199
+         MVC   0(4,R5),##SSI                                            00050299
+         LA    R5,4(,R5)                                                00050399
+         LA    R15,#SMPSSI                                              00050499
+         BAS   R1,SMP8000                 LITTLE SUB LOOP               00050599
+         MVI   0(R5),C')'                                               00050699
+         LA    R5,2(,R5)                                                00050799
+SMP6590  DS    0H                                                       00050899
+         MVI   0(R5),C'.'                 TERMINATOR                    00050999
+         CLI   MSGDS2,C' '                OUTDSN() SPECIFIED?           00051099
+         BE    SMP6590@                   NO                            00051199
+         PUT   BAMDCB,MSGTEXT1+4          YES, WRITE TO OUTDSN          00051299
+         B     SMP6590@+4                                               00051399
+SMP6590@ DS    0H                                                       00051499
+         M$ERRST MSGTEXT1                 OUTPUT LINE 2                 00051599
+         SPACE 1                                                        00051699
+         CLI   #SMPSRCU,1                 ++SRCUPD?                     00051799
+         BE    SMP6590A                   YES                           00051899
+         CLI   #SMPMACU,1                 ++MACUPD?                     00051999
+         BE    SMP6590A                   YES                           00052099
+         CLI   #SMPINLN,1                 INLINE?                       00052199
+         BE    SMP6592                    YES                           00052299
+         B     SMP6595                    NO                            00052399
+SMP6590A DS    0H                                                       00052499
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        00052599
+         LA    R5,MSGTEXT1+4                                            00052699
+         MVC   0(15,R5),##CHANGE          ./ CHANGE NAME=               00052799
+         MVC   15(8,R5),0(R3)             MEMBER                        00052899
+         CLI   MSGDS2,C' '                OUTDSN() SPECIFIED?           00052999
+         BE    SMP6590B                   NO                            00053099
+         PUT   BAMDCB,MSGTEXT1+4          YES, WRITE TO OUTDSN          00053199
+         B     SMP6590B+4                                               00053299
+SMP6590B DS    0H                                                       00053399
+         M$ERRST MSGTEXT1                 OUTPUT ./ CHANGE              00053499
+SMP6592  DS    0H                                                       00053599
+         BAS   R6,SMPINPUT                READ MEMBER                   00053699
+         SPACE 1                                                        00053799
+SMP6595  DS    0H                                                       00053899
+         LA    R3,16(,R3)                 NEXT MEMBER POSITION          00053999
+         B     SMP6530                    LOOP                          00054099
+         SPACE 1                                                        00054199
+SMP7000  DS    0H                                                       00054299
+         B     SMP9950                                                  00054399
+         SPACE 1                                                        00054499
+* LITTLE SUBROUTINE                                                     00054599
+SMP8000  DS    0H                      LITTLE SUB                       00054699
+         LA    R14,8                   FIRST 8 CHARACTERS               00054799
+SMP8010  CLI   0(R15),C' '             SPACE?                           00054899
+         BER   R1                      YES, DONE                        00054999
+         MVC   0(1,R5),0(R15)          MOVE TO OUTPUT                   00055099
+         LA    R5,1(,R5)               NEXT TO   CHARACTER              00055199
+         LA    R15,1(,R15)             NEXT FROM CHARACTER              00055299
+         BCT   R14,SMP8010             LOOP FOR 8                       00055399
+         BR    R1                      ALL DONE                         00055499
+         SPACE 3                                                        00055599
+* READ MEMBER SUBROUTINE                                                00055699
+SMPINPUT DS    0H                                                       00055799
+         STM   R3,R5,#SMPREGS      SAVE REGISTERS                       00055899
+         MVC   MEMNAME(8),0(R3)    INITIALIZE THE MEMBER NAME           00055999
+         XC    #MEMCNT(4),#MEMCNT  COUNT OF INPUT LOGICAL RECORDS       00056099
+         MVC   STARTTR(3),8(R3)    NO, FIRST DISK ADDRESS TO READ       00056199
+         MVC   DIRNAME(8),0(R3)    MEMBER NAME FOR PAM                  00056299
+         SPACE 3                                                        00056399
+SMP9076  L     R15,=V(EXCP)                                             00056499
+         BASR  R14,R15                                                  00056599
+         B     *+4(R15)            PROCESS RETURN CODE                  00056699
+         B     SMP9080               00 - SUCCESSFUL READ               00056799
+         B     SMP9090               04 - END OF MEMBER                 00056899
+         B     SMP9090               08 - END OF DATA SET               00056999
+         B     SMP9090               12 - I/O ERROR                     00057099
+         SPACE 2                                                        00057199
+SMP9080  LR    R3,R0               BUFFER START                         00057299
+         L     R5,LS               BLOCK LENGTH                         00057399
+         SPACE 1                                                        00057499
+SMP9082  DS    0H                                                       00057599
+         AR    R5,R3               END OF BUFFER                        00057699
+         BCTR  R5,0                END OF BUFFER -1                     00057799
+         TM    FLAGSCC,RECFMF      RECFM=F?                             00057899
+         LH    R4,LRECL                                                 00057999
+         BO    SMP9088             YES, BRANCH                          00058099
+         TM    FLAGSCC,RECFMV      RECFM=V?                             00058199
+         BNO   SMP9088             NO, ASSUME RECFM=U                   00058299
+         AH    R3,=H'4'            SKIP BLOCK LENGTH WORD               00058399
+         B     SMP9086                                                  00058499
+         SPACE 3                                                        00058599
+SMP9084  BXLE  R3,R4,SMP9086       GET THE NEXT LOGICAL RECORD          00058699
+         B     SMP9076             END OF BLOCK, BRANCH                 00058799
+         SPACE 2                                                        00058899
+         CNOP  0,8                 ALIGN FOR LOOP                       00058999
+SMP9086  TM    FLAGSCC,RECFMV      RECFM=V?                             00059099
+         BNO   SMP9088             NO, BRANCH                           00059199
+         SR    R4,R4                                                    00059299
+         ICM   R4,B'0011',0(R3)    RECORD LENGTH +4                     00059399
+         LR    R14,R4              RECORD LENGTH +4                     00059499
+         AH    R3,=H'4'            SKIP RECORD LENGTH WORD              00059599
+         SH    R4,=H'4'            RECORD LENGTH VALID?                 00059699
+         BNM   SMP9088             YES, BRANCH                          00059799
+         B     SMP9076             NO, SKIP BLOCK                       00059899
+         SPACE 2                                                        00059999
+SMP9088  L     R1,#MEMCNT          ANOTHER                              00060099
+         LA    R1,1(,R1)                  OUTPUT                        00060199
+         ST    R1,#MEMCNT                       RECORD                  00060299
+         LR    R15,R4              LRECL                                00060399
+         C     R15,##MSGLEN        132 OR LESS?                         00060499
+         BNH   *+4+4               YES                                  00060599
+         L     R15,##MSGLEN        MAKE 132                             00060699
+         BCTR  R15,0               -1 FOR MOVE                          00060799
+         MVC   MSGTEXT1(136),MSGBL132  BLANK THE MESSAGE LINE           00060899
+         MVC   MSGTEXT1+4(*-*),0(R3)                                    00060999
+         EX    R15,*-6             MOVE LOGICAL RECORD                  00061099
+         CLI   MSGDS2,C' '         OUTDSN() SPECIFIED?                  00061199
+         BE    SMP9088@            NO                                   00061299
+         PUT   BAMDCB,MSGTEXT1+4   YES, WRITE TO OUTDSN                 00061399
+         B     SMP9088@+4                                               00061499
+SMP9088@ DS    0H                                                       00061599
+         M$ERRST MSGTEXT1          OUTPUT LOGICAL RECORD                00061699
+         B     SMP9084                                                  00061799
+         SPACE 2                                                        00061899
+SMP9090  OC    #MEMCNT+1(3),#MEMCNT+1  ANY RECORDS?                     00061999
+         BNZ   SMP9094                 YES, BRANCH                      00062099
+         LA    R1,L510                 NO, NULL MEMBER WARNING          00062199
+         M$MSG (R1)                                                     00062299
+         SPACE 2                                                        00062399
+SMP9094  DS    0H                                                       00062499
+         LM    R3,R5,#SMPREGS      RESTORE REGS                         00062599
+         BR    R6                  RETURN TO CALLER                     00062699
+         SPACE 2                                                        00062799
+SMP9950  DS    0H                                                       00062899
+         CLI   MSGDS2,C' '              OUTDSN() SPECIFIED?             00062999
+         BE    SMP9950X                 NO                              00063099
+         MVI   OPENLIST,X'80'                                           00063199
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SMPGEN                  00063299
+         LA    R1,BAMDCB                                                00063399
+         FREEPOOL (1)                                                   00063499
+         LA    R1,#SMPGEN                 SMPGEN DDNAME                 00063599
+         BAS   R2,SMP9990                 FREE THIS DATA SET            00063699
+SMP9950X DS    0H                                                       00063799
+         B     NEWSTAX                                                  00063899
+         SPACE 2                                                        00063999
+SMP9990  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         00064099
+         BLR   R2                         NO, RETURN                    00064199
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                00064299
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00064399
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00064499
+         USING S99RBP,R1                                                00064599
+         SPACE 1                                                        00064699
+         LA    R4,M99RB                                                 00064799
+         USING S99RB,R4                                                 00064899
+         ST    R4,S99RBPTR                                              00064999
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00065099
+         SPACE 1                                                        00065199
+         LA    R5,M99TUPL                                               00065299
+         USING S99TUPL,R5                                               00065399
+         MVI   S99RBLN,20                 LENGTH 20                     00065499
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    00065599
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         00065699
+         SPACE 1                                                        00065799
+         LA    R3,#CMXSYS3                TEXT POINTER                  00065899
+         USING S99TUNIT,R3                                              00065999
+         MVC   S99TUKEY(6),SMPFDDNA       ADD TEXT KEYS                 00066099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            00066199
+         LA    R0,SMPUNALC                UNALLOC EVEN IF "PERM"        00066299
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          00066399
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     00066499
+         SPACE 1                                                        00066599
+         DYNALLOC                                                       00066699
+         BR    R2                                                       00066799
+         DROP  R1,R3,R4,R5                                              00066899
+         SPACE 2                                                        00066999
+*  SMPGEN CONSTANTS                                                     00067099
+         PRINT NOGEN                                                    00067199
+SMPDCB   DCB   DSORG=PS,DDNAME=SMPGEN,MACRF=(PM)                        00067299
+SMPDL    EQU   *-SMPDCB                                                 00067399
+         PRINT NOGEN                                                    00067499
+SMP865E  M$TX  'PDS865E THE SMPGEN OUTPUT CAN NOT BE OPENED'            00067599
+         PRINT GEN                                                      00067699
+SMPDDNAM DC    X'000100010006',C'SMPGEN'         SMPGEN   DDNAME        00067799
+SMPDSNAM DC    X'00020001002C'                   DSNAME                 00067899
+SMPDSMBR DC    X'000300010008'                   MEMBER                 00067999
+SMPALLOC DC    X'00040001000108'                 DISP=SHR               00068099
+SMPNORM  DC    X'00050001000108'                 DISP=(,KEEP)           00068199
+SMPANORM DC    X'00060001000108'                 DISP=(,,KEEP)          00068299
+SMPUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   00068399
+SMPFDDNA DC    X'000100010008'                   FOR FREE DDNAME        00068499
+         SPACE 1                                                        00068599
+#SMPGEN  DC    CL8'SMPGEN'                       DDNAME                 00068699
+$SMPGEN  DC    CL8'$SMPGEN'                      DEFAULT MEMBER NAME    00068799
+#SMPASSP EQU   X'80'            SMPGEN: ASSOCIATES PHASE                00068899
+#SMPONE  EQU   X'10'            SMPGEN: A SINGLE MEMBER                 00068999
+#SMPASS2 EQU   X'01'            SMPGEN: SMPGEN ASSOCIATES TOO           00069099
+##TYPE   DC    X'00000000'                                              00069199
+##MSGLEN DC    F'132'                                                   00069299
+##MAC    DC    C'++MAC'                                                 00069399
+##SRC    DC    C'++SRC'                                                 00069499
+##MACUPD DC    C'++MACUPD'                                              00069599
+##SRCUPD DC    C'++SRCUPD'                                              00069699
+##UPD    DC    C'UPD'                                                   00069799
+##CHANGE DC    C'./ CHANGE NAME='                                       00069899
+##SSI    DC    C'SSI('                                                  00069999
+##MBR    DC    C'(        )'                                            00070099
+##DIST   DC    C'DISTLIB('                                              00070199
+##SYSL   DC    C'SYSLIB('                                               00070299
+##TXL    DC    C'TXLIB('                                                00070399
+##LKL    DC    C'LKLIB('                                      DRK APR19 00070499
+##DMOD   DC    C'DISTMOD('                                              00070599
+##RELF   DC    C'RELFILE('                                              00070699
+##PGM    DC    C'PROGRAM'                                     DRK APR19 00070899
+         SPACE 3                                                        00070999
+OBTAIN3  CAMLST SEARCH,0,0,0                                            00071099
+         ORG   OBTAIN3+4                                                00071199
+         SPACE 3                                                        00071299
+LOCATE3  CAMLST NAME,0,,0                                               00072099
+         ORG   LOCATE3+4                                                00080000

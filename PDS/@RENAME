@@ -1,0 +1,406 @@
+         TITLE 'P D S  --  PDS RENAME                        09/28/88'  11614000
+*********************************************************************** 11615000
+***      RENAME SUBCOMMAND                                          *** 11616000
+*********************************************************************** 11617000
+*                                                                       11618000
+         SPACE 1                                                        11619000
+RENAME   CSECT                                                          11620003
+         USING *,R8                                                     11621000
+         TM    DS1SMSFG,DS1PDSE        PDSE DATASET?          DRK MAY08 11621306
+         BNO   RENAME2                 NO, CONTINUE           DRK MAY08 11621406
+         TM    #RENSWAP,X'01'          SWAP MEMBER NAMES?     DRK MAY08 11621506
+         BNO   RENAME2                 NO, CONTINUE           DRK MAY08 11621711
+         M$MSG L707                    YES, DO NOT ALLOW      DRK MAY08 11621811
+         M$ERRST MSGBLANK              ONE BLANK LINE         DRK MAY08 11621911
+         B     NEWCMD                                         DRK MAY08 11622011
+RENAME2  DS    0H                                             DRK MAY08 11622111
+         CLI   #RENRANG,1              RENAME GROUP?                    11622211
+         BE    RENAME30                YES, BRANCH                      11623000
+         SPACE 1                                                        11624000
+         TM    SPFLAG2,SPFLNCD            LINE COMMAND?        SS AUG85 11625000
+         BNO   RENAME3                    NO, BRANCH                    11626000
+         MVC   SPFSAVM2,MEMBER2           GET MEMBER NAME      SS AUG85 11627000
+         B     RENAME6                    NO, BRANCH                    11628000
+         SPACE 1                                                        11629000
+RENAME3  MVC   MEMBERD+1(2),LMEMBER2   CHANGE DEFAULT MEMBER LENGTH     11630000
+         MVC   MEMBERD+1+2(8),MEMBER2  CHANGE DEFAULT MEMBER NAME       11631000
+         MVI   MEMBERD,FMEMBER1        ONLY ONE MEMBER NAME NOW         11632000
+         NI    PMEMMIN,FF-X'80'        NO MEMBER LIST NOW               11633000
+         BAS   R14,DEFGROUP            ADD DEFAULT GROUP                11634000
+         CLI   #RENREP,0               ANY REPBY NAME?                  11635000
+         BE    RENAME6                 NO, BRANCH                       11636000
+         MVC   MEMBERD+1(2),LMEMBER1   YES, SAVE NEW DEFAULT NAME       11637000
+         MVC   MEMBERD+1+2(8),MEMBER1  YES, SAVE NEW DEFAULT NAME       11638000
+         BAS   R14,DEFGROUP            ADD DEFAULT GROUP                11639000
+         SPACE 1                                                        11640000
+RENAME6  MVC   DSNMEMQ(8),MEMBER1      MEMBER NAME TO TEST              11641000
+         BAS   R2,ENQMTEST             MEMBER IN USE?                   11642000
+         B     NEWCMD                  YES, ERROR                       11643000
+         SPACE 1                                                        11644000
+         BAS   R2,OPENSTOW             OPEN STOW DCB; ENQUEUES          11645000
+         B     NEWCMD                  COULD NOT OPEN -- ERROR          11646000
+         LA    R6,NEWCMD               ASSUME NOT A SWAP REQUEST        11647000
+         SPACE 1                                                        11648000
+         CLC   MEMBER1(8),MEMBER2      UPDATE ALIASES ONLY?             11649000
+         BE    RENAME90                YES, BRANCH                      11650000
+         SPACE 2                                                        11651000
+         TM    #RENSWAP,X'01'          SWAP MEMBER NAMES?               11652000
+         BNO   RENAME20                NO, BRANCH                       11653000
+         SPACE 1                                                        11654000
+*** RENAME WITH SWAP OPERAND *** *** *** *** *** *** *** *** *** *** ** 11655000
+         MVC   MSGTEXT1(DIREND-DIRNAME),DIRNAME  SAVE THE FIRST MEMBER  11656000
+         XC    DIRUSER,DIRUSER         CLEAR THE USER FIELDS            11657000
+         MVC   DIRNAME,MEMBER2         SECOND MEMBER NAME               11658000
+         SPACE 2                                                        11659000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           11660000
+         B     *+4(R15)                PROCESS RETURN CODE              11661000
+         B     RENAME10                  00 - SUCCESSFUL                11662000
+         B     NOMEMBER                  04 - MEMBER NOT FOUND          11663000
+         B     IOERROR                   08 - I/O ERROR                 11664000
+         SPACE 2                                                        11665000
+RENAME10 MVC   DIRFLAG(DIREND-DIRFLAG),DIRFLAG+2 BLDL ADDS THINGS       11666000
+         SPACE 1                                                        11667000
+         MVC   DIRNAME,MEMBER2         SECOND MEMBER NAME               11668000
+         STOW  STOWDCB,DIRNAME,D       ISSUE STOW WITH DELETE OPTION    11669000
+         LTR   R15,R15                 SUCCESSFUL?                      11670000
+         BNZ   IOERROR                 NO, I/O ERROR                    11671000
+         MVC   DIRNAME,MEMBER1         FIRST MEMBER NAME                11672000
+         STOW  STOWDCB,DIRNAME,D       ISSUE STOW WITH DELETE OPTION    11673000
+         LTR   R15,R15                 SUCCESSFUL?                      11674000
+         BNZ   IOERROR                 NO, I/O ERROR                    11675000
+         SPACE 1                                                        11676000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   11677000
+         STOW  STOWDCB,DIRNAME,A       ADD THIS MEMBER ENTRY            11678000
+         SPACE 1                                                        11679000
+         LTR   R15,R15                 SUCCESSFUL?                      11680000
+         BNZ   IOERROR                 NO, I/O ERROR                    11681000
+         MVC   MSGTEXT2(DIREND-DIRNAME),DIRNAME  SAVE THE SECOND MEMBER 11682000
+         SPACE 2                                                        11683000
+         MVC   DIRNAME(DIREND-DIRNAME),MSGTEXT1  FIRST MEMBER           11684000
+         MVC   DIRNAME,MEMBER2         SECOND MEMBER NAME               11685000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   11686000
+         STOW  STOWDCB,DIRNAME,A       ADD THIS MEMBER ENTRY            11687000
+         SPACE 1                                                        11688000
+         LTR   R15,R15                 SUCCESSFUL?                      11689000
+         BNZ   IOERROR                 NO, I/O ERROR                    11690000
+         BAS   R6,RENAME90             UPDATE ANY ALIAS MEMBERS         11691000
+         MVC   DIRNAME(DIREND-DIRNAME),MSGTEXT2  SECOND MEMBER          11692000
+         MVC   MEMBER1(8),MEMBER2      SWAP THE                         11693000
+         MVC   MEMBER2(8),DIRNAME              MEMBER NAMES             11694000
+         BAS   R6,RENAME90             UPDATE ANY ALIAS MEMBERS         11695000
+         B     NEWCMD                                                   11696000
+         SPACE 3                                                        11697000
+*** RENAME USING THE REPBY PARAMETER *** *** *** *** *** *** *** *** ** 11698000
+RENAME20 CLI   #RENREP,0               ANY REPBY OPERAND?               11699000
+         BE    RENAME26                NO, BRANCH                       11700000
+         SPACE 1                                                        11701000
+         MVC   DIRNAME(8),#RENREP      MEMBER NAME FOR AN ERROR MESSAGE 11702000
+         BLDL  INDCB,BLDLLIST          CHECK FOR MEMBER PRESENCE        11703000
+         B     *+4(R15)                PROCESS RETURN CODE              11704000
+         B     RENAME22                  00 - FOUND THE MEMBER          11705000
+         B     NOMEMBER                  04 - MEMBER WAS NOT FOUND      11706000
+         B     IOERROR                   08 - I/O ERROR                 11707000
+         SPACE 1                                                        11708000
+RENAME22 MVC   DIRNAME(8),MEMBER2      MEMBER NAME FOR AN ERROR MESSAGE 11709000
+         STOW  STOWDCB,MEMBER1,C       ISSUE STOW WITH CHANGE OPTION    11710000
+         SPACE 1                                                        11711000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 11711102
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 11711202
+         B     *+4(R15)                PROCESS RETURN CODE              11712000
+         B     RENAME24                  00 - SUCCESSFUL                11713000
+         B     MEMEXIST                  04 - THIS NAME ALREADY EXISTS  11714000
+         B     NOMEMBER                  08 - MEMBER NAME NOT FOUND     11715000
+         B     FULLDIR                   12 - DIRECTORY FULL  DRK MAY03 11715101
+*        EX    0,*                       12 - INVALID RETURN CODE       11716001
+*        B     IOERROR                   16 - DIRECTORY I/O ERROR       11717002
+         SPACE 1                                                        11718000
+RENAME24 BAS   R6,RENAME90             UPDATE ANY ALIAS ENTRIES         11719000
+         MVC   MEMBER2(8),MEMBER1      SWAP MEMBER NAMES                11720000
+         MVC   MEMBER1(8),#RENREP      SWAP MEMBER NAMES                11721000
+         LA    R6,NEWCMD               EXIT ADDRESS                     11722000
+         SPACE 3                                                        11723000
+*** RENAME WITH NO OPERANDS  *** *** *** *** *** *** *** *** *** *** ** 11724000
+RENAME26 MVC   DIRNAME(8),MEMBER2      MEMBER NAME FOR AN ERROR MESSAGE 11725000
+         STOW  STOWDCB,MEMBER1,C       ISSUE STOW WITH CHANGE OPTION    11726000
+         SPACE 1                                                        11727000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 11727102
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 11727202
+         B     *+4(R15)                PROCESS RETURN CODE              11728000
+         B     RENAME90                  00 - SUCCESSFUL                11729000
+         B     MEMEXIST                  04 - THIS NAME ALREADY EXISTS  11730000
+         B     NOMEMBER                  08 - MEMBER NAME NOT FOUND     11731000
+         B     FULLDIR                   12 - DIRECTORY FULL  DRK MAY03 11731101
+*        EX    0,*                       12 - INVALID RETURN CODE       11732001
+*        B     IOERROR                   16 - DIRECTORY I/O ERROR       11733002
+         SPACE 3                                                        11734000
+*** RENAME WITH GROUP OPERAND ** *** *** *** *** *** *** *** *** *** ** 11735000
+RENAME30 NI    FLAGSBB,FF-FLINESET     NO OUTPUT IN PROGRESS YET        11736000
+         MVI   SUBPOOLT,21             TEMPORARY STORAGE IN USE         11737000
+         MVI   STARTTR+2,X'01'         READ THE DIRECTORY               11738000
+         LA    R5,256/2                256 MEMBERS INITIALLY            11739000
+         SPACE 1                                                        11740000
+RENAME40 SLL   R5,1                    MEMBERS*2 FOR EACH LOOP          11741000
+         SR    R2,R2                                                    11742000
+         LR    R3,R5                                                    11743000
+         LR    R0,R5                                                    11744000
+         SLL   R0,4                    MEMBERS*16 IS TABLE SIZE         11745000
+         ICM   R0,B'1000',SUBPOOLT                                      11746000
+         GETMAIN R,LV=(0)              ALLOCATE A NEW MEMBER TABLE      11747000
+         LR    R4,R1                   NEW TABLE ADDRESS                11748000
+         ICM   R0,B'1111',#MEMPTR      ANY PREVIOUS MEMBERS?            11749000
+         BZ    RENAME42                NO, BRANCH                       11750000
+         SRL   R3,1                    YES, USE SECOND HALF OF TABLE    11751000
+         LR    R14,R4                  NEW TABLE START ADDRESS          11752000
+         LR    R15,R5                                                   11753000
+         SLL   R15,3                   MEMBERS*8 IS OLD TABLE SIZE      11754000
+         LR    R2,R15                  DISPLACEMENT TO NEW PART         11755000
+         LR    R1,R15                                                   11756000
+         MVCL  R14,R0                  PRESERVE THE PREVIOUS TABLE      11757000
+         L     R1,#MEMPTR                                               11758000
+         LR    R0,R2                   LENGTH TO FREE                   11759000
+         ICM   R0,B'1000',SUBPOOLT     SUBPOOL TO FREE                  11760000
+         FREEMAIN R,LV=(0),A=(1)                                        11761000
+         SPACE 1                                                        11762000
+RENAME42 ST    R4,#MEMPTR              MEMBER TABLE BASE                11763000
+         AR    R4,R2                   WHERE TO ADD MEMBERS             11764000
+         SPACE 3                                                        11765000
+RENAME44 BAS   R14,READDIR             GET THE NEXT MEMBER              11766000
+         B     RENAME52                END OF MEMBERS, BRANCH           11767000
+         SPACE 1                                                        11768000
+         LH    R1,LMEMBER1             MEMBER NAME LENGTH               11769000
+         CLC   MEMNAME(*-*),MEMBER1    <<EXECUTED>>                     11770000
+         EX    R1,*-6                  MEMBER:GROUP                     11771000
+         BL    RENAME44                  LOW, LOOP                      11772000
+         BH    RENAME52                  HIGH, DONE WITH FIRST PHASE    11773000
+         MVC   DSNMEMQ(8),MEMNAME        EQUAL, CHECK FOR ENQUEUED      11774000
+         BAS   R2,ENQMTEST                                              11775000
+         NOP   0(,R0)                  OUTPUT AN ERROR MESSAGE ONLY     11776000
+         SPACE 2                                                        11777000
+         LA    R2,MEMNAME+7                                             11778000
+         TM    FLAGSBB,FLINESET        LINE IN PROGRESS?                11779000
+         BO    RENAME46                YES, BRANCH                      11780000
+         OI    FLAGSBB,FLINESET        LINE NOW IN PROGRESS             11781000
+         LA    R1,80                   ASSUME AN ACTIVE MODE            11782000
+         TM    SPFLAG0,SPFDON          ISPMODE ACTIVE?                  11783000
+         BO    RENAME45                YES, BRANCH                      11784000
+         TM    CONTOPTN,1              ANY LOG RECORDING?               11785000
+         BO    RENAME45                YES, BRANCH                      11786000
+*        GTSIZE ,                      TERMINAL SIZE           SS MAY89 11787001
+         GTSIZE                                                         11787101
+         CH    R1,=H'120'              120 OR LESS BYTES?               11788000
+         BL    *+8                     YES, BRANCH                      11789000
+         LH    R1,=H'120'              NO, USE 120 BYTES                11790000
+RENAME45 SH    R1,=H'7'                LESS SEVEN FOR PREFIX            11791000
+         ST    R1,LINESIZE             CHARACTERS/LINE                  11792000
+         MVC   MSGLINE+4(L'MSGRENAM),MSGRENAM                           11793000
+         LA    R6,MSGLINE+4+L'MSGRENAM                                  11794000
+         MVC   FULLWORD(3),L161$1                                       11795000
+         SPACE 1                                                        11796000
+RENAME46 CLI   0(R2),X'40'             SCAN FOR                         11797000
+         BNE   *+8                             LAST                     11798000
+         BCT   R2,RENAME46                         NON-BLANK            11799000
+         SPACE 1                                                        11800000
+         LA    R0,MEMNAME                                               11801000
+         SR    R2,R0                                                    11802000
+         BNM   *+6                                                      11803000
+         SR    R2,R2                                                    11804000
+         LA    R15,2(R6,R2)                                             11805000
+         LA    R1,MSGLINE                                               11806000
+         SR    R15,R1                                                   11807000
+         C     R15,LINESIZE                                             11808000
+         BNH   RENAME50                                                 11809000
+         LA    R1,MSGLINE+4                                             11810000
+         SR    R6,R1                                                    11811000
+         STC   R6,MTLEN                                                 11812000
+         MVC   INSERT#1(127),MSGLINE+4                                  11813000
+         LA    R1,FULLWORD                                              11814000
+         M$MSG (R1)                                                     11815000
+         MVI   MTLEN,8                                                  11816000
+         MVI   FULLWORD+2,C'9'                                          11817000
+         LA    R6,MSGLINE+3            INDENT FOR BLANKS                11818000
+         SPACE 1                                                        11819000
+RENAME50 MVI   0(R6),X'40'                                              11820000
+         MVC   1(8,R6),MEMNAME                                          11821000
+         TR    1(8,R6),TRLINE                                           11822000
+         LA    R1,2(R2,R6)                                              11823000
+         MVI   0(R1),C','                                               11824000
+         LA    R6,3(R2,R6)                                              11825000
+         MVC   0(16,R4),MEMNAME        CURRENT MEMBER NAME              11826000
+         LA    R4,16(,R4)              NEXT MEMBER NAME                 11827000
+         S     R3,=F'1'                ANY HOLD POSITIONS LEFT?         11828000
+         BP    RENAME44                YES, BRANCH                      11829000
+         B     RENAME40                NO, REALLOCATE                   11830000
+         SPACE 2                                                        11831000
+RENAME52 LA    R1,L711                 ASSUME NO MEMBERS FOUND          11832000
+         TM    FLAGSBB,FLINESET        LINE IN PROGRESS?                11833000
+         BZ    MSGNEW                  NO, EXIT                         11834000
+         LA    R1,MSGLINE+5                                             11835000
+         SR    R6,R1                                                    11836000
+         STC   R6,MTLEN                                                 11837000
+         MVC   INSERT#1(127),MSGLINE+4                                  11838000
+         LA    R1,FULLWORD                                              11839000
+         M$MSG (R1)                                                     11840000
+         MVI   MTLEN,8                                                  11841000
+         M$ERRST MSGBLANK                                               11842000
+         SPACE 1                                                        11843000
+         LA    R1,PDS391A              VERIFY THAT YOU WISH TO RENAME.. 11844000
+         BAS   R2,YESNO                PROMPT FOR YES OR NO             11845000
+         B     NEWCMD                  NO, BRANCH                       11846000
+         SPACE 2                                                        11847000
+         BAS   R2,OPENSTOW             OPEN STOW DCB; ENQUEUE           11848000
+         B     NEWCMD                  OPEN FAILED -- ERROR             11849000
+         SPACE 3                                                        11850000
+         L     R3,#MEMPTR              FIRST MEMBER POINTER             11851000
+         LA    R6,RENAME60             WHERE TO GO                      11852000
+         MVI   #RENDEFT,FMEMBER1+FMEMBER2+FMEMRANG+FMEM#MEM             11853000
+         MVC   #RENDEFT+1(2+8+8+2),LMEMBER1  LENGTH1, MEMBER1, M2, L2   11854000
+         SPACE 1                                                        11855000
+         MVC   MEMBERD(1+2+8+8+2),#RENDEFT    FLAG, LEN1, MEM1, M2, L2  11856000
+         MVC   MEMBERD+1(2),#RENDEFT+1+2+8+8  REPEAT LEN2 FOR LEN1      11857000
+         MVC   MEMBERD+1+2(8),#RENDEFT+1+2+8  REPEAT MEM2 FOR MEM1      11858000
+         NI    PMEMMIN,FF-X'80'               NO MEMBER LIST NOW        11859000
+         BAS   R14,DEFGROUP            DEFINE NEW MEMBER GROUP          11860000
+RENAME60 CR    R3,R4                   DONE?                            11861000
+         BE    NEWCMD                  YES, BRANCH                      11862000
+         MVC   DIRNAME(16),0(R3)       CURRENT MEMBER NAME              11863000
+         LA    R3,16(,R3)              NEXT MEMBER NAME                 11864000
+         AGO   .RN02                                          ABL DEC86 11865000
+         MVC   MEMBER1(8),DIRNAME                                       11866000
+         MVC   MEMBER2(8),DIRNAME                                       11867000
+         LH    R1,LMEMBER2                                              11868000
+         MVC   MEMBER2(*-*),#RENDEFT+1+2+8  <<EXECUTED>>                11869000
+         EX    R1,*-6                       MOVE IN FIRST FEW BYTES     11870000
+.RN02    ANOP                                                 ABL DEC86 11871000
+         MVC   MEMBER1(8),DIRNAME                                       11872000
+         MVC   MEMBER2(8),BLANKS                                        11873000
+         LH    R1,LMEMBER2                                              11874000
+         MVC   MEMBER2(*-*),#RENDEFT+1+2+8  <<EXECUTED>>                11875000
+         EX    R1,*-6                       MOVE IN FIRST FEW BYTES     11876000
+         LH    R0,LMEMBER1                  LENGTH1                     11877000
+         LA    R15,MEMBER1+1                WHERE TO GET                11878000
+         AR    R15,R0                                   INPUT           11879000
+         LA    R14,MEMBER2+1                WHERE TO MOVE               11880000
+         AR    R14,R1                                    OUTPUT         11881000
+         CR    R0,R1                        LENGTH1>LENGTH2?            11882000
+         BH    *+6                          YES, BRANCH                 11883000
+         LR    R0,R1                        NO, USE LENGTH2             11884000
+         LA    R1,6                         MACHINE LENGTH              11885000
+         SR    R1,R0                        6-MAX(LENGTH1,LENGTH2) OK?  11886000
+         BM    RENAME62                     NO, BRANCH                  11887000
+         MVC   0(*-*,R14),0(R15)            <<EXECUTED>>                11888000
+         EX    R1,*-6                       MOVE IN REST OF NAME        11889000
+RENAME62 DS    0H                                                       11890000
+         SPACE 1                                                        11891000
+         CLC   MEMBER1(8),MEMBER2      UPDATE ALIASES ONLY?             11892000
+         BE    RENAME90                YES, BRANCH                      11893000
+         SPACE 2                                                        11894000
+         TM    #RENSWAP,X'01'          SWAP MEMBER NAMES?               11895000
+         BO    RENAME70                YES, BRANCH                      11896000
+         SPACE 1                                                        11897000
+         MVC   DIRNAME(8),MEMBER2      MEMBER NAME FOR AN ERROR MESSAGE 11898000
+         STOW  STOWDCB,MEMBER1,C       ISSUE STOW WITH CHANGE OPTION    11899000
+         SPACE 1                                                        11900000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 11900102
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 11900202
+         B     *+4(R15)                PROCESS RETURN CODE              11901000
+         B     RENAME90                  00 - SUCCESSFUL                11902000
+         B     MEMEXIST                  04 - THIS NAME ALREADY EXISTS  11903000
+         EX    0,*                       08 - MEMBER NAME NOT FOUND     11904000
+         B     FULLDIR                   12 - DIRECTORY FULL  DRK MAY03 11904101
+*        EX    0,*                       12 - INVALID RETURN CODE       11905001
+*        B     IOERROR                   16 - DIRECTORY I/O ERROR       11906002
+         SPACE 3                                                        11907000
+         SPACE 3                                                        11908000
+*** RENAME WITH GROUP AND SWAP OPERAND   *** *** *** *** *** *** *** ** 11909000
+RENAME70 XC    DIRUSER,DIRUSER         CLEAR THE USER FIELDS            11910000
+         MVC   DIRNAME,MEMBER1         FIRST MEMBER NAME                11911000
+         SPACE 1                                                        11912000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           11913000
+         LTR   R15,R15                 ANY PROBLEM?                     11914000
+         BNZ   IOERROR                 YES, ERROR                       11915000
+         SPACE 1                                                        11916000
+         MVC   DIRFLAG(DIREND-DIRFLAG),DIRFLAG+2 BLDL ADDS THINGS       11917000
+         MVC   MSGTEXT1(DIREND-DIRNAME),DIRNAME  SAVE THE FIRST MEMBER  11918000
+         XC    DIRUSER,DIRUSER         CLEAR THE USER FIELDS            11919000
+         MVC   DIRNAME,MEMBER2         SECOND MEMBER NAME               11920000
+         SPACE 2                                                        11921000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           11922000
+         B     *+4(R15)                PROCESS RETURN CODE              11923000
+         B     RENAME80                  00 - SUCCESSFUL                11924000
+         B     NOMEMBER                  04 - MEMBER NOT FOUND          11925000
+         B     IOERROR                   08 - I/O ERROR                 11926000
+         SPACE 3                                                        11927000
+RENAME80 MVC   DIRFLAG(DIREND-DIRFLAG),DIRFLAG+2 BLDL ADDS THINGS       11928000
+         SPACE 1                                                        11929000
+         MVC   DIRNAME,MEMBER2         SECOND MEMBER NAME               11930000
+         STOW  STOWDCB,DIRNAME,D       ISSUE STOW WITH DELETE OPTION    11931000
+         LTR   R15,R15                 SUCCESSFUL?                      11932000
+         BNZ   IOERROR                 NO, I/O ERROR                    11933000
+         MVC   DIRNAME,MEMBER1         FIRST MEMBER NAME                11934000
+         STOW  STOWDCB,DIRNAME,D       ISSUE STOW WITH DELETE OPTION    11935000
+         LTR   R15,R15                 SUCCESSFUL?                      11936000
+         BNZ   IOERROR                 NO, I/O ERROR                    11937000
+         SPACE 1                                                        11938000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   11939000
+         STOW  STOWDCB,DIRNAME,A       ADD THIS MEMBER ENTRY            11940000
+         SPACE 1                                                        11941000
+         LTR   R15,R15                 SUCCESSFUL?                      11942000
+         BNZ   IOERROR                 NO, I/O ERROR                    11943000
+         MVC   MSGTEXT2(DIREND-DIRNAME),DIRNAME  SAVE THE SECOND MEMBER 11944000
+         SPACE 2                                                        11945000
+         MVC   DIRNAME(DIREND-DIRNAME),MSGTEXT1  FIRST MEMBER           11946000
+         MVC   DIRNAME,MEMBER2         SECOND MEMBER NAME               11947000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   11948000
+         STOW  STOWDCB,DIRNAME,A       ADD THIS MEMBER ENTRY            11949000
+         SPACE 1                                                        11950000
+         LTR   R15,R15                 SUCCESSFUL?                      11951000
+         BNZ   IOERROR                 NO, I/O ERROR                    11952000
+         BAS   R6,RENAME90             UPDATE ANY ALIAS MEMBERS         11953000
+         MVC   DIRNAME(DIREND-DIRNAME),MSGTEXT2  SECOND MEMBER          11954000
+         MVC   MEMBER1(8),MEMBER2      SWAP THE                         11955000
+         MVC   MEMBER2(8),DIRNAME              MEMBER NAMES             11956000
+         BAS   R6,RENAME90             UPDATE ANY ALIAS MEMBERS         11957000
+         B     RENAME60                PROCESS OTHER MEMBERS IN GROUP   11958000
+         SPACE 2                                                        11959000
+** UPDATE ANY ALIAS ENTRIES FOR LOAD MODULES                            11960000
+RENAME90 MVC   INSERT#1(8),MEMBER1                                      11961000
+         MVC   INSERT#2(8),MEMBER2        NEW MEMBER NAME               11962000
+         TR    INSERT#2+8+3(8),TRLINE     MAKE PRINTABLE                11963000
+         M$MSG L090$2                                                   11964000
+         SPACE 1                                                        11965000
+         TM    FLAGSCC,RECFMU          LOAD MODULE?                     11966000
+         BNOR  R6                      NO, BRANCH                       11967000
+         TM    DIRFLAG,DIRALIAS        AN ALIAS?                        11968000
+         BOR   R6                      YES, BRANCH                      11969000
+         SPACE 1                                                        11970000
+         MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  11971000
+         SPACE 1                                                        11972000
+RENAME95 BAS   R14,READDIR             GET NEXT DIRECTORY MEMBER        11973000
+         B     0(R6)                   LAST MEMBER PROCESSED            11974000
+         SPACE 1                                                        11975000
+         CLC   DIRTTR,MEMTTR           TTR'S MATCH?                     11976000
+         BNE   RENAME95                NO, BRANCH                       11977000
+         TM    MEMFLAG,X'80'           ALIAS ENTRY?                     11978000
+         BNO   RENAME95                NO, CONTINUE SEARCHING           11979000
+         SPACE 1                                                        11980000
+         L     R14,DIRPTRS             CURRENT DIRECTORY ENTRY          11981000
+         MVC   DIRNAME(DIREND-DIRNAME),0(R14)                           11982000
+         SPACE 1                                                        11983000
+         LA    R14,DIRREAL             CORRESPONDING MAIN ENTRY NAME    11984000
+         TM    DIRATTR,ATTRSCTR        SCATTER LOADED?                  11985000
+         BNO   *+8                     NO, BRANCH                       11986000
+         LA    R14,DIRREALS            YES, USE THIS NAME               11987000
+         CLC   0(8,R14),MEMBER2        ALIAS NAME POINTER=MEMBER NAME?  11988000
+         BE    RENAME95                YES, BRANCH                      11989000
+         SPACE 1                                                        11990000
+         MVC   0(8,R14),MEMBER2        CHANGE THE MEMBER POINTER        11991000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   11992000
+         STOW  STOWDCB,DIRNAME,R       REPLACE THIS MEMBER ENTRY        11993000
+         SPACE 1                                                        11994000
+         LR    R5,R15                  SAVE RETURN CODE                 11995000
+         MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      11996000
+         M$MSG L065$1                                                   11997000
+         LTR   R15,R5                  SUCCESSFUL?                      11998000
+         BNZ   IOERROR                 NO, I/O ERROR                    11999000
+         B     RENAME95                CONTINUE FOR ALL ALIASES         12000000
+MSGRENAM DC    C'MEMBERS TO BE RENAMED ARE:'                            12001000

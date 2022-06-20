@@ -1,0 +1,178 @@
+         TITLE 'ISPF - ISPEXEC SELECT           '              SS AUG86 00010000
+* SELECT CMD OR PGM SUPPORT                                    SS AUG86 00020000
+ISPSLCT  DS    0H                                              SS AUG86 00030000
+         USING ISPSLCT,R4                                      SS AUG86 00040000
+         STAX                                                           00050000
+         ESTAE 0                        CANCEL THE ESTAE ADDR  SS AUG86 00060000
+ESTAE11  DS    0H                       Z/XDC PROBE           DRK DEC08 00061006
+         BAS   R2,ISPCERT               CNTL ERROR RETURN      SS AUG86 00070000
+         LA    R15,ISPSLCTC             SELECT CHAR            SS AUG86 00080000
+         LA    R0,ISPL250               STANDARD LENGTH        SS AUG86 00090001
+         LA    R1,SPFZSEL               POINT TO ZSEL          SS AUG86 00100000
+         STM   R15,R1,PARMLIST          SET PARMLIST           SS AUG86 00110000
+         OI    PARMLIST+8,X'80'         END FLAG               SS AUG86 00120000
+         LA    R1,PARMLIST              *                      SS AUG86 00130000
+         L     R15,ISPLINK              *                      SS AUG86 00140000
+         BASR  R14,R15                  *                      SS AUG86 00150000
+         ST    R15,SPFTSV2              SAVE                   SS AUG86 00160000
+         MVC   STAEPARM(4),STAELIST     RESET THE ESTAE ADDRES SS AUG86 00170000
+         L     R2,ISPESTAE              ESTAE EXIT ADDRESS     SS AUG86 00180000
+         ESTAE (R2),CT,PARAM=(R7),MF=(E,STAEPARM)              SS AUG86 00190000
+ESTAE12  DS    0H                       Z/XDC PROBE           DRK DEC08 00191006
+         L     R2,SPFSTAXX              GET ORIGINAL EX ADDR   SS AUG86 00200000
+         STAX  (2),USADDR=(R7),REPLACE=YES,IBUF=0,OBUF=0,              X00210000
+               MF=(E,STAXPARM)          *                      SS AUG86 00220000
+         BAS   R2,ISPCERC               CNTL ERROR CANCEL      SS AUG86 00230000
+*    SPFZERR ... CHECK FOR ATTN OR ABEND                       SS AUG86 00240000
+*                 ISPD210=ABEND         *                      SS AUG86 00250000
+*                 ISPD211=ATTN          *                      SS AUG86 00260000
+*                 ISPD2..=OTHER ERROR (INVALID)                SS AUG86 00270000
+         CLC   SPFZERR,ISPSLABD         ISPD210                SS AUG86 00280000
+         BE    ISPSLCTB                 ABEND                  SS AUG86 00290000
+         CLC   SPFZERR,ISPSLATT         ISPD211                SS AUG86 00300000
+         BE    ISPSLCTT                 ATTN                   SS AUG86 00310000
+         CLC   SPFTSV2,ISPSLR20         IS IT RC 20            SS NOV88 00320000
+         BNE   ISPSLCT5                 NO, USER RC            SS NOV88 00330000
+         CLC   SPFZERR(5),ISPSLERR      ISPD2..                SS AUG86 00340000
+         BE    ISPSLCTE                 ERROR                  SS AUG86 00350000
+ISPSLCT5 DS    0H                       *                      SS NOV88 00360000
+         L     R1,SPFTSV2               GET RC                 SS AUG86 00370000
+         BAS   R2,ISPDECCV              MAKE PRINTABLE         SS AUG86 00380000
+         MVC   SPFMLIN1(4),ISPSLMGR     RC=                    SS AUG86 00390000
+         L     R1,SPFTSV2               GET RC                 SS AUG86 00400000
+         CH    R1,ISPH9999              4 DIGIT NUMBER         SS AUG86 00410000
+         BH    ISPSLCT7                 NO MAKE IT 7           SS AUG86 00420000
+         MVC   SPFMLIN1+4(4),SPFDCNV4   RC VALUE               SS AUG86 00430000
+         B     ISPSLCTR                 *                      SS AUG86 00440000
+ISPSLCT7 DS    0H                       *                      SS AUG86 00450000
+         MVC   SPFMLIN1+1(7),SPFDCONV+5 7 DIGIT NUMBER         SS AUG86 00460000
+         B     ISPSLCTR                 *                      SS AUG86 00470000
+ISPSLCTB DS    0H                       *                      SS AUG86 00480000
+         MVC   SPFMSGID,SPFZERR         COPY ID                SS AUG86 00490000
+         MVC   SPFMLIN1,ISPSLMGA                               SS AUG86 00500000
+         B     ISPSLCTR                 *                      SS AUG86 00510000
+ISPSLCTT DS    0H                       *                      SS AUG86 00520000
+         MVC   SPFMSGID,SPFZERR         *                      SS AUG86 00530000
+         MVC   SPFMLIN1,ISPSLMGT        *                      SS AUG86 00540000
+         B     ISPSLCTR                 *                      SS AUG86 00550000
+ISPSLCTE DS    0H                       *                      SS AUG86 00560000
+         MVC   SPFMSGID,SPFZERR         *                      SS AUG86 00570000
+         MVC   SPFMLIN1,ISPSLMGE        *                      SS AUG86 00580000
+         B     ISPSLCTR                 *                      SS AUG86 00590000
+ISPSLCTR DS    0H                       *                      SS AUG86 00600000
+         L     R15,SPFTSV2              GET RC                 SS AUG86 00610000
+         BR    R3                       *                      SS AUG86 00620000
+* LITERALS                              *                      SS AUG86 00630000
+ISPSLR20 DC    F'20'             RETURN CODE 20                SS NOV88 00640000
+ISPSLCTC DC    CL8'SELECT '      SELECT VERB                   SS AUG86 00650000
+ISPSLABD DC    CL8'ISPD210'      ABEND MSG ID                  SS AUG86 00660000
+ISPSLATT DC    CL8'ISPD211'      ATTN  MSG ID                  SS AUG86 00670000
+ISPSLERR DC    CL5'ISPD2'        ERR   MSG ID RANGE            SS AUG86 00680000
+ISPSLMGA DC    CL8'*ABEND'       ABEND MSG                     SS AUG86 00690000
+ISPSLMGT DC    CL8'*ATTN'        ATTN  MSG                     SS AUG86 00700000
+ISPSLMGE DC    CL8'*INVALID'     ERR   MSG                     SS AUG86 00710000
+ISPSLMGR DC    CL4'*RC='         RC    MSG                     SS AUG86 00720000
+         DROP  R4                                              SS AUG86 00730000
+         TITLE 'ISPF - TRAP SUBROUTINE          '              SS NOV88 00740000
+* TRAP SUBROUTINE                                              SS NOV88 00750004
+ISPTRAPX DS    0H                                              SS NOV88 00760000
+         USING ISPTRAPX,R4                                     SS NOV88 00770000
+         LA    R1,ISPTRAPV        DEF VAR TABLE                SS NOV88 00780000
+         BAS   R2,ISPVDEFX                                     SS NOV88 00790000
+         LTR   R15,R15            FIRST TIME                   SS NOV88 00800000
+         BNZ   ISPTRAP2           NOT FIRST TIME               SS NOV88 00810000
+         MVC   SPFTVARN(8),SPFCSUF      NAME                   SS NOV88 00820000
+         MVI   SPFTVARN+7,C'V'            WITH A V ON END      SS NOV88 00830000
+         LA    R14,SPFTVARN             *                      SS NOV88 00840000
+         LA    R1,245                   *                      SS NOV88 00850000
+         ST    R1,SPFFIXED              SET LENGTH             SS NOV88 00860000
+         LA    R1,SPFFIXED              *                      SS NOV88 00870000
+         LA    R15,SPFZSEL+4            USE FOR VAR            SS NOV88 00880000
+         BAS   R2,ISPVDEF               DEFINE                 SS NOV88 00890000
+ISPTRAP2 DS    0H                       *                      SS NOV88 00900000
+         LA    R1,SPFZSEL+249           LAST CHAR              SS NOV88 00910000
+         LA    R14,249                  COUNT                  SS NOV88 00920000
+ISPTRAPB DS    0H                       *                      SS NOV88 00930000
+         CLI   0(R1),C' '               BLANK                  SS NOV88 00940000
+         BNE   ISPTRAPG                 GOT SOMETHING          SS NOV88 00950000
+         BCTR  R1,0                     BACK UP ONE            SS NOV88 00960000
+         BCT   R14,ISPTRAPB               UNTIL START          SS NOV88 00970002
+         LA    R15,20                   NO GOOD                SS NOV88 00980000
+         BR    R3                       EXIT                   SS NOV88 00990000
+ISPTRAPG DS    0H                       *                      SS NOV88 01000000
+         CLI   0(R1),C')'               SHOULD BE              SS NOV88 01010000
+         BNE   *+8                      MISSING, OK            SS NOV88 01020000
+         MVI   0(R1),C' '               BLANK OUT              SS NOV88 01030000
+         LA    R15,SPFTVARN             GET NAME               SS NOV88 01040000
+         BAS   R2,ISPVPUTS              COPY TO SHR POOL       SS NOV88 01050000
+ISPTRAP3 DS    0H                       *                      SS NOV88 01060000
+         CLI   SPFTLIM,C'0'             IS IT BLANK OR ZEROS   SS NOV88 01070000
+         BH    *+10                     *                      SS NOV88 01080000
+         MVC   SPFTLIM,ISPTRAPD         DEFAULT LIMIT          SS NOV88 01090000
+         CLC   SPFTLIM,ISPBLK8          IS IT BLANK            SS NOV88 01100000
+         BNE   *+10                     *                      SS NOV88 01110000
+         MVC   SPFTLIM,ISPTRAPD         DEFAULT LIMIT          SS NOV88 01120000
+         CLI   SPFTPLOG,C'*'            USE CURRENT LOG        SS NOV88 01130000
+         BE    ISPTRAPK                 YES, OK                SS NOV88 01140000
+         MVC   SPFTSVB,SPFTPLOG         LOG NUMBER             SS NOV88 01150000
+         NI    SPFTSVB,X'0F'            MAKE NUMERIC           SS DEC89 01160003
+         SR    R0,R0                    *                      SS NOV88 01170000
+         IC    R0,SPFTSVB               *                      SS NOV88 01180000
+         LTR   R0,R0                    ANY VALUE              SS NOV88 01190000
+         BNZ   ISPTRAPL                 YES, SET LOG           SS NOV88 01200000
+         LA    R0,1                     USE LOG 1              SS NOV88 01210000
+ISPTRAPL DS    0H                       *                      SS NOV88 01220000
+         BAS   R2,ISPVIEWI              SET LOG                SS NOV88 01230000
+ISPTRAPK DS    0H                       *                      SS NOV88 01240000
+         MVI   SPFTCNT,C'0'             NO OUTPUT YET          SS NOV88 01250000
+         MVC   SPFMLIN1,ISPBLK8         NO MESSAGE YET         SS NOV88 01260000
+         MVC   SPFSTART,SPFLAST         DISPLAY FROM HERE      SS NOV88 01270000
+         BAS   R2,ISPLOGBT              GOT BOTTOM OF LOG      SS NOV88 01280000
+         CLI   SPFTPCPY,C'N'            COPY CMD TO LOG        SS NOV88 01290000
+         BE    ISPTRAPJ                 NO, CONTINUE           SS NOV88 01300000
+         MVC   SPFINPUT(249),SPFZSEL    COPY COMMAND           SS NOV88 01310000
+         MVI   SPFINPUT+249,C' '                               SS NOV88 01320000
+         MVC   PUTGETBF(4),ISPLEN2      SET LENGTH             SS NOV88 01330000
+         LA    R1,PUTGETBF              PARM FOR LOGCD         SS NOV88 01340000
+         L     R15,SPFSTART             NEED BY LOGCD          SS NOV88 01350000
+         BAS   R2,ISPLOGCD              *                      SS NOV88 01360000
+ISPTRAPJ DS    0H                       *                      SS NOV88 01370000
+         MVI   SPFZSEL,C' '             BLANK                  SS NOV88 01380000
+         MVC   SPFZSEL+1(249),SPFZSEL     AND RIPPLE           SS NOV88 01390000
+         MVC   SPFZSEL(L'ISPTRAPS),ISPTRAPS    PDSTRAP         SS NOV88 01400000
+         MVC   SPFZSEL+12(8),SPFLOGNM   COPY LOG NAME          SS NOV88 01410000
+         MVC   SPFZSEL+21(8),SPFTVARN   COPY VER NAME          SS NOV88 01420000
+         MVC   SPFZSEL+30(6),SPFTLIM    LIMIT                  SS NOV88 01430000
+         BAS   R2,ISPSLCTI              SELECT PDSTRAP         SS NOV88 01440000
+         ST    R15,SPFTRAPR             SAVE RETURN CODE       SS NOV88 01450000
+         LA    R15,VSPFTRC              GET SHARED             SS NOV88 01460000
+         BAS   R2,ISPVGETS              *         VAR          SS NOV88 01470000
+         LA    R15,VSPFTCNT             GET SHARED             SS NOV88 01480000
+         BAS   R2,ISPVGETS              *         VAR          SS NOV88 01490000
+         L     R15,SPFTRAPR             GET  RETURN CODE       SS NOV88 01500000
+         LTR   R15,R15                  CHECK RETURN CODE      SS NOV88 01510000
+         BZR   R3                       ZERO RETURN CODE       SS NOV88 01520000
+         C     R15,ISPL4                NOZERO RETURN CODE     SS NOV88 01530000
+         BE    ISPTRAP4                 *                      SS NOV88 01540000
+         C     R15,ISPL8                ABEND                  SS NOV88 01550000
+         BNER  R3                       ISPEXEC ERROR          SS NOV88 01560000
+         MVC   SPFMLIN1(3),ISPTRAPE     ABEND                  SS NOV88 01570000
+         MVC   SPFMLIN1+3(5),SPFTRC     ABEND                  SS NOV88 01580000
+         BR    R3                       *                      SS NOV88 01590000
+ISPTRAP4 DS    0H                       *                      SS NOV88 01600000
+         MVC   SPFMLIN1+4(4),SPFTRC     RETURN CODE            SS NOV88 01610000
+         CLI   SPFTRC+4,C' '            LESS THAN 5 LONG       SS NOV88 01620000
+         BE    *+10                     YES                    SS NOV88 01630000
+         MVC   SPFMLIN1+1(7),SPFTRC     PASS BACK 7 DIGITS     SS NOV88 01640000
+         BR    R3                       *                      SS NOV88 01650000
+         DS    0F                       *                      SS NOV88 01660000
+ISPTRAPV DC    H'1',X'10',X'00'                                SS NOV88 01670000
+         DC    A(VSPFTRC),AL2(SPFTRC-SPWRKC),H'12'             SS NOV88 01680000
+         DC    A(VSPFTCNT),AL2(SPFTCNT-SPWRKC),H'06'           SS NOV88 01690000
+         DC    X'FF'                                           SS NOV88 01700000
+VSPFTRC  DC    C'PDSTRC  '                                     SS NOV88 01710000
+VSPFTCNT DC    C'PDSTCNT  '                                    SS NOV88 01720000
+ISPTRAPD DC    CL6'3000'                DEFAULT LIMIT          SS NOV88 01730000
+ISPTRAPE DC    C'*A='                   ABEND= MESSAGE         SS NOV88 01740000
+ISPTRAPS DC    C'CMD(PDSTRAP T2345678 V2345678 L23456) MODE(FSCR)'      01750000
+         DROP  R4                                              SS NOV88 01760000

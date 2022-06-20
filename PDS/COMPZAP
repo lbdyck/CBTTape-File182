@@ -1,0 +1,8 @@
+//ZAPPDS   EXEC  PGM=AMASPZAP                                           00010000
+//SYSPRINT DD  SYSOUT=*                                                 00020000
+//SYSLIB   DD  DISP=SHARE,DSN=hlq.new.pds86.load                        00030003
+ NAME  PDS86 OPTIONS                                                    00040000
+ VER   0EBC  C3D6D4D7,C1D9C540      COMPARE    SUBCOMMAND               00050004
+ VER   0ED0  C3D6D4D7,C1D9C5C3      COMPAREC   SUPER-C  (DEFAULT)       00060004
+*REP   0ED0  C3D6D4D7,C1D9C55B      COMPARE$   YALE                     00070004
+*REP   0ED0  C3D6D4D7,C1D9C5E6      COMPAREW   COMPAREX                 00080004

@@ -1,0 +1,631 @@
+         TITLE 'P D S  --  PDS MODIFICATIONS                 11/01/03'  00010099
+PDSMODS  CSECT                                                          00020099
+         DS    0D                                                       00030047
+MSGLEN   EQU   64                                                       00040047
+ DC C'----------------------------------------------------------------' 00050099
+ DC C'                    PDS v8.6                                    ' 00060099
+ DC C'              Update 18, May 29, 2022                           ' 00070099
+ DC C'----------------------------------------------------------------' 00080099
+ DC C'VIEW: Bypass SPFEDIT dsname enqueue check.                      ' 00090099
+ DC C'                                                                ' 00100099
+ DC C'LISTV: Identify volumes with cylinder-managed space.            ' 00100199
+ DC C'                                                                ' 00100299
+ DC C'O.UT:  Added new option to P86LVUX (line cmd utility for LISTV).' 00101099
+ DC C' DEAV     Display LSPACE enhanced information                   ' 00102099
+ DC C'                                                                ' 00106099
+ DC C'CAX: Update detection of catalog status attribute flags.        ' 00110099
+ DC C'                                                                ' 00120099
+ DC C'SRCHFOR: LPSF(nn) to set the "List Previous-Search-Following"   ' 00130099
+ DC C'lines value.                                                    ' 00140099
+ DC C'                                                                ' 00150099
+ DC C'O.UT:  Added new option to P86LLUX (line cmd utility for load). ' 00160099
+ DC C' VLM      File Manager view load module information             ' 00170099
+ DC C'                                                                ' 00180099
+ DC C'CHANGE: RefList/RefMode and hot spot for CHANGE Data Set Menu   ' 00190099
+ DC C'added to CHANGE Data Set Entry Panel (P86OPCH).                 ' 00200099
+ DC C'                                                                ' 00210099
+ DC C'LISTC: Display maximum extents for PDSE libraries (DSAT).       ' 00220099
+ DC C'                                                                ' 00230099
+ DC C'COPY:  GENS parameter added to copy PDSE V2 member generations. ' 00240099
+ DC C'Specifies that all members and generations to be copied from    ' 00250099
+ DC C'the input PDSE data set are to replace any identically named    ' 00260099
+ DC C'members on the output PDSE data set.  Requires new function     ' 00270099
+ DC C'APAR OA60639 for IEBCOPY.                                       ' 00280099
+ DC C'                                                                ' 00290099
+ DC C'CSECTS: Add VOLUME to PDS command invocation.                   ' 00300099
+ DC C'                                                                ' 00310099
+ DC C'O.UT:  Added new options to P86OPUX (primary cmd utility).      ' 00320099
+ DC C'  CBT     The Official CBT ISPF Application                     ' 00330099
+ DC C'  INFO    Display dataset information                           ' 00340099
+ DC C'                                                                ' 00350099
+ DC C'PDSMODEL: Add STORCLAS to PDSMODEL dialog.                      ' 00360099
+ DC C'                                                                ' 00370099
+ DC C'The following message was changed:                              ' 00380099
+ DC C'  PDS706E DLINK IS NOT SUPPORTED FOR PDSE DATA SETS             ' 00390099
+ DC C'                                                                ' 00400099
+ DC C'DISASM: Display SYSPUNCH for ASMDASM and DISASM programs.       ' 00410099
+ DC C'ASMDASM can now disassemble object text in sequential or        ' 00420099
+ DC C'partitioned source datasets.                                    ' 00430099
+ DC C'                                                                ' 00440099
+ DC C'CSECTS: Dialog update including SORT, FIND, DLINK, IDRL,        ' 00450099
+ DC C'VERSION, and HISTORY commands.                                  ' 00460099
+ DC C'                                                                ' 00470099
+ DC C'    Inside PDS, use CS line command                             ' 00480099
+ DC C'    Outside PDS, use TSO %CSECTS ''loadlib.dsn'' module volser  ' 00490099
+ DC C'  '                                                             ' 00500099
+ DC C'                                                                ' 00510099
+ DC C'PDSHELP: Edit TSO Help member for accuracy and clarity.         ' 00520099
+ DC C'                                                                ' 00530099
+ DC C'VERIFY: Support RECFM=U non-executable libraries.               ' 00540099
+ DC C'                                                                ' 00550099
+ DC C'Functions Pull-down:  Personal Data Set Lists                   ' 00560099
+ DC C'                                                                ' 00570099
+ DC C'Added historical documents:                                     ' 00580099
+ DC C'  $OY07766:  IBM APAR to protect the integrity of a PDS DSCB.   ' 00590099
+ DC C'                                                                ' 00600099
+ DC C'  $PDSPAIN:  SHARE MVS GROUP Position Addressing the need       ' 00610099
+ DC C'  for Functional Enhancement to OS/MVS Partitioned Data Sets.   ' 00620099
+ DC C'                                                                ' 00630099
+ DC C'O.UT:  Added new options to P86OPUX (primary cmd utility).      ' 00640099
+ DC C'  >       Switch to output DSNAME used in last COPY subcommand  ' 00650099
+ DC C'  ADM     RACF security administration (RACFADM)                ' 00660099
+ DC C'  MSG     Display PDS message (e.g., msg pds100)                ' 00670099
+ DC C'  EDSL    Lionel Dyck Enhanced Data Set List                    ' 00680099
+ DC C'                                                                ' 00690099
+ DC C'PGLITE: Add EAV support to PDSEGENI rexx function.              ' 00700099
+ DC C'Thank you Lionel B. Dyck.                                       ' 00710099
+ DC C'                                                                ' 00720099
+ DC C'VSAMXMIT:  VI clist/panels updated with RLS/SMS information.    ' 00730099
+ DC C'Thank you Jim Turner.                                           ' 00740099
+ DC C'                                                                ' 00750099
+ DC C'HISTORY: Message PDS715E issued for a PDSE load library when an ' 00760099
+ DC C'IF or MEMLIST subcommand did not locate any members with        ' 00770099
+ DC C'attributes desired in the members searched.                     ' 00780099
+ DC C'Thank you Greg Price.                                           ' 00790099
+ DC C'                                                                ' 00800099
+ DC C'PGLITE: A simpler version, or subset, of PDSEGEN, which can be  ' 00810099
+ DC C'used to Edit/View/Browse PDSE V2 member generations. This is an ' 00820099
+ DC C'ISPF Dynamic Area application that is entirely self-contained   ' 00830099
+ DC C'and ready to run out of the box.  No ISPF Tables are used.  Use ' 00840099
+ DC C'when you want speed without the beef.                           ' 00850099
+ DC C'                                                                ' 00860099
+ DC C'Options Pull-down:  PDSE V2 Member Generations...               ' 00870099
+ DC C'----------------------------------------------------------------' 00880099
+ DC C'                    PDS v8.6                                    ' 00890099
+ DC C'              Update 17, February 25, 2019                      ' 00900099
+ DC C'----------------------------------------------------------------' 00910099
+ DC C'MAP: IEWBIND Binder API now used for program objects and load   ' 00920099
+ DC C'modules resulting in enhanced reporting.  From Greg Price.      ' 00930099
+ DC C'                                                                ' 00940099
+ DC C' o  RSECT reporting (R-O)                                       ' 00950099
+ DC C' o  RMODE64 section reporting                                   ' 00960099
+ DC C' o  Private code section reporting ($PRVnnnn)                   ' 00970099
+ DC C' o  Binder class reporting (deferred load is labeled)           ' 00980099
+ DC C'                                                                ' 00990099
+ DC C'ATTRIB/DIRENTRY/VERIFY: RMODE64 reporting.                      ' 01000099
+ DC C'                                                                ' 01010099
+ DC C'The following messages were added:                              ' 01020099
+ DC C'  PDS879E RESIDENCE MODE 64 AND ADDRESSING MODE xxx ARE         ' 01030099
+ DC C'          INCOMPATIBLE                                          ' 01040099
+ DC C'  PDS198I CBT DIALOGS PGLITE/PDSEGEN SUPPORT PDSE V2 MEMBER     ' 01050099
+ DC C'          GENERATIONS                                           ' 01060099
+ DC C'  PDS983E MAXGENS VALUE IS > 2,000,000,000                      ' 01070099
+ DC C'  PDS984E MAXGENS VALUE EXCEEDS THE SMS LIMIT                   ' 01080099
+ DC C'  PDS199I LARGEST FREE AREA ON VOLUME volser IS nnnnnn CYLINDERS' 01090099
+ DC C'                                                                ' 01100099
+ DC C'COPY: MAXGENS parameter added for NEW DSNTYPE(LIBRARY)          ' 01110099
+ DC C'output dataset allocations.                                     ' 01120099
+ DC C'                                                                ' 01130099
+ DC C'PDSVERS: Save PDS version display setting in ISPF Profile       ' 01140099
+ DC C'                                                                ' 01150099
+ DC C'O.UT:  Added new options to P86OPUX (primary cmd utility).      ' 01160099
+ DC C'  FLIP    Switch between current and previous data sets         ' 01170099
+ DC C'  CHEAT   PDS cheat sheet for long subcommands                  ' 01180099
+ DC C'  VERS    Display PDS version number in Starboard area          ' 01190099
+ DC C'  YALE    Compare two PDS files with Yale COMPARE command       ' 01200099
+ DC C'  PGLITE  A simpler version, or subset, of PDSEGEN              ' 01210099
+ DC C'                                                                ' 01220099
+ DC C'PTSEXP: Member name of ALL will expand all members of the input ' 01230099
+ DC C'PDS to an output PDS.                                           ' 01240099
+ DC C'                                                                ' 01250099
+ DC C'HISTORY: Display Enterprise COBOL compiler options when they    ' 01260099
+ DC C'are program objects in a PDSE.                                  ' 01270099
+ DC C'                                                                ' 01280099
+ DC C'PDS200I: Display number of extents for PDSE libraries.          ' 01290099
+ DC C'                                                                ' 01300099
+ DC C'SHAXMIT: SHA1SUM, SHA2SUM, SHA224S, SHA3SUM, and SHA5SUM        ' 01310099
+ DC C'in TSO XMIT format (load modules).                              ' 01320099
+ DC C'                                                                ' 01330099
+ DC C'O.UT:  Added new options to P86LOUX (line cmd utility).         ' 01340099
+ DC C'  RVIV    RESTORE deleted versions of member                    ' 01350099
+ DC C'  RNS     RENAME SWAP for PDSE members                          ' 01360099
+ DC C'                                                                ' 01370099
+ DC C'SMPJOBS: SMP jobs to install the PDS command package.  JCL,     ' 01380099
+ DC C'IDCAMS, and the UCLIN you need for a SMP install.               ' 01390099
+ DC C'----------------------------------------------------------------' 01400099
+ DC C'                    PDS v8.6                                    ' 01410099
+ DC C'              Update 16, April 10, 2018                         ' 01420099
+ DC C'----------------------------------------------------------------' 01430099
+ DC C'IF: PACKED/NOPACKED parameters were added.                      ' 01440099
+ DC C'                                                                ' 01450099
+ DC C'OFFLOAD/LOAD/PTSEXP: NEW, TRK/CYL, SPACE, and VOLUME parameters ' 01460099
+ DC C'for output file allocation were added.                          ' 01470099
+ DC C'                                                                ' 01480099
+ DC C'FIND/IF: NEWML added to THEN/ELSE actions.  NEWML is similar to ' 01490099
+ DC C'MEMLIST except it also performs a MEMLIST RESET.                ' 01500099
+ DC C'                                                                ' 01510099
+ DC C'CONTROL: TOGGLES operand displays the state of the toggle       ' 01520099
+ DC C'switches that can be set by CONTROL.                            ' 01530099
+ DC C'                                                                ' 01540099
+ DC C'CONTROL: MEMLIST toggles whether RESET should be added to all   ' 01550099
+ DC C'MEMLIST subcommands.  If toggle is ON, then the MEMLIST table   ' 01560099
+ DC C'is cleared before adding entries.                               ' 01570099
+ DC C'                                                                ' 01580099
+ DC C'The following message was added:                                ' 01590099
+ DC C'  PDS197I MEMLIST RESET IS ON/OFF                               ' 01600099
+ DC C'                                                                ' 01610099
+ DC C'ATTRIB: PDS856E STOW ERROR, R15=28, R0=00000000                 ' 01620099
+ DC C'STOW replace attempted for a PDSE load library when the LKEDDATE' 01630099
+ DC C'parameter was specified.  Fix by Greg Price.                    ' 01640099
+ DC C'                                                                ' 01650099
+ DC C'PDSQINST: Quick install exec.                                   ' 01660099
+ DC C'                                                                ' 01670099
+ DC C'$TSO8*: 8-character TSO userid/prefix support for z/OS 2.3.     ' 01680099
+ DC C'                                                                ' 01690099
+ DC C'PDS859E COMMAND IKJEFTSR WAS NOT FOUND                          ' 01700099
+ DC C'LPD search code in PDSMAIN was failing for link pack modules    ' 01710099
+ DC C'because of a LPD entry size increase (40 to 48) in z/OS 2.3.    ' 01720099
+ DC C'LPD search code was replaced with a LOAD macro.                 ' 01730099
+ DC C'                                                                ' 01740099
+ DC C'PDSHELP: Add documentation for dialog functions                 ' 01750099
+ DC C'(CAX, LISTA, LISTC, LISTV, SET, AND TCT).                       ' 01760099
+ DC C'                                                                ' 01770099
+ DC C'O.UT:  Added new option to P86LLUX (line cmd utility for load). ' 01780099
+ DC C'  CS      Display CSECTs for load module                        ' 01790099
+ DC C'                                                                ' 01800099
+ DC C'O.UT:  Added new options to P86OPUX (primary cmd utility).      ' 01810099
+ DC C'  FP      FInd ISPF packed members                              ' 01820099
+ DC C'  MODEL   Allocate a new data set based on the active data set  ' 01830099
+ DC C'  COPMSG  Extract XMIT/IEBCOPY summary messages from SYSOUT     ' 01840099
+ DC C'  CHGM    CHANGE dataset menu                                   ' 01850099
+ DC C'  IRL     Last 30 Referenced DSNAMEs                            ' 01860099
+ DC C'                                                                ' 01870099
+ DC C'  ENTER OPTION -- DSN=AD.FILE182.PDS484                         ' 01880099
+ DC C'  >xmit : to.cbt outda(bin) sysout(x)  /* IEB msgs to SYSOUT */ ' 01890099
+ DC C'    |                                                           ' 01900099
+ DC C'  >copmsg                                                       ' 01910099
+ DC C'    |                                                           ' 01920099
+ DC C'    V                                                           ' 01930099
+ DC C'>TRP(%ISFBROW                                                   ' 01940099
+ DC C'IEB1013I COPYING FROM PDS   INDD=SYS00251 DSN=AD.FILE182.PDS484 ' 01950099
+ DC C'IEB1098I 744 OF 744 MEMBERS UNLOADED FROM INPUT DATA SET        ' 01960099
+ DC C'IEB147I END OF JOB - 0 WAS HIGHEST SEVERITY CODE                ' 01970099
+ DC C'----------------------------------------------------------------' 01980099
+ DC C'                    PDS v8.6                                    ' 01990099
+ DC C'              Update 15, April 4, 2017                          ' 02000099
+ DC C'----------------------------------------------------------------' 02010099
+ DC C'MAP: Abend S0C4-11 when accessing PDSE directory block load     ' 02020099
+ DC C'module endry.  Fix by Greg Price.                               ' 02030099
+ DC C'                                                                ' 02040099
+ DC C'MATCH: Added SUBLIST operand to build a new sublist based       ' 02050099
+ DC C'on the comparison results.  Added VOLUME operand for use if     ' 02060099
+ DC C'the input comparison pds is not cataloged.                      ' 02070099
+ DC C'                                                                ' 02080099
+ DC C'OFFLOAD: NOSEP operand to exclude separators between            ' 02090099
+ DC C'output members.                                                 ' 02100099
+ DC C'                                                                ' 02110099
+ DC C'DISASM: New global variable ASMPGM to select the disassembly    ' 02120099
+ DC C'program. DISASM/RESOURCE from CBT or ASMDASM from HLASM toolkit.' 02130099
+ DC C'                                                                ' 02140099
+ DC C'COPY: The source and target data set names can be the same if   ' 02150099
+ DC C'they are on different volumes.  If VOLUME is not specified,     ' 02160099
+ DC C'the volser in the catalog will be used for the target data set. ' 02170099
+ DC C'                                                                ' 02180099
+ DC C'CONTROL: ISPLOG operand toggles whether all subcommands are     ' 02190099
+ DC C'written to ISPLOG.  If toggle is OFF (default), NLOn global     ' 02200099
+ DC C'variables will determine what subcommands get logged.           ' 02210099
+ DC C'                                                                ' 02220099
+ DC C'The following messages were added:                              ' 02230099
+ DC C'  PDS195I ISPLOG SUBCOMMAND MONITORING IS ON/OFF                ' 02240099
+ DC C'  PDS196I MEMBER NAME VALIDATION IS ON/OFF                      ' 02250099
+ DC C'  PDS397A SHOULD ENTIRE DIRECTORY BE MODIFIED (Y/N) ?           ' 02260099
+ DC C'  PDS192I PDSE FORMAT:      VERSION       MAXGENS               ' 02270099
+ DC C'  PDS192I                         n    nnnnnnnnnn               ' 02280099
+ DC C'  PDS247I PDS DETERMINED BLOCKSIZE WILL BE USED                 ' 02290099
+ DC C'                                                                ' 02300099
+ DC C'ATTRIB: Fixed PDS117I cumulative size error when processing     ' 02310099
+ DC C'ISPF extended statistics.                                       ' 02320099
+ DC C'                                                                ' 02330099
+ DC C'O.UT:  Added new options to P86OPUX utility panel.              ' 02340099
+ DC C'  FAMS    Dan Dalby FAMS attribute extract                      ' 02350099
+ DC C'  MBRGEN  Lionel Dyck PDSE V2 member generations dialog         ' 02360099
+ DC C'  PACK    Lionel Dyck Pack dataset with TRSMAIN                 ' 02370099
+ DC C'  UNPACK  Lionel Dyck Unpack dataset with TRSMAIN               ' 02380099
+ DC C'  VB2FB   Lionel Dyck Copy Variable->Fixed and Fixed->Variable  ' 02390099
+ DC C'  PRDS    Bill Smith PRINTDS dialog                             ' 02400099
+ DC C'                                                                ' 02410099
+ DC C'The following message was changed:                              ' 02420099
+ DC C'  PDS006I END OF DATA SET dsname                                ' 02430099
+ DC C'                                                                ' 02440099
+ DC C'Added $$$PROS2:  Effective use of the TSO PDS Command, Part 2.  ' 02450099
+ DC C'                                                                ' 02460099
+ DC C'COMPARE:  If using COMPAREC, then the compare type can be       ' 02470099
+ DC C'changed to BYTE, FILE, or WORD by specifying the type after the ' 02480099
+ DC C'DSNAME/MEMBER specifications.                                   ' 02490099
+ DC C'                                                                ' 02500099
+ DC C'MEMLIST/ATTRIB/IF:  Eight character TSO userid support.         ' 02510099
+ DC C'                                                                ' 02520099
+ DC C'Added TSOTESTn:  TSO TEST breakpoints/equates used to debug     ' 02530099
+ DC C'PDS 8.6.  See member $$$$TEST for notes on TSO TEST.            ' 02540099
+ DC C'----------------------------------------------------------------' 02550099
+ DC C'                    PDS v8.6                                    ' 02560099
+ DC C'              Update 14, May 21, 2014                           ' 02570099
+ DC C'----------------------------------------------------------------' 02580099
+ DC C'LISTV: Expand cylinder display fields (largest, total, and      ' 02590099
+ DC C'primary) to 7 characters and identify 3390-A volumes.  Identify ' 02600099
+ DC C'VVDS allocation on volume in status indicator field.            ' 02610099
+ DC C'                                                                ' 02620099
+ DC C'AMBLIST: BOTH option to display all LISTLOAD information.       ' 02630099
+ DC C'                                                                ' 02640099
+ DC C'CONDEND: Fixed problem with multiple warning/error messages     ' 02650099
+ DC C'in error message buffer.                                        ' 02660099
+ DC C'                                                                ' 02670099
+ DC C'EAV support for PDSE data sets allocated in the cylinder-managed' 02680099
+ DC C'space.  This mod thanks to John Hamlet from SAS.                ' 02690099
+ DC C'                                                                ' 02700099
+ DC C'COPY: Display IEBCOPY output if return code is -1 from          ' 02710099
+ DC C'IKJEFTSR.  This happens on x37 type abends.                     ' 02720099
+ DC C'                                                                ' 02730099
+ DC C'HISTORY: Display COBOL compiler options (messages PDS250I and   ' 02740099
+ DC C'PDS260I) in PDSE members.                                       ' 02750099
+ DC C'                                                                ' 02760099
+ DC C'The following message was changed:                              ' 02770099
+ DC C'  PDS733E BROWSE FAILED -- NULL MEMBER (ZERO-LENGTH DATA)       ' 02780099
+ DC C'                                                                ' 02790099
+ DC C'The following messages were added:                              ' 02800099
+ DC C'  PDS734E BROWSE FAILED -- NO MEMBERS IN PDS                    ' 02810099
+ DC C'  PDS735E BROWSE FAILED -- I/O ERROR                            ' 02820099
+ DC C'  PDS121I nn,nnn SPANNED RECORD SEGMENTS WERE INPUT             ' 02830099
+ DC C'                                                                ' 02840099
+ DC C'OFFLOAD/PTSEXP/SMPGEN: Add disposition parameter for output DSN.' 02850099
+ DC C'                                                                ' 02860099
+ DC C'CPKMAP: New global variable MAPPGM to select the track map      ' 02870099
+ DC C'program.  FDRCPK (Innovation DP) or DISKMAP (CBT 972).  TRKMAP  ' 02880099
+ DC C'is an alias for this subcommand.                                ' 02890099
+ DC C'                                                                ' 02900099
+ DC C'LISTC: Add percent used to dual panel.                          ' 02910099
+ DC C'                                                                ' 02920099
+ DC C'PTSEXP: Add LIST/NOLIST parameter to control display of         ' 02930099
+ DC C'expanded data.                                                  ' 02940099
+ DC C'----------------------------------------------------------------' 02950099
+ DC C'                    PDS v8.6                                    ' 02960099
+ DC C'              Update 13, June 6, 2012                           ' 02970099
+ DC C'----------------------------------------------------------------' 02980099
+ DC C'PDSE: Fixed abends (S0C4/S30A/S90A) in PDSE directory routines  ' 02990099
+ DC C'when processing REPLACE subcommands for PDSE files.             ' 03000099
+ DC C'                                                                ' 03010099
+ DC C'Add LOAD and OFFLOAD to PDS subcommand logging.                 ' 03020099
+ DC C'----------------------------------------------------------------' 03030099
+ DC C'                    PDS v8.6                                    ' 03040099
+ DC C'              Update 12, January 4, 2012                        ' 03050099
+ DC C'----------------------------------------------------------------' 03060099
+ DC C'CONTROL: TSO displays the active TSO users (sorted).            ' 03070099
+ DC C'CONTROL: GEO displays a DASD geometry table.                    ' 03080099
+ DC C'CONTROL: IBM displays the Gilbert Saint-flour compiler table.   ' 03090099
+ DC C'CONTROL: LISTENV displays software and hardware information.    ' 03100099
+ DC C'                                                                ' 03110099
+ DC C'RCQDATE: PDS interface to the Michael Theys (csc.com)           ' 03120099
+ DC C'Perpetual Calendar and Date Conversion dialog.                  ' 03130099
+ DC C'                                                                ' 03140099
+ DC C'The following messages were added:                              ' 03150099
+ DC C'                                                                ' 03160099
+ DC C'  PDS292I SYSTEM NAME: sysname                                  ' 03170099
+ DC C'  PDS534W MATCH DATA SET IS NOT PARTITIONED                     ' 03180099
+ DC C'  PDS097I TSO USERS: count                                      ' 03190099
+ DC C'  PDS708E EXTENDED/LARGE FORMAT, HFS, AND VSAM ARE NOT SUPPORTED' 03200099
+ DC C'  PDS277I RESTORE FIND STRING TRUNCATED TO 32 CHARACTERS        ' 03210099
+ DC C'                                                                ' 03220099
+ DC C'MATCH: PDS interface to the Bill Godfrey pdsmatch program       ' 03230099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 03240099
+ DC C'                                                                ' 03250099
+ DC C'MAP: Greg Price added support for format 2 program objects      ' 03260099
+ DC C'in a PDSE.                                                      ' 03270099
+ DC C'                                                                ' 03280099
+ DC C'MEMLIST: Greg Price updated MEMLIST to use DESERV for a PDSE    ' 03290099
+ DC C'program object library resulting in much improved response time.' 03300099
+ DC C'                                                                ' 03310099
+ DC C'USAGE: Invoke IGWFAMS interface for PDSE pages used.            ' 03320099
+ DC C'                                                                ' 03330099
+ DC C'CONTROL: Fixed S0C7 in MIPS calculation (LISTENV).              ' 03340099
+ DC C'                                                                ' 03350099
+ DC C'PDSQWGEN: Edit macro to tag PDSHELP member for load into a      ' 03360099
+ DC C'MVS/QuickRef User data base.                                    ' 03370099
+ DC C'                                                                ' 03380099
+ DC C'VPDSE: Verify a PDSE directory structure with IEBPDSE.          ' 03390099
+ DC C'                                                                ' 03400099
+ DC C'ISPMODE: Ignore operands on ISPMODE subcommand.                 ' 03410099
+ DC C'                                                                ' 03420099
+ DC C'LISTC: Support EAV and Y2K versions of DSAT command.            ' 03430099
+ DC C'                                                                ' 03440099
+ DC C'SETLOG: Log limit sizes changed to 128,000 lines.               ' 03450099
+ DC C'----------------------------------------------------------------' 03460099
+ DC C'                    PDS v8.6                                    ' 03470099
+ DC C'              Update 11, February 2, 2010                       ' 03480099
+ DC C'----------------------------------------------------------------' 03490099
+ DC C'AMBLIST: PDS interface to the IBM Service Aid AMBLIST program   ' 03500099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 03510099
+ DC C'                                                                ' 03520099
+ DC C'ATTRIB/DIRENTRY/IF/MEMLIST/VERIFY: Added support for extended   ' 03530099
+ DC C'ISPF member statistics (z/OS 1.11).                             ' 03540099
+ DC C'                                                                ' 03550099
+ DC C'The following messages were added:                              ' 03560099
+ DC C'                                                                ' 03570099
+ DC C'  PDS522W ADDSTATS REQUIRED WITH EXTEND                         ' 03580099
+ DC C'  PDS231I extended directory list                               ' 03590099
+ DC C'                                                                ' 03600099
+ DC C'ATTRIB: LONG option will display ISPF size stats in             ' 03610099
+ DC C'99,999,999 format (message PDS231I).                            ' 03620099
+ DC C'                                                                ' 03630099
+ DC C'PTSEXP: PDS interface to the SMP Service Routine GIMCPTS        ' 03640099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 03650099
+ DC C'                                                                ' 03660099
+ DC C'F (Find) in table: NULL string                                  ' 03670099
+ DC C'PDSM863A Required positional operand is too short/long or it    ' 03680099
+ DC C'requires a delimiter.                                           ' 03690099
+ DC C'----------------------------------------------------------------' 03700099
+ DC C'                    PDS v8.6                                    ' 03710099
+ DC C'              Update 10, June 11, 2009                          ' 03720099
+ DC C'----------------------------------------------------------------' 03730099
+ DC C'PDS subcommand logging now identified in the ISPF Log.          ' 03740099
+ DC C'                                                                ' 03750099
+ DC C'Member $$PDSNEW is a powerpoint slide presentation on           ' 03760099
+ DC C'the new subcommands in PDS v8.6.                                ' 03770099
+ DC C'                                                                ' 03780099
+ DC C'LISTC: Expanded DSORG field for Extended VSAM files.            ' 03790099
+ DC C'                                                                ' 03800099
+ DC C'LISTC: TI line command to run CA-1 tape inquiry for a tape      ' 03810099
+ DC C'dataset.                                                        ' 03820099
+ DC C'                                                                ' 03830099
+ DC C'The following messages were added:                              ' 03840099
+ DC C'                                                                ' 03850099
+ DC C'  PDS108I nnnnn CHARACTERS PER AVERAGE VARIABLE LENGTH RECORD   ' 03860099
+ DC C'  PDS521W OUTPUT DATA SET IS NOT PARTITIONED                    ' 03870099
+ DC C'                                                                ' 03880099
+ DC C'CONTROL: COMPILER displays information on IBM compiler products.' 03890099
+ DC C'                                                                ' 03900099
+ DC C'LOAD: PDS interface to the Bill Godfrey pdsload program         ' 03910099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 03920099
+ DC C'----------------------------------------------------------------' 03930099
+ DC C'                    PDS v8.6                                    ' 03940099
+ DC C'              Update 09, May 20, 2008                           ' 03950099
+ DC C'----------------------------------------------------------------' 03960099
+ DC C'CONDEND: Added option to end PDS after a warning or error       ' 03970099
+ DC C'message.  PDS will end with a return code 4 (warning message)   ' 03980099
+ DC C'or a return code 8 (error message).  This is intended for use   ' 03990099
+ DC C'in TSO background execution (IKJEFT1A).                         ' 04000099
+ DC C'                                                                ' 04010099
+ DC C'PARSE: Removed the prompt for FIND/REPLACE strings after an     ' 04020099
+ DC C'error condition if running in background.                       ' 04030099
+ DC C'                                                                ' 04040099
+ DC C'The following message was added:                                ' 04050099
+ DC C'                                                                ' 04060099
+ DC C'  PDS707E RENAME SWAP IS NOT SUPPORTED FOR PDSE DATA SETS       ' 04070099
+ DC C'----------------------------------------------------------------' 04080099
+ DC C'                    PDS v8.6                                    ' 04090099
+ DC C'              Update 08, January 28, 2008                       ' 04100099
+ DC C'----------------------------------------------------------------' 04110099
+ DC C'HISTORY: Identified NUMPROC and TRUNC options in Enterprise     ' 04120099
+ DC C'COBOL for z/OS programs.                                        ' 04130099
+ DC C'                                                                ' 04140099
+ DC C'New global variable MIGVOL to specify the name of the HSM       ' 04150099
+ DC C'migrated dataset volser.                                        ' 04160099
+ DC C'                                                                ' 04170099
+ DC C'USAGE: Fixed S0C4 when running PDS from an APF library.  PDSE   ' 04180099
+ DC C'only.                                                           ' 04190099
+ DC C'                                                                ' 04200099
+ DC C'Added support for DSNAME aliases.                               ' 04210099
+ DC C'                                                                ' 04220099
+ DC C'New global variable MLRESET to specify the default RESET action ' 04230099
+ DC C'for MEMLIST subcommands.                                        ' 04240099
+ DC C'                                                                ' 04250099
+ DC C'COBANAL: PDS interface to the Roland Schiradin COBOL load       ' 04260099
+ DC C'module analyzer program via the TSO/E Service Facility Routine, ' 04270099
+ DC C'IKJEFTSR.                                                       ' 04280099
+ DC C'                                                                ' 04290099
+ DC C'Program COBANAL added to the UTILXMIT member in                 ' 04300099
+ DC C'the installation PDS.                                           ' 04310099
+ DC C'                                                                ' 04320099
+ DC C'HISTORY, ATTRIB, MAP, MEMLIST:  Greg Price added date support   ' 04330099
+ DC C'for Not-Editable load modules in a PDSE.                        ' 04340099
+ DC C'----------------------------------------------------------------' 04350099
+ DC C'                    PDS v8.6                                    ' 04360099
+ DC C'              Update 07, July 18, 2007                          ' 04370099
+ DC C'----------------------------------------------------------------' 04380099
+ DC C'DISASM: PDSE support via the Dick Thorton disassembler programs ' 04390099
+ DC C'on CBT file 234 (RESOURCE and REBUILD).                         ' 04400099
+ DC C'                                                                ' 04410099
+ DC C'Programs RESOURCE and REBUILD added to the UTILXMIT member in   ' 04420099
+ DC C'the installation PDS.                                           ' 04430099
+ DC C'                                                                ' 04440099
+ DC C'CPKMAP: PDS interface to the Innovation DP Compaktor map        ' 04450099
+ DC C'program via the TSO/E Service Facility Routine, IKJEFTSR.       ' 04460099
+ DC C'                                                                ' 04470099
+ DC C'MEMLIST: Added additional sort fields for load library          ' 04480099
+ DC C'members.                                                        ' 04490099
+ DC C'----------------------------------------------------------------' 04500099
+ DC C'                    PDS v8.6                                    ' 04510099
+ DC C'              Update 06, June 18, 2007                          ' 04520099
+ DC C'----------------------------------------------------------------' 04530099
+ DC C'Action Bars added to MEMLIST Source, MEMLIST Load, ISPMODE Log, ' 04540099
+ DC C'LISTA, LISTV, LISTF, CAX, and TCT panels.                       ' 04550099
+ DC C'                                                                ' 04560099
+ DC C'The following message was added for USAGE ALL:                  ' 04570099
+ DC C'                                                                ' 04580099
+ DC C'  PDS184I PDSE SPACE:    USED PAGES     %UTILIZED               ' 04590099
+ DC C'  PDS184I             n,nnn,nnn,nnn           nnn               ' 04600099
+ DC C'                                                                ' 04610099
+ DC C'Added panel P86CHG@ (CHANGE Dataset Menu) to the Options        ' 04620099
+ DC C'pull-down choice.                                               ' 04630099
+ DC C'                                                                ' 04640099
+ DC C'COPY: Added DSNTYPE keyword for NEW output datasets.            ' 04650099
+ DC C'                                                                ' 04660099
+ DC C'Panel PDS@PRIM is now scrollable.                               ' 04670099
+ DC C'                                                                ' 04680099
+ DC C'DSLIST detection processing improved.                           ' 04690099
+ DC C'                                                                ' 04700099
+ DC C'LIST: Fixed problem with load modules that have zero            ' 04710099
+ DC C'length CSECTs (only IBM code AFAIK).                            ' 04720099
+ DC C'                                                                ' 04730099
+ DC C'LISTV/CAX: Fixed S0C4 in dialogs on z/OS 1.8 systems due to a   ' 04740099
+ DC C'31-bit CAXWA address.                                           ' 04750099
+ DC C'----------------------------------------------------------------' 04760099
+ DC C'                    PDS v8.6                                    ' 04770099
+ DC C'              Update 05, January 10, 2007                       ' 04780099
+ DC C'----------------------------------------------------------------' 04790099
+ DC C'LMA: PDS interface to the IBM Debug Tool Load Module Analyzer   ' 04800099
+ DC C'program via the TSO/E Service Facility Routine, IKJEFTSR.       ' 04810099
+ DC C'                                                                ' 04820099
+ DC C'  Example:     LMA PDSEDIT SHOWLIB LOUD SORTBY(DATE)            ' 04830099
+ DC C'                                                                ' 04840099
+ DC C'Member $$S2837 is a zip file which contains an Adobe PDF file   ' 04850099
+ DC C'of the Tom Conley Baltimore SHARE Session 2837:                 ' 04860099
+ DC C'                                                                ' 04870099
+ DC C'        "PDS - The Swiss Army Knife of Utilities"               ' 04880099
+ DC C'                                                                ' 04890099
+ DC C'The following messages were added:                              ' 04900099
+ DC C'                                                                ' 04910099
+ DC C'  PDS046I LARGEST AREA ABOVE THE LINE IS nnnM                   ' 04920099
+ DC C'  PDS246I NOWRITE IS IN EFFECT; NO UPDATES WILL BE PERFORMED    ' 04930099
+ DC C'  PDS276I A ZAP IDR RECORD WAS ADDED                            ' 04940099
+ DC C'  PDS290I IPL TIME: hh.mm.ss AM/PM   day-of-week mon dd, yyyy   ' 04950099
+ DC C'  PDS109I nnnnn CHARACTERS IN THE LARGEST VARIABLE LENGTH RECORD' 04960099
+ DC C'----------------------------------------------------------------' 04970099
+ DC C'                    PDS v8.6                                    ' 04980099
+ DC C'              Update 04, August 7, 2006                         ' 04990099
+ DC C'----------------------------------------------------------------' 05000099
+ DC C'DIRENTRY: Support for Large Program Objects (LPO).              ' 05010099
+ DC C'                                                                ' 05020099
+ DC C'SMPGEN: Create SMP/E controls for members.                      ' 05030099
+ DC C'                                                                ' 05040099
+ DC C'  Example:     SMPGEN P86: DISTLIB(APDPSRC) SYSLIB(PDPPNL) +    ' 05050099
+ DC C'                           OUTDSN(SEQ) TYPE(PANEL)              ' 05060099
+ DC C'                                                                ' 05070099
+ DC C'OFFLOAD: PDS interface to the David Cole/Greg Price offload     ' 05080099
+ DC C'program via the TSO/E Service Facility Routine, IKJEFTSR.       ' 05090099
+ DC C'                                                                ' 05100099
+ DC C'  Example:     OFFLOAD A:D SEQ                                  ' 05110099
+ DC C'                                                                ' 05120099
+ DC C'The following message was added:                                ' 05130099
+ DC C'                                                                ' 05140099
+ DC C'  PDS844E LOCATE FAILED FOR DATA SET dsname                     ' 05150099
+ DC C'                                                                ' 05160099
+ DC C'RESTORE: Added CAPS/ASIS keywords for the FIND operand.  Added  ' 05170099
+ DC C'the TEST operand to simulate deleted member resurrection.       ' 05180099
+ DC C'----------------------------------------------------------------' 05190099
+ DC C'                    PDS v8.6                                    ' 05200099
+ DC C'              Update 03, April 20, 2006                         ' 05210099
+ DC C'----------------------------------------------------------------' 05220099
+ DC C'XMIT: PDS interface to the TSO TRANSMIT command processor       ' 05230099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 05240099
+ DC C'                                                                ' 05250099
+ DC C'  Example:     XMIT A:D NODE.USERID                             ' 05260099
+ DC C'                                                                ' 05270099
+ DC C'SRCHFOR: PDS interface to the IBM ISRSUPC Search-For program    ' 05280099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 05290099
+ DC C'                                                                ' 05300099
+ DC C'  Example:     SRCHFOR A:D ''STRING''                           ' 05310099
+ DC C'  '                                                             ' 05320099
+ DC C'                                                                ' 05330099
+ DC C'Note:  SRCHFOR has been modified to handle member groups.       ' 05340099
+ DC C'       See PDS HELP for syntax changes.                         ' 05350099
+ DC C'                                                                ' 05360099
+ DC C'Member $$S2837 is a zip file which contains an Adobe PDF file   ' 05370099
+ DC C'of the Tom Conley Seattle SHARE Session 2837:                   ' 05380099
+ DC C'                                                                ' 05390099
+ DC C'        "PDS - The Swiss Army Knife of Utilities"               ' 05400099
+ DC C'----------------------------------------------------------------' 05410099
+ DC C'                    PDS v8.6                                    ' 05420099
+ DC C'              Update 02, February 22, 2006                      ' 05430099
+ DC C'----------------------------------------------------------------' 05440099
+ DC C'New global variable STOWI to specify if APAR OA13224            ' 05450099
+ DC C'"DISP=SHR for STOW Initialize" has been applied.                ' 05460099
+ DC C'----------------------------------------------------------------' 05470099
+ DC C'                    PDS v8.6                                    ' 05480099
+ DC C'              Update 01, January 6, 2006                        ' 05490099
+ DC C'----------------------------------------------------------------' 05500099
+ DC C'DISASM: PDS interface to the Dick Thorton disassembler program  ' 05510099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 05520099
+ DC C'                                                                ' 05530099
+ DC C'  Examples:    DISASM PDS86        (disassemble CSECT PDSMAIN)  ' 05540099
+ DC C'               DISASM PDS86 DISASM (disassemble CSECT DISASM)   ' 05550099
+ DC C'                                                                ' 05560099
+ DC C'DLINK: PDS interface to the David Noon delinker program via     ' 05570099
+ DC C'the TSO/E Service Facility Routine, IKJEFTSR.                   ' 05580099
+ DC C'                                                                ' 05590099
+ DC C'  Example:     DLINK PDS86         (delink PDS86 to object deck)' 05600099
+ DC C'----------------------------------------------------------------' 05610099
+ DC C'                    PDS v8.6                                    ' 05620099
+ DC C'              August-December 2005                              ' 05630099
+ DC C'----------------------------------------------------------------' 05640099
+ DC C'PDSE (partitioned data set extended) support from Greg Price    ' 05650099
+ DC C'and John Kalinich.  Greg coded the BPAM I/O routines and Binder ' 05660099
+ DC C'API calls.  John coded the QSAM directory I/O routines.         ' 05670099
+ DC C'                                                                ' 05680099
+ DC C'The following subcommands are not supported for PDSE data sets. ' 05690099
+ DC C'                                                                ' 05700099
+ DC C'Subcommand       PDSE Type         Reason                       ' 05710099
+ DC C'-------------    --------------    --------------------         ' 05720099
+ DC C'RESTORE          Data              IBM design                   ' 05730099
+ DC C'RESTORE          Program Object    IBM design                   ' 05740099
+ DC C'REPLACE          Program Object    IBM design                   ' 05750099
+ DC C'ALIAS            Program Object    Binder API                   ' 05760099
+ DC C'ATTRIB lkedattr  Program Object    Binder API                   ' 05770099
+ DC C'REPRO            Program Object    Binder API                   ' 05780099
+ DC C'                                                                ' 05790099
+ DC C'COMPAREC assist panels (P86LOCC, P86OPCC, and P86OSCC) for      ' 05800099
+ DC C'ISPF SUPER-C compare do not have to be renamed.  The correct    ' 05810099
+ DC C'assist panels will be displayed based on the CCAR global.       ' 05820099
+ DC C'                                                                ' 05830099
+ DC C'Global variable LOGWIDE specifies usage of panel P86PN1W        ' 05840099
+ DC C'(PDS Log Display 1).                                            ' 05850099
+ DC C'                                                                ' 05860099
+ DC C'Panel P86OPCH (o.c CHANGE Option Panel) has a DISPOSITION       ' 05870099
+ DC C'field.  DISP=OLD is required prior to a "FIXPDS RESET" on a     ' 05880099
+ DC C'PDSE.                                                           ' 05890099
+ DC C'                                                                ' 05900099
+ DC C'The following messages were added:                              ' 05910099
+ DC C'                                                                ' 05920099
+ DC C'  PDS531W THIS DATA SET IS A PDSE - SOME FUNCTIONS LIMITED      ' 05930099
+ DC C'  PDS856E STOW ERROR, R15=nn, R0=hexvalue                       ' 05940099
+ DC C'  PDS932E OLD ALLOCATION IS REQUIRED FOR THIS FUNCTION          ' 05950099
+ DC C'  PDS996E subcommand IS NOT SUPPORTED FOR PROGRAM OBJECTS       ' 05960099
+ DC C'                                                                ' 05970099
+ DC C'Member UTILXMIT was added to the installation file for          ' 05980099
+ DC C'a quick install of PDS related command processors.              ' 05990099
+ DC C'                                                                ' 06000099
+ DC C'  BLKDISK, COMPARE*, DELINKI, DISASM, DSAT, DVOL, HEL,          ' 06010099
+ DC C'  OFFLOAD, RELEASE, REVIEW and VTOC are in TSO XMIT format.     ' 06020099
+ DC C'                                                                ' 06030099
+ DC C'  RECEIVE INDS(installation.pds(UTILXMIT)) to install.          ' 06040099
+ DC C'                                                                ' 06050099
+ DC C'MXIBAT: PDS interface to the Rob Scott MXI program via          ' 06060099
+ DC C'the TSO/E Service Facility Routine, IKJEFTSR.                   ' 06070099
+ DC C'                                                                ' 06080099
+ DC C'  Examples:    MXIBAT IPL                                       ' 06090099
+ DC C'               MXIBAT MENU                                      ' 06100099
+ DC C'                                                                ' 06110099
+ DC C'SRCHFOR: PDS interface to the IBM ISRSUPC Search-For program    ' 06120099
+ DC C'via the TSO/E Service Facility Routine, IKJEFTSR.               ' 06130099
+ DC C'----------------------------------------------------------------' 06140099
+ DC C'                                                                ' 06150099
+ DC C'Please report any problems, enhancements, suggestions or        ' 06160099
+ DC C'comments concerning the PDS command to:                         ' 06170099
+ DC C'                                                                ' 06180099
+ DC C'John Kalinich                    Sam Golob                      ' 06190099
+ DC C'St Louis, MO                     Sam Golob Systems Programming  ' 06200099
+ dc c'the.pds.command@gmail.com        sbgolob@cbttape.org            ' 06210099
+ DC C'                                                                ' 06220099
+ DC C'Greg Price                                                      ' 06230099
+ DC C'Prycroft Six Pty. Ltd.                                          ' 06240099
+ DC C'service2@prycroft6.com.au                                       ' 06250099
+ DC X'FFFF'            End of Table                                     06260099

@@ -1,0 +1,835 @@
+         TITLE 'LISTC/LISTFILE FUNCTION'                       SS OCT88 00010000
+*************************************************************  SS OCT88 00020000
+*                                                              SS OCT88 00030000
+*      LISTC/LISTFILE FUNCTION                                 SS OCT88 00040000
+*                                                              SS OCT88 00050000
+*************************************************************  SS OCT88 00060000
+         SPACE 2                                               SS OCT88 00070000
+ISPLISTC DS    0H                                              SS OCT88 00080000
+         USING *,R4                                            SS OCT88 00090000
+         BAS   R2,ISPSETST              SET STATS PREV TABLE   SS OCT88 00100000
+         CLI   SPFFUNST+5,C'P'          LISTC   PENDING PROC   SS OCT88 00110000
+         BE    ISPLSC5                  YES, SET TO REPROCESS  SS OCT88 00120000
+ISPLSCAN DS    0H                       *                      SS OCT88 00130000
+         L     R15,SPFOPER      FIRST BLANK AFTER CMD          SS OCT88 00140000
+ISPLSCRT DS    0H                       *                      SS OCT88 00150000
+         LA    R14,30           MAX LENGTH                     SS OCT88 00160000
+         LA    R1,ISPLSCPR      PARSE LIST                     SS OCT88 00170000
+         BAS   R2,ISPPARSI      PARSE IT                       SS OCT88 00180000
+         C     R15,ISPL8        RETURN CODE                    SS OCT88 00190000
+         BH    ISPLSCE1         BAD KEYS                       SS OCT88 00200000
+         TM    SPFPRBI1,X'30'     CONFLICTING REQUESTS         SS OCT88 00210000
+         BO    ISPLSCE2           YES GIVE MESSAGE             SS OCT88 00220000
+         CLI   SPFFUNST+5,C'I'    INACTIVE                     SS OCT88 00230000
+         BE    ISPLSC20           YES   OPEN THE TABLE         SS OCT88 00240000
+         CLI   SPFTBPFI+1,5       ALREADY AT LISTC             SS OCT88 00250000
+         BE    ISPLSC05           THEN CHECK FOR OTHER         SS OCT88 00260000
+ISPLSC1  DS    0H                                              SS OCT88 00270000
+         LH    R1,SPFFUNLP+10     GET LAST PANEL               SS OCT88 00280000
+         LNR   R1,R1                    *                      SS OCT88 00290000
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS OCT88 00300000
+ISPLSC05 DS    0H                       *                      SS OCT88 00310000
+         CLI   SPFPRRC,8          ANY OPERANDS?                SS OCT88 00320000
+         BNE   ISPLSC10           YES, CHECK REQUESTS          SS OCT88 00330000
+ISPLSC40 DS    0H                       *                      SS OCT88 00340000
+         LA    R15,40             DISPLAY IF NO MORE CMDS      SS OCT88 00350000
+         BR    R3                 TO ROUTER                    SS OCT88 00360000
+ISPLSC10 DS    0H                       *                      SS OCT88 00370000
+         TM    SPFPRBI1,X'08'     RESET REQUEST                SS OCT88 00380000
+         BZ    ISPLSC30           NO, CHECK OTHER REQUESTS     SS OCT88 00390000
+* RESET TB IF OPEN                                             SS OCT88 00400000
+         BAS   R2,ISPTBEND                                     SS OCT88 00410000
+ISPLSC20 DS    0H                                              SS OCT88 00420000
+         BAS   R2,ISPLSCOI        GO CREATE AND OPEN TABLE     SS OCT88 00430000
+ISPLSC30 DS    0H                                              SS OCT88 00440000
+         TM    SPFPRBI1,X'20'     VTOC  REQUEST                SS OCT88 00450000
+         BO    ISPVTOC            YES GO FOR IT                SS OCT88 00460000
+         TM    SPFPRBI1,X'10'     DSAT  REQUEST                SS OCT88 00470000
+         BO    ISPDSAT            YES GO FOR IT                SS OCT88 00480000
+         TM    SPFPRBI1,X'01'     V2    REQUEST                SS OCT88 00490000
+         BO    ISPVTC2            YES GO FOR IT                SS OCT88 00500000
+         TM    SPFPRBI1,X'02'     VV    REQUEST                SS OCT88 00510000
+         BO    ISPVTC3            YES GO FOR IT                SS OCT88 00520000
+         BAS   R2,ISPQUERY              *                      SS OCT88 00530000
+         ICM   R1,15,SPFTSIZE     GET SIZE OF TABLE            SS OCT88 00540000
+         BNZ   ISPLSC40           HAVE TABLE        DISPLAY    SS OCT88 00550000
+         MVC   SPFMSGID,ISPBLK8   NO MESSAGE                   SS OCT88 00560000
+         B     ISPLSCE1           PROMPT FOR REQUEST           SS OCT88 00570000
+ISPLSCE3 DS    0H                       *                      SS OCT88 00580000
+* LONG MESSAGE MUST ALREADY BE IN SPFMLIN2                     SS OCT88 00590000
+         MVC   SPFMLIN1,ISPBLK8   NO SHORT MESSAGE             SS OCT88 00600000
+         MVC   SPFMSGID,ISPPDSM   SET MESSAGE                  SS OCT88 00610000
+         MVI   SPFMSGID+7,C'A'    ACTION MESSAGE               SS OCT88 00620000
+         MVI   SPFMSGID+6,C'1'    GENERAL PURPOSE MESSAGE     DRK SEP01 00630030
+         B     ISPLSCE1           PROMPT FOR DATA              SS OCT88 00640000
+ISPLSCE2 DS    0H                       *                      SS OCT88 00650000
+         MVC   SPFMSGID,ISPPDSM   SET MESSAGE                  SS OCT88 00660000
+         MVI   SPFMSGID+7,C'A'    ACTION MESSAGE               SS OCT88 00670000
+         MVI   SPFMSGID+6,C'7'    CONFLICT ERROR              DRK SEP01 00680030
+         B     ISPLSCE1           PROMPT FOR DATA              SS OCT88 00690000
+ISPLSCE1 DS    0H                                             GLA JUN88 00700000
+         MVC   SPFVZCMD(250),SPFINPUT COPY BAD COMMAND        GLA JUN88 00710000
+         LA    R15,ISPLSCPP       LISTC PROMPT PANEL OFFSET    SS OCT88 00720000
+         LA    R1,SPFMSGID        SET FOR MESSAGE             GLA JUN88 00730000
+         BAS   R2,ISPSINGI        DISPLAY PANEL               GLA JUN88 00740000
+         MVI   SPFMSGID,C' '      CLEAR MESSAGE ID            GLA JUN88 00750000
+         C     R15,ISPL8          END KEY                     GLA JUN88 00760000
+         BE    ISPLSC40           DISPLAY LAST ACTIVE TABLE    SS OCT88 00770000
+         MVC   SPFINPUT(250),SPFZSEL    COPY                  GLA JUN88 00780000
+         LA    R15,SPFINPUT             STARTING ADDRESS      GLA JUN88 00790000
+         LA    R14,30                   LENGTH                GLA JUN88 00800000
+         LA    R1,C' '                  BLANK                 GLA JUN88 00810000
+         BAS   R2,ISPCLI                FIND BLANK AFTER CMD  GLA JUN88 00820000
+         B     ISPLSCRT                 RETRY                 GLA JUN88 00830000
+ISPLSC5  DS    0H                       *                     GLA JUN88 00840000
+         L     R15,SPFOPER              BLANK AFTER CMD        SS FEB89 00850000
+         LA    R14,30                   SCAN FOR OPERAND       SS FEB89 00860000
+         BAS   R2,ISPCKBLK                                     SS FEB89 00870000
+         LTR   R15,R15                  ANY                    SS FEB89 00880000
+         BNZ   ISPLSC1B                 YES, CANNOT PROCESS    SS FEB89 00890000
+         LH    R1,SPFFUNLP+10     GET LAST PANEL               SS OCT88 00900000
+         LNR   R1,R1                    *                     GLA JUN88 00910000
+         BAS   R2,ISPSTKI         SWAP PANEL                  GLA JUN88 00920000
+         LA    R15,36             GO TO PENDING ACT PROC      GLA JUN88 00930000
+         BR    R3                                             GLA JUN88 00940000
+ISPLSC1B DS    0H                       *                      SS FEB89 00950000
+         MVC   SPFMSGID,ISPPDSM         GENERIC MESSAGE        SS FEB89 00960000
+         MVI   SPFMSGID+6,C'1'          PDSM..1B MESSAGE       SS FEB89 00970000
+         MVI   SPFMSGID+7,C'B'          BUSY MSG               SS FEB89 00980000
+         LA    R15,100                  TO DISPLAY             SS FEB89 00990000
+         BR    R3                       RETURN TO ROUTER       SS FEB89 01000000
+ISPLSCPP DC    CL8'&P.LCLTC'      LISTC PROMPT PANEL           SS OCT88 01010000
+ISPLSCPR DS    0F                                              SS OCT88 01020000
+         DC    X'32',X'080000',CL8'RESET'                     DRK JUL98 01030000
+         DC    X'33',X'200000',CL8'VTOC'                       SS OCT88 01040000
+         DC    X'21',X'010000',CL8'V2'     *TEST*              SS OCT88 01050000
+         DC    X'21',X'020000',CL8'VV'     *TEST*              SS OCT88 01060000
+         DC    X'33',X'100000',CL8'DSAT'                       SS OCT88 01070000
+         DC    X'FF'                                           SS OCT88 01080000
+         SPACE 2                                                        01090000
+ISPVTOC  DS    0H                       *                     GLA JUN88 01100000
+         SPACE 2                                              GLA JUN88 01110000
+*  DISPLAY PANEL TO GET VTOC COMMAND OPTIONS                  GLA JUN88 01120000
+         SPACE 1                                              GLA JUN88 01130000
+         LA    R1,ISPVTCNM    GET VTOC COMMAND NAME            SS OCT88 01140000
+         BAS   R2,ISPXLNKI    CHECK IF COMMAND EXISTS          SS OCT88 01150000
+         LTR   R15,R15        RC WILL TELL                     SS OCT88 01160000
+         BNZ   ISPLSCE1       GIVE MESSAGE                     SS OCT88 01170000
+         LA    R0,VX070              START OF WRITE SUBROUTINE SS OCT88 01180000
+         ST    R0,WORKTBL+12         OPERAND OFFSET            SS OCT88 01190000
+         LA    R15,ISPVTCPP   VTOC PROMPT PANEL                SS OCT88 01200000
+         B     ISPLSCPT                 *                      SS OCT88 01210000
+ISPVTC2  DS    0H                       *                     GLA JUN88 01220000
+         SPACE 2                                              GLA JUN88 01230000
+*  DISPLAY PANEL TO GET VTOC COMMAND OPTIONS                  GLA JUN88 01240000
+         SPACE 1                                              GLA JUN88 01250000
+         LA    R1,ISPVTCNM    GET VTOC COMMAND NAME            SS OCT88 01260000
+         BAS   R2,ISPXLNKI    CHECK IF COMMAND EXISTS          SS OCT88 01270000
+         LTR   R15,R15        RC WILL TELL                     SS OCT88 01280000
+         BNZ   ISPLSCE1       GIVE MESSAGE                     SS OCT88 01290000
+         LA    R0,VX070              START OF WRITE SUBROUTINE SS OCT88 01300000
+         ST    R0,WORKTBL+12         OPERAND OFFSET            SS OCT88 01310000
+         LA    R15,ISPVTCP2   VTC2 PROMPT PANEL                SS OCT88 01320000
+         B     ISPLSCPT                 *                      SS OCT88 01330000
+ISPVTC3  DS    0H                       *                     GLA JUN88 01340000
+         SPACE 2                                              GLA JUN88 01350000
+*  DISPLAY PANEL TO GET VTOC COMMAND OPTIONS                  GLA JUN88 01360000
+         SPACE 1                                              GLA JUN88 01370000
+         LA    R1,ISPVTCNM    GET VTOC COMMAND NAME            SS OCT88 01380000
+         BAS   R2,ISPXLNKI    CHECK IF COMMAND EXISTS          SS OCT88 01390000
+         LTR   R15,R15        RC WILL TELL                     SS OCT88 01400000
+         BNZ   ISPLSCE1       GIVE MESSAGE                     SS OCT88 01410000
+         LA    R0,VX070              START OF WRITE SUBROUTINE SS OCT88 01420000
+         ST    R0,WORKTBL+12         OPERAND OFFSET            SS OCT88 01430000
+         LA    R15,ISPVTCP3   VTC2 PROMPT PANEL                SS OCT88 01440000
+         B     ISPLSCPT                 *                      SS OCT88 01450000
+ISPDSAT  DS    0H                       *                      SS OCT88 01460000
+         SPACE 2                                               SS OCT88 01470000
+*  DISPLAY PANEL TO GET DSAT COMMAND OPTIONS                   SS OCT88 01480000
+         SPACE 1                                               SS OCT88 01490000
+         LA    R1,ISPDSTNM    GET DSAT COMMAND NAME            SS OCT88 01500000
+         BAS   R2,ISPXLNKI    CHECK IF COMMAND EXISTS          SS OCT88 01510000
+         LTR   R15,R15        RC WILL TELL                     SS OCT88 01520000
+         BNZ   ISPLSCE1       GIVE MESSAGE                     SS OCT88 01530000
+         LA    R0,DX070              START OF WRITE SUBROUTINE SS OCT88 01540000
+         ST    R0,WORKTBL+12         OPERAND OFFSET            SS OCT88 01550000
+         LA    R15,ISPDSTPP   DSAT PROMPT PANEL                SS OCT88 01560000
+         B     ISPLSCPT                 *                      SS OCT88 01570000
+*                                                              SS OCT88 01580034
+* SUBROUTINE TO CHECK COMMAND NAME EXISTS IN LINKLIB OR LPALIB SS OCT88 01590034
+*                                                              SS OCT88 01600034
+*  R1 = ADDRESS OF NAME                                        SS OCT88 01610034
+*  R15 RETURNED   0=THERE  4=NOT THERE                         SS OCT88 01620034
+*                                                              SS OCT88 01630034
+ISPXLNKI DS    0H                       *                      SS OCT88 01640034
+ISPXLINK DS    0H                       *                      SS OCT88 01650034
+         MVC   DIRNAME,0(R1)                                   SS OCT88 01660034
+         SPACE 2                                              GLA JUN88 01670034
+*** IN A LINKLIST LIBRARY?                                    GLA JUN88 01680034
+         BLDL  0,BLDLLIST ----+            CHECK FOR A LOAD MODULEJUN88 01690034
+         LA    R1,X'100'      |            TTR=1 (FOR SEQUENTIAL) JUN88 01700034
+         ST    R1,DIRTTR      |            RESET TTR          GLA JUN88 01710034
+         LTR   R15,R15    <---+            IN THE LINKLIST?   GLA JUN88 01720034
+         BZR   R2                          YES, OK             SS OCT88 01730034
+         SR    R15,R15                     ASSUME IN LPA       SS FEB90 01740040
+         L     R1,CVTPTR(,R0)              NEED CHECK OF LPA   SS OCT88 01750040
+         L     R1,CVTLPDIA-CVTMAP(R1)      POINT TO LINK PACK DIRECTORY 01760040
+         SPACE 2                                              GLA JUN88 01770034
+*** MODULE NOT IN LINKLIST, TRY THE IN-STORAGE LPALIB DIRECTORYLA JUN88 01780034
+ISPXLNK1 CLC   8(8,R1),DIRNAME             THIS MODULE NAME?   SS OCT88 01790034
+         BER   R2                          YES, OK             SS OCT88 01800034
+         CLI   8(R1),X'FF'                 END OF DIRECTORY?   SS OCT88 01810040
+         LA    R1,40(,R1)                                     DRK SEP01 01820035
+         BNE   ISPXLNK1                    NO, BRANCH          SS OCT88 01830034
+         MVC   SPFMLIN1,ISPBLK8   NO SHORT MESSAGE             SS OCT88 01840034
+         MVC   SPFMLIN2,ISPXLNKM  MESSAGE MODEL                SS OCT88 01850034
+         MVC   SPFMLIN2+8(4),DIRNAME  INSERT NAME             DRK SEP01 01860039
+         MVC   SPFMSGID,ISPPDSM   SET MESSAGE                  SS OCT88 01870034
+         MVI   SPFMSGID+7,C'A'    ACTION MESSAGE               SS OCT88 01880034
+         MVI   SPFMSGID+6,C'1'    GENERAL PURPOSE MESSAGE     DRK SEP01 01890034
+         LA    R15,4                       DID NOT FIND        SS OCT88 01900034
+         BR    R2                                              SS OCT88 01910034
+         SPACE 3                                              GLA JUN88 01920034
+ISPXLNKM DC    CL80'COMMAND 1234 WAS NOT FOUND'               DRK SEP01 01930039
+ISPLSCPT DS    0H                       *                      SS OCT88 01940000
+         NI    SPFLAG5,255-SPFVT0C-SPFVCAT CLEAR INIT FLAGS   DRK OCT99 01950000
+         MVI   SPFVZCMD,C' '                                  GLA JUN88 01960000
+         MVC   SPFVZCMD+1(249),SPFVZCMD                       GLA JUN88 01970000
+         LA    R1,ISPBLK8     NO MESSAGE                      GLA JUN88 01980000
+         BAS   R2,ISPSINGI    PUT UP PANEL                    GLA JUN88 01990000
+         LTR   R15,R15        ANY END COMMAND                 GLA JUN88 02000000
+         BNZ   ISPLSC40       IF SO THEN EXIT                  SS OCT88 02010000
+         MVC   SPFZSEL(4),ISPVTCBF GET BUFFER LEN/OFFSET       SS OCT88 02020000
+*        CLC   SPFZSEL+235(8),ISPBLK8   OPERANDS TO LONG       SS OCT88 02030000
+*        CLC   SPFZSEL+235(8),ISPBLK8   OPERANDS TO LONG       SS OCT88 02040000
+         MVC   SPFZSEL+235(15),ISPVTCPC  PDSCALL OPTION        SS OCT88 02050000
+         LA    R1,WORKTBL                INTERFACE SUBROUTINE  SS OCT88 02060000
+         STCM  R1,15,SPFZSEL+245         PUT ADDR IN OPTION    SS OCT88 02070000
+         LA    R1,SPFZSEL                  NEW COMMAND BUFFER GLA JUN88 02080000
+         ST    R1,ADDRTEXT                 POINT TO THE COMMAND BUFFER" 02090083
+*  BUILD PARM BLOCKS TO INVOKE COMMAND                        GLA JUN88 02100000
+         SPACE 1                                              GLA JUN88 02110000
+         L     R14,ADDRECT                                    GLA JUN88 02120000
+         MVC   ECTPCMD-ECT(8,R14),ECTSCMD-ECT(R14)  PRIMARY   CMD NAME8 02130000
+         MVC   ECTSCMD-ECT(8,R14),ISPBLK8           SECONDARY  SS OCT88 02140000
+         LA    R1,ADDRTEXT                 CPPL START         GLA JUN88 02150000
+         SPACE 2                                              GLA JUN88 02160000
+         LA    R15,WORKTBL           START OF PARAMETER LIST  GLA JUN88 02170000
+         MVC   0(12,R15),VX060       SAVE RE-ENTRY CODE       GLA JUN88 02180000
+* WRITER SUBR ALREADY AT WORKTBL+12     *                      SS OCT88 02190000
+         ST    R7,16(,R15)           SAVE WORK AREA ADDRESS   GLA JUN88 02200000
+         LA    R14,DIRNAME           COMMAND NAME              SS OCT88 02210000
+         SPACE 2                                              GLA JUN88 02220000
+         XC    PARMLIST(8),PARMLIST  INITIALIZE LINK LIST     GLA JUN88 02230000
+         LINK  EPLOC=((14)),SF=(E,PARMLIST)                   GLA JUN88 02240000
+         L     R14,ADDRECT                                    GLA JUN88 02250000
+         MVC   ECTSCMD-ECT(8,R14),ECTPCMD-ECT(R14)  SECONDARY CMD NAME8 02260000
+         MVC   ECTPCMD-ECT(8,R14),PDSNAME           PRIMARY   CMD NAME8 02270000
+         B     ISPLSC40             RETURN TO DISPLAY          SS OCT88 02280000
+         SPACE 3                                              GLA JUN88 02290000
+ISPVTCPP DC    CL8'&P.LCVTC'  LISTC VTOC PROMPT PANEL          SS OCT88 02300000
+ISPVTCP2 DC    CL8'&P.LCVT2'  LISTC VTOC PROMPT PANEL *TEST*   SS OCT88 02310000
+ISPVTCP3 DC    CL8'&P.LCVTV'  LISTC VTOC PROMPT PANEL FROM LV  SS OCT88 02320000
+ISPVTCNM DC    CL8'&NVTO'     VTOC COMMAND NAME                SS OCT88 02330000
+ISPDSTPP DC    CL8'&P.LCDST'  LISTC DSAT PROMPT PANEL          SS OCT88 02340000
+ISPDSTNM DC    CL8'&NDSA'     DSAT COMMAND NAME                SS OCT88 02350000
+ISPVTCPC DC    C'  PDSCALL(XXXX)'    PDS CALLER IDENTIFIER     SS OCT88 02360000
+ISPVTCBF DC    H'235',H'4'           BUF LEN AND OFFSET        SS OCT88 02370000
+         SPACE 1                                              GLA JUN88 02380000
+VX060    ST    R1,20(,R15)         0 REENTER: SAVE PARAMETER ADDR JUN88 02390045
+         L     R15,12(,R15)        4 REENTER: GET ROUTINE ADDRESS JUN88 02400000
+         BAS   R1,0(,R15)          8 REENTER: LINK TO SUBROUTINE  JUN88 02410045
+***      DS    A                  12 REENTER: A(ROUTINE)      GLA JUN88 02420000
+***      DS    A                  16 REENTER: A(WORK AREA)    GLA JUN88 02430000
+***      DS    A                  20 REENTER: A(MESSAGE)      GLA JUN88 02440000
+         SPACE 3                                              GLA JUN88 02450000
+*  BAD OPERANDS ON COMMAND                                    GLA JUN88 02460000
+         SPACE 3                                              GLA JUN88 02470000
+         SPACE 3                                              GLA JUN88 02480000
+         DROP  R4                                             DRK OCT98 02490032
+*#*#*#*#*#*#*#*#                                              GLA JUN88 02500000
+*   PARSE LINES COMING BACK FROM VTOC                         GLA JUN88 02510000
+* TO GET  DSN (SPFADSN)  VOL (SPFAVOL)  DSO (SPFATYPE)        GLA JUN88 02520000
+*           44 BYTES       6 BYTES        4 BYTES             GLA JUN88 02530000
+*#*#*#*#*#*#*#*#                                              GLA JUN88 02540000
+VX070    SAVE  (14,12)                                        GLA JUN88 02550000
+         USING VX070,R4              BASE REGISTER NOTIFY     GLA JUN88 02560049
+         LR    R4,R15         SET THIS MODULE BASE            GLA JUN88 02570000
+         L     R8,=A(ISPDSPY) GET REAL MOD BASE               GLA JUN88 02580000
+         L     R5,=A(ISPDSPY+4096) GET REAL MOD BASE          GLA JUN88 02590000
+         L     R7,4(,R1)             WORK AREA ADDRESS        GLA JUN88 02600000
+         L     R1,8(,R1)             OUTPUT MESSAGE START     GLA JUN88 02610000
+         LM    R9,R12,BASES          RESTORE BASE REGISTERS   GLA JUN88 02620000
+         L     R6,SPFXWRK     GET SPF DIALOG VAR ADDR         GLA JUN88 02630000
+         LA    R15,VALSAVE           SAVE AREA FOR THIS ROUTINELA JUN88 02640000
+         ST    R13,4(,R15)                                    GLA JUN88 02650000
+         ST    R15,8(,R13)           CHAIN SAVE AREAS         GLA JUN88 02660000
+         LR    R13,R15                                        GLA JUN88 02670000
+         CLC   VX095,3(R1)        TITLE LINE                   SS OCT88 02680000
+         BE    VX089              YES , SKIP                   SS OCT88 02690000
+         CLC   VX095,4(R1)        TITLE LINE OTHER VT0CPRNT    SS APR89 02700000
+         BE    VX088              YES , SKIP AND SET FLAG      SS APR89 02710000
+         CLC   VX096,3(R1)        TOTAL LINE                   SS OCT88 02720000
+         BE    VX089X             YES , SKIP                   SS OCT88 02730000
+* FIRST SET KEY AND SEE IF DUP          *                      SS OCT88 02740000
+         TM    SPFLAG5,SPFVT0C       USING OTHER VTOCPRNT      SS APR89 02750000
+         BZ    VX072                    *                      SS APR89 02760000
+         CLI   8(R1),C'0'         ALLOC VALUE                 Y2K AUG97 02770000
+         BL    VX076              NO, MUST BE ERROR           Y2K AUG97 02780000
+         MVC   SPFCVOL,57(R1)     VOLUME                       SS APR89 02790000
+         MVC   SPFCDSN(44),64(R1) DSNAME                       SS APR89 02800000
+         B     VX074                    *                      SS APR89 02810000
+VX072    DS    0H                       *                      SS APR89 02820000
+         CLI   7(R1),C'0'         ALLOC VALUE                 Y2K AUG97 02830000
+         BL    VX076              NO, MUST BE ERROR           Y2K AUG97 02840000
+         MVC   SPFCVOL,55(R1)     VOLUME                       SS OCT88 02850000
+         MVC   SPFCDSN(44),62(R1) DSNAME                       SS OCT88 02860000
+VX074    DS    0H                       *                      SS APR89 02870000
+         ST    R1,SPFTSV1               *                      SS OCT88 02880000
+         BAS   R2,ISPGET          SAVE R1                      SS OCT88 02890000
+         L     R1,SPFTSV1         RESTORE R1                   SS OCT88 02900000
+         ST    R15,SPFTSV2        SAVE RC                      SS SEP89 02910000
+* NEED TO EXTRACT DEVTYPE               *                      SS OCT88 02920000
+*        XC    SPFCDEV,SPFCDEV    NO TYPE                      SS OCT88 02930096
+         LA    R15,SPFCVOL        GET VOLUME                   SS AUG89 02940000
+         BAS   R2,ISPDEVTY        GET DEVTYPE                  SS AUG89 02950000
+         LTR   R15,R15            FOUND *                      SS AUG89 02960000
+         BNZ   *+8                NO SKIP                      SS AUG89 02970095
+         STCM  R1,B'1111',SPFCDEV SET DEVTYPE                  SS AUG89 02980000
+         L     R1,SPFTSV1            RESTORE R1                SS AUG89 02990000
+         TM    SPFLAG5,SPFVT0C       USING OTHER VTOCPRNT      SS APR89 03000000
+         BZ    *+8                      *                      SS APR89 03010000
+         LA    R1,1(,R1)          ADJUST FOR OFFSET            SS APR89 03020000
+         MVI   SPFCTRKS,C' '                                  DRK SEP11 03030075
+         MVI   SPFCTRKS+1,C' '                                DRK SEP11 03040075
+         MVC   SPFCTRKS+2(5),03(R1)  SIZE                     DRK SEP11 03050075
+* NEED TO CONVERT TOT AND FREE TO REQUESTED TYPE               SS OCT88 03060000
+* FOR NOW GIVE IN TRACKS                *                      SS OCT88 03070000
+         MVI   SPFCTOT,C' '                                    SS OCT88 03080000
+         MVI   SPFCTOT+1,C' '                                 DRK SEP11 03090075
+         MVI   SPFCTOT+7,C'T'     UNITS OF TRKS               DRK SEP11 03100075
+         MVC   SPFCTOT+2(5),3(R1) ALLOC                       DRK SEP11 03110075
+         TM    SPFLAG5,SPFVT0C       USING OTHER VTOCPRNT      SS APR89 03120000
+         BZ    *+8                      *                      SS APR89 03130000
+         LA    R1,1(,R1)          ADJUST FOR OFFSET            SS APR89 03140000
+         MVI   SPFCFREE,C' '                                   SS OCT88 03150000
+         MVI   SPFCFREE+1,C' '                                DRK SEP11 03160075
+         MVI   SPFCFREE+7,C'T'    UNITS OF TRKS               DRK SEP11 03170075
+         MVC   SPFCFREE+2(5),10(R1) UNUSED                    DRK SEP11 03180075
+         OI    SPFCFREE+6,X'F0'   ALWAYS HAVE A NUMERIC NUM   DRK SEP11 03190075
+         SPACE 1                                              DRK MAY14 03200086
+         STM   R0,R2,SAVELSTC        SAVE                     DRK MAY14 03210086
+         PACK  DOUBLE(8),SPFCFREE(7) FREE TRKS                DRK MAY14 03220086
+         CVB   R0,DOUBLE                                      DRK MAY14 03230086
+         PACK  DOUBLE(8),SPFCTOT(7)  TOTAL TRKS               DRK MAY14 03240086
+         CVB   R2,DOUBLE                                      DRK MAY14 03250086
+         LTR   R2,R2                 ZERO?                    DRK MAY14 03260086
+         BNZ   *+4+4                 NO                       DRK MAY14 03270086
+         LA    R2,1(R2)              YES, AVOID S0C9          DRK MAY14 03280086
+         SPACE 1                                              DRK MAY14 03290086
+         LR    R1,R2               TOTAL TRKS                 DRK MAY14 03300086
+         SR    R1,R0               TOTAL TRKS - FREE TRKS     DRK MAY14 03310086
+         MH    R1,=H'100'          * 100 FOR PERCENT          DRK MAY14 03320086
+         SR    R0,R0               CLEAR EVEN FOR DIVIDE      DRK MAY14 03330086
+         DR    R0,R2               PERCENT SPACE USED         DRK MAY14 03340086
+         BAS   R2,ISPDECCV         CONVERT VALUE IN R1        DRK MAY14 03350086
+         MVC   SPFCUSED,SPFDCNV3   SPACE USED                 DRK MAY14 03360086
+         MVI   SPFCUSED+3,C'%'                                DRK MAY14 03370086
+         LM    R0,R2,SAVELSTC      RESTORE                    DRK MAY14 03380086
+         SPACE 1                                              DRK MAY14 03390086
+         MVC   SPFCEXT,19(R1)     EXTENTS                      SS OCT88 03400000
+         MVC   SPFCDSOR,23(R1)    ORGANIZATION                 SS OCT88 03410000
+         CLI   SPFCDSOR,C' '      BLANK DSORG?                ABL JAN89 03420000
+         BNE   *+10               NO, BRANCH                  ABL JAN89 03430000
+         MVC   SPFCDSOR,VX098S    YES, MOVE IN **             ABL JAN89 03440000
+         MVC   SPFCRF(3),27(R1)   RECFM                        SS OCT88 03450000
+         MVC   SPFCRF+3(2),ISPBLK8      *                      SS OCT88 03460000
+         MVC   SPFCLREC,31(R1)    LRECL                        SS OCT88 03470000
+         MVC   SPFCBLKS,37(R1)    BLKSIZE                      SS OCT88 03480000
+* NEED TO CONVERT VTOC DATES TO MONTH AND DAY                  SS OCT88 03490000
+         MVI   SPFCCCEN,C'0'          ASSUME 19XX             Y2K AUG97 03500000
+         OI    43(R1),X'F0'           TURN ON FOR COMPARE     Y2K AUG97 03510000
+         CLC   43(2,R1),=C'&WIN19XX'  BELOW 19XX WINDOW?      Y2K AUG97 03520000
+         BNL   *+8                    NO, THEN 19XX           Y2K AUG97 03530000
+         MVI   SPFCCCEN,C'1'          YES, THEN 20XX          Y2K AUG97 03540000
+         MVI   SPFCRCEN,C'0'          ASSUME 19XX             Y2K AUG97 03550000
+         CLC   49(5,R1),=C' 0000'     REFDATE OF ZEROS?       Y2K AUG97 03560000
+         BE    VX074A                 YES, THEN NO REF DATE   Y2K AUG97 03570000
+         OI    49(R1),X'F0'           TURN ON FOR COMPARE     Y2K AUG97 03580000
+         CLC   49(2,R1),=C'&WIN19XX'  BELOW 19XX WINDOW?      Y2K AUG97 03590000
+         BNL   *+8                    NO, THEN 19XX           Y2K AUG97 03600000
+         MVI   SPFCRCEN,C'1'          YES, THEN 20XX          Y2K AUG97 03610000
+VX074A   DS    0H                                             Y2K AUG97 03620000
+         PACK  MEMLWK(3),43(5,R1)     YYDDD --> YYDDDF CREATE ABL JAN89 03630000
+         PACK  MEMLWK+9(3),49(5,R1)   YYDDD --> YYDDDF REFER  ABL JAN89 03640000
+         LA    R1,MEMLWK              ADDRESS OF INPUT DATE   ABL JAN89 03650000
+         LA    R15,LKEDDATE           ADDRESS OF OUTPUT       ABL JAN89 03660000
+         L     R2,VX098R              CONVERT TO MMDDYY       ABL JAN89 03670000
+         BASR  R14,R2                                         ABL JAN89 03680000
+         SPACE 2                                              ABL JAN89 03690000
+         MVC   MEMLWK(9),VX098M      EDIT MASK                ABL JAN89 03700000
+         MVC   LKEDDATE+3(2),LKEDDATE  MMDDYY TO YYMMDD       ABL JAN89 03710000
+         ED    MEMLWK(9),LKEDDATE+2  DATE AS " YY/MM/DD"      ABL JAN89 03720000
+         MVC   SPFCCDAT(8),MEMLWK+1  MOVE INTO STORAGE        ABL JAN89 03730000
+*                                                                       03740000
+         LA    R1,MEMLWK+9            ADDRESS OF INPUT DATE   ABL JAN89 03750000
+         LA    R15,LKEDDATE           ADDRESS OF OUTPUT       ABL JAN89 03760000
+         L     R2,VX098R              CONVERT TO MMDDYY       ABL JAN89 03770000
+         BASR  R14,R2                                         ABL JAN89 03780000
+         SPACE 2                                              ABL JAN89 03790000
+         MVC   MEMLWK(9),VX098M      EDIT MASK                ABL JAN89 03800000
+         MVC   LKEDDATE+3(2),LKEDDATE  MMDDYY TO YYMMDD       ABL JAN89 03810000
+         ED    MEMLWK(9),LKEDDATE+2  DATE AS " YY/MM/DD"      ABL JAN89 03820000
+         MVC   SPFCRDAT(8),MEMLWK+1  MOVE INTO STORAGE        ABL JAN89 03830000
+         CLC   SPFCRDAT(8),=C'00/01/00' REFDATE OF ZEROS?     Y2K AUG97 03840000
+         BNE   *+10                     NO, BRANCH            ABL JAN89 03850000
+         MVC   SPFCRDAT,ISPBLK44        YES, CLEAR REFER DATE DRK SEP11 03860055
+         MVI   SPFCVTOC,C'Y'            YES IN VTOC            SS OCT88 03870000
+         SPACE 1                                                        03880057
+         MVC   SPFCEDAT(2),=C'20'   ASSUME 20XX               DRK SEP11 03890057
+         CLI   SPFCCCEN,C'1'        20XX?                     DRK SEP11 03900057
+         BE    *+4+6                YES                       DRK SEP11 03910057
+         MVC   SPFCEDAT(2),=C'19'   NO, 19XX                  DRK SEP11 03920062
+         MVC   SPFCEDAT+2(8),SPFCCDAT YY/MM/DD                DRK SEP11 03930057
+         MVC   SPFCCDAT(10),SPFCEDAT  YYYY/MM/DD              DRK SEP11 03940057
+         SPACE 1                                                        03950057
+         CLC   SPFCRDAT(10),ISPBLK44  REF DATE SPACES?        DRK SEP11 03960058
+         BE    NOREF1                 YES                     DRK SEP11 03970058
+         MVC   SPFCEDAT(2),=C'20'   ASSUME 20XX               DRK SEP11 03980057
+         CLI   SPFCRCEN,C'1'        20XX?                     DRK SEP11 03990057
+         BE    *+4+6                YES                       DRK SEP11 04000057
+         MVC   SPFCEDAT(2),=C'19'   NO, 19XX                  DRK SEP11 04010062
+         MVC   SPFCEDAT+2(8),SPFCRDAT YY/MM/DD                DRK SEP11 04020057
+         MVC   SPFCRDAT(10),SPFCEDAT  YYYY/MM/DD              DRK SEP11 04030057
+NOREF1   DS    0H                                             DRK SEP11 04040058
+         SPACE 1                                                        04050057
+         L     R1,SPFTSV1            RESTORE R1               DRK OCT99 04060000
+         TM    SPFLAG5,SPFVT0C       USING OTHER VTOCPRNT     DRK OCT99 04070000
+         BZ    *+4+6+6+4             NO                       DRK OCT99 04080028
+         MVC   SPFCSEC(5),115(R1)    YES, MOVE SEC QUANTITY   DRK OCT99 04090000
+         MVC   SPFCUPD(1),122(R1)    MOVE UPD INDICATOR       DRK OCT99 04100028
+         B     *+4+6+6                                        DRK OCT99 04110028
+         MVC   SPFCSEC(5),113(R1)    MOVE SEC QUANTITY        DRK OCT99 04120028
+         MVC   SPFCUPD(1),120(R1)    MOVE UPD INDICATOR       DRK OCT99 04130028
+         TM    SPFLAG5,SPFVCAT       USING CAT OPTION OF VTOC DRK OCT99 04140000
+         BZ    VX074B                NO                       DRK OCT99 04150000
+         TM    SPFLAG5,SPFVT0C       USING OTHER VTOCPRNT     DRK OCT99 04160000
+         BZ    *+4+6+4               NO                       DRK OCT99 04170000
+         MVC   SPFCCAT(1),126(R1)    YES, MOVE CTLG INDICATOR DRK OCT99 04180028
+         B     VX074C                CONTINUE                 DRK OCT99 04190000
+         MVC   SPFCCAT(1),124(R1)    MOVE CTLG INDICATOR      DRK OCT99 04200028
+         B     VX074C                CONTINUE                 DRK OCT99 04210000
+VX074B   DS    0H                                             DRK OCT99 04220000
+         MVI   SPFCCAT,C'-'          NO CATALOG INDICATOR     DRK OCT99 04230000
+VX074C   DS    0H                                             DRK OCT99 04240000
+         CLI   SPFCCAT,C'C'          CATALOGED ON THIS VOLUME DRK OCT99 04250029
+         BNE   *+4+4                 NO                       DRK OCT99 04260029
+         MVI   SPFCCAT,C'Y'          CHANGE TO Y(ES)          DRK OCT99 04270029
+         SPACE 1                                                        04280000
+         ICM   R0,15,SPFTSV2            TEST RC 0              SS SEP89 04290000
+         BZ    VX075                    YES, MUST BE MOD       SS OCT88 04300000
+*  FILL IN REST OF ROW WITH BLANKS                             SS OCT88 04310000
+         MVC   SPFCOPT,ISPBLK8          *                      SS OCT88 04320000
+         MVC   SPFCDATA,ISPBLK8         *                      SS OCT88 04330082
+         MVC   SPFCREQ,ISPBLK8          *                      SS OCT88 04340000
+         MVC   SPFCDSN2,ISPBLK8         *                      SS OCT88 04350000
+         MVC   SPFCDSNL,ISPBLK8         *                      SS OCT88 04360000
+*        MVI   SPFCCAT,C'-'             *                      SS OCT88 04370000
+         MVC   SPFCKEYL,ISPBLK8         *                      SS OCT88 04380000
+         MVC   SPFCRKP,ISPBLK8          *                      SS OCT88 04390000
+         MVC   SPFCEDAT,ISPBLK44        *                      SS OCT88 04400059
+*        MVC   SPFCSECU,ISPBLK8         *                      SS OCT88 04410089
+*        MVC   SPFCUPD,ISPBLK8          *                      SS OCT88 04420028
+         MVC   SPFCATYP,ISPBLK8         *                      SS OCT88 04430000
+*        MVC   SPFCSEC,ISPBLK8          *                      SS OCT88 04440000
+         MVC   SPFCDIR,ISPBLK8          *                      SS OCT88 04450000
+         MVC   SPFCMMCT,ISPBLK8         *                      SS OCT88 04460000
+*                                                              SS OCT88 04470000
+**       ADD LINE TO TABLE                                     SS OCT88 04480000
+*                                                              SS OCT88 04490000
+         BAS   R2,ISPTBADD                                     SS OCT88 04500000
+         B     VX089                 SUCCESSFUL OUTPUT         SS OCT88 04510000
+*                                                              SS OCT88 04520000
+**       REPLACE LINE IN TABLE                                 SS OCT88 04530000
+*                                                              SS OCT88 04540000
+VX075    DS    0H                       *                      SS OCT88 04550000
+         BAS   R2,ISPTBMOD              YES, REPLACE           SS OCT88 04560000
+         B     VX089                    RETURN CODE 0          SS OCT88 04570000
+* PUT ERROR MESSAGE INTO LOG            *                      SS OCT88 04580000
+VX076    DS    0H                       *                      SS OCT88 04590000
+         MVI   SPFLINE,C' '             BLANK                  SS OCT88 04600000
+         MVC   SPFLINE+1(157),SPFLINE      RIPPLE              SS OCT88 04610000
+         SR    R15,R15                  *                      SS OCT88 04620000
+         ICM   R15,1,0(R1)           GET LENGTH                SS OCT88 04630000
+         BNZ   *+8                   GOOD LENGTH               SS OCT88 04640000
+         LA    R15,80                NO, USE 80                SS OCT88 04650000
+         CLI   0(R1),150             MAX LENGTH                SS OCT88 04660000
+         BNH   *+8                      *                      SS OCT88 04670000
+         LA    R15,150                  *                      SS OCT88 04680000
+         BCTR  R15,0                    *                      SS OCT88 04690000
+         EX    R15,VX077                *                      SS OCT88 04700000
+         BAS   R2,ISPADDCO           PUT MESSAGE IN LOG        SS OCT88 04710000
+         SR    R15,R15               ZERO RC                   SS OCT88 04720000
+         B     VX090                    *                      SS OCT88 04730000
+VX077    MVC   SPFLINE(0),1(R1)      <EXECUTED>                SS OCT88 04740000
+VX088    OI    SPFLAG5,SPFVT0C       USING OTHER VTOCPRNT      SS APR89 04750000
+         CLC   125(3,R1),=C'CAT'     USING CAT OPTION OF VTOC DRK OCT99 04760028
+         BNE   *+4+4                 NO                       DRK OCT99 04770000
+         OI    SPFLAG5,SPFVCAT       YES, SET FLAG            DRK OCT99 04780000
+         B     VX089X                                         DRK OCT99 04790000
+VX089    CLC   123(3,R1),=C'CAT'     USING CAT OPTION OF VTOC DRK OCT99 04800028
+         BNE   *+4+4                 NO                       DRK OCT99 04810000
+         OI    SPFLAG5,SPFVCAT       YES, SET FLAG            DRK OCT99 04820000
+VX089X   SR    R15,R15               ZERO RETURN CODE          SS OCT88 04830000
+         B     VX090                    *                      SS OCT88 04840000
+VX080    LA    R15,4                 SET REGISTER R15         GLA JUN88 04850000
+VX090    L     R13,4(,R13)           UNCHAIN SAVE AREAS       GLA JUN88 04860000
+         ST    R15,16(R13)           SAVE RETURN CODE         GLA JUN88 04870000
+         RETURN (14,12),T,RC=(15)    RETURN                   GLA JUN88 04880000
+VX095    DC    C'ALLOC'              TITLE LINE                SS OCT88 04890000
+VX096    DC    C'TOTAL'              TOTAL LINE                SS OCT88 04900000
+VX098R   DC    V(CONVDATE)           CONVERSION ROUTINE       ABL JAN89 04910000
+VX098S   DC    C'** '                UNKNOWN DSORG            ABL JAN89 04920000
+VX098M   DC    X'F02120612020612020' CONVERSION MASK          ABL JAN89 04930000
+         DROP  R4                                             DRK OCT98 04940000
+*#*#*#*#*#*#*#*#                                              DRK SEP11 04950064
+*                                                             DRK SEP11 04960064
+*   PARSE LINES COMING BACK FROM DSAT:                        DRK SEP11 04970064
+*   Y2K (HOWARD DEAN) AND EAV (ANDREAS FREYBIER)              DRK SEP11 04980064
+*                                                             DRK SEP11 04990064
+*#*#*#*#*#*#*#*#                                              DRK SEP11 05000064
+DX070    SAVE  (14,12)                                         SS OCT88 05010000
+         USING DX070,R4              BASE REGISTER NOTIFY      SS OCT88 05020049
+         LR    R4,R15                SET THIS MODULE BASE      SS OCT88 05030064
+         L     R8,=A(ISPDSPY)        GET REAL MOD BASE         SS OCT88 05040064
+         L     R5,=A(ISPDSPY+4096)   GET REAL MOD BASE         SS OCT88 05050064
+         L     R7,4(,R1)             WORK AREA ADDRESS         SS OCT88 05060000
+         L     R1,8(,R1)             OUTPUT MESSAGE START      SS OCT88 05070000
+         LM    R9,R12,BASES          RESTORE BASE REGISTERS    SS OCT88 05080000
+         L     R6,SPFXWRK            GET SPF DIALOG VAR ADDR   SS OCT88 05090064
+         LA    R15,VALSAVE           SAVE AREA FOR THIS ROUTINE       " 05100064
+         ST    R13,4(,R15)                                     SS OCT88 05110000
+         ST    R15,8(,R13)           CHAIN SAVE AREAS          SS OCT88 05120000
+         LR    R13,R15                                         SS OCT88 05130000
+         SPACE 1                                                        05140064
+         USING DSATEAV,R1                                     DRK SEP11 05150079
+         CLC   DX095,DSSER        TITLE LINE                  DRK SEP11 05160080
+         BE    DX070A             YES, CHECK VERSION          DRK SEP11 05170066
+         B     DX070D             NO                          DRK SEP11 05180066
+DX070A   DS    0H                                                       05190066
+         CLC   33(3,R1),=C'EXT'   EAV VERSION?                DRK SEP11 05200066
+         BNE   DX070B             NO                          DRK SEP11 05210067
+         MVC   SPFCVER(3),=C'EAV' ANDREAS FREYBIER VERSION    DRK SEP11 05220091
+         B     DX070C                                         DRK SEP11 05230067
+DX070B   DS    0H                                                       05240066
+         MVC   SPFCVER(3),=C'Y2K' HOWARD DEAN VERSION         DRK SEP11 05250072
+DX070C   DS    0H                                                       05260066
+         B     DX089              SKIP TITLE LINE             DRK SEP11 05270066
+DX070D   DS    0H                                                       05280066
+         CLC   SPFCVER(3),=C'EAV' ANDREAS FREYBIER VERSION?   DRK SEP11 05290091
+         BE    DX070X             YES, THEN NO MOVE                     05300067
+         MVI   WORKTBL+100,C' '   BLANK                       DRK SEP11 05310067
+         MVC   WORKTBL+101(127),WORKTBL+100  RIPPLE           DRK SEP11 05320068
+         MVC   WORKTBL+100(1),0(R1)      LENGTH               DRK SEP11 05330071
+         MVC   WORKTBL+101(6),1(R1)      SERIAL               DRK SEP11 05340067
+         MVC   WORKTBL+108(8),8(R1)      DEVTYPE              DRK SEP11 05350067
+         MVC   WORKTBL+119(5),17(R1)     ALLOC                DRK SEP11 05360067
+         MVC   WORKTBL+127(5),23(R1)     FREE                 DRK SEP11 05370067
+*        MVC   WORKTBL+134(2),29(R1)     EXT                  DRK SEP11 05380099
+         MVC   WORKTBL+133(3),28(R1)     EXT                  DRK AUG21 05390099
+         MVC   WORKTBL+138(90),32(R1)    DSORG .... DSN       DRK SEP11 05400099
+         MVC   0(128,R1),WORKTBL+100     Y2K IN EAV FORMAT    DRK SEP11 05410099
+         SPACE 1                                                        05420099
+DX070X   DS    0H                                                       05430067
+         CLC   DSSER(8),ISPBLK8   TOTAL OR ERROR LINE?        DRK SEP11 05440080
+         BNE   DX071              NO, BRANCH                  ABL JAN89 05450000
+         CLC   92(8,R1),=C'DATA SET' EAV TOTAL LINE?          DRK SEP11 05460065
+         BE    DX089              YES, SKIP TOTALS            DRK SEP11 05470065
+         B     DX076              NO, SOME ERROR MESSAGE      ABL JAN89 05480000
+DX071    CLC   DX096,DSSER        EMPTY DESIGNATION?          DRK SEP11 05490080
+         BE    DX076              YES, SOME ERROR MESSAGE     ABL JAN89 05500000
+         SPACE 1                                              DRK JAN99 05510000
+* FIRST SET KEY AND SEE IF DUP          *                      SS OCT88 05520000
+         MVC   SPFCVOL,DSSER      VOLUME                      DRK SEP11 05530080
+         CLI   DSDSN,C' '         MULTI-VOLUME DSNAME?        DRK SEP11 05540080
+         BNE   DX072              NO                          DRK JUL03 05550042
+         B     *+4+6              SKIP BLANK DSNAME MOVE      DRK JUL03 05560042
+DX072    DS    0H                       *                      SS OCT88 05570042
+         MVC   SPFCDSN(44),DSDSN  DSNAME                      DRK SEP11 05580080
+         ST    R1,SPFTSV1               *                      SS OCT88 05590000
+         BAS   R2,ISPGET          SAVE R1                      SS OCT88 05600000
+         L     R1,SPFTSV1         RESTORE R1                   SS OCT88 05610000
+         ST    R15,SPFTSV2        SAVE RC                      SS SEP89 05620000
+         MVI   SPFCCAT,C'Y'       YES IN CATALOG               SS OCT88 05630000
+         MVI   SPFCVTOC,C'N'      ASSUME NOT ON VTOC           SS OCT88 05640000
+* NEED TO EXTRACT DEVTYPE               *                      SS OCT88 05650000
+*        XC    SPFCDEV,SPFCDEV    NO TYPE                      SS AUG89 05660000
+         MVC   SPFHEXCV(8),DSDEVT GET DEVTYPE                  SS AUG89 05670080
+         BAS   R2,ISPBINCV        CONVERT TO BINARY            SS SEP89 05680000
+         STCM  R1,15,SPFCDEV      SET   *                      SS AUG89 05690000
+         L     R1,SPFTSV1         RESTORE R1                   SS SEP89 05700000
+         CLI   DSALLOC+6,C'0'     ALLOC VALUE                 DRK SEP11 05710080
+         BNL   DX073              YES, VOLUME IS MOUNTED       SS OCT88 05720000
+         ICM   R0,15,SPFTSV2            TEST RC 0              SS SEP89 05730000
+         BZ    DX075                    YES, MUST BE MOD       SS OCT88 05740000
+         MVC   SPFCTRKS,ISPBLK8   SIZE                         SS OCT88 05750000
+         MVC   SPFCTOT,ISPBLK8    TOT                          SS OCT88 05760000
+         MVC   SPFCFREE,ISPBLK8   FREE                         SS OCT88 05770000
+         MVC   SPFCUSED,ISPBLK8   USED %                      DRK MAY14 05780090
+         MVC   SPFCEXT,ISPBLK8    EXTENTS                      SS OCT88 05790000
+         MVC   SPFCDSOR,ISPBLK8   ORGANIZATION                 SS OCT88 05800000
+         MVC   SPFCRF,ISPBLK8     RECFM                        SS OCT88 05810000
+         MVC   SPFCLREC,ISPBLK8   LRECL                        SS OCT88 05820000
+         MVC   SPFCBLKS,ISPBLK8   BLKSIZE                      SS OCT88 05830000
+         MVC   SPFCUPD,ISPBLK8          *                      SS OCT88 05840000
+         MVC   SPFCCDAT,ISPBLK44  CREATION DATE               DRK SEP11 05850054
+         MVC   SPFCRDAT,ISPBLK44  REFERENCE DATE              DRK SEP11 05860054
+         MVC   SPFCCCEN,ISPBLK8   CREATION DATE CENTURY       DRK MAR99 05870000
+         MVC   SPFCRCEN,ISPBLK8   REFERENCE DATE CENTURY      DRK MAR99 05880000
+         B     DX074                    *                      SS OCT88 05890000
+DX073    DS    0H                       *                      SS OCT88 05900000
+         MVC   SPFCTRKS,DSALLOC   SIZE                        DRK SEP11 05910080
+* NEED TO CONVERT TOT AND FREE TO REQUESTED TYPE               SS OCT88 05920000
+* FOR NOW GIVE IN TRACKS                *                      SS OCT88 05930000
+         MVI   SPFCTOT+7,C'T'     UNITS OF TRKS               DRK SEP11 05940069
+         MVC   SPFCTOT(7),DSALLOC ALLOC                       DRK SEP11 05950080
+         MVI   SPFCFREE+7,C'T'    UNITS OF TRKS               DRK SEP11 05960069
+         MVC   SPFCFREE(7),DSFREE UNUSED                      DRK SEP11 05970080
+         OI    SPFCFREE+6,X'F0'   ALWAYS HAVE A NUMERIC NUM   ABL JAN89 05980069
+         SPACE 1                                              DRK MAY14 05990086
+         STM   R0,R2,SAVELSTC        SAVE                     DRK MAY14 06000086
+         PACK  DOUBLE(8),SPFCFREE(7) FREE TRKS                DRK MAY14 06010086
+         CVB   R0,DOUBLE                                      DRK MAY14 06020086
+         PACK  DOUBLE(8),SPFCTOT(7)  TOTAL TRKS               DRK MAY14 06030086
+         CVB   R2,DOUBLE                                      DRK MAY14 06040086
+         LTR   R2,R2                 ZERO?                    DRK MAY14 06050086
+         BNZ   *+4+4                 NO                       DRK MAY14 06060086
+         LA    R2,1(R2)              YES, AVOID S0C9          DRK MAY14 06070086
+         SPACE 1                                              DRK MAY14 06080086
+         LR    R1,R2               TOTAL TRKS                 DRK MAY14 06090086
+         SR    R1,R0               TOTAL TRKS - FREE TRKS     DRK MAY14 06100086
+         MH    R1,=H'100'          * 100 FOR PERCENT          DRK MAY14 06110086
+         SR    R0,R0               CLEAR EVEN FOR DIVIDE      DRK MAY14 06120086
+         DR    R0,R2               PERCENT SPACE USED         DRK MAY14 06130086
+         BAS   R2,ISPDECCV         CONVERT VALUE IN R1        DRK MAY14 06140086
+         MVC   SPFCUSED,SPFDCNV3   SPACE USED                 DRK MAY14 06150086
+         MVI   SPFCUSED+3,C'%'                                DRK MAY14 06160086
+         LM    R0,R2,SAVELSTC      RESTORE                    DRK MAY14 06170086
+         SPACE 1                                              DRK MAY14 06180086
+         MVC   SPFCEXT,DSEXT      EXTENTS                     DRK SEP11 06190080
+         MVC   SPFCDSOR,DSDSORG   ORGANIZATION IF ICF         DRK SEP11 06200080
+         CLI   SPFCDSOR,C'A'      AM?                          SS FEB89 06210069
+         BNE   *+10               NO, SKIP                     SS FEB89 06220000
+         MVC   SPFCDSOR(2),DX097  YES, MAKE VS                DRK DEC08 06230048
+         MVC   SPFCRF(5),DSRECFM  RECFM                        SS OCT88 06240080
+         MVC   SPFCLREC,DSLRECL   LRECL                        SS OCT88 06250080
+         MVC   SPFCBLKS,DSBLKSI   BLKSIZE                      SS OCT88 06260080
+         SPACE 1                                                        06270053
+         MVC   SPFCCDAT(4),DSCRDT+6   CREATION DATE YYYY      DRK SEP11 06280080
+         MVI   SPFCCDAT+4,C'/'                                DRK SEP11 06290070
+         MVC   SPFCCDAT+5(5),DSCRDT MM/DD                     DRK SEP11 06300080
+         SPACE 1                                                        06310051
+         CLC   DSRFDT(7),=CL7' 000000'  ZERO REFDATE?         DRK SEP11 06320080
+         BNE   DX073A                   NO                    DRK SEP11 06330070
+         MVC   SPFCRDAT(10),ISPBLK44    YES                   DRK SEP11 06340070
+         B     DX073B                                         DRK SEP11 06350070
+DX073A   DS    0H                                                       06360070
+         CLC   DSRFDT,ISPBLK44          BLANK REFDATE?        DRK SEP11 06370080
+         BE    DX073B                   YES                   DRK SEP11 06380070
+         MVC   SPFCRDAT(4),DSRFDT+6   REFERENCE DATE YYYY     DRK SEP11 06390080
+         MVI   SPFCRDAT+4,C'/'                                DRK SEP11 06400070
+         MVC   SPFCRDAT+5(5),DSRFDT MM/DD                     DRK SEP11 06410080
+DX073B   DS    0H                                                       06420070
+         CLC   SPFCCDAT(2),=C'20'   20XX?                     DRK SEP11 06430070
+         BNE   DX073C               NO                        DRK SEP11 06440070
+         MVI   SPFCCCEN,C'1'        20TH                      DRK SEP11 06450070
+         B     DX073D                                         DRK SEP11 06460070
+DX073C   DS    0H                                                       06470070
+         MVI   SPFCCCEN,C'0'        19TH                      DRK SEP11 06480070
+DX073D   DS    0H                                                       06490070
+         CLC   SPFCRDAT(10),ISPBLK44  REF DATE SPACES?        DRK SEP11 06500070
+         BE    DX073F                 YES                     DRK SEP11 06510070
+         CLC   SPFCRDAT(2),=C'20'   20XX?                     DRK SEP11 06520070
+         BNE   DX073E               NO                        DRK SEP11 06530070
+         MVI   SPFCRCEN,C'1'        20TH                      DRK SEP11 06540070
+         B     DX073F                                         DRK SEP11 06550070
+DX073E   DS    0H                                                       06560070
+         MVI   SPFCRCEN,C'0'        19TH                      DRK SEP11 06570070
+DX073F   DS    0H                                                       06580070
+         CLI   DSRFDT+10,C'*'     DATASET UPDATED?            DRK SEP11 06590080
+         BNE   *+4+4+4            NO                          DRK OCT99 06600029
+         MVI   SPFCUPD,C'Y'       UPDATED = YES               DRK OCT99 06610029
+         B     *+4+4              CONTINUE                    DRK OCT99 06620029
+         MVI   SPFCUPD,C'N'       UPDATED = NO                DRK OCT99 06630029
+         MVI   SPFCVTOC,C'Y'      YES IN VTOC                  SS OCT88 06640029
+DX074    DS    0H                       *                      SS OCT88 06650029
+         ICM   R0,15,SPFTSV2            TEST RC 0              SS SEP88 06660000
+         BZ    DX075                    YES, MUST BE MOD       SS OCT88 06670000
+*  FILL IN REST OF ROW WITH BLANKS                             SS OCT88 06680000
+         MVC   SPFCOPT,ISPBLK8          *                      SS OCT88 06690000
+         MVC   SPFCDATA,ISPBLK8         *                      SS OCT88 06700082
+         MVC   SPFCREQ,ISPBLK8          *                      SS OCT88 06710000
+         MVC   SPFCDSN2,ISPBLK8         *                      SS OCT88 06720000
+         MVC   SPFCDSNL,ISPBLK8         *                      SS OCT88 06730000
+         MVC   SPFCKEYL,ISPBLK8         *                      SS OCT88 06740000
+         MVC   SPFCRKP,ISPBLK8          *                      SS OCT88 06750000
+         MVC   SPFCEDAT,ISPBLK44        *                      SS OCT88 06760059
+*        MVC   SPFCSECU,ISPBLK8         *                      SS OCT88 06770089
+         MVC   SPFCATYP,ISPBLK8         *                      SS OCT88 06780000
+         MVC   SPFCSEC,ISPBLK8          *                      SS OCT88 06790000
+         MVC   SPFCDIR,ISPBLK8          *                      SS OCT88 06800000
+         MVC   SPFCMMCT,ISPBLK8         *                      SS OCT88 06810000
+*                                                              SS OCT88 06820000
+**       ADD LINE TO TABLE                                     SS OCT88 06830000
+*                                                              SS OCT88 06840000
+         BAS   R2,ISPTBADD                                     SS OCT88 06850000
+         B     DX089                 SUCCESSFUL OUTPUT         SS OCT88 06860000
+*                                                              SS OCT88 06870000
+**       REPLACE LINE IN TABLE                                 SS OCT88 06880000
+*                                                              SS OCT88 06890000
+DX075    DS    0H                       *                      SS OCT88 06900000
+         BAS   R2,ISPTBMOD              YES, REPLACE           SS OCT88 06910000
+         B     DX089                    RETURN CODE 0          SS OCT88 06920000
+* PUT ERROR MESSAGE INTO LOG            *                      SS OCT88 06930000
+DX076    DS    0H                       *                      SS OCT88 06940000
+         ST    R1,SPFTSV1               SAVE R1               ABL JAN89 06950000
+         BAS   R2,ISPLOGBT              GO TO BOTTOM OF LOG   ABL JAN89 06960000
+         L     R1,SPFTSV1               RELOAD R1             ABL JAN89 06970000
+         MVI   SPFLINE,C' '             BLANK                  SS OCT88 06980000
+         MVC   SPFLINE+1(157),SPFLINE      RIPPLE              SS OCT88 06990000
+         SR    R15,R15                  *                      SS OCT88 07000000
+         ICM   R15,1,0(R1)           GET LENGTH                SS OCT88 07010000
+         BNZ   *+8                   GOOD LENGTH               SS OCT88 07020000
+         LA    R15,80                NO, USE 80                SS OCT88 07030000
+         CLI   0(R1),150             MAX LENGTH                SS OCT88 07040000
+         BNH   *+8                      *                      SS OCT88 07050000
+         LA    R15,150                  *                      SS OCT88 07060000
+         BCTR  R15,0                    *                      SS OCT88 07070000
+         EX    R15,DX077                *                      SS OCT88 07080000
+         BAS   R2,ISPADDCO           PUT MESSAGE IN LOG        SS OCT88 07090000
+         SR    R15,R15               ZERO RC                   SS OCT88 07100000
+         B     DX090                    *                      SS OCT88 07110056
+DX077    MVC   SPFLINE(0),1(R1)         *                      SS OCT88 07120000
+DX089    SR    R15,R15               ZERO RETURN CODE          SS OCT88 07130000
+         B     DX090                    *                      SS OCT88 07140000
+DX080    LA    R15,4                 SET REGISTER R15          SS OCT88 07150000
+DX090    L     R13,4(,R13)           UNCHAIN SAVE AREAS        SS OCT88 07160000
+         ST    R15,16(R13)           SAVE RETURN CODE          SS OCT88 07170000
+         RETURN (14,12),T,RC=(15)    RETURN                    SS OCT88 07180000
+DX095    DC    C'SERIAL'             TITLE LINE                SS OCT88 07190000
+DX096    DC    C'EMPTY '             EMPTY GDG HEADER LINE    ABL JAN89 07200000
+DX097    DC    C'VS'                 VSAM                      SS FEB89 07210000
+         LTORG ,                                              GLA JUN88 07220000
+         DROP  R4,R1                    *                      SS OCT88 07230065
+         TITLE 'LISTC/LISTFILE OPEN SUBROUTINE'                SS OCT88 07240000
+*************************************************************  SS OCT88 07250000
+*                                                              SS OCT88 07260000
+*      LISTC/LISTFILE OPEN SUBROUTINE                          SS OCT88 07270000
+*                                                              SS OCT88 07280000
+*************************************************************  SS OCT88 07290000
+         SPACE 2                                               SS OCT88 07300000
+ISPLSCOP DS    0H                       *                      SS OCT88 07310000
+         USING *,R4                                            SS OCT88 07320000
+         BAS   R2,ISPSETST              SET STATS PREV TABLE   SS OCT88 07330000
+* OPEN TB                                                      SS OCT88 07340000
+* DO VDEF FIRST                                                SS OCT88 07350000
+         LA    R1,ISPLSCAV        DEF VAR TABLE                SS OCT88 07360000
+         BAS   R2,ISPVDEFX                                     SS OCT88 07370000
+         CLI   SPFFUNST+5,C'I'    INACTIVE                     SS OCT88 07380000
+         BNER  R3                 NO, SKIP                     SS OCT88 07390000
+         CLI   SPFTBPFI+1,5       ALREADY AT LISTC             SS OCT88 07400000
+         BE    ISPLSCNK           THEN DISPLAY AS IS           SS OCT88 07410000
+         LA    R1,20              PANEL J                      SS OCT88 07420000
+         LNR   R1,R1              SET FOR SWAP                 SS OCT88 07430000
+         BAS   R2,ISPSTKI         STACK IT                     SS OCT88 07440000
+ISPLSCNK MVC   SPFTBL,SPFCSUF    GET BASE NAME                 SS OCT88 07450000
+         MVI   SPFTBL+2,C'C'     SET TO PDC                    SS OCT88 07460000
+         XC    SPFTFLG1(4),SPFTFLG1                            SS OCT88 07470000
+         XC    SPFTFF(2),SPFTFF                                SS OCT88 07480000
+         LA    R15,ISPLSCKY      KEYS                          SS OCT88 07490000
+         LA    R0,ISPLSCVN       VER NAMES                     SS OCT88 07500000
+         BAS   R2,ISPTBOPN                                     SS OCT88 07510000
+         BAS   R2,ISPSETST         ALSO INIT STATUS FLAG       SS OCT88 07520000
+         LH    R0,SPFTBPSR         SORT INIT INDEX             SS OCT88 07530000
+         BAS   R2,ISPSORTI         REQUEST SORT INIT           SS OCT88 07540000
+         BR    R3                  RETURN TO CALLER            SS OCT88 07550000
+         DS    0F                       *                      SS SEP90 07560000
+ISPLSCAV DC    H'0',X'02',X'00'                                SS OCT88 07570000
+         DC    A(VSPFCOPT),AL2(SPFCOPT-SPWRKC),H'04'           SS OCT88 07580000
+         DC    A(VSPFCDAT),AL2(SPFCDATA-SPWRKC),H'08'          SS OCT88 07590000
+         DC    A(VSPFCCAT),AL2(SPFCCAT-SPWRKC),H'01'           SS OCT88 07600000
+         DC    A(VSPFCDSN),AL2(SPFCDSN-SPWRKC),H'44'           SS OCT88 07610000
+         DC    A(VSPFCVOL),AL2(SPFCVOL-SPWRKC),H'06'           SS OCT88 07620000
+         DC    A(VSPFCDSO),AL2(SPFCDSOR-SPWRKC),H'03'         DRK NOV08 07630047
+         DC    A(VSPFCRF),AL2(SPFCRF-SPWRKC),H'05'             SS OCT88 07640000
+         DC    A(VSPFCKEY),AL2(SPFCKEYL-SPWRKC),H'03'          SS OCT88 07650000
+         DC    A(VSPFCUPD),AL2(SPFCUPD-SPWRKC),H'01'           SS OCT88 07660000
+         DC    A(VSPFCCDA),AL2(SPFCCDAT-SPWRKC),H'10'         DRK SEP11 07670052
+         DC    A(VSPFCSEC),AL2(SPFCSECU-SPWRKC),H'04'          SS OCT88 07680000
+         DC    A(VSPFCEXT),AL2(SPFCEXT-SPWRKC),H'03'           SS OCT88 07690000
+         DC    A(VSPFCTRK),AL2(SPFCTRKS-SPWRKC),H'07'         DRK SEP11 07700069
+         DC    A(VSPFCSEX),AL2(SPFCSEC-SPWRKC),H'05'          DRK SEP11 07710076
+         DC    A(VSPFCTOT),AL2(SPFCTOT-SPWRKC),H'08'          DRK SEP11 07720069
+* ADDITIONAL WORK VARIABLES             *                      SS OCT88 07730000
+         DC    A(VSPFCPVO),AL2(SPFCPVOL-SPWRKC),H'06'          SS NOV88 07740000
+         DC    A(VSPFCUCU),AL2(SPFCUCUR-SPWRKC),H'03'          SS AUG89 07750000
+         DC    A(VSPFCCEN),AL2(SPFCCCEN-SPWRKC),H'01'         Y2K AUG97 07760000
+         DC    X'FF'                                           SS OCT88 07770000
+VSPFCOPT DC    C'(PDSCOPT PDSCREQ PDSCDEV)'                    SS OCT88 07780084
+VSPFCDAT DC    C'(PDSCDATA PDSCDSN2 PDSCDSNL)'                 SS OCT88 07790000
+VSPFCCAT DC    C'(PDSCCAT  PDSCVTOC)'                          SS OCT88 07800000
+VSPFCDSN DC    C'PDSCDSN '                                     SS OCT88 07810000
+VSPFCVOL DC    C'PDSCVOL '                                     SS OCT88 07820000
+VSPFCDSO DC    C'PDSCDSOR'                                     SS OCT88 07830000
+VSPFCRF  DC    C'(PDSCRF PDSCLREC PDSCBLKS)'                   SS OCT88 07840000
+VSPFCKEY DC    C'(PDSCKEYL PDSCRKP)'                           SS OCT88 07850000
+VSPFCUPD DC    C'PDSCUPD '                                     SS OCT88 07860000
+VSPFCCDA DC    C'(PDSCCDAT PDSCRDAT PDSCEDAT)'                 SS OCT88 07870000
+VSPFCSEC DC    C'(PDSCUSED)' REUSED PDSCSECU VARIABLE         DRK MAY14 07880088
+VSPFCEXT DC    C'(PDSCEXT PDSCATYP)'                           SS OCT88 07890000
+VSPFCTRK DC    C'(PDSCTRKS)'                                  DRK SEP11 07900076
+VSPFCSEX DC    C'(PDSCSEC  PDSCDIR  PDSCMMCT)'                DRK SEP11 07910076
+VSPFCTOT DC    C'(PDSCTOT PDSCFREE)'                           SS OCT88 07920000
+VSPFCPVO DC    C'PDSCPVOL'                                     SS OCT88 07930000
+VSPFCUCU DC    C'(PDSCUCUR PDSCCNEW PDSCCNTL)'                 SS AUG89 07940000
+VSPFCCEN DC    C'(PDSCCCEN PDSCRCEN)'                         Y2K AUG97 07950000
+* TABLE DEFINITION                      *                      SS OCT88 07960000
+ISPLSCKY DC    C'(PDSCDSN PDSCVOL)'  KEY VARIABLES             SS OCT88 07970000
+ISPLSCVN DC    C'(PDSCOPT PDSCDATA PDSCREQ  PDSCDEV  PDSCDSN2 PDSCDSNL X07980000
+               PDSCCAT PDSCVTOC PDSCDSOR PDSCRF   PDSCLREC PDSCBLKS '   07990000
+         DC    C'PDSCKEYL PDSCRKP  PDSCUPD  PDSCCDAT PDSCRDAT PDSCEDAT X08000000
+               PDSCUSED PDSCEXT PDSCATYP PDSCTRKS PDSCSEC  PDSCDIR '    08010084
+         DC    C'PDSCMMCT PDSCTOT  PDSCFREE '                           08020000
+         DC    C'PDSCCCEN PDSCRCEN '                          Y2K AUG97 08030000
+         DC    C')'  ABOVE TABLE LAST EDIT                     SS OCT88 08040000
+         DROP  R4                       *                      SS OCT88 08050000
+DSATEAV  DSECT ,              OFFSET                          DRK SEP11 08060079
+         DS    CL1                 0                                    08070079
+DSSER    DS    CL6                 1                                    08080080
+         DS    CL1                                                      08090065
+DSDEVT   DS    CL8                 8                                    08100080
+         DS    CL1                                                      08110065
+DSALLOC  DS    CL7                17                                    08120080
+         DS    CL1                                                      08130065
+DSFREE   DS    CL7                25                                    08140080
+         DS    CL1                                                      08150065
+DSEXT    DS    CL3                33                                    08160080
+         DS    CL2                                                      08170065
+DSDSOPRE DS    CL2                38                                    08180080
+DSDSORG  DS    CL3                40                                    08190080
+         DS    CL1                                                      08200069
+DSRECFM  DS    CL4                44                                    08210080
+         DS    CL1                                                      08220069
+DSBLKSI  DS    CL5                49                                    08230080
+         DS    CL1                                                      08240069
+DSLRECL  DS    CL5                55                                    08250080
+         DS    CL1                                                      08260069
+DSCRDT   DS    CL10               61                                    08270080
+         DS    CL1                                                      08280069
+DSRFDT   DS    CL10               72                                    08290080
+DSUPD    DS    CL1                82                                    08300080
+         DS    CL1                                                      08310069
+DSDSN    DS    CL44               84                                    08320080
+DSLEN    EQU   *-DSATEAV         128                                    08330080
+         SPACE 2                                                        08340081
+ISPDSPY  CSECT ,              RESUME CSECT                    DRK SEP11 08350098

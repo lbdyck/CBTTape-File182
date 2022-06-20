@@ -1,0 +1,146 @@
+         TITLE 'P D S  --  PDS PRINTOFF AND ITS ALIASES      09/28/88'  00010001
+*********************************************************************** 00020000
+***    PRINTOFF SUBCOMMAND (AND ITS ALIASES)                        *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050000
+         SPACE 1                                                        00060000
+*   SUPPORTED SUBCOMMANDS: DSPRINT, PRINTOFF, REVIEW, SUBMIT,           00070000
+*                          TSOLIST, VPSPRINT, &XS1, &XS2, &XS3          00080000
+PRINTOFF CSECT                                                          00090027
+         USING *,R8                                                     00100000
+         TM    #MEMFLAG,X'40'           SUBMIT?                         00110000
+         BNO   PRINT2                   NO, BRANCH                      00120000
+         MVC   MSGLINE(120),WORKTBL     RESET THE OPERAND     DRK SEP02 00130008
+         LR    R6,R4                    SAVE R4                         00140000
+         L     R5,#MEMPTR               START OF MEMBER LIST            00150000
+         SH    R5,=H'16'                FOR FIRST ADD                   00160000
+         STM   R5,R6,#OUTREGS                                           00170000
+         SPACE 1                                                        00180000
+PRINT1   LM    R5,R6,#OUTREGS                                           00190000
+         LA    R5,16(,R5)               NEXT MEMBER                     00200000
+         CR    R5,R6                    ANY MORE?                       00210000
+         BNL   NEWSTAX                  NO, BRANCH                      00220000
+         STM   R5,R6,#OUTREGS                                           00230000
+         MVC   DIRNAME(12),0(R5)        MEMBER NAME                     00240000
+         SPACE 1                                                        00250000
+PRINT2   MVC   MSGTEXT1+4(8),##SUBCAL   PROCESSOR TO ATTACH             00260000
+         MVI   MSGTEXT1+12,X'40'        ADD A BLANK                     00270000
+         MVI   MSGTEXT1+13,C''''        ADD A QUOTE                     00280000
+         MVC   MSGTEXT1+14(44),DSNAME   ADD THE DATA SET NAME           00290000
+         LH    R15,DSNLEN               DSNAME ACTUAL LENGTH            00300000
+         LA    R4,14(,R15)              LENGTH OF "PRINTOFF'"           00310000
+         LA    R3,MSGTEXT1+13(R15)      POINT TO CURRENT BYTE -1        00320000
+         TM    DSORG,DS1DSGPO           NON-PARTITIONED DATA SET?       00330000
+         BZ    PRINT6                   YES, BRANCH                     00340000
+         CLC   ##SUBCOM(8),$SUB         SUBMIT SUBCOMMAND?    DRK FEB05 00340125
+         BE    PRINT2A                  YES, BRANCH           DRK FEB05 00340225
+         TM    ##ADRPC#,@I              REVIEW SUBCOMMAND?     GP DEC89 00341025
+         BZ    PRINT2A                  NO, BRANCH             GP DEC89 00342025
+         TM    FLAGSAA,FMEMBER1+FMEMBER2  ALL MEMBERS DESIRED? GP DEC89 00343000
+         BNZ   PRINT2A                  NO, BRANCH             GP DEC89 00344000
+         TM    FLAGSAA,FMEM#MEM         MEMBER GROUP HAPPENING?GP DEC89 00345000
+         BNO   PRINT6                   NO, BRANCH             GP DEC89 00346000
+PRINT2A  DS    0H                                              GP DEC89 00347000
+         SPACE 1                                                        00350000
+         MVI   1(R3),C'('               MEMBER NAME PARENTHESIS         00360000
+         MVC   2(8,R3),DIRNAME          MEMBER NAME                     00370000
+         LA    R3,2+8(,R3)              END OF MEMBER +1                00380000
+         LA    R4,2+8(,R4)              LENGTH OF MEMBER +1             00390000
+         LA    R2,8                     MAXIMUM MACHINE LENGTH+1        00400000
+PRINT3   BCTR  R3,0                     SCAN                            00410000
+         BCTR  R4,0                         BACKWARDS                   00420000
+         CLI   0(R3),X'40'                           FOR                00430000
+         BNE   *+8                                       FIRST          00440000
+         BCT   R2,PRINT3                                      NON-BLANK 00450000
+         SPACE 1                                                        00460000
+         BCTR  R2,0                     MACHINE LENGTH                  00470000
+         TRT   DIRNAME(*-*),TRTMEM      <<EXECUTED>>                    00480000
+         EX    R2,*-6                   VALID MEMBER NAME?              00490000
+         BNZ   BADMEMB                  NO, ERROR                       00500031
+         CLI   DIRNAME,C'0'             VALID FIRST CHARACTER?          00510000
+         BNL   BADMEMB                  NO, BRANCH                      00520000
+         LA    R3,1(,R3)                POINT TO TERMINATOR             00531004
+         MVI   0(R3),C')'               ADD A CLOSING PARENTHESIS       00540000
+         SPACE 1                                                        00550000
+PRINT6   MVI   1(R3),C''''              ADD A QUOTE                     00560000
+         MVI   2(R3),X'40'              ADD A BLANK                     00570000
+         LA    R4,3(,R4)                ACCOUNT FOR ")' "               00580000
+         LA    R2,MSGLINE               START OF ANY ADDED TEXT         00590000
+         SR    R2,R4                    WHERE TO START MESSAGE          00600000
+         LR    R14,R4                   CURRENT MESSAGE LENGTH          00610000
+         BCTR  R14,0                    MESSAGE MACHINE LENGTH          00620000
+         MVC   0(*-*,R2),MSGTEXT1       <<EXECUTED>>                    00630000
+         EX    R14,*-6                  MOVE IN MESSAGE TEXT            00640000
+         SPACE 1                                                        00650000
+PRINT9   AH    R4,#COMMDSZ              ADD REMAINING LENGTH            00660000
+         SLL   R4,16                    CLEAR BOTTOM TWO BYTES          00670000
+         STCM  R4,B'1111',0(R2)         SAVE STRING TOTAL LENGTH        00680000
+         SPACE 1                                                        00690000
+         LA    R3,##SUBCAL              PROCESSOR TO ATTACH             00700000
+*        M$ERRST (R2)                   DELETE * TO OUTPUT COMMAND      00710000
+         ST    R2,ADDRTEXT              COMMAND ADDRESS                 00720000
+         ST    R2,ADDRCBUF              COMMAND ADDRESS                 00730000
+         CLI   ##SUBCAL,C'%'            IMPLIED CLIST?                  00740000
+         BNE   PRINT10                  NO, BRANCH                      00750000
+         L     R8,=A(EXEC)              YES, SET UP ENTRY ADDRESS       00760000
+         BR    R8                                                       00770000
+         SPACE 1                                                        00780000
+PRINT10  MVI   3(R2),9                  POINT TO OPERAND OFFSET         00790000
+         SPACE 1                                                        00800000
+         LA    R0,=CL8'CONTROL'           FIRST PARAMETER               00810000
+         LA    R1,=CL8'DISPLAY'           SECOND PARAMETER              00820000
+         LA    R2,=CL8'SM'                THIRD PARAMETER               00830000
+         LA    R3,=F'0'                   FOURTH PARAMETER              00840000
+         STM   R0,R3,MSGTEXT2             SAVE ADDRESSES                00850000
+         OI    MSGTEXT2+12,X'80'          LAST                          00860000
+         LA    R1,MSGTEXT2                    PARAMETER                 00870000
+         L     R15,ISPLINK                                              00880000
+         TM    SPFLAG0,SPFDON             ISPMODE ACTIVE?               00890000
+         BNO   *+6                        NO, BRANCH                    00900000
+         BASR  R14,R15                    YES, LET SPF KNOW             00910000
+         SPACE 1                                                        00920000
+PRINT11  DS    0H                       REVIEW ...            DRK OCT03 00920117
+         TM    SPFLAG0,SPFDON           ISPMODE ACTIVE?       DRK OCT03 00920209
+         BNO   PRINT12                  NO, BRANCH            DRK OCT03 00920309
+         TM    SPFLAG0,SPFDSUSP         ISPMODE SUSPENDED?    DRK OCT03 00920413
+         BO    PRINT12                  YES, BRANCH           DRK OCT03 00920513
+*        CLC   ##SUBCAL(8),=CL8'REVIEW' REVIEW SUBCOMMAND?    DRK OCT03 00921023
+         CLC   ##SUBCOM(8),$REV         REVIEW SUBCOMMAND?    DRK FEB05 00921124
+         BNE   PRINT12                  NO, BRANCH            DRK OCT03 00921223
+         LA    R14,=CL8'CONTROL'        CONTROL               DRK OCT03 00921315
+         LA    R15,=CL8'ERRORS'         ERRORS                DRK OCT03 00921415
+         LA    R0,=CL8'RETURN'          RETURN                DRK OCT03 00921515
+         STM   R14,R0,PARMLIST                                DRK OCT03 00921615
+         OI    PARMLIST+8,X'80'                               DRK OCT03 00921715
+         LA    R1,PARMLIST                                    DRK OCT03 00921815
+         L     R15,ISPLINK                                    DRK OCT03 00921915
+         BASR  R14,R15                                        DRK OCT03 00922015
+         SPACE 1                                              DRK OCT03 00922115
+         L     R2,ADDRCBUF              COMMAND STRING        DRK OCT03 00922218
+         LH    R3,0(,R2)                STRING LENGTH         DRK OCT03 00922326
+         MVC   0(4,R2),=CL4'CMD('                             DRK OCT03 00922415
+         LR    R1,R3                                          DRK OCT03 00922515
+         AR    R1,R2                    END OF COMMAND STRING DRK OCT03 00922615
+*        MVI   0(R1),C')'               CLOSE PAREN           DRK OCT03 00922729
+*        LA    R3,1(,R3)                LENGTH + 1            DRK OCT03 00922829
+         MVC   0(14,R1),=C') NEWAPPL(REV)' APPLID/CLOSE PAREN DRK SEP09 00922929
+         LA    R3,14(,R3)               LENGTH + 14           DRK SEP09 00923029
+         LA    R15,=CL8'SELECT'         SELECT COMMAND        DRK OCT03 00923129
+         ST    R3,FULLWORD                                    DRK OCT03 00923229
+         LA    R0,FULLWORD              LENGTH OF COMMAND     DRK OCT03 00923329
+         LR    R1,R2                    POINT TO COMMAND      DRK OCT03 00923429
+         STM   R15,R1,PARMLIST          SET PARMLIST          DRK OCT03 00923529
+         OI    PARMLIST+8,X'80'         END FLAG              DRK OCT03 00923629
+         LA    R1,PARMLIST                                    DRK OCT03 00923729
+         L     R15,ISPLINK                                    DRK OCT03 00923829
+         BASR  R14,R15                                        DRK OCT03 00923929
+         B     NEWSTAX                  DO THE NEXT COMMAND   DRK OCT03 00924029
+PRINT12  DS    0H                                             DRK OCT03 00925029
+         L     R14,ADDRECT                                              00930000
+         MVC   ECTPCMD-ECT(8,R14),##SUBCAL  PROCESSOR COMMAND NAME      00940000
+         LA    R1,ADDRTEXT              ADDRESS OF THE CPPL             00950000
+         LA    R3,##SUBCAL              PROCESSOR TO ATTACH             00960000
+         BAS   R2,ATTACH                CLEAR THE ATTENTION ECB         00970000
+         TM    #MEMFLAG,X'40'           SUBMIT?                         00980000
+         BO    PRINT1                   YES, BRANCH                     00990000
+         B     NEWSTAX                  DO THE NEXT COMMAND             01000000

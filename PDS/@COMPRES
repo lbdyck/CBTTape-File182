@@ -1,0 +1,406 @@
+         TITLE 'P D S  --  PDS COMPRESS                      09/28/88'  02369000
+*********************************************************************** 02370000
+***      COMPRESS SUBCOMMAND   ADDED BY BRUCE LELAND -- APR., 1984  *** 02371000
+*********************************************************************** 02372000
+*                                                                       02373000
+         SPACE 1                                                        02374000
+COMPRESS CSECT                                                          02375006
+         USING *,R8                                                     02376000
+         SPACE 1                                                        02377000
+         CLI   #CMXFLAG,0                 LIST OPTION SET?              02378000
+         BNE   *+8                        YES, BRANCH                   02379000
+         MVI   #CMXFLAG,&COMPLST          NO, USE THE DEFAULT           02380000
+         MVI   VOLALLOC,X'40'             READ THE DSCB AGAIN           02381000
+         CLI   DSPALLOC,ALLOOLD           EXCLUSIVE USE ALREADY?        02382000
+         BE    CMXSYSDD                   YES, BRANCH                   02383000
+         CLI   #CMXSHR,1                  SHR COMPRESS DESIRED?         02384000
+         BE    CMXSYSDD                   YES, BRANCH                   02385000
+*  ALLOCATE THE DATA SET TO COMPRESS AS "OLD"                           02386000
+         BAS   R2,CLOSEIT                 CLOSE THE DATA SET            02387000
+         BAS   R2,DEALLDCB                UNALLOCATE THE DATA SET       02388000
+         LA    R0,RESTART0                ABEND RECOVERY                02389000
+         ST    R0,RECOVER                               RESTART ADDRESS 02390000
+         MVI   DSPALLOC,ALLOOLD           WANT EXCLUSIVE USE NOW        02391000
+         L     R15,=V(ALLOCATE)           ALLOCATION ROUTINE ADDRESS    02392000
+         BASR  R14,R15                    ALLOCATE THE DATA SET?        02393000
+         B     RESTART0                   NO, ERROR                     02394000
+         SPACE 1                                                        02395000
+         L     R8,##ADRCMD                REESTABLISH THE BASE REGISTER 02396000
+         CLI   DSPALLOC,ALLOOLD           OLD ALLOCATION NOW?           02397000
+         BE    CMXSYSDD                   YES, BRANCH                   02398000
+         CLI   #CMXSHR,1                  SHR COMPRESS DESIRED?         02399000
+         BNE   RESTART2                   NO, QUIT                      02400000
+         SPACE 2                                                        02401000
+*  ALLOCATE COMPRESS //SYSIN FILE                                       02402001
+CMXSYSDD XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02403000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02404000
+         USING S99RBP,R1                                                02405000
+         SPACE 1                                                        02406000
+         LA    R4,M99RB                                                 02407000
+         USING S99RB,R4                                                 02408000
+         ST    R4,S99RBPTR                                              02409000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02410000
+         SPACE 1                                                        02411000
+         LA    R5,M99TUPL                                               02412000
+         USING S99TUPL,R5                                               02413000
+         MVI   S99RBLN,20                 LENGTH 20                     02414000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02415000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02416000
+         SPACE 1                                                        02417000
+         MVC   #CMXSYS3(14),CMXDDNAM      REQUEST DDNAME FEEDBACK       02418000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02419000
+         USING S99TUNIT,R3                                              02420000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02421000
+         MVC   S99TUPTR+4(20),CMXSYSIN    ADD OTHER LIST ELEMENTS       02422000
+         SPACE 1                                                        02423000
+         DYNALLOC                                                       02424000
+         MVC   #CMXDDIN(8),#CMXSYS3+6     MOVE IN THE DSNAME            02425000
+         SPACE 2                                                        02426000
+         DROP  R1,R3,R4,R5                                              02427000
+         LTR   R15,R15                    SUCCESSFUL?                   02428000
+         BNZ   CMXERROR                   NO, BRANCH                    02429000
+         SPACE 3                                                        02430000
+*  ALLOCATE COMPRESS //SYSPRINT DATA SET                                02431001
+         SPACE 1                                                        02432000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02433000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02434000
+         USING S99RBP,R1                                                02435000
+         SPACE 1                                                        02436000
+         LA    R4,M99RB                                                 02437000
+         USING S99RB,R4                                                 02438000
+         ST    R4,S99RBPTR                                              02439000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02440000
+         SPACE 1                                                        02441000
+         LA    R5,M99TUPL                                               02442000
+         USING S99TUPL,R5                                               02443000
+         MVI   S99RBLN,20                 LENGTH 20                     02444000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02445000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02446000
+         SPACE 1                                                        02447000
+         MVC   #CMXSYS3(14),CMXDDNAM      REQUEST DDNAME FEEDBACK       02448000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02449000
+         USING S99TUNIT,R3                                              02450000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02451000
+         MVC   S99TUPTR+4(4),CMXSYSIN     ASSUME DUMMY TEXT IS DESIRED  02452000
+         CLI   #CMXFLAG,3                 NOLIST?                       02453000
+         BNE   *+8                        NO, BRANCH                    02454000
+         LA    R5,4(,R5)                  YES, USE THE DUMMY TEXT       02455000
+         MVC   S99TUPTR+4(40),CMXSYSPR    ADD OTHER LIST ELEMENTS       02456000
+         MVC   MSGTEXT2(9+9),CMXPRTFI     ADD PRIMARY, SECONDARY        02457000
+         LA    R0,MSGTEXT2                START OF PRIMARY AMOUNT       02458000
+         ST    R0,S99TUPTR+4              CHANGE ADDRESS POINTER        02459000
+         LA    R0,MSGTEXT2+9              START OF SECONDARY AMOUNT     02460000
+         ST    R0,S99TUPTR+4+4            CHANGE ADDRESS POINTER        02461000
+         L     R15,TOTUSEDX               NUMBER OF USED MEMBER BLOCKS  02462000
+         MH    R15,=H'21'                 MAXIMUM MEMBERS               02463000
+         AR    R15,R15                    MAXIMUM MEMBERS*2             02464000
+         SR    R14,R14                                                  02465000
+         D     R14,=F'50'                 50 MEMBERS/PAGE               02466000
+         SRL   R15,4                      DIVIDED BY 16                 02467000
+         LA    R15,2(,R15)                ADD 2                         02468000
+         STCM  R15,B'0111',MSGTEXT2+6     UPDATE IN PRIMARY SPACE       02469000
+         STCM  R15,B'0111',MSGTEXT2+9+6   UPDATE IN SECONDARY SPACE     02470000
+         SPACE 1                                                        02471000
+         DYNALLOC                                                       02472000
+         SPACE 2                                                        02473000
+         MVC   #CMXDDPR(8),#CMXSYS3+6     MOVE IN THE DDNAME            02474000
+         DROP  R1,R3,R4,R5                                              02475000
+         LTR   R15,R15                    SUCCESSFUL?                   02476000
+         BNZ   CMXERROR                   NO, BRANCH                    02477000
+         SPACE 2                                                        02478000
+*  ALLOCATE COMPRESS //SYSUT3 DATA SET                                  02479001
+         SPACE 1                                                        02480000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02481000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02482000
+         USING S99RBP,R1                                                02483000
+         SPACE 1                                                        02484000
+         LA    R4,M99RB                                                 02485000
+         USING S99RB,R4                                                 02486000
+         ST    R4,S99RBPTR                                              02487000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02488000
+         SPACE 1                                                        02489000
+         LA    R5,M99TUPL                                               02490000
+         USING S99TUPL,R5                                               02491000
+         MVI   S99RBLN,20                 LENGTH 20                     02492000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02493000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02494000
+         SPACE 1                                                        02495000
+         MVC   #CMXSYS3(14),CMXDDNAM      REQUEST DDNAME FEEDBACK       02496000
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02497000
+         USING S99TUNIT,R3                                              02498000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02499000
+         MVC   S99TUPTR+4(24),CMXSYSUT    ADD OTHER LIST ELEMENTS       02500000
+         MVC   MSGTEXT2(9+9),CMXPRTFI     ADD PRIMARY, SECONDARY        02501000
+         LA    R0,MSGTEXT2                START OF PRIMARY AMOUNT       02502000
+         ST    R0,S99TUPTR+4              CHANGE ADDRESS POINTER        02503000
+         LA    R0,MSGTEXT2+9              START OF SECONDARY AMOUNT     02504000
+         ST    R0,S99TUPTR+4+4            CHANGE ADDRESS POINTER        02505000
+         L     R15,TOTUSEDX               NUMBER OF USED MEMBER BLOCKS  02506000
+         MH    R15,=H'21'                 MAXIMUM MEMBERS               02507000
+         MH    R15,=H'105'                                              02508000
+         SR    R14,R14                                                  02509000
+         D     R14,=F'100'                TOTAL SPACE IN BLOCKS         02510000
+         SRL   R15,4                      DIVIDED BY 16                 02511000
+         LA    R15,2(,R15)                ADD 2                         02512000
+         STCM  R15,B'0111',MSGTEXT2+6     UPDATE IN PRIMARY SPACE       02513000
+         STCM  R15,B'0111',MSGTEXT2+9+6   UPDATE IN SECONDARY SPACE     02514000
+         SPACE 1                                                        02515000
+         DYNALLOC                                                       02516000
+         SPACE 2                                                        02517000
+         MVC   #CMXDDT3(8),#CMXSYS3+6     MOVE IN THE DDNAME            02518000
+         DROP  R1,R3,R4,R5                                              02519000
+         LTR   R15,R15                    SUCCESSFUL?                   02520000
+         BZ    CMXSTAX                    YES, BRANCH                   02521000
+         SPACE 2                                                        02522000
+CMXERROR ST    R15,DAIRRC                 SAVE RETURN CODE              02523000
+         LA    R0,RESTART0                ABEND RECOVERY                02524000
+         ST    R0,RECOVER                               RESTART ADDRESS 02525000
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       02526000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        02527000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        02528000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    02529000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           02530000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   02531000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 02532000
+         SPACE 1                                                        02533000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               02534000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        02535000
+         BZ    CMXERR2                    NO, BRANCH                    02536000
+         SPACE 1                                                        02537000
+         CVD   R15,DOUBLE                                               02538000
+         MVI   MTLEN,4                                                  02539000
+         MVC   INSERT#1(4),=X'40202120'                                 02540000
+         ED    INSERT#1(4),DOUBLE+6                                     02541000
+         MVI   INSERT#1,C'='                                            02542000
+         M$MSG L835$1                                                   02543000
+         SPACE 1                                                        02544000
+CMXERR2  BAS   R2,CLOSEIT                 CLOSE THE DATA SET            02545000
+         BAS   R2,DEALLDCB                UNALLOCATE THE DATA SET       02546000
+         B     CMXRETRN                                                 02547000
+         SPACE 3                                                        02548000
+CMXSTAX  M$MSG L480                       COMPRESS IN PROGRESS MESSAGE  02549000
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          02550000
+         SPACE 1                                                        02551000
+         XC    WORKTBL,WORKTBL            CLEAR THE TEMPORARY TABLE     02552000
+         STAX  COMPNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X02552203
+               OBUF=(PDS480W,PDS480WL),MF=(E,WORKTBL)                   02552303
+         LA    R1,ZERO                    NO FIRST PARAMETER            02555000
+         ST    R1,#CMXLIST                                              02556000
+         LA    R1,#CMXDDNA                SECOND PARAMETER              02557000
+         ST    R1,#CMXLIST+4                                            02558000
+         OI    #CMXLIST+4,X'80'           MARK END OF LIST              02559000
+         XC    #CMXDDNA(34),#CMXDDNA      CLEAR FIRST PORTION OF LIST   02560000
+         MVI   #CMXDDNA+1,80              LENGTH OF DDNAME LIST         02561000
+         MVC   #CMXDDT1,DDNAME            SYSUT1 DDNAME                 02562000
+         MVC   #CMXDDT2,DDNAME            SYSUT2 DDNAME                 02563000
+         BAS   R6,RESERVE                 RESERVE DEVICE IF REQUIRED    02564000
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 02565000
+         LA    R14,#SUBHOLD+28            POINT TO FLAGS                02566000
+         LA    R15,CMXCOPY                POINT TO CALLED PROGRAM       02567000
+         LA    R0,#SUBHOLD+28+4           POINT TO PROGRAM NAME LENGTH  02568000
+         LA    R1,#SUBHOLD+28+8           POINT TO RETURN CODE          02569000
+         LA    R2,#SUBHOLD+28+12          POINT TO REASON CODE          02570000
+         LA    R3,#SUBHOLD+28+16          POINT TO ABEND CODE           02571000
+         LA    R4,#CMXLIST                POINT TO PARAMETER LIST       02572000
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     02573000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  02574000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    02575000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      02576000
+         SPACE 1                                                        02577000
+COMPRZAP LA    R0,3239  **TO BE ZAPPED    PASSWORD                      02578000
+         SVC   247      **TO BE ZAPPED    GET AUTHORIZED                02579005
+         ORG   *-2      -- NOTE --        OVERLAY THE SVC CALL          02580000
+         NOPR  0        **TO BE ZAPPED    OVERLAY THE SVC CALL          02581000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 02582000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            02583000
+         CLC   ##SUBCAL(8),CMXEFTSR       INVOKE IKJEFTSR?              02584000
+         BNE   COMPNLNK                   NO, BRANCH                    02585000
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   02586000
+         SPACE 2                                                        02587000
+COMPNLNK BAS   R2,ATTACH                  SPFCOPY/IEBCOPY/$PDSFAST      02588000
+COMPLINK SR    R0,R0                      UNAUTHORIZATION CODE          02589000
+         SVC   247      **TO BE ZAPPED    GET UNAUTHORIZED              02590005
+         ORG   *-2      -- NOTE --        OVERLAY THE SVC CALL          02591000
+         NOPR  0        **TO BE ZAPPED    OVERLAY THE SVC CALL          02592000
+         SPACE 3                                                        02593000
+         BAS   R2,DEQ                     RELEASE ANY RESERVES          02594000
+         BAS   R2,CLOSEIT                 CLOSE THE DATA SET            02595000
+         BAS   R2,DEALLDCB                UNALLOCATE THE DATA SET       02596000
+         LA    R0,RESTART0                ABEND RECOVERY                02597000
+         ST    R0,RECOVER                               RESTART ADDRESS 02598000
+         STAX  ,                                                        02599000
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        02600000
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       02601000
+         CLC   ##SUBCAL(8),CMXEFTSR       INVOKE IKJEFTSR?              02602000
+         BNE   CMXTSROK                   NO, BRANCH                    02603000
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      02604000
+         CLI   SUBSECB+3,12               RC:12                         02605000
+         BL    CMXTSROK                   LOW, VALID COMPRESS           02606000
+         BE    *+12                       EQUAL, ATTENTION              02607000
+         CLI   SUBSECB+3,X'FF'            RETURN CODE = FF?             02608000
+         BNE   CMXTSROK                   NO, BRANCH                    02609000
+         M$MSG L980                       ATTENTION WITH IKJEFTSR       02610000
+         B     CMXRETRN                                                 02611000
+         SPACE 1                                                        02612000
+CMXTSROK CLI   SUBSECB+3,12               RETURN CODE > 12?             02613000
+         BH    CMXNOPEN                   YES, BRANCH                   02614000
+         CLI   #CMXFLAG,3                 NOLIST REQUESTED?             02615000
+         BNE   CMXOPEN                    NO, BRANCH                    02616000
+CMXNOPEN MVI   MTLEN+4,3                                                02617000
+         SR    R15,R15                                                  02618000
+         ICM   R15,B'0001',SUBSECB+3                                    02619000
+         CVD   R15,DOUBLE                                               02620000
+         MVC   INSERT#1(8),##SUBCOM       SUBCOMMAND NAME               02621000
+         MVC   INSERT#2-1(4),=X'40202120'                               02622000
+         ED    INSERT#2-1(4),DOUBLE+6                                   02623000
+         MVI   INSERT#2,C'='                                            02624000
+         M$MSG L171$2                                                   02625000
+         B     CMXRETRN                                                 02626000
+         SPACE 3                                                        02627000
+CMXOPEN  MVC   STOWDCB(CMXDL),CMXDCB      GET MODEL DCB                 02628000
+         MVC   DCBDDNAM-IHADCB+STOWDCB(8),#CMXDDPR                      02629000
+         MVI   OPENLIST,X'80'                                           02630000
+         OPEN  (STOWDCB),MF=(E,OPENLIST)      OPEN SYSPRINT             02631000
+         TM    DCBOFLGS-IHADCB+STOWDCB,X'10'  SUCCESSFUL OPEN?          02632000
+         BO    CMXMSGIN                       YES, BRANCH               02633000
+         M$MSG L865                           NO STATUS AVAILABLE       02634000
+         B     CMXRETRN                       EXIT                      02635000
+         SPACE 3                                                        02636000
+*  PROCESS SYSPRINT RECORDS                                             02637000
+         SPACE 1                                                        02638000
+CMXMSGIN GET   STOWDCB                    GET LIST RECORD               02639000
+         CLI   1(R1),X'40'                HEADER LINE?                  02640000
+         BE    CMXMSGIN                   YES, IGNORE                   02641000
+         CLI   #CMXFLAG,2                 FULL LIST REQUESTED?          02642000
+         BE    CMXMSGON                   YES, OUTPUT                   02643000
+         LA    R3,CMXEXCL-6               START OF EXCLUSION TABLE -6   02644000
+CMXMSGCK LA    R3,6(,R3)                  NEXT MESSAGE ID               02645000
+         CLC   1(6,R1),0(R3)              MESSAGE ID TO BE EXCLUDED?    02646000
+         BE    CMXMSGIN                   YES, IGNORE                   02647000
+         CLI   0(R3),FF                   END OF TABLE?                 02648000
+         BNE   CMXMSGCK                   NO, LOOP                      02649000
+         SPACE 3                                                        02650000
+CMXMSGON MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        02651000
+*        CLC   1(6,R1),CMXIEB14           UNUSED TRACKS MESSAGE?        02652001
+*        BNE   *+8                        NO, BRANCH                    02653001
+*        MVI   MSGTEXT1+1,64              YES, TRUNCATE THE MESSAGE     02654001
+         MVC   MSGTEXT1+4(120),1(R1)      ADD THE IEBCOPY MESSAGE       02655000
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            02656000
+         B     CMXMSGIN                                                 02657000
+         SPACE 3                                                        02658000
+CMXEXCL  DC    C'IEB152'           IEB152I MEMBERNAME COMPRESSED-WAS AL 02659000
+         DC    C'IEB154'           IEB154I MEMBERNAME HAS BEEN SUCCESSF 02660000
+         DC    C'IEB167'           IEB167I FOLLOWING MEMBER(S) COPIED F 02661000
+         DC    C'IEB161'           IEB161I COMPRESS TO BE DONE USING IN 02662000
+* FOLLOWING ARE FOR PDSFAST, VERSION 3.2 OR LATER:                      02663000
+         DC    C'----- '           -----  PDSFAST PAGE HEADER LINE      02664000
+         DC    C'COPYRI'           COPYRIGHT  ... PDSFAST HEADER LINE   02665000
+         DC    C'PDF101'           PDF101I START PDSFAST EXECUTION      02666000
+         DC    C'PDF104'           PDF104I START COPY STEP 1            02667000
+         DC    C'PDF110'           PDF110I OPERATION IS COMPRESS - INDD 02668000
+         DC    C'PDF121'           PDF121I NO CONTROL CARDS FOUND ON DD 02669000
+         DC    C'PDF156'           PDF156M MEMBER ........ MOVED        02670000
+         DC    C'PDF189'           PDF189I END OF COPY STEP 1, CONDITIO 02671000
+         DC    C'PDF195'           PDF195I END OF CONTROL CARD FILE     02672000
+* FOLLOWING ARE FOR PDSFAST, VERSION 3.1 OR EARLIER:                    02673000
+         DC    C'PDSFAS'           PDSFAST   ... HEADER LINE            02674000
+         DC    C'PDF00 '           PDF00  START EXECUTION               02675000
+         DC    C'PDF06 '           PDF06   INPUT DATASET:  ...          02676000
+         DC    C'PDF09 '           PDF09  MEMBER ........ - MOVED ...   02677000
+         DC    X'FF'                                                    02678000
+         SPACE 2                                                        02679000
+*** THE FOLLOWING MESSAGES ARE ALSO CANDIDATES FOR SUPPRESSION:         02680000
+CMXIEB14 DC    C'IEB144'           IEB144I THERE ARE XXXXXXX UNUSED TRA 02681000
+***      DC    C'IEB147'           IEB147I END OF JOB X WAS HIGHEST RET 02682000
+***      DC    C'IEB149'           IEB149I THERE ARE XXXXXXX UNUSED DIR 02683000
+***      DC    C'IEB153'           IEB153I ALL MEMBERS COMPRESSED-ALL W 02684000
+         DC    X'FF'                                                    02685000
+         SPACE 2                                                        02686000
+CMXMDONE DS    0H                                                       02687000
+         MVI   OPENLIST,X'80'                                           02688000
+         CLOSE (STOWDCB),MF=(E,OPENLIST)  CLOSE THE SYSPRINT FILE.      02689000
+         LA    R1,STOWDCB                                               02690000
+         FREEPOOL (1)                                                   02691000
+         SPACE 2                                                        02692000
+CMXRETRN M$ERRST MSGBLANK                                               02693000
+         LA    R1,#CMXDDIN                SYSIN DDNAME                  02694000
+         BAS   R2,CMXFREDD                FREE THIS DATA SET            02695000
+         SPACE 1                                                        02696000
+         LA    R1,#CMXDDPR                SYSPRINT DDNAME               02697000
+         BAS   R2,CMXFREDD                FREE THIS DATA SET            02698000
+         SPACE 1                                                        02699000
+         LA    R1,#CMXDDT3                SYSUT3 DDNAME                 02700000
+         BAS   R2,CMXFREDD                FREE THIS DATA SET            02701000
+         B     RESTART0                                                 02702000
+         SPACE 1                                                        02703000
+CMXFREDD CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         02704000
+         BLR   R2                         NO, RETURN                    02705000
+         SPACE 1                                                        02706000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                02707000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02708000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02709000
+         USING S99RBP,R1                                                02710000
+         SPACE 1                                                        02711000
+         LA    R4,M99RB                                                 02712000
+         USING S99RB,R4                                                 02713000
+         ST    R4,S99RBPTR                                              02714000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02715000
+         SPACE 1                                                        02716000
+         LA    R5,M99TUPL                                               02717000
+         USING S99TUPL,R5                                               02718000
+         MVI   S99RBLN,20                 LENGTH 20                     02719000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    02720000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         02721000
+         SPACE 1                                                        02722000
+         LA    R3,#CMXSYS3                TEXT POINTER                  02723000
+         USING S99TUNIT,R3                                              02724000
+         MVC   S99TUKEY(6),CMXFDDNA       ADD TEXT KEYS                 02725000
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            02726000
+         LA    R0,CMXUNALC                UNALLOC EVEN IF "PERM"        02727000
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          02728000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     02729000
+         SPACE 1                                                        02730000
+         DYNALLOC                                                       02731000
+         BR    R2                                                       02732000
+         SPACE 1                                                        02733000
+         DROP  R1,R3,R4,R5                                              02734000
+         SPACE 2                                                        02735000
+COMPNULL BR    14                      JUST RETURN TO THE RETURN        02736000
+         SPACE 2                                                        02737000
+*  COMPRESS CONSTANTS                                                   02738000
+         PRINT NOGEN                                                    02739000
+CMXDCB   DCB   DSORG=PS,DDNAME=CMX,MACRF=GL,EODAD=CMXMDONE              02740000
+CMXDL    EQU   *-CMXDCB                                                 02741000
+         PRINT GEN                                                      02742000
+         SPACE 2                                                        02743000
+PDS480W  DC    C'PDS480W COMPRESS MAY NOT BE INTERRUPTED'               02744000
+PDS480WL EQU   *-PDS480W                                                02745000
+         SPACE 2                                                        02746000
+CMXEFTSR DC    CL8'IKJEFTSR'                                            02747000
+CMXCOPY  DC    CL8'IEBCOPY'                                             02748000
+CMXDDNAM DC    X'0055000100084040404040404040'                          02749000
+CMXFDDNA DC    X'000100010008'                                          02750000
+CMXDUMMY DC    X'00240000'                       DUMMY DATA SET         02751000
+CMXBLKSI DC    X'0030000100020050'               DCB=BLKSIZE=80         02752000
+CMXNEW   DC    X'00040001000104'                 DISP=(NEW)             02753000
+CMXDEL   DC    X'00050001000104'                 DISP=(,DELETE)         02754000
+CMXCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        02755000
+CMXPERM  DC    X'00520000'                       PERMANENT ALLOCATION   02756000
+CMXUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   02757000
+         SPACE 2                                                        02758000
+         SPACE 2                                                        02759000
+CMXPRTFI DC    X'000A00010003',AL3(*-*)          SPACE=(,NNN)           02760000
+CMXPRTSE DC    X'000B00010003',AL3(*-*)          SPACE=(,(,NNN))        02761000
+CMXPRTIN DC    X'00090001000300181B'             SPACE=(6171)           02762000
+CMXUT3IN DC    X'000900010003000050'             SPACE=(80)             02763000
+         SPACE 1                                                        02764000
+CMXPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          02765000
+CMXPRTLR DC    X'004200010002',AL2(121)          DCB=LRECL=121          02766000
+CMXPRTBL DC    X'003000010002',AL2(6171)         DCB=BLKSIZE=6171       02767000
+         SPACE 2                                                        02768000
+CMXSYSIN DC    A(CMXDUMMY,CMXBLKSI,CMXNEW,CMXDEL),X'80',AL3(CMXCDEL)    02769000
+CMXSYSUT DC    A(CMXPRTFI,CMXPRTSE,CMXUT3IN)                            02770000
+         DC    A(CMXNEW,CMXDEL),X'80',AL3(CMXCDEL)                      02771000
+CMXSYSPR DC    A(CMXPRTFI,CMXPRTSE,CMXPRTIN)                            02772000
+         DC    A(CMXPRTRE,CMXPRTLR,CMXPRTBL)                            02773000
+         DC    A(CMXNEW,CMXDEL,CMXCDEL),X'80',AL3(CMXPERM)              02774000

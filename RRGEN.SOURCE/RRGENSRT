@@ -1,0 +1,194 @@
+*PROCESS SUPRWARN(303)
+RRSORT   START                                                          00000010
+         USING *,15                                                     00000020
+         MVC   SAVEX+2(2),FTADR        * SET SAVE EXIT TO FTRTN.        00000030
+         B     SAVEM                   * GO SAVE REGISTERS.             00000040
+         L     15,42(15)               * EP FROM RELEASE.               00000050
+         MVC   SAVEX+2(2),RLSEADR      * SET SAVE EXIT TO RLSERTN.      00000060
+         B     SAVEM                   * GO SAVE REGISTERS.             00000070
+         L     15,28(15)               * EP FROM IN PROC EXIT.          00000080
+         MVC   SAVEX+2(2),ISTXADR      * SET SAVE EXIT TO ISTXRTN.      00000090
+         B     SAVEM                   * GO SAVE REGISTERS.             00000100
+         L     15,14(15)               * EP FROM RETURN.                00000110
+         MVC   SAVEX+2(2),OSTXADR      * SET SAVE EXIT TO OSTXRTN.      00000120
+         B     SAVEM                   * GO SAVE REGISTERS.             00000130
+EPADR    DC    A(RRSORT)                                                00000140
+FTADR    DC    S(FTRTN)                                                 00000150
+RLSEADR  DC    S(RELEASE)                                               00000160
+ISTXADR  DC    S(SORTEM)                                                00000170
+OSTXADR  DC    S(RETURN)                                                00000180
+SAVEM    SAVE  (14,12)                 * SAVE RRGEN REGS                00000190
+         BALR  12,0                    *                                00000200
+         USING *,12                    *                                00000210
+START    LA    11,MYSAVE               *                                00000220
+         ST    11,8(13)                *                                00000230
+         ST    13,4(11)                *                                00000240
+         LR    13,11                   *                                00000250
+SAVEX    B     FTRTN                                                    00000260
+* THIS ROUTINE CALLS THE SORT AND PASSES THE PARAMETER ADDRESS. THIS    00000270
+*  ROUTINE IS ENTERED WHEN THE SORT MACRO IS EXECUTED IN THE COMPILED   00000280
+*  RRGEN PROGRAM. THE SORT RETURNS TO THIS MODULE AT END OF SORT.       00000290
+*  THIS ROUTINE THEN RETURNS TO THE RRGEN PROGRAM AT TGEF.              00000300
+FTRTN    MVC   LHESCD(4),0(1)          * MOVE LHE SORT STAT TO PARM.    00000310
+         MVC   LHERECD(4),4(1)         * MOVE LHE REC STAT TO PARM.     00000320
+         MVC   ADRIN(4),8(1)           * RRGEN INPUT PROC ADDR TO HOLD. 00000330
+         MVC   ADROUT(4),12(1)         * RRGEN OUT PROC ADDR TO HOLD.   00000340
+         MVC   RECAR(4),16(1)          * RECAR ADDR TO HOLD.            00000350
+         ST    14,ADREOF               * STORE RETURN ADDR.             00000360
+* FIND RHE OF SORT STATEMENT .                                          00000370
+         L     5,LHESCD                * 5 POINT TO LHE OF SORT STAT.   00000380
+         LA    6,45(5)                 * SET SEARCH LIMIT.              00000390
+FT01     CLC   0(6,5),=C'FIELDS'       * START OF FIELD PARAMETER?      00000400
+         BE    FT02                    * YES                            00000410
+         LA    5,1(5)                  * NO, 5 UP BY 1.                 00000420
+         CR    5,6                     * END OF SEARCH?                 00000430
+         BL    FT01                    * NO.                            00000440
+         ST    6,RHESCD                * YES, BAD SORT STATEMENT.       00000450
+         B     FT04                                                     00000460
+         LA    5,6(5)                                                   00000470
+FT02     CLI   0(5),C' '               * END OF SORT STATEMENT?         00000480
+         BE    FT03                    * YES                            00000490
+         LA    5,1(5)                  * NO, 5 UP BY 1                  00000500
+         B     FT02                    *  GO LOOK AT NEXT POS.          00000510
+FT03     ST    5,RHESCD                * RHE SORT STAT TO HOLD.         00000520
+* FIND RECORD  SIZE FOR MOVE OF RECORD AND RHE OF RECORD STATEMENT.     00000530
+FT04     L     5,LHERECD               * 5 TO LHE RECORD STATEMENT.     00000540
+         LA    6,45(5)                 * SET SEARCH LIMIT.              00000550
+FT05     CLC   0(6,5),=C'LENGTH'       * LENGTH PARM?                   00000560
+         BE    FT06                    * YES                            00000570
+         LA    5,1(5)                  * 5 UP BY 1.                     00000580
+         CR    5,6                     * SEARCH LIMIT REACHED?          00000590
+         BL    FT05                    * NO, GO CHECK NEXT POS.         00000600
+         ST    6,RHERECD               * BAD RECORD STATEMENT           00000610
+         B     FT13                                                     00000620
+FT06     TRT   7(5,5),NUMTAB           * 5 POS SIZE.                    00000630
+         BNZ   FT06A                   * NO, CHECK 4.                   00000640
+         MVC   SIZWK+3(5),7(5)         * YES, MOVE TO WORK.             00000650
+         B     FT08                                                     00000660
+FT06A    TRT   7(4,5),NUMTAB           * 4 POS SIZE.                    00000670
+         BNZ   FT06B                   * NO, CHECK 3.                   00000680
+         MVC   SIZWK+4(4),7(5)         * YES, MOVE TO WORK.             00000690
+         B     FT08                                                     00000700
+FT06B    TRT   7(3,5),NUMTAB           * 3 POS SIZE?                    00000710
+         BNZ   FT07                                                     00000720
+         MVC   SIZWK+5(3),7(5)         * RECORD SIZE TO HOLD AREA.      00000730
+         B     FT08                                                     00000740
+FT07     TRT   7(2,5),NUMTAB           * SIZE 2 POS ?                   00000750
+         BNZ   FT08                    * NO - BUT LET SORT BRING DOWN.  00000760
+         MVC   SIZWK+6(2),7(5)         * MOVE 2 POS SIZE TO HOLD AREA.  00000770
+FT08     CLI   0(5),C' '               * END OF RECORD STATEMENT.       00000780
+         BE    FT09                    * YES                            00000790
+         LA    5,1(5)                  * NO, 5 UP BY 1.                 00000800
+         B     FT08                    * GO LOOK AT NEXT POS.           00000810
+FT09     ST 5,RHERECD                  * RHE RECORD STATEMENT TO HOLD.  00000820
+         CLC   SIZWK+3(5),=C'00900'    * RECORD GREATER THAN 900 POS.   00000830
+         BH    FT13                                                     00000840
+         PACK  SIZWK(8),SIZWK(8)       * PACK RECORD SIZE.              00000850
+         CVB   7,SIZWK                 * RECORD SIZE TO BINARY.         00000860
+         LTR   7,7                     * RECORD SIZE ZERO.              00000870
+         BZ    FT13                    * YES. ERROR.                    00000880
+         LH    5,=H'256'               * 5 = MAX MOVE CNT.              00000890
+         LA    6,MOVE1                 * 6 TO 1ST MOVE INS              00000900
+         BCTR  7,0                     * REC SIZE DOWN BY 1.            00000910
+FT10     CR    5,7                     * REC SIZE LESS THAN 256?        00000920
+         BH    FT11                    * YES.                           00000930
+         MVI   7(6),X'00'              * NO,SET MOVE SWITCH.            00000940
+         SR    7,5                     * REC SIZE DOWN BY 256.          00000950
+         LA    6,10(6)                 * 6 TO NEXT MOVE INS             00000960
+         B     FT10                    *                                00000970
+FT11     STC   7,1(6)                  * REMAINDER TO MOVE INS.         00000980
+         LA    1,SORTPARM                                               00000990
+         LINK  EP=SORT,MF=(E,(1))      * GO SORT.                       00001000
+FT12     L     14,ADREOF                                                00001010
+         L     13,MYSAVE+4                                              00001020
+         LM    0,12,20(13)                                              00001030
+         BR    14                                                       00001040
+FT13     LA    15,11(0)                * SET RETURN CODE.               00001050
+         B     FT12                                                     00001060
+APROCOUT DC    A(PROCOUT)                                               00001070
+* THIS ROUTINE PASSES A RECORD FROM RRGEN INPUT PROCEDURE TO THE SORT.  00001080
+*  RETURN FROM SORT IS TO PROCIN.                                       00001090
+RELEASE  ST    14,ADRIN                * SET RRGEN RETURN ADDR.         00001100
+         L     13,SRTSAVE              * GET SORT SAVE AREA ADDR.       00001110
+         L     1,RECAR                 * R1 POINTS TO RECORD.           00001120
+         LM    14,0,12(13)                                              00001130
+         LM    2,12,28(13)                                              00001140
+         LA    15,12(0)                * R15 = RETURN CODE              00001150
+         BR    14                      * RETURN TO SORT.                00001160
+* THIS ROUTINE GOES TO THE SORT AT END OF INPUT PROCEDURE.              00001170
+*  RETURN FROM SORT IS TO PROCOUT.                                      00001180
+SORTEM   L     13,SRTSAVE              * GET SORT SAVE AREA ADDR.       00001190
+         RETURN (14,12),,RC=8          * RETURN TO SORT.                00001200
+* THIS ROUTINE GOES TO THE SORT TO GET ANOTHER RECORD.                  00001210
+*  RETURN FROM SORT IS AT PROCOUT                                       00001220
+RETURN   ST    14,ADROUT               * SET RRGEN RETURN ADDR.         00001230
+         L     13,SRTSAVE              * GET SORT SAVE AREA ADDR.       00001240
+FTSW1    BC    0,RETURN01              * ONE TIME SWITCH.               00001250
+         MVI   FTSW1+1,X'F0'           * RESET ONE TIME SWITCH.         00001260
+         MVI   FTSW2+1,X'00'           * RESET OUT PROC ONE TIME SW.    00001270
+         L     5,24(13)                * GET SORT RECAR ADDR.           00001280
+         L     5,0(5)                                                   00001290
+         L     15,APROCOUT                                              00001300
+         B     MOVEREC                 * GO GET FIRST RECORD.           00001310
+RETURN01 RETURN (14,12),,RC=4          * RETURN TO SORT.                00001320
+         DS    0F                                                       00001330
+         DC    X'0000'                                                  00001340
+SRTPARM  DC    XL2'001C'                                                00001350
+LHESCD   DC    A(0)                                                     00001360
+RHESCD   DC    A(0)                                                     00001370
+LHERECD  DC    A(0)                                                     00001380
+RHERECD  DC    A(0)                                                     00001390
+INPROC   DC    A(PROCIN)                                                00001400
+OUTPROC  DC    A(PROCOUT)                                               00001410
+         DC    XL4'FF00C1D7'                                            00001420
+ADRIN    DC    A(0)                                                     00001430
+ADROUT   DC    A(0)                                                     00001440
+ADREOF   DC    A(0)                                                     00001450
+RECAR    DC    A(0)                                                     00001460
+SORTPARM DC    X'80'                                                    00001470
+         DC    AL3(SRTPARM)                                             00001480
+SRTSAVE  DC    A(0)                                                     00001490
+MYSAVE   DC    18F'0'                                                   00001500
+* THIS ROUTINE IS THE INPUT PROCEDURE FOR THE SORT. THE SORT LINKS TO   00001510
+*  THIS ROUTINE AND THIS ROUTINE BRANCHES TO RRGEN AT TGSI.             00001520
+         USING *,15                                                     00001530
+PROCIN   SAVE  (14,12)                 * SAVE SORT REGS.                00001540
+         L     12,IBASE                * ESTABLISH MYBASE.              00001550
+         ST    13,SRTSAVE              * SAVE SORT SAVE AREA ADR.       00001560
+         L     13,MYSAVE+4             * GET RRGEN SAVE AREA.           00001570
+         L     14,ADRIN                * POINT 14 TO TGSI.              00001580
+         LM    15,12,16(13)            * RESTORE RRGEN REGS.            00001590
+         BR    14                      * BRANCH TO TGSI                 00001600
+IBASE    DC    A(START)                                                 00001610
+** THIS ROUTINE IS THE OUTPUT PROCEDURE FOR THE SORT. THE SORT LINK     00001620
+**  TO THIS ROUTINE WHEN IT IS THROUGH SORTING. THIS ROUTINE MOVE A     00001630
+*   RECORD TO RECAR AND BRANCHES TO RRGEN AT TGSO. AT END OF FILE       00001640
+*   THIS ROUTINE BRANCHES BACK TO THE SORT.                             00001650
+         USING *,15                                                     00001660
+PROCOUT  SAVE  (14,12)                 * SAVE SORT REGS.                00001670
+         L     12,OBASE                * ESTABLISH MY BASE.             00001680
+         ST    13,SRTSAVE              * SAVE SORT SAVE AREA ADR.       00001690
+         L     5,0(1)                  * 5=RECAR FROM SORT              00001700
+         LTR   5,5                     * EOF ?                          00001710
+         BZ    SRTEOF                  * YES                            00001720
+FTSW2    BC    15,PROCX                * FIRST TIME FROM SORT SWITCH.   00001730
+MOVEREC  L     6,RECAR                 * GET RRGEN RECAR ADDR.          00001740
+MOVE1    MVC   0(256,6),0(5)           * MOVE 1ST PART OF RECORD.       00001750
+SW1      BC    15,PROCX                * BRANCH IF NO MORE RECORD.      00001760
+MOVE2    MVC   256(256,6),256(5)       * MOVE 2ND PART OF REC.          00001770
+SW2      BC    15,PROCX                * BRANCH IF NO MORE.             00001780
+MOVE3    MVC   512(256,6),512(5)       * MOVE 3RD PART OF RECORD.       00001790
+SW3      BC    15,PROCX                * BRANCH IF NO MORE.             00001800
+MOVE4    MVC   768(132,6),768(5)       * MOVE REST OF REC (MAX 900)     00001810
+PROCX    L     13,MYSAVE+4             * GET RRGEN SAVE AREA ADDR.      00001820
+         L     14,ADROUT               * GET TGSO ADDR.                 00001830
+         LM    15,12,16(13)            * RESTORE RRGEN REGS.            00001840
+         BR    14                      * GO TO TGSO.                    00001850
+SRTEOF   RETURN (14,12),,RC=8          * GO TO SORT.                    00001860
+OBASE    DC    A(START)                                                 00001870
+         DS    0D                                                       00001880
+SIZWK    DC    CL8'00000000'                                            00001890
+NUMTAB   DC    CL240' '                                                 00001900
+         DC    XL10'00'                                                 00001910
+         DC    CL6' '                                                   00001920
+         END                                                            00001930

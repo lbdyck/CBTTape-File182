@@ -1,0 +1,45 @@
+         TITLE 'P D S  --  PDS CLEAR                         09/28/88'  02077000
+*********************************************************************** 02078000
+***      CLEAR   SUBCOMMAND  (SCREEN CLEAR FOR 3270 SCREENS)        *** 02079000
+*********************************************************************** 02080000
+*                                                                       02081000
+         SPACE 1                                                        02082000
+CLEAR    CSECT                                                          02083001
+         USING *,R8                                                     02084000
+         B     CLEAR0              NORMAL CLEAR                         02085000
+         B     CLEAR1              WAKE UP SESSION MANAGER              02086000
+         SPACE 1                                                        02087000
+CLEAR0   ICM   R0,B'1111',PAGESIZE 3270 DISPLAY SCREEN?                 02088000
+         BZ    CLEAR2              NO, JUST WRITE A BLANK LINE          02089000
+         SPACE 2                                                        02090000
+         TM    SPFLAG0,SPFDON      ISPMODE ON?                          02091000
+         BO    CLEAR2              YES, JUST WRITE A BLANK LINE         02092000
+         L     R1,CVTPTR(,R0)      --> CVT                              02093003
+         L     R1,0(,R1)           --> TCB WORDS                        02094000
+         L     R1,8(,R1)           --> CURRENT USER ASCB                02095000
+         L     R1,X'6C'(,R1)       --> ASXB                             02096000
+         L     R1,X'14'(,R1)       --> LWA                              02097000
+         CLC   X'94'+1(3,R1),=F'0' SESSION MANAGER TMP ACTIVE?          02098000
+         BNE   CLEAR2              YES, JUST WRITE A BLANK LINE         02099000
+         AIF ('&CONVTAM' EQ 'TCAMONLY').NCONV10                         02100000
+         STFSMODE ON               TURN ON FULLSCREEN MODE              02101000
+.NCONV10 ANOP                                                           02102000
+         SPACE 1                                                        02103000
+         AIF ('&CONVTAM' EQ 'VTAMONLY').NCONV20                         02104000
+         LA    R0,12               SET SIZE FOR TPUT                    02105000
+         LA    R1,=X'F1115D7E114040133C404000'                          02106000
+         ICM   R1,B'1000',=X'03'   FULLSCR OPTION BITS                  02107000
+         TPUT  (1),(0),R           FULL SCREEN TPUT TO CLEAR THE SCREEN 02108000
+.NCONV20 ANOP                                                           02109000
+         SPACE 1                                                        02110000
+CLEAR1   TCLEARQ INPUT             CLEAR INPUT QUEUE FOR SYNCRONIZATION 02111000
+         AIF ('&CONVTAM' EQ 'TCAMONLY').NCONV30                         02112000
+         STLINENO LINE=1,MODE=OFF  TURN OFF FULL SCREEN MODE            02113000
+.NCONV30 ANOP                                                           02114000
+         SPACE 1                                                        02115000
+         STFSMODE OFF              TURN OFF FULL SCREEN MODE            02116000
+         STTMPMD  OFF              WAKE UP SESSION MANAGER              02117000
+         BR    R2                                                       02118000
+         SPACE 1                                                        02119000
+CLEAR2   M$ERRST MSGBLANK          WRITE A BLANK LINE ONLY              02120000
+         BR    R2                                                       02121000

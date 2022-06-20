@@ -1,0 +1,234 @@
+//ONE   EXEC  PGM=ASMA90,REGION=2048K,                                  00010002
+//             PARM=(NORLD,RENT,TERM,'XREF(SHORT)')                     00020000
+//SYSLIB   DD  DSN=SYS1.MODGEN,DISP=SHR                                 00030001
+//         DD  DSN=SYS1.MACLIB,DISP=SHR                                 00040000
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(CYL,(10,5))                            00050000
+//SYSUT2   DD  UNIT=SYSDA,SPACE=(CYL,(10,5))                            00060000
+//SYSUT3   DD  UNIT=SYSDA,SPACE=(CYL,(10,5))                            00070000
+//SYSLIN   DD  UNIT=SYSDA,SPACE=(TRK,(5,5)),DISP=(,PASS),DSN=&&X,       00080002
+//         DCB=BLKSIZE=3120                                             00090000
+//SYSPRINT DD  SYSOUT=*                                                 00100000
+//SYSTERM  DD  SYSOUT=*                                                 00110000
+//SYSIN    DD  *                                                        00120000
+VTSOCMD  CSECT                                                          00130000
+*                                                                       00140000
+* SAMPLE TSO COMMAND AUTHORIZATION EXIT FOR RACF SYSTEMS WRITTEN BY:    00150000
+*   DAVID SAGER   JOHNS HOPKINS UNIVERSITY / APPLIED PHYSICS LABORATORY 00160000
+*                                                                       00170000
+*        TSO COMMAND VALIDATION EXIT                                    00180000
+*                                                                       00190000
+*        THIS ROUTINE IS CALLED BY THE TSO PROCESSOR TO VALIDATE        00200000
+*        THE TSO COMMAND USAGE.                                         00210000
+*                                                                       00220000
+*        FUNCTIONS -                                                    00230000
+*            1) INVOKE RACF TO VALIDATE USERS ACCESS TO THE TSO         00240000
+*               COMMAND.                                                00250000
+*            2) FOR UNAUTHORIZED ATTEMPTS, WRITES A TYPE 80 SMF RECORD. 00260000
+*                                                                       00270000
+*        INPUT -                                                        00280000
+*            R1 POINTS TO A STANDARD TSO CPPL FOLLOWED BY A POINTER     00290000
+*            TO AN EIGHT BYTE AREA CONTAINING THE COMMAND NAME.         00300000
+*                                                                       00310000
+*        OUTPUT -                                                       00320000
+*            R15 CONTAINS A RETURN CODE WITH THE FOLLOWING MEANING:     00330000
+*               0 - COMMAND IS AUTHORIZED                               00340000
+*               4 - COMMAND IS NOT AUTHORIZED                           00350000
+*                                                                       00360000
+         SAVE  (14,12),,VTSOCMD-&SYSDATE-&SYSTIME SAVE REGISTERS        00370000
+         USING VTSOCMD,R12        ESTABLISH ADDRESSABILITY              00380000
+         LR    R12,R15            LOAD BASE REGISTER                    00390000
+         LR    R11,R1             SET UP PARAMETER REGISTER             00400000
+         GETMAIN RU,LV=WORKSIZE,BNDRY=PAGE  ACQUIRE WORK AREA           00410000
+         LR    R10,R1             GET ADDRESS OF WORK AREA              00420000
+         ST    R13,4(,R10)        CHAIN                                 00430000
+         ST    R10,8(,R13)          SAVEAREAS                           00440000
+         LR    R13,R10            POINT TO MY SAVE AREA                 00450000
+         USING WORKAREA,R13       ESTABLISH ADDRESSABILITY              00460000
+         L     R11,16(R11)        POINT TO COMMAND NAME                 00470000
+         MVC   COMMAND(8),0(R11)  SAVE COMMAND NAME                     00480000
+*                                                                       00490000
+*        DETERMINE IF TSO COMMAND CHECKING IS WANTED.                   00500000
+*                                                                       00510000
+         L     R1,CVTPTR          ADDRESS OF CVT                        00520000
+         USING CVT,R1                                                   00530000
+         L     R1,CVTUSER         ADDRESS OF JHU/APL CVT                00540000
+         USING APLCVT,R1                                                00550000
+         TM    RACFFLG1,RACFTSOC  IS TSO COMMAND CHECKING WANTED?       00560000
+         BNO   AUTH               NO, ALLOW ALL COMMANDS                00570000
+         DROP  R1                                                       00580000
+*                                                                       00590000
+*        GET ACEE ADDRESS                                               00600000
+*                                                                       00610000
+         L     R1,CVTPTR          ADDRESS OF CVT                        00620000
+         USING CVT,R1                                                   00630000
+         L     R1,CVTTCBP         TCB POINTER                           00640000
+         DROP  R1                                                       00650000
+         L     R1,12(R1)          CURRENT ASCB                          00660000
+         USING ASCB,R1                                                  00670000
+         L     R1,ASCBASXB        ADDRESS OF ASXB                       00680000
+         DROP  R1                                                       00690000
+         USING ASXB,R1                                                  00700000
+         ICM   R10,B'1111',ASXBSENV  GET ADDRESS OF ACEE                00710000
+         DROP  R1                                                       00720000
+         BZ    NOTAUTH            NO ACEE, FAIL REQUEST                 00730000
+         USING ACEE,R10                                                 00740000
+         TM    ACEEFLG1,ACEERACF  IS USER RACF DEFINED?                 00750000
+         BNO   NOTAUTH            NO, GO CHECK USERID                   00760000
+         TM    ACEEFLG1,ACEESPEC  IS USER SPECIAL?                      00770000
+         BO    AUTH               YES, ALLOW ALL COMMANDS               00780000
+*                                                                       00790000
+*        DETERMINE IF RACF IS ACTIVE AND USER IS RACF DEFINED.          00800000
+*                                                                       00810000
+         L     R1,CVTPTR          ADDRESS OF CVT                        00820000
+         USING CVT,R1                                                   00830000
+         ICM   R2,15,CVTRAC       ADDRESS OF RACF CVT                   00840000
+         DROP  R1                                                       00850000
+         BZ    NOTAUTH            RACF NOT IN SYSTEM                    00860000
+         USING RCVT,R2                                                  00870000
+         TM    RCVTSTAT,RCVTRNA   IS RACF ACTIVE?                       00880000
+         BO    NOTAUTH            NO                                    00890000
+         TM    RCVTFLGS,RCVTROFF  HAS RVARY INACTIVE BEEN ISSUED?       00900000
+         BO    NOTAUTH            YES                                   00910000
+         DROP  R2                                                       00920000
+*                                                                       00930000
+*        VALIDATE COMMAND USAGE                                         00940000
+*                                                                       00950000
+         LA    R5,GRACINST        GET ADDRESS OF INSTALLATION AREA      00960000
+         USING RACFINST,R5                                              00970000
+         MVC   GRACCALL(8),=CL8'SASRACF'  MOVE IN CALLER NAME           00980000
+         DROP  R5                                                       00990000
+         MVC   FRC1A(FRC1L),FRC1  COPY LIST FORM OF MACRO               01000000
+*        FRACHECK DESTROYS REGISTERS 0-5, 14,AND 15.                    01010000
+         FRACHECK ENTITY=COMMAND,ATTR=READ,ACEE=(R10),                 X01020000
+               WKAREA=FRWORK,INSTLN=(R5),MF=(E,FRC1A)                   01030000
+         LTR   R15,R15            TEST RETURN CODE                      01040000
+         BZ    AUTH               USER IS AUTHORIZED                    01050000
+         C     R15,FULL4                                                01060000
+         BE    AUTH               COMMAND NOT DEFINED TO RACF           01070000
+         C     R15,FULL8                                                01080000
+         BE    LOG                USER IS NOT AUTHORIZED                01090000
+         B     NOTAUTH            OTHER ERROR                           01100000
+         SPACE 3                                                        01110000
+*                                                                       01120000
+*        LOG COMMAND VIOLATION                                          01130000
+*                                                                       01140000
+LOG      DS    0H                                                       01150000
+         SMFRTEST RECTYPE=80      ARE TYPE 80 RECORDS WANTED?           01160000
+         LTR   R15,R15                                                  01170000
+         BNZ   NOTAUTH            NO, SKIP LOGGING                      01180000
+*        FILL IN TYPE 80 RECORD                                         01190000
+         LA    R2,SMF80           ADDRESS OF SMF RECORD                 01200000
+         USING SMFRCD80,R2                                              01210000
+         LA    R1,79              LENGTH OF FIXED PORTION               01220000
+         LA    R0,VARLEN          LENGTH OF VARIABLE PORTION            01230000
+         AR    R1,R0              TOTAL RECORD LENGTH                   01240000
+         STH   R1,SMF80LEN        SET RDW LENGTH                        01250000
+         MVI   SMF80RTY,X'50'     SET RECORD TYPE - 80                  01260000
+         MVI   SMF80DES,X'A0'     DESCRIPTOR - VIOLATION & VER NUMBER   01270000
+         MVI   SMF80EVT,X'02'     EVENT CODE - RESOURCE ACCESS          01280000
+         MVI   SMF80EVQ,X'01'     EVENT QUALIFIER - INSUFF AUTHORITY    01290000
+         MVC   SMF80USR(8),ACEEUSRI  USERID                             01300000
+         MVC   SMF80GRP(8),ACEEGRPN  GROUP                              01310000
+         LA    R1,75                                                    01320000
+         STH   R1,SMF80REL        OFFSET TO RELOCATE SECTION            01330000
+         LA    R1,4                                                     01340000
+         STH   R1,SMF80CNT        NUMBER OF RELOCATE SECTIONS           01350000
+         MVI   SMF80ATH,X'80'     NORMAL AUTHORITY CHECK                01360000
+         MVI   SMF80REA,X'10'     AUDIT ACCESS TO ENTITY                01370000
+         MVC   SMF80TRM(8),ACEETRID  TERMINAL ID                        01380000
+         MVC   SMF80JBN(8),ACEEUSRI  JOB NAME                           01390000
+         MVC   SMF80UID(8),ACEEUSRI  USERID                             01400000
+         MVI   SMF80VER,X'02'     RACF RELEASE 3                        01410000
+         MVC   SMF80DTP(VARLEN),VARAREA   MOVE IN VARIABLE DATA         01420000
+         MVC   SMF80DTA(8),COMMAND   MOVE IN COMMAND NAME               01430000
+         SMFWTM (2)               WRITE TYPE 80 RECORD                  01440000
+         DROP  R2                                                       01450000
+         B     NOTAUTH            FAIL REQUEST                          01460000
+         SPACE 3                                                        01470000
+NOTAUTH  DS    0H                 FAIL REQUEST                          01480000
+         MVC   SAVERC(4),FULL4    SET RETURN CODE TO 4                  01490000
+         B     EXIT               EXIT                                  01500000
+AUTH     DS    0H                 ALLOW REQUEST                         01510000
+         MVC   SAVERC(4),FULL0    SET RETURN CODE TO 0                  01520000
+         B     EXIT               EXIT                                  01530000
+         SPACE 2                                                        01540000
+EXIT     DS    0H                                                       01550000
+         L     R2,SAVERC          GET RETURN CODE                       01560000
+         LR    R1,R13             GET POINTER TO WORK AREA              01570000
+         L     R13,4(,R13)        UNCHAIN SAVE AREAS                    01580000
+         FREEMAIN R,LV=WORKSIZE,A=(1)  FREE DYNAMIC AREA                01590000
+         LR    R15,R2             RESTORE RETURN CODE                   01600000
+         RETURN (14,12),RC=(15)                                         01610000
+         SPACE 2                                                        01620000
+         DROP  R10                                                      01630000
+         EJECT                                                          01640000
+*                                                                       01650000
+*        CONSTANTS                                                      01660000
+*                                                                       01670000
+FULL0    DC    F'0'                                                     01680000
+FULL4    DC    F'4'                                                     01690000
+FULL8    DC    F'8'                                                     01700000
+         SPACE 3                                                        01710000
+FRC1     FRACHECK CLASS='CTSO',MF=L                                     01720000
+FRC1L    EQU   *-FRC1                                                   01730000
+         SPACE 3                                                        01740000
+VARAREA  DS    0C                                                       01750000
+         DC    X'01'              RESOURCE                              01760000
+         DC    X'08'              LENGTH                                01770000
+         DC    CL8' '             COMMAND                               01780000
+         DC    X'03'              ACCESS REQUESTED                      01790000
+         DC    X'01'              LENGTH                                01800000
+         DC    X'10'              READ                                  01810000
+         DC    X'04'              ACCESS ALLOWED                        01820000
+         DC    X'01'              LENGTH                                01830000
+         DC    X'08'              NONE                                  01840000
+         DC    X'11'              CLASS                                 01850000
+         DC    X'08'              LENGTH                                01860000
+         DC    CL8'GTSO'          GTSO                                  01870000
+VARLEN   EQU   *-VARAREA                                                01880000
+         LTORG                                                          01890000
+         REGS                                                           01900000
+         SPACE 3                                                        01910000
+         ENTRY PATCH                                                    01920000
+PATCH    DC    50S(*)             PATCH AREA                            01930000
+         EJECT                                                          01940000
+WORKAREA DSECT                                                          01950000
+SAVEAREA DS    18F                SAVE AREA                             01960000
+FRWORK   DS    16F                WORKAREA FOR FRACHECK                 01970000
+SAVERC   DS    F                                                        01980000
+FRC1A    DS    CL(FRC1L)                                                01990000
+COMMAND  DS    CL8                COMMAND NAME                          02000000
+GRACINST DS    CL80               INSTALLATION WORKAREA                 02010000
+SMF80    DS    CL256              SMF TYPE 80 RECORD                    02020000
+         DS    0D                 FILL OUT DSECT                        02030000
+WORKSIZE EQU   *-WORKAREA         LENGTH OF WORK AREA                   02040000
+         SPACE 3                                                        02050000
+         RACFINST                 GENERATE RACF INSTALLATION AREA DSECT 02060000
+         SPACE 3                                                        02070000
+         APLCVT                   GENERATE APL'S CVT DSECT              02080000
+         SPACE 3                                                        02090000
+         IHAACEE                  GENERATE ACEE DSECT                   02100000
+         SPACE 3                                                        02110000
+         IHAASCB                  GENERATE ASCB DSECT                   02120000
+         SPACE 3                                                        02130000
+         IHAASXB                  GENERATE ASXB DSECT                   02140000
+         SPACE 3                                                        02150000
+         CVT   DSECT=YES          GENERATE CVT DSECT                    02160000
+         SPACE 3                                                        02170000
+         ICHPRCVT                 GENERATE RCVT DSECT                   02180000
+         SPACE 3                                                        02190000
+         IFASMFR 80               GENERATE SMF RECORD DSECT             02200000
+         SPACE 3                                                        02210000
+         IEESMCA                  GENERATE SMCA DSECT                   02220000
+         SPACE 3                                                        02230000
+         END                                                            02240000
+//LK1    EXEC  PGM=IEWL,PARM='MAP,RENT,REUS,REFR,LET,NCAL',COND=(5,LT)  02250000
+//SYSPRINT DD  SYSOUT=*                                                 02260000
+//SYSLMOD  DD  DISP=SHR,DSN=LINK.LIBRARY    <=== MODIFY                 02270000
+//IN       DD  DSN=&&X,DISP=(OLD,DELETE)                                02280000
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(TRK,(5,5))                             02290000
+//SYSLIN   DD  *                                                        02300000
+  INCLUDE  IN                                                           02310000
+  ENTRY    PDSMAIN                                                      02320000
+  INCLUDE  SYSLMOD(PDS45678)                <=== MODIFY                 02330000
+  NAME     PDS45678(R)                      <=== MODIFY                 02340000

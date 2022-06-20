@@ -1,0 +1,764 @@
+         TITLE 'P D S  --  PDS DSNAME                        09/28/88'  00010000
+*********************************************************************** 00020000
+***      DSNAME  SUBCOMMAND                                         *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050000
+* THIS ROUTINE IS CALLED BY BROWSE, CHANGE, FIXPDS, AND USAGE:          00051037
+*                                                                       00052035
+*        L     R15,=A(DSNAMES)                                          00052136
+*        BASR  R2,R15                                                   00053036
+*                                                                       00054036
+         SPACE 1                                                        00060000
+DSNAMES  CSECT                                                          00070038
+         BASR  R6,0                                                     00070134
+         USING *,R6                                                     00070234
+         SPACE 1                                                        00071030
+         CLC   ##SUBCOM(8),$DSN         DSN SUBCOMMAND?                 00100000
+         BNE   DSNAMES2                 NO, BRANCH                      00110000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK AUG05 00110115
+         BO    DSNAMES2                 YES                   DRK AUG05 00111015
+*** REOPEN THE DATA SET TO ENSURE DS1LSTAR IS CORRECT                   00120000
+         OI    FLAGSJJ,FNOREAD          CALL EXCP FOR OPEN ONLY         00130000
+         MVC   STARTTR(3),DS1LSTAR      SET BEYOND END OF DATA SET      00140000
+         L     R15,=V(EXCP)                                             00150000
+         BASR  R14,R15                                                  00160000
+         NI    FLAGSJJ,FF-FNOREAD       CALL IS COMPLETED               00170000
+         SPACE 2                                                        00180000
+DSNAMES2 DS    0H                                                       00190000
+         MVC   INSERT#1(80),BLANK128    BLANK THE FIRST LINE            00200000
+         MVI   MTLEN,80                 80 CHARACTER MESSAGE            00210000
+         TM    FLAGSJJ,FDSNMSG          MSG ALLOCATION?                 00220000
+         BO    DSNMSG                   YES, BRANCH                     00230000
+         TM    FLAGSJJ,FDSNTSO          TSO ALLOCATION?                 00240000
+         BO    DSNTSO                   YES, BRANCH                     00250000
+         SPACE 1                                                        00260000
+DSNJCL   MVC   INSERT#1(20),DSNJDSN     ADD "//12345678  DD  DSN="      00270000
+         MVC   INSERT#1+2(8),DDNAME     MOVE IN THE DDNAME              00280000
+         LA    R1,INSERT#1+20           DSNAME START POSITION           00290000
+         MVC   0(44,R1),DSNAME          MOVE IN THE DSNAME              00300000
+         AH    R1,DSNLEN                LENGTH OF THE DSNAME            00310000
+         MVC   0(15,R1),DSNJDSND        ADD ",DISP=SHR,UNIT="           00320000
+         CLI   DSPALLOC,ALLOSHR         DISP=SHR?                       00330000
+         BE    *+10                     YES, BRANCH                     00340000
+         MVC   6(3,R1),=C'OLD'          NO, DISP=OLD                    00350000
+         LH    R15,BYTEUCB              UCBBYTE                         00360000
+         MH    R15,=H'9'                INDEX INTO THE UNIT TABLE       00370000
+         LA    R15,UNITTBL(R15)         DEVICE UNIT TYPE                00380000
+         LA    R1,15(,R1)               START OF UNIT DATA              00390000
+         MVC   0(8,R1),1(R15)           ADD TO THE MESSAGE              00400000
+         MVI   8(R1),X'40'              ADD A TERMINATOR                00410000
+         LA    R1,1(,R1)                SCAN                            00420000
+         CLI   0(R1),X'40'                  FOR FIRST                   00430000
+         BNE   *-8                                   BLANK              00440000
+         MVI   0(R1),C','               ADD A TERMINATOR AND CONTINUE   00450000
+         M$MSG L220$1                                                   00460000
+         MVC   INSERT#1(80),BLANK128    BLANK THE SECOND LINE           00470000
+         MVC   INSERT#1(20),DSNJDCT     "// DCB=(RECFM=, ..."           00480000
+         IC    R5,FLAGSCC               RECFM BITS                      00490000
+         SLL   R5,29                    DROP TOP BITS                   00500000
+         SRL   R5,29                    REPOSITION                      00510000
+         IC    R5,RECFMTYP(R5)          RECORD FORMAT                   00520000
+         STC   R5,INSERT#1+15           MOVE INTO MESSAGE               00530000
+         LA    R1,INSERT#1+16                                           00540000
+         TM    RECFM,DCBRECBR           RECFM=.B?                       00550000
+         BNO   *+12                     NO, BRANCH                      00560000
+         MVI   0(R1),C'B'                                               00570000
+         LA    R1,1(R1)                                                 00580000
+         TM    RECFM,DCBRECSB           RECFM=.S?                       00590000
+         BNO   *+12                     NO, BRANCH                      00600000
+         MVI   0(R1),C'S'                                               00610000
+         LA    R1,1(R1)                                                 00620000
+         TM    RECFM,DCBRECTO           RECFM=.T?                       00630000
+         BNO   *+12                     NO, BRANCH                      00640000
+         MVI   0(R1),C'T'                                               00650000
+         LA    R1,1(R1)                                                 00660000
+         TM    RECFM,DCBRECCA           RECFM=.A?                       00670000
+         BNO   *+12                     NO, BRANCH                      00680000
+         MVI   0(R1),C'A'                                               00690000
+         LA    R1,1(R1)                                                 00700000
+         TM    RECFM,DCBRECCM           RECFM=.M?                       00710000
+         BNO   *+12                     NO, BRANCH                      00720000
+         MVI   0(R1),C'M'                                               00730000
+         LA    R1,1(R1)                                                 00740000
+         TM    FLAGSCC,RECFMU           RECFM=U?                        00750000
+         BO    DSN010                   YES, NO LRECL                   00760000
+         MVC   0(7,R1),DSNJDCTL         MOVE IN LRECL TEXT              00770000
+         LA    R1,7(R1)                                                 00780000
+         LH    R4,LABLRECL                                              00790000
+         BAS   R14,DSNCONV                                              00800000
+         SPACE 1                                                        00810000
+DSN010   MVC   0(9,R1),DSNJDCTB                                         00820000
+         LA    R1,9(R1)                                                 00830000
+         LH    R4,BLKSI                                                 00840000
+         BAS   R14,DSNCONV                                              00850000
+         SPACE 1                                                        00860000
+         SR    R4,R4                                                    00870000
+         ICM   R4,B'0001',DS1KEYL       ANY KEY LENGTH?                 00880000
+         BZ    DSN020                   NO, BRANCH                      00890000
+         MVC   0(8,R1),DSNJDCTK         ADD ,KEYLEN=                    00900000
+         LA    R1,8(R1)                                                 00910000
+         BAS   R14,DSNCONV                                              00920000
+         SPACE 1                                                        00930000
+         MVC   0(5,R1),DSNJDCTR         ADD ,RKP=                       00940000
+         LA    R1,5(R1)                                                 00950000
+         SR    R4,R4                                                    00960000
+         ICM   R4,B'0011',DS1RKP        RELATIVE KEY POSITION           00970000
+         BAS   R14,DSNCONV                                              00980000
+         SPACE 1                                                        00990000
+DSN020   TM    OPTCD,X'A4'              ANY OPTCD CHARACTERS?           01000000
+         BZ    DSN024                   NO, BRANCH                      01010000
+         MVC   0(7,R1),DSNJDCTO         ADD ,OPTCD=                     01020000
+         LA    R1,7(R1)                                                 01030000
+         TM    OPTCD,DCBOPTW            OPTCD=W?                        01040000
+         BNO   *+12                     NO, BRANCH                      01050000
+         MVI   0(R1),C'W'                                               01060000
+         LA    R1,1(R1)                                                 01070000
+         TM    OPTCD,DCBOPTC            OPTCD=C?                        01080000
+         BNO   *+12                     NO, BRANCH                      01090000
+         MVI   0(R1),C'C'                                               01100000
+         LA    R1,1(R1)                                                 01110000
+         TM    OPTCD,DCBSRCHD           OPTCD=Z?                        01120000
+         BNO   *+12                     NO, BRANCH                      01130000
+         MVI   0(R1),C'Z'                                               01140000
+         LA    R1,1(R1)                                                 01150000
+         SPACE 1                                                        01160000
+DSN024   TM    DSORG,DS1DSGPO           PARTITIONED?                    01170000
+         BO    DSN030                   NO, BRANCH                      01180000
+         MVC   0(7,R1),DSNJDCTD         ADD ,DSORG=                     01190000
+         IC    R5,DSORG                 DSORG BITS                      01200000
+         SLL   R5,24                    DROP TOP BITS                   01210000
+         SRL   R5,28                    REPOSITION BITS *2              01220000
+         LA    R5,DSORGTYP(R5)          DSORG                           01230000
+         MVC   7(2,R1),0(R5)            MOVE INTO MESSAGE               01240000
+         TM    DSORG+1,DS1ACBM          VSAM DATA SET?                  01250000
+         BNO   *+10                     YES, BRANCH                     01260000
+         MVC   7(2,R1),DSNLVS                                           01270000
+         LA    R1,9(,R1)                SKIP OVER DSORG TEXT            01280000
+         TM    DS1DSORG,DS1DSGU         UNMOVEABLE?                     01290000
+         BNO   DSN030                   NO, BRANCH                      01300000
+         MVI   0(R1),C'U'               ADD U                           01310000
+         LA    R1,1(,R1)                SKIP OVER U                     01320000
+         SPACE 1                                                        01330000
+DSN030   MVC   0(10,R1),DSNJDCTV        ADD ),VOL=SER=                  01340000
+         MVC   10(6,R1),VOLALLOC        ADD THE SERIAL NUMBER           01350000
+         MVI   10+6(R1),C','                                            01360000
+         M$MSG L220$1                                                   01370000
+         SPACE 1                                                        01380000
+         MVC   INSERT#1(80),DSNJSPA     //  SPACE= ...                  01390000
+         L     R1,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS                 01400000
+         LH    R14,NUMEXT               NUMBER OF EXTENTS               01410000
+         SR    R0,R0                                                    01420000
+         SR    R15,R15                                                  01430000
+*                                                                       01440000
+         ICM   R15,3,32+14(R1) <----+   NUMBER OF TRACKS IN EXTENT      01450000
+         AR    R0,R15               |   ADD NUMBER OF TRACKS            01460000
+         LA    R1,16(,R1)           |   NEXT EXTENT                     01470000
+         BCT   R14,*-4-2-4  --------+   BRANCH FOR ALL EXTENTS          01480000
+*                                                                       01490000
+*        A     R0,=F'100000'            FAT DASD TEST         DRK MAY98 01491002
+         ST    R0,DSNTOTAL              SAVE TOTAL D.S. SIZE IN TRACKS  01500000
+         SR    R1,R1                                                    01510000
+         ICM   R1,3,DS1LSTAR            GET TT OF LAST TRACK            01520000
+         CLC   DS1LSTAR(3),ZERO         ANY ALLOCATION?                 01530000
+         BE    *+8                      NO, BRANCH                      01540000
+         LA    R1,1(,R1)                JUMP FOR COMPUTATION            01550000
+         SR    R0,R1                                                    01560000
+         ST    R0,DSNEMPTY              TOTAL FREE SPACE                01570000
+         SPACE 1                                                        01580000
+         LA    R1,INSERT#1+DSNJSPAP     PRIMARY SPACE                   01590000
+         L     R4,DSNTOTAL              TOTAL FREE SPACE                01600000
+         TM    DS1SCALO,X'C0'           CYLINDER ALLOCATION?            01610000
+         BNO   DSN050                   NO, BRANCH                      01620000
+         MVC   INSERT#1+11(3),=C'CYL'   YES, MARK AS CYLINDER ALLOC.    01630000
+         LH    R0,DEVTTRKS              TRACKS/CYLINDER                 01640000
+         LR    R5,R0                                                    01650000
+         BCTR  R5,0                     TRACKS/CYLINDER -1              01660000
+         AR    R5,R4                    TOTAL+TRK/CYL -1                01670000
+         SR    R4,R4                                                    01680000
+         DR    R4,R0                    CEIL(TOTAL+TRK/CYL-1) / TRK/CYL 01690000
+         LR    R4,R5                    RESULTING QUOTIENT              01700000
+DSN050   BAS   R14,DSNCONV                                              01710000
+         SPACE 1                                                        01720000
+         SR    R4,R4                                                    01730000
+         ICM   R4,B'0111',DS1SCALO+1    SECONDARY ALLOCATION?           01740000
+         BZ    DSN070                   NO, BRANCH                      01750000
+         TM    DS1SCALO,X'80'           TRACK OR CYLINDER ALLOCATION?   01760000
+         BO    DSN060                   YES, BRANCH                     01770000
+         TM    DS1SCALO,X'40'           AVERAGE BLOCK ALLOCATION?       01780000
+         BNO   DSN060                   NO, BRANCH                      01790000
+         LH    R14,BLKSI                BLOCKSIZE                       01800000
+         ICM   R14,B'1000',=X'01'       R=1, K=0, DD=BLKSIZE            01810000
+         PUSH  ACONTROL                                       DRK MAY08 01810142
+         ACONTROL FLAG(NOPAGE0)                               DRK MAY08 01810241
+         TRKCALC FUNCTN=TRKCAP,TYPE=BYTEUCB+1,RKDD=(14),               X01820000
+               REGSAVE=YES,MF=(E,PARMLIST)                              01830000
+         POP   ACONTROL                                       DRK MAY08 01831041
+         LR    R5,R0                                                    01840000
+         BCTR  R5,0                                                     01850000
+         AR    R5,R4                                                    01860000
+         SR    R4,R4                                                    01870000
+         DR    R4,R0                    CEIL((BUFFERS+#/TRK-1)/(#/TRK)) 01880000
+         LR    R4,R5                    RESULTING QUOTIENT              01890000
+DSN060   MVI   0(R1),C','               SEPARATOR                       01900000
+         LA    R1,1(,R1)                                                01910000
+         BAS   R14,DSNCONV                                              01920000
+         SPACE 1                                                        01930000
+DSN070   TM    DSORG,DS1DSGPO           PARTITIONED DATA SET?           01940000
+         BNO   DSN080                   NO, BRANCH                      01950000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK NOV10 01951046
+         BO    DSN080                   YES                   DRK NOV10 01952046
+         MVI   0(R1),C','               SEPARATOR                       01960000
+         CLC   DS1SCALO+1(3),ZERO       SECONDARY ALLOCATION?           01970000
+         BNE   *+8                      YES, BRANCH                     01980000
+         LA    R1,1(,R1)                NO, ADD ANOTHER COMMA           01990000
+         MVI   0(R1),C','               SEPARATOR                       02000000
+         LA    R1,1(,R1)                                                02010000
+         L     R4,TOTALLOX              TOTAL DIRECTORY BLOCKS          02020000
+         BAS   R14,DSNCONV                                              02030000
+         SPACE 2                                                        02040000
+DSN080   MVI   0(R1),C')'               PAIRED PARENTHESIS 1            02050000
+         MVI   1(R1),C')'               PAIRED PARENTHESIS 2            02060000
+         TM    DS1SCALO,X'01'           CYLINDER ROUNDING?              02070000
+         BNO   *+10                     NO, BRANCH                      02080000
+         MVC   1(9,R1),DSNLROUN         YES, MARK IT                    02090000
+         SPACE 1                                                        02100000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK NOV10 02100143
+         BNO   DSN085                   NO                    DRK NOV10 02101043
+         LA    R1,INSERT#1+DSNJSPAT     YES, WHERE TO STORE   DRK NOV10 02101143
+         MVC   0(3,R1),=C'N/A'          NO FREE               DRK NOV10 02101243
+         LA    R1,3(R1)                 BUMP                  DRK NOV10 02101344
+         B     DSN090                                         DRK NOV10 02101443
+DSN085   DS    0H                                                       02102043
+         LA    R1,INSERT#1+DSNJSPAT     WHERE TO STORE NUMBER FREE      02110000
+         L     R4,DSNEMPTY              TOTAL FREE TRACKS               02120000
+         BAS   R14,DSNCONV                                              02130000
+         SPACE 1                                                        02140000
+         TM    DSORG,DS1DSGPO           PARTITIONED?                    02150000
+         BNO   DSN090                   NO, BRANCH                      02160000
+         MVC   0(10,R1),DSNLFREE        FREE DIRECTORY BLOCKS           02170000
+         LA    R1,10(,R1)               WHERE TO STORE NUMBER FREE      02180000
+         L     R4,TOTALLOX              TOTAL DIRECTORY BLOCKS          02190000
+         S     R4,TOTUSEDX              FREE DIRECTORY BLOCKS           02200000
+         BAS   R14,DSNCONV                                              02210000
+DSN090   MVI   0(R1),C'*'               TERMINATOR                      02220000
+         MVI   1(R1),C'/'                         CHARACTERS            02230000
+         M$MSG L220$1                                                   02240000
+         B     DSNFIN                                                   02250000
+         SPACE 3                                                        02260000
+DSNTSO   MVC   INSERT#1(22),DSNTDSN     ADD "ALLOC F(1234567)  DA('"    02270000
+         MVC   INSERT#1+8(8),DDNAME     MOVE IN THE DDNAME              02280000
+         LA    R1,INSERT#1+8            DDNAME START POSITION           02290000
+         LA    R1,1(,R1)                SCAN                            02300000
+         CLI   0(R1),X'40'                  FOR FIRST                   02310000
+         BNE   *-8                                   BLANK              02320000
+         MVI   0(R1),C')'               ADD TERMINATOR                  02330000
+         LA    R1,INSERT#1+22           DSNAME START POSITION           02340000
+         MVC   0(44,R1),DSNAME          MOVE IN THE DSNAME              02350000
+         AH    R1,DSNLEN                LENGTH OF THE DSNAME            02360000
+         MVC   0(12,R1),DSNTDSND        ADD "') SHR UNIT("              02370000
+         CLI   DSPALLOC,ALLOSHR         DISP=SHR?                       02380000
+         BE    *+10                     YES, BRANCH                     02390000
+         MVC   3(3,R1),=C'OLD'          NO, DISP=OLD                    02400000
+         LH    R15,BYTEUCB              UCBBYTE                         02410000
+         MH    R15,=H'9'                INDEX INTO THE UNIT TABLE       02420000
+         LA    R15,UNITTBL(R15)         DEVICE UNIT TYPE                02430000
+         LA    R1,12(,R1)               START OF UNIT DATA              02440000
+         MVC   0(8,R1),1(R15)           ADD TO THE MESSAGE              02450000
+         MVI   8(R1),X'40'              ADD A TERMINATOR                02460000
+         LA    R1,1(,R1)                SCAN                            02470000
+         CLI   0(R1),X'40'                  FOR FIRST                   02480000
+         BNE   *-8                                   BLANK              02490000
+         MVC   0(3,R1),DSNLPAR          ADD A TERMINATOR AND CONTINUE   02500000
+         M$MSG L210$1                                                   02510000
+         MVC   INSERT#1(80),BLANK128    BLANK THE SECOND LINE           02520000
+         MVC   INSERT#1(08),DSNTDCT     "  RECFM("                      02530000
+         IC    R5,FLAGSCC               RECFM BITS                      02540000
+         SLL   R5,29                    DROP TOP BITS                   02550000
+         SRL   R5,29                    REPOSITION                      02560000
+         IC    R5,RECFMTYP(R5)          RECORD FORMAT                   02570000
+         STC   R5,INSERT#1+8            MOVE INTO MESSAGE               02580000
+         LA    R1,INSERT#1+9                                            02590000
+         TM    RECFM,DCBRECBR           RECFM=.B?                       02600000
+         BNO   *+12                     NO, BRANCH                      02610000
+         MVI   1(R1),C'B'                                               02620000
+         LA    R1,2(R1)                                                 02630000
+         TM    RECFM,DCBRECSB           RECFM=.S?                       02640000
+         BNO   *+12                     NO, BRANCH                      02650000
+         MVI   1(R1),C'S'                                               02660000
+         LA    R1,2(R1)                                                 02670000
+         TM    RECFM,DCBRECTO           RECFM=.T?                       02680000
+         BNO   *+12                     NO, BRANCH                      02690000
+         MVI   1(R1),C'T'                                               02700000
+         LA    R1,2(R1)                                                 02710000
+         TM    RECFM,DCBRECCA           RECFM=.A?                       02720000
+         BNO   *+12                     NO, BRANCH                      02730000
+         MVI   1(R1),C'A'                                               02740000
+         LA    R1,2(R1)                                                 02750000
+         TM    RECFM,DCBRECCM           RECFM=.M?                       02760000
+         BNO   *+12                     NO, BRANCH                      02770000
+         MVI   1(R1),C'M'                                               02780000
+         LA    R1,2(R1)                                                 02790000
+         TM    FLAGSCC,RECFMU           RECFM=U?                        02800000
+         BO    DSN310                   YES, NO LRECL                   02810000
+         MVC   0(8,R1),DSNTDCTL         MOVE IN LRECL TEXT              02820000
+         LA    R1,8(R1)                                                 02830000
+         LH    R4,LABLRECL                                              02840000
+         BAS   R14,DSNCONV                                              02850000
+         SPACE 1                                                        02860000
+DSN310   MVC   0(10,R1),DSNTDCTB                                        02870000
+         LA    R1,10(R1)                                                02880000
+         LH    R4,BLKSI                                                 02890000
+         BAS   R14,DSNCONV                                              02900000
+         SPACE 1                                                        02910000
+         SR    R4,R4                                                    02920000
+         ICM   R4,B'0001',DS1KEYL       ANY KEY LENGTH?                 02930000
+         BZ    DSN320                   NO, BRANCH                      02940000
+         MVC   0(9,R1),DSNTDCTK         ADD ,KEYLEN=                    02950000
+         LA    R1,9(R1)                                                 02960000
+         BAS   R14,DSNCONV                                              02970000
+         SPACE 1                                                        02980000
+         MVC   0(6,R1),DSNTDCTR         ADD ,RKP=                       02990000
+         LA    R1,6(R1)                                                 03000000
+         SR    R4,R4                                                    03010000
+         ICM   R4,B'0011',DS1RKP        RELATIVE KEY POSITION           03020000
+         BAS   R14,DSNCONV                                              03030000
+         SPACE 1                                                        03040000
+DSN320   TM    OPTCD,X'A4'              ANY OPTCD CHARACTERS?           03050000
+         BZ    DSN324                   NO, BRANCH                      03060000
+         MVC   0(8,R1),DSNTDCTO         ADD OPTCD(                      03070000
+         LA    R1,8(R1)                                                 03080000
+         TM    OPTCD,DCBOPTW            OPTCD=W?                        03090000
+         BNO   *+12                     NO, BRANCH                      03100000
+         MVI   0(R1),C'W'                                               03110000
+         LA    R1,1(R1)                                                 03120000
+         TM    OPTCD,DCBOPTC            OPTCD=C?                        03130000
+         BNO   *+12                     NO, BRANCH                      03140000
+         MVI   0(R1),C'C'                                               03150000
+         LA    R1,1(R1)                                                 03160000
+         TM    OPTCD,DCBSRCHD           OPTCD=Z?                        03170000
+         BNO   *+12                     NO, BRANCH                      03180000
+         MVI   0(R1),C'Z'                                               03190000
+         LA    R1,1(R1)                                                 03200000
+         SPACE 1                                                        03210000
+DSN324   TM    DSORG,DS1DSGPO           PARTITIONED?                    03220000
+         BO    DSN330                   NO, BRANCH                      03230000
+         MVC   0(8,R1),DSNTDCTD         ADD ) DSORG(                    03240000
+         IC    R5,DSORG                 DSORG BITS                      03250000
+         SLL   R5,24                    DROP TOP BITS                   03260000
+         SRL   R5,28                    REPOSITION BITS *2              03270000
+         LA    R5,DSORGTYP(R5)          DSORG                           03280000
+         MVC   8(2,R1),0(R5)            MOVE INTO MESSAGE               03290000
+         TM    DSORG+1,DS1ACBM          VSAM DATA SET?                  03300000
+         BNO   *+10                     YES, BRANCH                     03310000
+         MVC   8(2,R1),DSNLVS                                           03320000
+         LA    R1,10(,R1)               SKIP OVER DSORG TEXT            03330000
+         TM    DS1DSORG,DS1DSGU         UNMOVEABLE?                     03340000
+         BNO   DSN330                   NO, BRANCH                      03350000
+         MVI   0(R1),C'U'               ADD U                           03360000
+         LA    R1,1(,R1)                SKIP OVER U                     03370000
+         SPACE 1                                                        03380000
+DSN330   MVC   0(9,R1),DSNTDCTV         ADD ) VOLUME(                   03390000
+         LA    R1,9(,R1)                START OF UNIT DATA              03400000
+         MVC   0(6,R1),VOLALLOC         ADD THE SERIAL NUMBER           03410000
+         MVI   6(R1),X'40'              ADD A TERMINATOR                03420000
+         LA    R1,1(,R1)                SCAN                            03430000
+         CLI   0(R1),X'40'                  FOR FIRST                   03440000
+         BNE   *-8                                   BLANK              03450000
+         MVC   0(3,R1),DSNLPAR          ADD A TERMINATOR AND CONTINUE   03460000
+         M$MSG L210$1                                                   03470000
+         SPACE 1                                                        03480000
+         MVC   INSERT#1(80),DSNTSPA     "  TRA SPACE(N ..."   DRK NOV98 03490003
+         L     R1,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS                 03500000
+         LH    R14,NUMEXT               NUMBER OF EXTENTS               03510000
+         SR    R0,R0                                                    03520000
+         SR    R15,R15                                                  03530000
+*                                                                       03540000
+         ICM   R15,3,32+14(R1) <----+   NUMBER OF TRACKS IN EXTENT      03550000
+         AR    R0,R15               |   ADD NUMBER OF TRACKS            03560000
+         LA    R1,16(,R1)           |   NEXT EXTENT                     03570000
+         BCT   R14,*-4-2-4  --------+   BRANCH FOR ALL EXTENTS          03580000
+*                                                                       03590000
+*        A     R0,=F'100000'            FAT DASD TEST         DRK MAY98 03591002
+         ST    R0,DSNTOTAL              SAVE TOTAL D.S. SIZE IN TRACKS  03600000
+         SR    R1,R1                                                    03610000
+         ICM   R1,3,DS1LSTAR            GET TT OF LAST TRACK            03620000
+         CLC   DS1LSTAR(3),ZERO         ANY ALLOCATION?                 03630000
+         BE    *+8                      NO, BRANCH                      03640000
+         LA    R1,1(,R1)                JUMP FOR COMPUTATION            03650000
+         SR    R0,R1                                                    03660000
+         ST    R0,DSNEMPTY              TOTAL FREE SPACE                03670000
+         SPACE 1                                                        03680000
+         LA    R1,INSERT#1+DSNTSPAP     PRIMARY SPACE                   03690000
+         L     R4,DSNTOTAL              TOTAL FREE SPACE                03700000
+         TM    DS1SCALO,X'C0'           CYLINDER ALLOCATION?            03710000
+         BNO   DSN350                   NO, BRANCH                      03720000
+         MVC   INSERT#1+2(3),=C'CYL'    YES, MARK AS CYLINDER ALLOC.    03730000
+         LH    R0,DEVTTRKS              TRACKS/CYLINDER                 03740000
+         LR    R5,R0                                                    03750000
+         BCTR  R5,0                     TRACKS/CYLINDER -1              03760000
+         AR    R5,R4                    TOTAL+TRK/CYL -1                03770000
+         SR    R4,R4                                                    03780000
+         DR    R4,R0                    CEIL(TOTAL+TRK/CYL-1) / TRK/CYL 03790000
+         LR    R4,R5                    RESULTING QUOTIENT              03800000
+DSN350   BAS   R14,DSNCONV                                              03810000
+         SPACE 1                                                        03820000
+         SR    R4,R4                                                    03830000
+         ICM   R4,B'0111',DS1SCALO+1    SECONDARY ALLOCATION?           03840000
+         BZ    DSN370                   NO, BRANCH                      03850000
+         TM    DS1SCALO,X'80'           TRACK OR CYLINDER ALLOCATION?   03860000
+         BO    DSN360                   YES, BRANCH                     03870000
+         TM    DS1SCALO,X'40'           AVERAGE BLOCK ALLOCATION?       03880000
+         BNO   DSN360                   NO, BRANCH                      03890000
+         LH    R14,BLKSI                BLOCKSIZE                       03900000
+         ICM   R14,B'1000',=X'01'       R=1, K=0, DD=BLKSIZE            03910000
+         PUSH  ACONTROL                                       DRK MAY08 03910142
+         ACONTROL FLAG(NOPAGE0)                               DRK MAY08 03910241
+         TRKCALC FUNCTN=TRKCAP,TYPE=BYTEUCB+1,RKDD=(14),               X03920000
+               REGSAVE=YES,MF=(E,PARMLIST)                              03930000
+         POP   ACONTROL                                       DRK MAY08 03931041
+         LR    R5,R0                                                    03940000
+         BCTR  R5,0                                                     03950000
+         AR    R5,R4                                                    03960000
+         SR    R4,R4                                                    03970000
+         DR    R4,R0                    CEIL((BUFFERS+#/TRK-1)/(#/TRK)) 03980000
+         LR    R4,R5                    RESULTING QUOTIENT              03990000
+DSN360   MVI   0(R1),C','               SEPARATOR                       04000000
+         LA    R1,1(,R1)                                                04010000
+         BAS   R14,DSNCONV                                              04020000
+         SPACE 1                                                        04030000
+DSN370   MVI   0(R1),C')'               PAIRED PARENTHESIS 1            04040000
+         LA    R1,1(,R1)                                                04050000
+         TM    DSORG,DS1DSGPO           PARTITIONED DATA SET?           04060000
+         BNO   DSN380                   NO, BRANCH                      04070000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK NOV10 04070146
+         BO    DSN380                   YES                   DRK NOV10 04071046
+         MVC   1(4,R1),DSNLDIR          SEPARATOR                       04080000
+         LA    R1,5(,R1)                                                04090000
+         L     R4,TOTALLOX              TOTAL DIRECTORY BLOCKS          04100000
+         BAS   R14,DSNCONV                                              04110000
+         MVI   0(R1),C')'               FINAL PARENTHESIS               04120000
+         SPACE 2                                                        04130000
+DSN380   DS    0H                                                       04131045
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK NOV10 04131145
+         BNO   DSN385                   NO                    DRK NOV10 04131245
+         LA    R1,INSERT#1+DSNTSPAT     YES, WHERE TO STORE   DRK NOV10 04131345
+         MVC   0(3,R1),=C'N/A'          NO FREE               DRK NOV10 04131445
+         LA    R1,3(R1)                 BUMP                  DRK NOV10 04131545
+         B     DSN390                                         DRK NOV10 04131645
+DSN385   DS    0H                                                       04132045
+         LA    R1,INSERT#1+DSNTSPAT     WHERE TO STORE NUMBER FREE      04140045
+         L     R4,DSNEMPTY              TOTAL FREE TRACKS               04150000
+         BAS   R14,DSNCONV                                              04160000
+         SPACE 1                                                        04170000
+         TM    DSORG,DS1DSGPO           PARTITIONED?                    04180000
+         BNO   DSN390                   NO, BRANCH                      04190000
+         MVC   0(10,R1),DSNLFREE        FREE DIRECTORY BLOCKS           04200000
+         LA    R1,10(,R1)               WHERE TO STORE NUMBER FREE      04210000
+         L     R4,TOTALLOX              TOTAL DIRECTORY BLOCKS          04220000
+         S     R4,TOTUSEDX              FREE DIRECTORY BLOCKS           04230000
+         BAS   R14,DSNCONV                                              04240000
+DSN390   MVI   0(R1),C'*'               TERMINATOR                      04250000
+         MVI   1(R1),C'/'                         CHARACTERS            04260000
+         M$MSG L210$1                                                   04270000
+         B     DSNFIN                                                   04280000
+         SPACE 3                                                        04290000
+DSNMSG   MVC   INSERT#1(80),DSNM200H       ADD HEADER                   04300000
+         TM    OPTCD,X'A4'                 ANY OPTCD CHARACTERS?        04310000
+         BZ    *+10                        NO, BRANCH                   04320000
+         MVC   INSERT#1+10(3),DSNLOPT      ADD OPT                      04330000
+         TM    DSORG,DS1DSGPO              PARTITIONED?                 04340000
+         BO    *+10                        YES, BRANCH                  04350000
+         MVC   INSERT#1+63(7),DSNLDSO      NO, CHANGE THE HEADER        04360000
+         TM    DS1SMSFG,DS1PDSE            PDSE DATASET?      DRK SEP05 04360122
+         BNO   DSNMSGH                     NO                 DRK SEP05 04361022
+         MVC   INSERT#1+71(5),DSNLDSO      YES, ADD TO HEADER DRK SEP05 04361122
+DSNMSGH  DS    0H                                             DRK SEP05 04362022
+         M$MSG L200$1                                                   04370000
+         MVC   INSERT#1(80),DSNM200E    ADD DATA LINE                   04380000
+         CLI   DSPALLOC,ALLOSHR         DISP=SHR?                       04390000
+         BE    *+10                     YES, BRANCH                     04400000
+         MVC   INSERT#1+0(3),=C'OLD'    NO, DISP=OLD                    04410000
+         LH    R15,BYTEUCB              UCBBYTE                         04420000
+         MH    R15,=H'9'                INDEX INTO THE UNIT TABLE       04430000
+         LA    R15,UNITTBL(R15)         DEVICE UNIT TYPE                04440000
+         MVC   INSERT#1+05(8),1(R15)    DEVICE TYPE TEXT                04450000
+         TM    OPTCD,X'A4'              ANY OPTCD CHARACTERS?           04460000
+         BZ    DSN650                   NO, BRANCH                      04470000
+         LA    R1,INSERT#1+10                                           04480000
+         TM    OPTCD,DCBOPTW            OPTCD=W?                        04490000
+         BNO   *+12                     NO, BRANCH                      04500000
+         MVI   0(R1),C'W'                                               04510000
+         LA    R1,1(R1)                                                 04520000
+         TM    OPTCD,DCBOPTC            OPTCD=C?                        04530000
+         BNO   *+12                     NO, BRANCH                      04540000
+         MVI   0(R1),C'C'                                               04550000
+         LA    R1,1(R1)                                                 04560000
+         TM    OPTCD,DCBSRCHD           OPTCD=Z?                        04570000
+         BNO   *+12                     NO, BRANCH                      04580000
+         MVI   0(R1),C'Z'                                               04590000
+         LA    R1,1(R1)                                                 04600000
+DSN650   IC    R5,FLAGSCC               RECFM BITS                      04610000
+         SLL   R5,29                    DROP TOP BITS                   04620000
+         SRL   R5,29                    REPOSITION                      04630000
+         IC    R5,RECFMTYP(R5)          RECORD FORMAT                   04640000
+         STC   R5,INSERT#1+14           MOVE INTO MESSAGE               04650000
+         LA    R1,INSERT#1+15                                           04660000
+         TM    RECFM,DCBRECBR           RECFM=.B?                       04670000
+         BNO   *+12                     NO, BRANCH                      04680000
+         MVI   0(R1),C'B'                                               04690000
+         LA    R1,1(R1)                                                 04700000
+         TM    RECFM,DCBRECSB           RECFM=.S?                       04710000
+         BNO   *+12                     NO, BRANCH                      04720000
+         MVI   0(R1),C'S'                                               04730000
+         LA    R1,1(R1)                                                 04740000
+         TM    RECFM,DCBRECTO           RECFM=.T?                       04750000
+         BNO   *+12                     NO, BRANCH                      04760000
+         MVI   0(R1),C'T'                                               04770000
+         LA    R1,1(R1)                                                 04780000
+         TM    RECFM,DCBRECCA           RECFM=.A?                       04790000
+         BNO   *+12                     NO, BRANCH                      04800000
+         MVI   0(R1),C'A'                                               04810000
+         LA    R1,1(R1)                                                 04820000
+         TM    RECFM,DCBRECCM           RECFM=.M?                       04830000
+         BNO   *+12                     NO, BRANCH                      04840000
+         MVI   0(R1),C'M'                                               04850000
+         LA    R1,1(R1)                                                 04860000
+         LH    R4,LABLRECL                                              04870000
+         TM    FLAGSCC,RECFMU           RECFM=U?                        04880000
+         BNO   *+6                      NO, BRANCH                      04890000
+         SR    R4,R4                    YES, LRECL IS ZERO              04900000
+         CVD   R4,DOUBLE                CONVERT TO DECIMAL              04910000
+         ED    INSERT#1+19(6),DOUBLE+5  CONVERT TO DISPLAY              04920000
+         LH    R4,BLKSI                                                 04930000
+         CVD   R4,DOUBLE                CONVERT TO DECIMAL              04940000
+         ED    INSERT#1+27(6),DOUBLE+5  CONVERT TO DISPLAY              04950000
+         SPACE 1                                                        04960000
+         LH    R14,NUMEXT               NUMBER OF EXTENTS               04970000
+         CVD   R14,DOUBLE                                               04980000
+         ED    INSERT#1+33(4),DOUBLE+6  CONVERT TO DISPLAY              04990000
+         L     R1,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS                 05000000
+         SR    R0,R0                                                    05010000
+         SR    R15,R15                                                  05020000
+*                                                                       05030000
+         ICM   R15,3,32+14(R1) <----+   NUMBER OF TRACKS IN EXTENT      05040000
+         AR    R0,R15               |   ADD NUMBER OF TRACKS            05050000
+         LA    R1,16(,R1)           |   NEXT EXTENT                     05060000
+         BCT   R14,*-4-2-4  --------+   BRANCH FOR ALL EXTENTS          05070000
+*                                                                       05080000
+*        A     R0,=F'100000'            FAT DASD TEST         DRK MAY98 05081002
+         ST    R0,DSNTOTAL              SAVE TOTAL D.S. SIZE IN TRACKS  05090000
+         CVD   R0,DOUBLE                                                05091000
+*        ED    INSERT#1+38(6),DOUBLE+5  CONVERT TO DISPLAY              05091101
+         MVC   WORKTBL(8),=X'4020202020202120'                DRK MAY98 05091201
+         ED    WORKTBL(8),DOUBLE+4      CONVERT TO DISPLAY    DRK MAY98 05092001
+         MVC   INSERT#1+38(6),WORKTBL+2 FAT DASD NNNNNN TRKS  DRK MAY98 05093008
+         SR    R1,R1                                                    05100000
+         ICM   R1,3,DS1LSTAR            GET TT OF LAST TRACK            05110000
+         CLC   DS1LSTAR(3),ZERO         ANY ALLOCATION?                 05120000
+         BE    *+8                      NO, BRANCH                      05130000
+         LA    R1,1(,R1)                JUMP FOR COMPUTATION            05140000
+         SR    R0,R1                                                    05150000
+         ST    R0,DSNEMPTY              TOTAL FREE SPACE                05160000
+         SPACE 1                                                        05170000
+         CVD   R0,DOUBLE                                                05180000
+*        ED    INSERT#1+46(6),DOUBLE+5  CONVERT TO DISPLAY              05180101
+         MVC   WORKTBL(8),=X'4020202020202120'                DRK MAY98 05181001
+         ED    WORKTBL(8),DOUBLE+4      CONVERT TO DISPLAY    DRK MAY98 05182001
+         MVC   INSERT#1+46(6),WORKTBL+2 FAT DASD NNNNNN TRKS  DRK MAY98 05183009
+         SPACE 1                                                        05200000
+         SR    R4,R4                                                    05210000
+         ICM   R4,B'0111',DS1SCALO+1    SECONDARY ALLOCATION?           05220000
+         BZ    DSN660                   NO, BRANCH                      05230000
+         TM    DS1SCALO,X'80'           TRACK OR CYLINDER ALLOCATION?   05240000
+         BO    DSN660                   YES, BRANCH                     05250000
+         TM    DS1SCALO,X'40'           AVERAGE BLOCK ALLOCATION?       05260000
+         BNO   DSN660                   NO, BRANCH                      05270000
+         LH    R14,BLKSI                BLOCKSIZE                       05280000
+         ICM   R14,B'1000',=X'01'       R=1, K=0, DD=BLKSIZE            05290000
+         PUSH  ACONTROL                                       DRK MAY08 05290142
+         ACONTROL FLAG(NOPAGE0)                               DRK MAY08 05290241
+         TRKCALC FUNCTN=TRKCAP,TYPE=BYTEUCB+1,RKDD=(14),               X05300000
+               REGSAVE=YES,MF=(E,PARMLIST)                              05310000
+         POP   ACONTROL                                       DRK MAY08 05311041
+         LR    R5,R0                                                    05320000
+         BCTR  R5,0                                                     05330000
+         AR    R5,R4                                                    05340000
+         SR    R4,R4                                                    05350000
+         DR    R4,R0                    CEIL((BUFFERS+#/TRK-1)/(#/TRK)) 05360000
+         LR    R4,R5                    RESULTING QUOTIENT              05370000
+DSN660   CVD   R4,DOUBLE                                                05380000
+         ED    INSERT#1+52(6),DOUBLE+5  CONVERT TO DISPLAY              05390000
+         SPACE 1                                                        05400000
+         TM    DS1SCALO,X'C0'           CYLINDER ALLOCATION?            05410000
+         BNO   *+10                     NO, BRANCH                      05420000
+         MVC   INSERT#1+59(3),=C'CYL'   YES, MARK AS CYLINDER ALLOC.    05430000
+         SPACE 1                                                        05440000
+         TM    DSORG,DS1DSGPO           PARTITIONED?                    05450000
+         BO    DSN680                   NO, BRANCH                      05460000
+         LA    R1,INSERT#1+63           WHERE TO ADD DSORG DATA         05470000
+         MVC   0(8,R1),BLANKS           BLANK THE EDIT DATA             05480000
+         IC    R5,DSORG                 DSORG BITS                      05490000
+         SLL   R5,24                    DROP TOP BITS                   05500000
+         SRL   R5,28                    REPOSITION BITS *2              05510000
+         LA    R5,DSORGTYP(R5)          DSORG                           05520000
+         MVC   0(2,R1),0(R5)            MOVE INTO MESSAGE               05530000
+         TM    DSORG+1,DS1ACBM          VSAM DATA SET?                  05540000
+         BNO   *+10                     YES, BRANCH                     05550000
+         MVC   0(2,R1),DSNLVS                                           05560000
+         TM    DS1DSORG,DS1DSGU         UNMOVEABLE?                     05570000
+         BNO   DSN690                   NO, BRANCH                      05580000
+         MVI   2(R1),C'U'               ADD U                           05590000
+         B     DSN690                                                   05600000
+         SPACE 1                                                        05610000
+DSN680   L     R4,TOTALLOX              TOTAL DIRECTORY BLOCKS          05620000
+         S     R4,TOTUSEDX              FREE DIRECTORY BLOCKS           05630000
+         CVD   R4,DOUBLE                                                05640000
+         ED    INSERT#1+62(8),DOUBLE+4  CONVERT TO DISPLAY              05650000
+         SPACE 1                                                        05660000
+DSN690   DS    0H                                             DRK AUG05 05670017
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK AUG05 05670117
+         BNO   DSN695                   NO                    DRK AUG05 05670217
+*        MVC   INSERT#1+33(5),BLANK128  YES                   DRK OCT18 05670353
+         SR    R1,R1                                          DRK OCT18 05670452
+         IC    R1,DS1NOEPV                                    DRK OCT18 05670552
+         CVD   R1,DOUBLE                                      DRK OCT18 05670652
+         MVC   INSERT#1+33(4),=X'40202120'                    DRK OCT18 05670752
+         ED    INSERT#1+33(4),DOUBLE+6                        DRK OCT18 05670852
+         SPACE 1                                                        05670953
+         MVC   INSERT#1+38(6),DSNN$A     N/A                  DRK AUG05 05671054
+         MVC   INSERT#1+46(6),DSNN$A     N/A                  DRK AUG05 05671154
+         MVC   INSERT#1+62(8),DSNNOLIM   NOLIMIT              DRK AUG05 05671254
+         MVC   INSERT#1+70(5),DSNPOE     PO-E                 DRK SEP05 05671354
+DSN695   DS    0H                                             DRK AUG05 05671422
+         M$MSG L200$1                                                   05672017
+         SPACE 2                                                        05680000
+DSNFIN   MVI   MTLEN,8                  RESET THE INSERT LENGTH         05690000
+         M$ERRST MSGBLANK               ONE BLANK LINE                  05700000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK FEB02 05711006
+         BNO   DSNFIN2                  NO, CONTINUE          DRK FEB02 05712006
+         MVI   MTLEN,25                 INSERT LENGTH         DRK JAN06 05712225
+         MVC   INSERT#1(25),BLANK128                          DRK JAN06 05712328
+         TM    FLAGSCC,RECFMU           RECFM=U?              DRK JAN06 05712427
+         BNO   *+4+6                    NO                    DRK JAN06 05712527
+         MVC   INSERT#1(25),DSNPDSEU    SOME FUNCTIONS LIMITED        " 05712648
+         M$MSG L531$1                   DATA SET IS A PDSE    DRK JAN06 05712725
+         M$ERRST MSGBLANK               ONE BLANK LINE        DRK FEB02 05712806
+         COPY  @DSINFO2                 VERSION, MAXGENS      DRK JUN16 05712949
+         B     DSNFIN4                                        DRK FEB02 05713012
+DSNFIN2  DS    0H                                             DRK FEB02 05714006
+         TM    DDNAMEN,X'80'            ANY NON-PARTITIONED MESSAGE?    05720000
+         BNO   DSNFIN4                  NO, BRANCH                      05730000
+         M$MSG L530                     NOT PARTITIONED WARNING         05740000
+         M$ERRST MSGBLANK               ONE BLANK LINE                  05750000
+         NI    DDNAMEN,FF-X'80'         RESET TOP BIT                   05760000
+DSNFIN4  CLI   DDNAMEN,0                ANY N OF M MESSAGE?             05770000
+         BER   R2                       NO, BRANCH                      05780000
+         SR    R15,R15                                                  05790000
+         IC    R15,DDNAMEN                                              05800000
+         CVD   R15,DOUBLE                                               05810000
+         MVI   MTLEN,2                                                  05820000
+         MVC   FULLWORD(4),=X'40202120'                                 05830000
+         ED    FULLWORD(4),DOUBLE+6                                     05840000
+         MVC   INSERT#1(2),FULLWORD+2                                   05850000
+         SR    R15,R15                                                  05860000
+         IC    R15,DDNAMEM                                              05870000
+         CVD   R15,DOUBLE                                               05880000
+         MVI   MTLEN+4,2               LENGTH OF THE STANDARD INSERT    05890000
+         MVC   FULLWORD(4),=X'40202120'                                 05900000
+         ED    FULLWORD(4),DOUBLE+6                                     05910000
+         MVC   INSERT#2(2),FULLWORD+2                                   05920000
+         M$MSG L194$2                                                   05930000
+         M$ERRST MSGBLANK               ONE BLANK LINE                  05940000
+         MVI   MTLEN,8                  RESET THE INSERT LENGTH         05950000
+         MVI   MTLEN+4,8                RESET THE INSERT LENGTH         05960000
+         MVI   DDNAMEN,0                                                05970000
+         BR    R2                                                       05980000
+         SPACE 3                                                        05990000
+DSNCONV  CVD   R4,DOUBLE                                                06000000
+         MVC   FULLWORD(4),DOUBLE+4                                     06010000
+         UNPK  DOUBLE(7),FULLWORD(4)                                    06020000
+         LA    R4,DOUBLE-1                                              06030000
+         LA    R4,1(R4)                                                 06040000
+         CLI   0(R4),C'0'                                               06050000
+         BE    *-8                                                      06060000
+         OI    DOUBLE+6,X'F0'                                           06070000
+DSNMOVE  MVC   0(1,R1),0(R4)                                            06080000
+         LA    R1,1(R1)                                                 06090000
+         TM    1(R4),X'F0'                                              06100000
+         LA    R4,1(R4)                                                 06110000
+         BO    DSNMOVE                                                  06120000
+         BR    R14                                                      06130000
+         SPACE 1                                                        06140000
+         DROP  R6                       DSNAMES+2              GP APR18 06141050
+         SPACE 1                                                        06142050
+DSNTDSN  DC    C'ALLOC F(1234567)  DA('''') SHR UNIT('                  06150000
+DSNTDSND EQU   DSNTDSN+22,12                                            06160000
+         SPACE 1                                                        06170000
+DSNTDCT  DC    C'  RECFM() LRECL() BLKSIZE() DSORG(**) KEYLEN() RKP() OX06180000
+               PTCD() VOLUME('                                          06190000
+DSNTDCTL EQU   DSNTDCT+8,8                                              06200000
+DSNTDCTB EQU   DSNTDCT+8+8,10                                           06210000
+DSNTDCTD EQU   DSNTDCT+8+8+10,10                                        06220000
+DSNTDCTK EQU   DSNTDCT+8+8+10+10,9                                      06230000
+DSNTDCTR EQU   DSNTDCT+8+8+10+10+9,6                                    06240000
+DSNTDCTO EQU   DSNTDCT+8+8+10+10+9+6,8                                  06250000
+DSNTDCTV EQU   DSNTDCT+8+8+10+10+9+6+8,9                                06260000
+         SPACE 1                                                        06270000
+DSNTSPA  DC    CL80'  TRA SPACE(N                            /*FREE TRKX06280003
+               =N'                                                      06290000
+DSNTSPAP EQU   12,4                                                     06300000
+DSNTSPAT EQU   52,7                                                     06310000
+         SPACE 2                                                        06320000
+DSNJDSN  DC    C'//12345678  DD  DSN=,DISP=SHR,UNIT='                   06330000
+DSNJDSND EQU   DSNJDSN+20,15                                            06340000
+         SPACE 1                                                        06350000
+DSNJDCT  DC    C'//  DCB=(RECFM=,LRECL=,BLKSIZE=,DSORG=**,KEYLEN=,RKP=,X06360000
+               OPTCD=),VOL=SER='                                        06370000
+DSNJDCTL EQU   DSNJDCT+15,7                                             06380000
+DSNJDCTB EQU   DSNJDCT+15+7,9                                           06390000
+DSNJDCTD EQU   DSNJDCT+15+7+9,9                                         06400000
+DSNJDCTK EQU   DSNJDCT+15+7+9+9,8                                       06410000
+DSNJDCTR EQU   DSNJDCT+15+7+9+9+8,5                                     06420000
+DSNJDCTO EQU   DSNJDCT+15+7+9+9+8+5,7                                   06430000
+DSNJDCTV EQU   DSNJDCT+15+7+9+9+8+5+7,10                                06440000
+         SPACE 1                                                        06450000
+DSNJSPA  DC    CL80'//  SPACE=(TRK,(N                        /*FREE TRKX06460000
+               =N'                                                      06470000
+DSNJSPAP EQU   16,4                                                     06480000
+DSNJSPAT EQU   52,7                                                     06490000
+         SPACE 1                                                        06500000
+DSNM200H DC    CL80'DISP UNIT     RECFM LRECL BLKSIZE   ALLOCTRK FREETRX06510000
+               K SECONDARY FREEDIR'                   123X 12345        06520000
+DSNM200E DC    CL80'SHR                                  X             X06530000
+                       TRK        '                                     06540000
+         ORG   DSNM200E+19                                              06550000
+         DC    X'402020202120'                                          06560000
+         ORG   DSNM200E+27                                              06570000
+         DC    X'402020202120'                                          06580000
+         ORG   DSNM200E+33                                              06590000
+         DC    X'40202120'                                              06600000
+         ORG   DSNM200E+38                                              06610000
+         DC    X'402020202120'                                          06620000
+         ORG   DSNM200E+46                                              06630000
+         DC    X'402020202120'                                          06640000
+         ORG   DSNM200E+52                                              06650000
+         DC    X'402020202120'                                          06660000
+         ORG   DSNM200E+62                                              06670000
+         DC    X'4020202020202120'                                      06680000
+         ORG   ,                                                        06690000
+DSNN$A   DC    C'   N/A'                                                06690254
+DSNNOLIM DC    C' NOLIMIT'                                              06690354
+DSNPOE   DC    C' PO-E'                                                 06690454
+DSNPDSEU DC    C' - SOME FUNCTIONS LIMITED'                             06691025
+DSNLFREE DC    C',FREE DIR='                                            06700000
+DSNLROUN DC    C',,,ROUND)'                                             06710000
+DSNLDSO  DC    CL7'DSORG'                                               06720000
+DSNLDIR  DC    C'DIR('                                                  06730000
+DSNLOPT  DC    C'OPT'                                                   06740000
+DSNLPAR  DC    C') -'                                                   06750000
+DSNLVS   DC    C'VS'                                                    06760000
+DSORGTYP DC    C'**DAPS??IS'              DSORG=.. TEXT                 06770000
+RECFMTYP DC    C'*FV?U'                   RECFM=. TEXT                  06780000
+ALLOOLD  EQU   X'01'                                                    06790000
+ALLOMOD  EQU   X'02'                                                    06800000
+ALLOSHR  EQU   X'08'                                                    06810000

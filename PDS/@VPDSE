@@ -1,0 +1,424 @@
+         TITLE 'P D S  --  IEBPDSE INTERFACE                  2/22/11'  00000299
+*********************************************************************** 00000316
+***      VPDSE  SUBCOMMAND   ADDED BY JOHN KALINICH -- FEB., 2011   *** 00000499
+*********************************************************************** 00000516
+*                                                                       00050000
+         SPACE 1                                                        00061099
+VPDSE    CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         LA    R1,L535                 ASSUME A NON-PDSE                00080299
+         TM    DS1SMSFG,DS1PDSE        PDSE DATASET?                    00080399
+         BNO   MSGNEW                  NO, BRANCH                       00080499
+         AGO   .NOFAMS                                                  00080599
+*  CALL FAMS INTERFACE UNTIL IEBPDSE IS AVAILABLE (Z/OS 1.13)           00080899
+         L     R4,=V(FAMS)             FAMS SUBROUTINE                  00080999
+         BASR  R3,R4                   CALL SUBROUTINE                  00081099
+         M$ERRST MSGBLANK                                               00081199
+         COPY  @SMS                    SMS INFO                         00081299
+         CLI   #VPELIST,2              NOLIST?                          00081399
+         BE    VPENOTX                 YES                              00081499
+         SPACE 1                                                        00081599
+*  PDSE STRUCTURE NOTES UNTIL IEBPDSE IS AVAILABLE (Z/OS 1.13)          00081699
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE NOTES MSG              00081799
+         L     R2,=A(PDSENOTE)         PDSE STRUCTURE NOTES             00081899
+VPENOTE  MVC   MSGTEXT1+04(64),00(R2)  DESCRIPTION                      00081999
+         LA    R2,64(,R2)              NEXT ENTRY                       00082099
+         M$ERRST MSGTEXT1              OUTPUT THIS NOTE                 00082199
+         CLI   0(R2),X'FF'             END OF TABLE?                    00082299
+         BNE   VPENOTE                 NO, BRANCH                       00082399
+         M$ERRST MSGBLANK              ONE BLANK LINE                   00082499
+VPENOTX  DS    0H                                                       00082599
+         B     NEWCMD                  ALL DONE                         00083099
+.NOFAMS  ANOP                                                           00084099
+         SPACE 1                                                        00120000
+*  FREE SYSIN, SYSLIB, AND SYSPRINT DATASETS                            00120299
+VPE1000  DS    0H                                                       00120399
+         LA    R1,=CL8'SYSIN'           SYSIN DDNAME                    00120499
+         BAS   R2,VPE8580               FREE THIS DATA SET              00120599
+         LA    R1,=CL8'SYSLIB'          SYSLIB DDNAME                   00120682
+         BAS   R2,VPE8580               FREE THIS DATA SET              00120799
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120882
+         BAS   R2,VPE8580               FREE THIS DATA SET              00120999
+*  ALLOCATE IEBPDSE //SYSLIB DATA SET                                   00121299
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00121399
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00121499
+         USING S99RBP,R1                                                00121599
+         SPACE 1                                                        00121699
+         LA    R4,M99RB                                                 00121799
+         USING S99RB,R4                                                 00121899
+         ST    R4,S99RBPTR                                              00121999
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00122099
+         SPACE 1                                                        00122199
+         LA    R5,M99TUPL                                               00122299
+         USING S99TUPL,R5                                               00122399
+         MVI   S99RBLN,20               LENGTH 20                       00122499
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00122599
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00122699
+         LA    R3,WORKTBL                        START OF TEXT          00122799
+         SPACE 1                                                        00122899
+         MVC   0(L'VPEDDNLI+6,R3),VPEDDNLI       SPECIFY DDNAME TEXT    00122999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123099
+         LA    R3,L'VPEDDNLI+6(,R3)              START OF NEXT TEXT     00123199
+         SPACE 1                                                        00123299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123399
+         MVC   0(L'VPEDSNAM,R3),VPEDSNAM         SPECIFY DSNAME TEXT    00123499
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00123599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123699
+         LA    R3,L'VPEDSNAM+44(,R3)             START OF NEXT TEXT     00123799
+         SPACE 1                                                        00123899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123999
+         MVC   0(L'VPEALLOC,R3),VPEALLOC         SPECIFY DISP TEXT      00124099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124199
+         LA    R3,L'VPEALLOC(,R3)                START OF NEXT TEXT     00124299
+         SPACE 1                                                        00124399
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124499
+         MVC   0(L'VPENORM,R3),VPENORM           SPECIFY NORMAL TEXT    00124599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124699
+         LA    R3,L'VPENORM(,R3)                 START OF NEXT TEXT     00124799
+         SPACE 1                                                        00124899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124999
+         MVC   0(L'VPEANORM,R3),VPEANORM         SPECIFY ABNORMAL TEXT  00125099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00125199
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00125299
+         SPACE 1                                                        00125399
+         DYNALLOC                                                       00125499
+         SPACE 2                                                        00125599
+         DROP  R1,R4,R5                                                 00125699
+         LTR   R15,R15                       SUCCESSFUL?                00125799
+         BNZ   VPEERROR                      NO, BRANCH                 00125899
+         SPACE 2                                                        00126052
+*  ALLOCATE IEBPDSE //SYSIN FILE                                        00130099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00140023
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00150023
+         USING S99RBP,R1                                                00160023
+         SPACE 1                                                        00170023
+         LA    R4,M99RB                                                 00180023
+         USING S99RB,R4                                                 00190023
+         ST    R4,S99RBPTR                                              00200023
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00210023
+         SPACE 1                                                        00220023
+         LA    R5,M99TUPL                                               00230023
+         USING S99TUPL,R5                                               00240023
+         MVI   S99RBLN,20                 LENGTH 20                     00250023
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00260023
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00270023
+         SPACE 1                                                        00280023
+         MVC   #CMXSYS3(11),VPEDDNIN      SYSIN DDNAME                  00290099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00300023
+         USING S99TUNIT,R3                                              00310023
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00320023
+         MVC   S99TUPTR+4(40),VPESYSIN    ADD OTHER LIST ELEMENTS       00330099
+         SPACE 1                                                        00340023
+         DYNALLOC                                                       00350023
+         MVC   #CMXDDIN(8),=CL8'SYSIN'    MOVE IN THE DDNAME            00360066
+         SPACE 2                                                        00370023
+         DROP  R1,R3,R4,R5                                              00380023
+         LTR   R15,R15                    SUCCESSFUL?                   00390023
+         BNZ   VPEERROR                   NO, BRANCH                    00400099
+         SPACE 3                                                        00410023
+*  ALLOCATE IEBPDSE //SYSPRINT DATA SET                                 02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),VPEDDNPR      SYSPRINT DDNAME               02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),VPESYSPR    ADD OTHER LIST ELEMENTS       02360099
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         MVC   #CMXDDPR(8),=CL8'SYSPRINT' MOVE IN THE DDNAME            02540083
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   VPEERROR                   NO, BRANCH                    02570099
+         SPACE 3                                                        02570194
+         B     VPE6000                                                  02590099
+         SPACE 2                                                        08580000
+VPEERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    VPE8550                    NO, BRANCH                    08700099
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     VPE8550                                                  08780099
+         SPACE 3                                                        08790000
+VPE6000  DS    0H                                                       08800099
+*  OPEN SYSIN DATA SET                                                  08810066
+         MVC   BAMDCB(VPEDL),VPEDCB           GET MODEL DCB             08820099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDIN                       08830024
+         MVI   OPENLIST,X'80'                                           08840000
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               08850000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08860000
+         BO    VPE6010                         YES, BRANCH              08870099
+         LA    R1,VPE865E                      NO STATUS AVAILABLE      08880299
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08881039
+         B     VPE8550                         EXIT                     08890099
+         SPACE 3                                                        08900000
+*  OUTPUT SYSIN RECORD                                                  08910099
+VPE6010  DS    0H                                                       08930099
+         AGO   .NOINPUT                   BYPASS, SYSIN NOT USED        08940099
+         SPACE 1                                                        08950099
+         MVC   MSGTEXT1(136),MSGBL132     CLEAR THE MESSAGE AREA        09240099
+         LA    R15,MSGTEXT1+4                                           09241099
+         MVC   0(15,R15),VPEPDSE          VERIFY                        09241199
+         MVC   15(44,R15),DSNAME          DSNAME                        09241299
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT IEBPDSE STATEMENT      09750099
+.NOINPUT ANOP                                                           09760099
+         SPACE 1                                                        09770099
+         MVI   OPENLIST,X'80'                                           10560018
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   10570099
+         LA    R1,BAMDCB                                                10580000
+         FREEPOOL (1)                                                   10590000
+         SPACE 2                                                        10590169
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590299
+         STAX  VPENULL,USADDR=(R7),REPLACE=NO,IBUF=0,                  X10590699
+               OBUF=(VPE484W,VPE484WL),MF=(E,STAXPARM)                  10590799
+         LA    R1,VPEPARM                 PARM=                         10830099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910090
+         LA    R15,VPEPGM               2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930090
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940090
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950090
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960090
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970090
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,VPE7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),VPEEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   VPENLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+VPENLNK  BAS   R2,ATTACH                  IEBPDSE                       11440099
+         SPACE 3                                                        11490000
+VPE7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        12300099
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE              12300199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?            12300299
+         BNE   VPE8000                    NO                            12300399
+         MVC   INSERT#1(8),VPEPGM         YES, ERROR                    12300499
+         M$MSG L859$1                     NOT FOUND MESSAGE             12300599
+         B     VPE8550                                                  12300699
+         SPACE 1                                                        12301099
+VPE8000  MVC   BAMDCB(VPEDL),VPEDCB         GET MODEL DCB               12310099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSPRINT'                 12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSLIN                 12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    VPE8010                      YES, BRANCH                 12360099
+         LA    R1,VPE865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     VPE8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS SYSPRINT RECORDS                                             12400099
+VPE8010  DS    0H                                                       12420099
+         SR    R2,R2                      ZERO COUNTER                  12421099
+VPE8020  GET   BAMDCB                     GET OBJECT RECORD             12430099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(131),0(R1)      ADD THE IEBPDSE MESSAGE       12600099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         LA    R2,1(,R2)                  BUMP COUNTER                  12641099
+         C     R2,=F'1'                   FIRST RECORD?                 12642099
+         BNE   *+4+6                      NO                            12643099
+         MVC   #VPEMSG(3),MSGTEXT1+4+3    YES, MOVE IGW MSG NUMBER      12644099
+         B     VPE8020                                                  12650099
+         SPACE 3                                                        12660000
+VPE8500  DS    0H                                                       12830099
+         CLI   #VPELIST,2              NOLIST?                          12830199
+         BE    VPE8510                 YES                              12830299
+         CLC   #VPEMSG(3),=CL3'700'    PDSE VALIDATION SUCCESSFUL?      12830399
+         BNE   VPE8510                 NO                               12830499
+         SPACE 1                                                        12830599
+*  IGW700I MESSAGE NOTES                                                12830699
+         M$ERRST MSGBLANK              ONE BLANK LINE                   12830799
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE NOTES MSG              12830899
+         L     R2,=A(IGW700I)          IGW700I MSG NOTES                12830999
+VPENOTE2 MVC   MSGTEXT1+4(64),0(R2)    DESCRIPTION                      12831099
+         LA    R2,64(,R2)              NEXT ENTRY                       12831199
+         M$ERRST MSGTEXT1              OUTPUT THIS NOTE                 12831299
+         CLI   0(R2),X'FF'             END OF TABLE?                    12831399
+         BNE   VPENOTE2                NO, BRANCH                       12831499
+VPE8510  DS    0H                                                       12831699
+         CLC   ##SUBCAL(8),VPEEFTSR       INVOKE IKJEFTSR?              12832099
+         BNE   VPE8540                    NO, BRANCH                    12833099
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JUL11 12835199
+         BL    VPE8540                    YES, VALID IEBPDSE            12836099
+         MVI   MTLEN+4,11                 NO, ISSUE MESSAGE             12837099
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    12837199
+         SR    R15,R15                                                  12838099
+         ICM   R15,B'0001',#SUBHOLD+28+11                               12839199
+         CVD   R15,DOUBLE                                               12839299
+         MVC   INSERT#1(8),##SUBCOM                                     12839399
+         MVC   INSERT#2(4),=X'40202120'                                 12839499
+         ED    INSERT#2(4),DOUBLE+6                                     12839599
+         MVI   INSERT#2,C'='              RETURN CODE                   12839699
+         SPACE 1                                                        12839799
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12839899
+         BNE   VPE8530                    NO, SKIP MESSAGE              12839999
+         SPACE 1                                                        12840099
+         L     R0,#SUBHOLD+28+16        ABEND CODE                      12840199
+         SRDL  R0,12                    SHIFT USER ABEND TO R1          12840299
+         ST    R0,FULLWORD              SYSTEM ABEND CODE               12840399
+         MVC   INSERT#2+4(7),=C' ABEND='                                12840499
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                             12840599
+         TR    INSERT#2+11(4),TRTABLE                                   12840699
+         MVI   INSERT#2+11,C'S'         S000                            12840799
+         MVI   INSERT#2+11+4,X'40'                                      12840899
+         SPACE 1                                                        12840999
+         SRL   R1,20                    USER ABEND                      12841099
+         CVD   R1,DOUBLE                                                12841199
+         UNPK  DOUBLE(5),DOUBLE+5(3)                                    12841299
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE                  12841399
+         MVI   INSERT#2+11+5,C'U'       U0000                           12841499
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND                 12841599
+         SPACE 1                                                        12841699
+VPE8530  DS    0H                                                       12841799
+         M$MSG L171$2                                                   12841899
+VPE8540  DS    0H                                                       12841999
+         MVI   OPENLIST,X'80'                                           12842000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE       12850083
+         LA    R1,BAMDCB                                                12860000
+         FREEPOOL (1)                                                   12870000
+         SPACE 2                                                        12880000
+VPE8550  M$ERRST MSGBLANK                                               12890099
+         LA    R1,#CMXDDPR                SYSPRINT DDNAME               12900083
+         BAS   R2,VPE8580                 FREE THIS DATA SET            12910099
+         LA    R1,#CMXDDIN                SYSIN DDNAME                  12911099
+         BAS   R2,VPE8580                 FREE THIS DATA SET            12912099
+         LA    R1,=CL8'SYSLIB'            SYSLIB DDNAME                 12915099
+         BAS   R2,VPE8580                 FREE THIS DATA SET            12916099
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+VPE8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),VPEFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,VPEUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+VPENULL  BR    R14                                                      13252099
+         SPACE 2                                                        13260000
+*  VPDSE CONSTANTS                                                      13460099
+         PRINT NOGEN                                                    13470000
+VPEDCB   DCB   DSORG=PS,DDNAME=VPE,MACRF=(GL,PM),EODAD=VPE8500          13480099
+VPEDL    EQU   *-VPEDCB                                                 13490099
+         PRINT NOGEN                                                    13550138
+VPE484W  DC    C'PDS484W VPDSE SHOULD NOT BE INTERRUPTED'               13550399
+VPE484WL EQU   *-VPE484W                                                13550499
+VPE865E  M$TX  'PDS865E THE VPDSE OUTPUT CAN NOT BE OPENED'             13550599
+         PRINT GEN                                                      13551038
+VPEEFTSR DC    CL8'IKJEFTSR'                                            13710099
+VPEPGM   DC    CL8'IEBPDSE'                      IEBPDSE                13721099
+VPEPARM  DC    AL2(VPEPARML-2)                   PARM LENGTH            13721299
+* PARM(<DUMP|NODUMP,><FLUSH|NOFLUSH,>            IEBPDSE PARM           13721499
+*      <NOAANLYSIS,><PERFORMPENDINGDELETE>)                             13721599
+VPEPARML EQU   *-VPEPARM                                                13722399
+*                                                                       13722499
+VPEDDNLI DC    X'000100010006',C'SYSLIB'   L=6   SYSLIB   DDNAME        13722599
+VPEDDNIN DC    X'000100010005',C'SYSIN'    L=5   SYSIN    DDNAME        13722699
+VPEDDNPR DC    X'000100010008',C'SYSPRINT' L=8   SYSPRINT DDNAME        13722799
+VPEDSNAM DC    X'00020001002C'             L=44  DSNAME                 13722899
+*                                                                       13722999
+VPEALLOC DC    X'00040001000108'                 DISP=SHR               13723099
+VPENORM  DC    X'00050001000108'                 DISP=(,KEEP)           13723199
+VPEANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13723299
+VPEDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13724099
+VPEFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+VPENEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+VPEDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+VPECDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+VPEPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+VPEUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+         SPACE 2                                                        13840000
+VPEPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+VPEPRTSE DC    X'000B00010003',AL3(100)          SPACE=(,(,NNN))        13860099
+VPEPRTIN DC    X'000900010003',AL3(27951)        SPACE=(27951)          13870099
+VPESINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           13880099
+         SPACE 1                                                        13920000
+VPEPRTRE DC    X'004900010001',XL1'80'           DCB=RECFM=F            13951099
+VPEPRTLR DC    X'004200010002',AL2(131)          DCB=LRECL=131          13952099
+VPEPRTBL DC    X'003000010002',AL2(131)          DCB=BLKSIZE=131        13953099
+         SPACE 2                                                        13960000
+VPESINRE DC    X'004900010001',XL1'80'           DCB=RECFM=F            13970099
+VPESINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980099
+VPESINBL DC    X'003000010002',AL2(80)           DCB=BLKSIZE=80         13990099
+         SPACE 2                                                        14000000
+VPESYSIN DC    A(VPEPRTFI,VPEPRTSE,VPESINSP)                            14020099
+         DC    A(VPESINRE,VPESINLR,VPESINBL)                            14030099
+         DC    A(VPENEW,VPEDEL,VPECDEL),X'80',AL3(VPEPERM)              14040099
+VPESYSPR DC    A(VPEPRTFI,VPEPRTSE,VPEPRTIN)                            14080099
+         DC    A(VPEPRTRE,VPEPRTLR,VPEPRTBL)                            14090099
+         DC    A(VPENEW,VPEDEL,VPECDEL),X'80',AL3(VPEPERM)              14100099
+         SPACE 2                                                        14370000
+VPEPDSE  DC    CL15' VERIFY DSNAME='   SYSIN NOT USED IN IEBPDSE        14380099
+         COPY  @IGW700I                                                 14383099
+*        COPY  @PDSE                   PDSE STRUCTURE NOTES  ** TEST ** 14384099
+         SPACE 2                                                        14390099

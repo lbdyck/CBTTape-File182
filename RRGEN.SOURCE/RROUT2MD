@@ -1,0 +1,26 @@
+OUT1IS    CSECT                                                         00000010
+*  THIS IS A MOD THAT IS LOADED BY THE PROGRAM GENERATOR                00000020
+*   TO HANDLE  THE WRITES TO OUT1  REC AREA = REG 10                    00000030
+*                                                                       00000040
+         SAVE  (2,12),T,*                                               00000050
+         BALR  12,0                                                     00000060
+         USING *,12                                                     00000070
+         ST    13,SAVEAREA+4                                            00000080
+         LA    13,SAVEAREA                                              00000090
+ML01     B     ML03               SW TO BRANCH TO OPEN FIRST TIME       00000100
+ML02     PUT   DCBOT,*+0         WRITE                                  00000110
+ML02A    L     13,SAVEAREA+4      RELOAD HIS                            00000120
+         LM    14,12,12(13)             REGS                            00000130
+         LA    15,0(0,0)          SET RETURN CODE TO 0                  00000140
+         LA    14,12(0,14)        BUMP 14 BY 12 TO RETURN TO ADD        00000150
+         BR    14                                                       00000160
+ML03     OPEN  (DCBOT,(OUTPUT))                                         00000170
+         MVI   ML01+1,X'00'       NOP ML01                              00000180
+         LA    11,4(0,14)        14+4 POINTS TO ADR OF RECORD AREA      00000190
+         MVC   ML02+6(2),0(11)   PUT REC AREA ADR IN PUT MACRO          00000200
+         B     ML02A                                                    00000210
+SAVEAREA DC    18F'0'                                                   00000220
+         DC    CL2'  '                                                  00000230
+RECAREA  DS    CL900                                                    00000240
+DCBOT    DCB   DDNAME=OUT2,DSORG=PS,MACRF=PM                            00000250
+         END                                                            00000260

@@ -1,0 +1,186 @@
+         TITLE 'P D S  --  MATCH SUBLIST BUILD               11/29/15'  00000140
+*********************************************************************** 00000232
+***      MATCH SUBLIST SUBROUTINE                                   *** 00000332
+*********************************************************************** 00000432
+*                                                                       00000532
+         SPACE 1                                                        00000632
+SAMLIST  DS    0H                                             DRK NOV15 00000740
+         SR    R2,R2                      COUNTER                       00000835
+         MVI   OPENLIST,X'80'                                           13660225
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE       13660325
+         LA    R1,BAMDCB                                                13660425
+         FREEPOOL (1)                                                   13660525
+         SPACE 1                                                        13660725
+         MVC   BAMDCB(MATDL2),MATDCB2     GET MODEL DCB FOR SAMLIST     13660834
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSPRINT'                 13660925
+         MVI   OPENLIST,X'80'                                           13661025
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               13661125
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            13661225
+         BO    MAS010                       YES, BRANCH                 13661325
+         LA    R1,MAT865E                   NO STATUS AVAILABLE         13661425
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          13661525
+         B     MAT8550                      EXIT                        13661626
+         SPACE 1                                                        13661825
+*  PROCESS SYSPRINT RECORDS FOR SAMLIST                                 13662029
+MAS010   DS    0H                                                       13662123
+         GET   BAMDCB                     GET SYSPRINT                  13662222
+         CLC   1(11,R1),MASEXC1           HEADER?                       13662346
+         BE    MAS010                     YES, SKIP                     13662446
+         CLC   1(11,R1),MASEXC2           HEADER?                       13662546
+         BE    MAS010                     YES, SKIP                     13662646
+         CLC   1(11,R1),MASEXC3           HEADER?                       13662746
+         BE    MAS010                     YES, SKIP                     13662846
+         CLC   1(11,R1),MASEXC4           HEADER?                       13662946
+         BE    MAS010                     YES, SKIP                     13663046
+         CLC   1(11,R1),MASEXC5           HEADER?                       13663146
+         BE    MAS010                     YES, SKIP                     13663246
+         CLC   1(120,R1),BLANK128         BLANK LINE?                   13663346
+         BE    MAS010                     YES, SKIP                     13663446
+         SPACE 1                                                        13663546
+* TEST FOR UNEQUAL MESSAGES                                             13663646
+         CLC   11(9,R1),MASUNEQ           <UNEQUAL>?                    13663746
+         BE    MAS015                     YES                           13663846
+         CLC   11(9,R1),MASUNDR           *********?                    13663946
+         BE    MAS015                     YES                           13664046
+         CLC   11(9,R1),MASNEW1           <-- NEWER?                    13664146
+         BE    MAS015                     YES                           13664246
+         CLC   11(9,R1),MASNEW2           NEWER -->?                    13664346
+         BE    MAS015                     YES                           13664446
+         CLC   39(16,R1),MASLIB1          IN LIBRARY1 ONLY?             13664546
+         BE    MAS015                     YES                           13664646
+* TEST FOR EQUAL   MESSAGES                                             13664746
+         CLC   1(8,R1),22(R1)             MEMBER NAMES EQUAL?           13664847
+         BE    MAS015                     YES                           13664947
+         B     MAS010                     NO                            13665046
+MAS015   DS    0H                                                       13665146
+         LA    R2,1(R2)                   BUMP COUNTER                  13665246
+         MVC   DIRNAME(8),1(R1)           MEMBER NAME TO BLDLLIST       13665346
+         SPACE 2                                                        13665446
+         SR    R15,R15                                                  13665546
+         BLDL  INDCB,BLDLLIST             LOCATE DIRECTORY ENTRY        13665646
+         B     *+4(R15)                   PROCESS RETURN CODE           13665746
+         B     MAS020                       00 - SUCCESSFUL             13665846
+         B     MAS017                       04 - MEMBER NOT FOUND       13665946
+         B     IOERROR                      08 - I/O ERROR              13666046
+MAS017   DS    0H                                                       13666146
+         LA    R1,L853$1              MSG - (MEMBER) NOT FOUND          13666246
+         MVC   INSERT#1(8),DIRNAME                                      13666346
+         M$MSG (R1)                   OUTPUT MESSAGE                    13666446
+         B     MAS010                                                   13666546
+         SPACE 1                                                        13666646
+MAS020   DS    0H                                                       13666746
+         TM    FLAGSEE,FMEMGRP            MEMBER GROUP DEFINE START?    13666846
+         BO    MAS100                     YES, BRANCH                   13666946
+         SPACE 1                                                        13667046
+         OI    FLAGSEE,FMEMGRP            FIRST SUBLIST ELEMENT         13667146
+         MVC   MMEMMAX(4),MMEMMIN         POINT TO THE FIRST ELEMENT    13667246
+         XC    MMEMBERD(1+2+8+8+2),MMEMBERD  CLEAR THE MEMBER NAME      13667346
+         MVC   MMEMBERD+1+2(8),DIRNAME    MEMBER NAME                   13667400
+         MVC   MMEMBERD+1+2+8+8+2(3),DIRTTR TTR OF FIRST MEMBER         13668000
+         LA    R1,DIRNAME+7               END OF MEMBER NAME            13669000
+         LA    R0,7                       MACHINE LENGTH                13670000
+MAS050   CLI   0(R1),X'40'                BLANK?                        13671023
+         BNE   MAS060                     NO, BRANCH                    13672023
+         BCTR  R1,0                       PREVIOUS CHARACTER            13673000
+         BCT   R0,MAS050                  CHECK ALL BYTES               13674023
+MAS060   STCM  R0,B'1100',MMEMBERD+1      SAVE THE MACHINE LENGTH       13675023
+         MVI   MMEMBERD,FMEMBER1          A SINGLE MEMBER NAME          13676000
+         NI    MMEMMIN,FF-X'80'           MEMBER LIST IS INACTIVE       13677000
+         SPACE 1                                                        13678000
+         ICM   R1,B'0111',MMEMMIN+1       FIRST ELEMENT POINTER?        13679000
+         BZ    MAS010                     NO, DONE                      13680023
+         MVI   0(R1),0                    YES, INACTIVE ELEMENT         13681000
+         B     MAS010                                                   13682023
+         SPACE 1                                                        13683013
+MAS100   L     R1,MMEMMAX                 CURRENT END POINTER           13709023
+         CLC   1(3,R1),ZERO               ANY SLOT ENTRIES LEFT?        13710000
+         BNE   MAS180                     YES, BRANCH                   13711023
+         LA    R0,36*28                   36 MEMBERS, 28 WIDE EACH      13712000
+         ICM   R0,B'1000',=AL1(24)        ASSUME SPF IS INITIALIZED     13713000
+         STCM  R0,B'1000',SUBLIST2        MARK FOR LATER RELEASE        13714004
+         TM    FLAGSFF,FSPFCALL+FSPFDIAL  SPF INITIALIZED?              13715000
+         BM    MAS110                     YES, BRANCH                   13716023
+         AIF   ('&CISP' NE 'ISPFV2').NSPFME3                            13717030
+         TM    FLAGSFF,FSPFOPT6           CALLED FROM OPTION 6?         13718000
+         BO    MAS110                     YES, BRANCH                   13719023
+.NSPFME3 ANOP                                                           13720030
+         ICM   R0,B'1000',=AL1(23)        SPF IS NOT INITIALIZED        13721000
+         STCM  R0,B'1000',SUBLIST1        MARK FOR LATER RELEASE        13722004
+         MVI   SUBLIST2,0                 CLEAR THE EARLIER MARK        13723011
+MAS110   GETMAIN R,LV=(0)                 GET MORE ELEMENT STORAGE      13724023
+         LR    R15,R1                     START OF TABLE                13725000
+         L     R1,MMEMMAX                 CURRENT ELEMENT               13726000
+         LA    R0,36-1                    NUMBER OF ELEMENTS -1         13727000
+MAS136   LA    R15,28(,R15)               NEXT ELEMENT POINTER          13728023
+         ST    R15,0(,R1)                 POINT TO THE NEXT ELEMENT     13729000
+         LR    R1,R15                     NEXT ELEMENT                  13730000
+         BCT   R0,MAS136                  DO 36 ELEMENTS                13731023
+         XC    0(4,R1),0(R1)              CLEAR THE LAST POINTER        13732000
+         SPACE 2                                                        13733000
+MAS180   LA    R1,MMEMMIN                 ANCHOR FOR MEMBER LIST        13734023
+         CLC   DIRNAME(8),MMEMBERD+1+2    ALREADY IN LIST?              13735000
+         BE    MAS010                     YES, DO NOT ADD AGAIN         13736023
+         SPACE 2                                                        13737000
+MAS190   L     R1,0(,R1)                  NEXT ELEMENT                  13738023
+         TM    0(R1),X'80'                ACTIVE ELEMENT?               13739000
+         BNO   MAS200                     NO, NOT FOUND                 13740023
+         CLC   DIRNAME(8),4+2(R1)         ALREADY IN LIST?              13741000
+         BE    MAS010                     YES, DO NOT ADD AGAIN         13742023
+         B     MAS190                     SEARCH THE ENTIRE LIST        13743023
+         SPACE 2                                                        13744000
+MAS200   L     R1,MMEMMAX                 CURRENT ADDED ELEMENT         13745023
+         L     R15,0(,R1)                 NEXT POINTER                  13746000
+         MVI   0(R15),0                   INACTIVE THE NEXT ELEMENT     13747000
+         ST    R15,MMEMMAX                NEXT ELEMENT TO ADD           13748000
+         OI    0(R1),X'80'                ACTIVE ELEMENT                13749000
+         OI    MMEMMIN,X'80'              MEMBER LIST IS ACTIVE         13750000
+         XC    4(2+8+8+2,R1),4(R1)        CLEAR THE MEMBER NAME         13751000
+         MVC   4+2(8,R1),DIRNAME          MEMBER NAME                   13752000
+         MVC   4+2+8+8+2(3,R1),DIRTTR     ADD THIS TTR                  13753000
+         LA    R15,DIRNAME+7              END OF MEMBER NAME            13754000
+         LA    R0,7                       MACHINE LENGTH                13755000
+MAS250   CLI   0(R15),X'40'               BLANK?                        13756023
+         BNE   MAS260                     NO, BRANCH                    13757023
+         BCTR  R15,0                      PREVIOUS CHARACTER            13758000
+         BCT   R0,MAS250                  CHECK ALL BYTES               13759023
+MAS260   STC   R0,5(R1)                   SAVE THE MACHINE LENGTH       13760023
+         MVI   4(R1),FMEMBER1             A SINGLE MEMBER NAME          13761000
+         B     MAS010                                                   13762023
+MAS900   DS    0H                                                       13762123
+         LTR   R2,R2                   COUNTER ZERO?                    13762235
+         BZ    MAS910                  YES                              13762442
+         MVC   PMEMCURR(4),PMEMMIN     RESET THE CURRENT POINTER        13762541
+         MVC   LMEMBER1(2+8+8+2),MMEMBERD+1  RESET THE MEMBER NAME      13762641
+         MVC   FLAGSAA(1),MMEMBERD     RESET THE MEMBER FLAG            13762741
+         XC    MMEMMIN(12),PMEMMIN     INTERCHANGE                      13762841
+         XC    PMEMMIN(12),MMEMMIN                THE                   13762941
+         XC    MMEMMIN(12),PMEMMIN                   MEMBER LISTS       13763041
+         MVC   MEMBERD(1+2+8+8+2),MMEMBERD    RESET THE DEFAULT NAME    13763141
+         BAS   R14,DEFGROUP            ADD DEFAULT GROUP                13763241
+         XI    FLAGSEE,FMEMGRP         MEMGRP USED NOW                  13763341
+         MVI   FLAGSAA,00              RESET THE MEMBER FLAG            13763441
+         B     MAS920                                                   13763542
+MAS910   DS    0H                                                       13763641
+         MVI   FLAGSAA,0                  NULL MEMBER GROUP             13763742
+         MVC   PMEMCURR(4),PMEMMAX        NULL MEMBER LIST              13763842
+         NI    PMEMMIN,255-X'80'          NULL MEMBER LIST              13763942
+         XC    MEMBERD(1+2+8+8+2),MEMBERD NO MEMBER LIST                13764042
+         L     R1,MSGENTPT                START OF MEMBER PART          13764143
+         MVC   0(17,R1),BLANK128          CLEAR OUT THE MEMBER NAME     13764243
+MAS920   DS    0H                                                       13764342
+         B     MAT8510                 DONE ...                         13764442
+         SPACE 1                                                        13764546
+MASUNEQ  DC    CL9'<UNEQUAL>'          NEONLY/DATA                      13764645
+MASUNDR  DC    CL9'*********'          NEONLY/USER                      13764746
+MASNEW1  DC    CL9'<-- NEWER'          NEONLY/USER                      13764846
+MASNEW2  DC    CL9'NEWER -->'          NEONLY/USER                      13764946
+MASLIB1  DC    CL16'IN LIBRARY1 ONLY'  NEONLY/DATA | USER               13765046
+*                                                                       13765146
+MASEXC1  DC    CL11'--- PDSMATC'       SKIP HEADER LINES                13765248
+MASEXC2  DC    CL11'CRITERIA FO'       "    "      "                    13765348
+MASEXC3  DC    CL11'(SPF STATIS'       "    "      "                    13765448
+MASEXC4  DC    CL11'LIBRARY1 - '       "    "      "                    13765548
+MASEXC5  DC    CL11'LIBRARY2 - '       "    "      "                    13765648
+         SPACE 1                                                        13765746
+         CNOP  0,8                                                      13765846
+         SPACE 3                                                        13766036

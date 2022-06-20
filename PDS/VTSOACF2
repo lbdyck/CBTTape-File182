@@ -1,0 +1,152 @@
+//ASM      EXEC  PGM=ASMA90,REGION=32M,                                 00000101
+//             PARM=(NORLD,RENT,TERM,OBJ,                               00000201
+//             'XREF(SHORT),SIZE(MAX,ABOVE)')                           00000304
+//SYSLIB   DD  DSN=SYS1.MODGEN,DISP=SHARE                               00000501
+//         DD  DSN=SYS1.MACLIB,DISP=SHARE                               00000601
+//         DD  DSN=ACF2.R12.CAIMAC,DISP=SHR    <=== ACF2 SOURCE MACLIB  00000703
+//SYSUT1   DD  UNIT=VIO,SPACE=(4096,(120,120),,,ROUND),DCB=BUFNO=1      00000801
+//SYSLIN   DD  UNIT=VIO,SPACE=(TRK,(5,5)),DISP=(MOD,PASS),DSN=&&X,      00000901
+//             DCB=BLKSIZE=3120                                         00001001
+//SYSPRINT DD  SYSOUT=*                                                 00001101
+//SYSTERM  DD  SYSOUT=*                                                 00001201
+//SYSIN    DD  *                                                        00130000
+VTSOCMD  CSECT                                                          00140000
+*                                                                       00150000
+* SAMPLE TSO COMMAND AUTHORIZATION EXIT FOR ACF2 SYSTEMS WRITTEN BY:    00160000
+*   SAM LEPORE   WELLS FARGO BANK, SAN FRANCISCO, CALIFORNIA            00170000
+*** UPDATED 6/12/85 PER SAM LEPORE                                      00180000
+*                                                                       00190000
+*        TSO COMMAND VALIDATION EXIT                                    00200000
+*                                                                       00210000
+*        THIS ROUTINE IS CALLED BY THE TSO PROCESSOR TO VALIDATE        00220000
+*        THE TSO COMMAND USAGE.                                         00230000
+*                                                                       00240000
+*        FUNCTIONS -                                                    00250000
+*            1) INVOKE ACF2 TO VALIDATE USERS ACCESS TO THE TSO COMMAND 00260000
+*                                                                       00270000
+*            2) IF ACCESS IS ALLOWED, CHECK THE FIRST CHARACTER OF THE  00280000
+*               COMMAND NAME FOR THE ACF2 COMMAND LIMITING "BYPASS",    00290000
+*               AND REMOVE IT IF IT IS PRESENT.                         00300000
+*                                                                       00310000
+*        INPUT -                                                        00320000
+*            R1 POINTS TO A STANDARD TSO CPPL FOLLOWED BY A POINTER     00330000
+*            TO AN EIGHT BYTE AREA CONTAINING THE COMMAND NAME.         00340000
+*                                                                       00350000
+*        OUTPUT -                                                       00360000
+*            R15 CONTAINS A RETURN CODE WITH THE FOLLOWING MEANING:     00370000
+*               0 - COMMAND IS AUTHORIZED                               00380000
+*               4 - COMMAND IS NOT AUTHORIZED                           00390000
+*                                                                       00400000
+*        NOTE - USE OF THE ACF2 MACROS ACFSVC AND ACFGACVT REQUIRES     00410000
+*            INCLUSION OF MODULE ACF$GCVT DURING LINK EDIT.             00420000
+*                                                                       00430000
+         EJECT                                                          00440000
+         SAVE  (14,12),,VTSOCMD-&SYSDATE-&SYSTIME SAVE REGISTERS        00450000
+         USING VTSOCMD,R12        ESTABLISH ADDRESSABILITY              00460000
+         LR    R12,R15            LOAD BASE REGISTER                    00470000
+         LR    R11,R1             SET UP PARAMETER REGISTER             00480000
+         GETMAIN RU,LV=WORKSIZE,BNDRY=PAGE  ACQUIRE WORK AREA           00490000
+         ST    R13,4(,R1)         CHAIN                                 00500000
+         ST    R1,8(,R13)           SAVEAREAS                           00510000
+         LR    R13,R1             POINT TO MY SAVE AREA                 00520000
+         USING WORKAREA,R13       ESTABLISH ADDRESSABILITY              00530000
+         L     R11,16(R11)        POINT TO COMMAND NAME                 00540000
+*                                                                       00550000
+*        PREPARE PARAMETER LIST FOR ACF2 CALL                           00560000
+*        (ACF COMMAND LIMITING USES SAME FORMAT AS BLDL SVC)            00570000
+*                                                                       00580000
+         MVC   BLDLPARM(BLDLHDRL),BLDLHDR MOVE IN COUNT AND LENGTH      00590000
+         MVC   BLDLCMD(8),0(R11)  MOVE IN COMMAND NAME                  00600000
+*                                                                       00610000
+*        ISSUE ACF2 SVC FOR VALIDATION                                  00620000
+*                                                                       00630000
+         ACFSVC BLDLPARM,TYPE=C,NONE=NOACF2                             00640000
+         LTR   R15,R15            TEST RETURN CODE                      00650000
+         BNZ   NOTAUTH            COMMAND IS NOT AVAILABLE TO USER      00660000
+*                                                                       00670000
+*        COMMAND IS ALLOWED. IF THE FIRST CHARACTER IS THE COMMAND      00680000
+*        LIMITING BYPASS CHARACTER, IT MUST BE REMOVED BEFORE ATTACH.   00690000
+*                                                                       00700000
+         ACFGACVT R2,NONE=NOACF2  GET ADDRESS OF ACF CVT                00710000
+         USING ACCVT,R2                                                 00720000
+****                                                                 SL 00730000
+****===>       THE FOLLOWING THREE LINES HAVE BEEN COMMENTED OUT     SL 00740000
+****           BECAUSE THE COMMAND LIMITING BYPASS CHARACTER IS      SL 00750000
+****           NO LONGER IN THE FDR AS OF ACF2 RELEASE 4.0           SL 00760000
+****                                                                 SL 00770000
+****                                                                 SL 00780000
+****                                                                 SL 00790000
+****===> L     R2,ACCFDR          ADDRESS OF FIELD DEFINITION RECORD SL 00800000
+****===> USING ACFDR,R2                                              SL 00810000
+****===> CLC   0(1,R11),FDRTBYPC  IS FIRST CHAR THE BYPASS CHAR ?    SL 00820000
+         CLC   0(1,R11),ACCTBYPC  IS FIRST CHAR THE BYPASS CHAR ?    SL 00830000
+         DROP  R2                                                       00840000
+         BNE   AUTH               NO, DONE                              00850000
+         MVC   0(7,R11),1(R11)    YES, SHIFT LEFT (OVERLAY BYP CHAR)    00860000
+         MVI   7(R11),C' '        INSERT TRAILING BLANK                 00870000
+         B     AUTH                                                     00880000
+*                                                                       00890000
+*        IF ACF2 IS NOT ACTIVE, INFORM THE USER, WARN THE OPERATOR      00900000
+*           THEN ALLOW ACCESS                                           00910000
+*                                                                       00920000
+NOACF2   WTO   'WARNING - ACF2 IS NOT ACTIVE',ROUTCDE=(1,9,11),DESC=(6) 00930000
+         B     AUTH                                                     00940000
+         SPACE 3                                                        00950000
+NOTAUTH  DS    0H                 FAIL REQUEST                          00960000
+         LA    R2,4                                                     00970000
+         B     EXIT               EXIT                                  00980000
+AUTH     DS    0H                 ALLOW REQUEST                         00990000
+         LA    R2,0                                                     01000000
+         B     EXIT               EXIT                                  01010000
+         SPACE 2                                                        01020000
+EXIT     DS    0H                                                       01030000
+         LR    R1,R13             GET POINTER TO WORK AREA              01040000
+         L     R13,4(,R13)        UNCHAIN SAVE AREAS                    01050000
+         FREEMAIN R,LV=WORKSIZE,A=(1)  FREE DYNAMIC AREA                01060000
+         LR    R15,R2             RESTORE RETURN CODE                   01070000
+         RETURN (14,12),RC=(15)                                         01080000
+         SPACE 2                                                        01090000
+         EJECT                                                          01100000
+*                                                                       01110000
+*        CONSTANTS                                                      01120000
+*                                                                       01130000
+BLDLHDR  DS    0H                                                       01140000
+         DC    XL2'0001'               COUNT OF ENTRIES                 01150000
+         DC    XL2'0008'               LENGTH OF DATA                   01160000
+         SPACE 3                                                        01170000
+BLDLHDRL EQU   *-BLDLHDR                                                01180000
+         SPACE 3                                                        01190000
+         LTORG                                                          01200000
+****===> REGS        <=== DELETED, USE AXCFREGS INSTEAD.             SL 01210000
+         SPACE 3                                                        01220000
+         ENTRY PATCH                                                    01230000
+PATCH    DC    50S(*)             PATCH AREA                            01240000
+         EJECT                                                          01250000
+WORKAREA DSECT                                                          01260000
+SAVEAREA DS    18F                SAVE AREA                             01270000
+BLDLPARM DS    0XL12              BLDL PARAMETER LIST                   01280000
+BLDLCNT  DS    H                  COUNT OF ENTRIES                      01290000
+BLDLLEN  DS    H                  LENGTH OF DATA                        01300000
+BLDLCMD  DS    CL8                COMMAND NAME                          01310000
+         DS    0D                 FILL OUT DSECT                        01320000
+WORKSIZE EQU   *-WORKAREA         LENGTH OF WORK AREA                   01330000
+         SPACE 3                                                        01340000
+         ACFREGS                  GENERATE ACF2 REGISTER EQUATES     SL 01350000
+         SPACE 3                                                        01360000
+         ACCVT                    GENERATE ACF2 COMMUNICATION VECTOR    01370000
+****===> SPACE 3     <===  2 LINES DELETED, FDR NOT USED FOR R4.0    SL 01380000
+****===> ACFDR       <===  DELETED         ACF2 FIELD DEFINITION REC SL 01390000
+         END                                                            01400000
+//LK1    EXEC  PGM=IEWL,PARM='MAP,RENT,REUS,REFR,LET,NCAL',COND=(5,LT)  01410000
+//SYSPRINT DD  SYSOUT=*                                                 01420000
+//SYSLMOD  DD  DISP=SHR,DSN=LINK.LIBRARY    <=== MODIFY                 01430000
+//ACFMOD   DD  DISP=SHR,DSN=ACFMOD.LIBRARY  <=== MODIFY                 01440000
+//IN       DD  DSN=&&X,DISP=(OLD,DELETE)                                01450000
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(TRK,(5,5))                             01460000
+//SYSLIN   DD  *                                                        01470000
+  REPLACE  VTSOCMD                          <=== ADDED FOR RELINK    SL 01480000
+  INCLUDE  SYSLMOD(PDS45678)                <=== MODIFY                 01490000
+  INCLUDE  IN                                                           01500000
+  INCLUDE  ACFMOD(ACF$GCVT)                                             01510000
+  ENTRY    PDSMAIN                                                      01520002
+  NAME     PDS45678(R)                      <=== MODIFY                 01530000

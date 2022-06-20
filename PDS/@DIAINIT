@@ -1,0 +1,437 @@
+         TITLE 'ISPF - INITIALIZATION 1 SUBROUTINE'            SS NOV85 00010009
+* INITIALIZE THE DIALOG VARIABLES                              SS JUL84 00020000
+ISPVINIT DS    0H                                              SS MAR85 00030000
+         USING *,R4                                            SS MAR85 00040000
+         MVI   SPFINPUT,C' '           BLANK IF NOT USED YET   SS NOV84 00050000
+         MVC   SPFINPUT+1(48),SPFINPUT                         SS NOV84 00060000
+         MVC   SPFZSAV(13),ISPENDIT  DEFAULT                   SS NOV84 00070000
+         MVC   SPFCOMPP(8),ISPCOMPP  DEFAULT                  DRK SEP05 00071017
+         L     R1,VPDSMAIN           PDSMAIN                  DRK MAY13 00071123
+         MVC   SPFPGMVV(10),21(R1)   PDS VERSION NUMBER       DRK MAY13 00072024
+         XC    SPFVFLGS,SPFVFLGS  CLEAR ODD VARIABLE FLAGS     SS NOV85 00080000
+* CHECK FOR VER 2 OR LATER              *                      SS AUG86 00090000
+         LA    R14,VCOPY            GET THE ENVIRONMENT        SS MAR85 00100005
+         ST    R14,PARMLIST                                    SS MAR85 00110000
+         LA    R14,VZENVIR          GET ISPF ENVIRONMENT       SS MAR85 00120005
+         L     R15,ISPL32           SET LENGTH                 SS MAR85 00130000
+         ST    R15,SPFFIXED            TO 32                   SS MAR85 00140005
+         LA    R15,SPFFIXED               USE AS PARM          SS MAR85 00150000
+         LA    R0,SPFZENVI                                     SS MAR85 00160000
+         LA    R1,ISPMOVE                                      SS MAR85 00170000
+         STM   R14,R1,PARMLIST+4                               SS MAR85 00180000
+         OI    PARMLIST+16,X'80'                               SS MAR85 00190000
+         LA    R1,PARMLIST                                     SS MAR85 00200000
+         L     R15,ISPLINK                                     SS MAR85 00210000
+         BASR  R14,R15                                         SS MAR85 00220000
+         CH    R15,ISPH16           SHORT                      SS AUG86 00230000
+         BE    ISPVINT1             CONTINUE ANYWAY            SS AUG86 00240000
+         C     R15,ISPL8            RC=8 -- FROM ISPFV1?      ABL APR85 00250000
+         BL    ISPVINT1             RC 0 FROM ISP V2           SS AUG86 00260000
+         BH    ISPERR               RC 20 SEVER ERROR          SS AUG86 00270000
+         B     ISPCLN               CLEANUP AND EXIT           SS AUG86 00280000
+ISPVINT1 DS    0H                                              SS AUG86 00290000
+         L     R1,CVTPTR(,R0)           CVT                    SS JUL88 00300000
+         TM    CVTDCB-CVT(R1),CVTMVSE   XA SYSTEM              SS JUL88 00310000
+         BZ    *+8                      NO                     SS JUL88 00320000
+         OI    SPFLAG5,SPFXA            FLAG FOR XA            SS JUL88 00330000
+         BAS   R2,ISPCTLSM         REFRESH FIRST TIME          SS AUG86 00340000
+         LA    R14,VDEFINE         START VDEFINES              SS JUL84 00350000
+         ST    R14,PARMLIST                                    SS JUL84 00360000
+         LA    R14,VSPFVFIX        ALL FIXED DIALOG VERBS      SS SEP84 00370000
+         LA    R15,SPFFIXED                                    SS JUL84 00380000
+         LA    R0,ISPFIX                                       SS JUL84 00390000
+         LA    R1,ISPL4                                        SS JUL84 00400000
+         STM   R14,R1,PARMLIST+4                               SS JUL84 00410000
+         OI    PARMLIST+16,X'80'                               SS JUL84 00420000
+         LA    R1,PARMLIST                                     SS JUL84 00430000
+         L     R15,ISPLINK                                     SS JUL84 00440000
+         BASR  R14,R15                                         SS JUL84 00450000
+         LTR   R15,R15                                         SS JUL84 00460000
+         BNZ   ISPERR                                          SS JUL84 00470000
+         LA    R1,ISPVIV                                       SS NOV85 00480000
+         BAS   R2,ISPVDEFX                                     SS NOV85 00490000
+         LA    R1,ISPVIV2                                      SS AUG86 00500000
+         BAS   R2,ISPVDEFX                                     SS AUG86 00510000
+         B     ISPVINT2                                        SS NOV85 00520000
+         DS    0F                                              SS NOV85 00530000
+ISPVIV   DC    H'0',X'80',X'00'                                SS NOV85 00540000
+         DC    A(VZCMD),AL2(SPFVZCMD-SPWRKC),H'250'            SS NOV85 00550000
+         DC    A(VZVERB),AL2(SPFRETRN-SPWRKC),H'8'             SS AUG86 00560000
+         DC    A(VZSCRLA),AL2(SPFSCRLA-SPWRKC),H'4'            SS OCT88 00570000
+         DC    A(VSPFMSG1),AL2(SPFMLIN1-SPWRKC),H'8'           SS NOV85 00580000
+         DC    A(VSPFMSG2),AL2(SPFMLIN2-SPWRKC),H'79'          SS NOV85 00590000
+         DC    A(VSPFZSEL),AL2(SPFZSEL-SPWRKC),H'250'          SS AUG86 00600000
+         DC    A(VPDSTNAM),AL2(SPFTBL-SPWRKC),H'8'             SS AUG86 00610000
+         DC    A(VPDSTCOD),AL2(SPFTBL+2-SPWRKC),H'1'           SS AUG86 00620000
+         DC    A(VZERRMSG),AL2(SPFZERR-SPWRKC),H'8'            SS AUG86 00630000
+         DC    A(VPDSUSRX),AL2(SPFUSRXX-SPWRKC),H'8'           SS AUG86 00640000
+         DC    A(VPDSUSRX+09),AL2(SPFUSRXX-SPWRKC),H'8'        SS AUG86 00650000
+         DC    A(VPDSUSRX+18),AL2(SPFUSRXX-SPWRKC),H'8'        SS AUG86 00660000
+         DC    A(VPDSUSRX+27),AL2(SPFUSRXX-SPWRKC),H'8'        SS AUG86 00670000
+         DC    A(VPDSUSRX+36),AL2(SPFUSRX2-SPWRKC),H'8'        SS OCT88 00680000
+         DC    A(VPDSUSRX+45),AL2(SPFUSRX2-SPWRKC),H'8'        SS OCT88 00690000
+         DC    A(VPDSLN1),AL2(SPFLIN1-SPWRKC),H'79'            SS OCT88 00700000
+         DC    A(VPDSLN2),AL2(SPFLIN2-SPWRKC),H'79'            SS OCT88 00710000
+         DC    A(VPDSLN1W),AL2(SPFLIN1W-SPWRKC),H'158'        DRK JUL04 00711013
+         DC    A(VPDSSTX),AL2(SPFFUNST-SPWRKC),H'1'            SS AUG86 00720000
+         DC    A(VPDFLTX),AL2(SPFMEMP-SPWRKC),H'3'             SS AUG86 00730000
+         DC    A(VPDSSEL),AL2(SPFSELFU-SPWRKC),H'4'            SS JUL87 00740000
+         DC    A(VPDSPASS),AL2(SPFPASST-SPWRKC),H'8'           SS JUL87 00750000
+         DC    A(VPDSBLK),AL2(SPFBLKCM-SPWRKC),H'4'            SS DEC87 00760000
+         DC    A(VPDSTLIM),AL2(SPFTLIM-SPWRKC),H'6'            SS NOV88 00761000
+         DC    A(VPDSFIND),AL2(SPFFDSAV-SPWRKC),H'32'         DRK DEC02 00761103
+         DC    A(VPDSCOMP),AL2(SPFCOMPP-SPWRKC),H'8'          DRK SEP05 00761216
+         DC    A(VPDSVERS),AL2(SPFPGMVV-SPWRKC),H'10'         DRK MAY13 00761324
+         DC    X'FF'                                           SS NOV85 00762000
+VSPFZSEL DC    C'PDSZSEL '                                     SS AUG86 00763000
+VPDSTNAM DC    C'PDSTNAME '             *                      SS AUG86 00764000
+VPDSTCOD DC    C'PDSTCODE '             *                      SS AUG86 00765000
+VZERRMSG DC    C'ZERRMSG '              *                      SS AUG86 00766000
+VPDSUSRX DC    CL9'USRLEFT'             *                      SS AUG86 00767000
+         DC    CL9'USRRIGHT'            *                      SS AUG86 00768000
+         DC    CL9'USRRFIND'            *                      SS AUG86 00769000
+         DC    CL9'USRRCHG '            *                      SS OCT88 00770000
+         DC    CL9'USRUP   '            *                      SS OCT88 00780000
+         DC    CL9'USRDOWN '            *                      SS AUG86 00790002
+VPDSPASS DC    C'PDSPASS '                                     SS JUL87 00800000
+VPDSSTX  DC    C'(PDSSTL PDSSTM PDSSTA PDSSTV '                SS OCT88 00810000
+         DC    C'PDSSTW PDSSTC PDSSTT PDSSTX '                 SS OCT88 00820000
+         DC    C'PDSSTF PDSSTS PDSSTI PDSSTN '                 SS OCT88 00830000
+         DC    C')'        END DEFAULT LIST                    SS OCT88 00840000
+VPDFLTX  DC    C'(PDSMEMP PDSLKDT PDSALCK PDSALUP PDSENDX '    SS OCT88 00850000
+         DC    C' PDSTDEL PDSTOLD PDSSWAP PDSEDUP PDSENDP '    SS DEC87 00860000
+         DC    C' PDSSPAC PDSSPWA '                            SS OCT88 00870000
+         DC    C' PDSLFOLD PDSLFDEL PDSLFAUT PDSLFPRM '        SS NOV88 00880000
+         DC    C' PDSTPSET PDSTPLOG PDSTPCPY '                 SS NOV88 00890000
+* SORT DEFAULTS  (CONTINUATION TO ABOVE) MUST BE 9 BYTES EACH  SS OCT88 00900000
+VPDFSRT  DS    0X   INDEXED BY SORT                            SS OCT88 00910000
+         DC    C'PDSSRTDM PDSSRTDU PDSSRTDV '                  SS OCT88 00920000
+         DC    C'PDSSRTDA PDSSRTDF PDSSRTDC '                  SS OCT88 00930000
+         DC    C'PDSSRTDX '                                    SS OCT88 00940000
+         DC    C')'        END DEFAULT LIST                    SS OCT88 00950000
+VPDSSEL  DC    C'(PDSSCSEL PDSLDSEL PDSLASEL PDSLVSEL '        SS NOV88 00960000
+         DC    C'PDSLCSEL PDSTTSEL PDSCXSEL '                  SS NOV88 00970000
+         DC    C'PDSLFSEL PDSCSSEL '                           SS NOV88 00980000
+         DC    C')'        END SELECT  LIST                    SS NOV88 00990000
+VPDSBLK  DC    C'PDSBLKCM '                                    SS DEC87 01000000
+VPDSTLIM DC    C'PDSTLIM  '                                    SS NOV88 01010000
+VPDSFIND DC    C'PDSFIND  '                                   DRK DEC02 01011004
+VPDSCOMP DC    C'PDSCOMPP '                                   DRK SEP05 01012016
+VPDSVERS DC    C'PDSPGMVV '                                   DRK MAY13 01013019
+*     DEF VARS IN #MDSECT               *                      SS AUG86 01020000
+         DS    0F                       *                      SS AUG86 01030000
+ISPVIV2  DC    H'0',X'04',X'01'      DEF VARS IN #MDSECT       SS AUG86 01040000
+         DC    A(VSPFMSG),AL2(SPFDSNMG-WORKAREA),H'79'         SS AUG86 01050000
+         DC    A(VPDSSETP),AL2(SETPROF-WORKAREA),H'8'          SS AUG86 01060000
+         DC    A(VPDSSETM),AL2(SETMACRO-WORKAREA),H'8'         SS AUG86 01070000
+         DC    X'FF'                                           SS AUG86 01080000
+VPDSSETP DC    C'PDSSETP '              *                      SS AUG86 01090000
+VPDSSETM DC    C'PDSSETM '              *                      SS AUG86 01100000
+* SELECT DEFAULTS .. MUST BE IN ORDER   *                      SS MAY88 01110000
+ISPDEFS1 DC    CL4'&ISCSEL'   SOURCE    *                      SS JUL87 01120000
+         DC    CL4'&ILDSEL'   LOAD      *                      SS JUL87 01130000
+         DC    CL4'&ILASEL'   LISTA     *                      SS JUL87 01140000
+         DC    CL4'&ILVSEL'   LISTV     *                      SS JUL87 01150000
+         DC    CL4'&ILCSEL'   LISTC/LISTF                      SS OCT88 01160000
+         DC    CL4'&ITTSEL'   TSO COMMAND TABLE                SS OCT88 01170000
+         DC    CL4'&ICXSEL'   CAX       *                      SS OCT88 01180000
+         DC    CL4'&IFLSEL'   FILTER    *                      SS OCT88 01190000
+         DC    CL4'&ICSSEL'   CSECTS    *                      SS OCT88 01200000
+         DC    X'FF'          END OF LIST                      SS MAY88 01210000
+* ENVIORMENTAL AND MEMLIST DEFAULTS MUST BE IN ORDER           SS MAY88 01220000
+ISPDEFE1 DC    CL3'&LKEDDAT'            *                      SS JUL87 01230000
+         DC    CL3'&ALICHK'             *                      SS MAY88 01240000
+         DC    CL3'NO'        ALIAS UPDATE OPTION              SS OCT88 01250000
+         DC    CL3'YES'       ENDX      *                      SS MAY88 01260000
+         DC    CL3'&SPFTDEL'            *                      SS MAY88 01270000
+         DC    CL3'&SPFTOLD'            *                      SS MAY88 01280000
+         DC    CL3'&SWAP'               *                      SS MAY88 01290000
+         DC    CL3'&EDUPDT'             *                      SS MAY88 01300000
+         DC    CL3'NO'        ORDERED PENDING ON END           SS MAY88 01310000
+         DC    CL3'YES'       LISTV SPACE IS DEFAULT           SS JUL88 01320000
+         DC    CL3'NO'        WAIT ON VTOC IS NO               SS JUL88 01330000
+         DC    CL3'NO'        LISTF REMOVE OLD                 SS NOV88 01340000
+         DC    CL3'NO'        LISTF REMOVE DELETE              SS NOV88 01350000
+         DC    CL3'NO'        LISTF AUTO UPDATE ON CHANGE      SS NOV88 01360000
+         DC    CL3'YES'       LISTF DELETE PROMPT              SS NOV88 01370000
+         DC    CL3'&TRAP'     TRAP ON                          SS NOV88 01380000
+         DC    CL3'*'         TRAP LOG NUMBER                  SS NOV88 01390000
+         DC    CL3'YES'       TRAP COPY CMD TO LOG             SS NOV88 01400000
+* SORT DEFAULTS  * FOLLOWED BY 2 BYTES OF HEX FOR TBL MATCH    SS OCT88 01410000
+         DC    XL3'5C0000'    MEML SOURCE                      SS OCT88 01420000
+         DC    XL3'5C0000'    MEML LOAD                        SS OCT88 01430000
+         DC    XL3'5C0000'    LISTV VOL                        SS OCT88 01440000
+         DC    XL3'5CA000'    LISTV ADDRESS                    SS OCT88 01450000
+         DC    XL3'5C0000'    LISTC/LISTFILE                   SS OCT88 01460000
+         DC    XL3'5C0000'    CSECT                            SS OCT88 01470000
+         DC    XL3'5C0000'    CAX                              SS OCT88 01480000
+         DC    X'FF'          END OF LIST                      SS MAY88 01490000
+VSPFFX2  DC    C'(PDSCSIZE PDSCMAX PDSCCKPT)'                  SS JUL87 01500000
+ISPVINT2 DS    0H                                              SS NOV85 01510000
+         MVI   SPFVZCMD,C' '                BLANK ..           SS AUG86 01520000
+         MVC   SPFVZCMD+1(L'SPFVZCMD-1),SPFVZCMD    RIPPLE     SS AUG86 01530000
+         MVC   SPFUSRXX,ISPBLK8   BLANK FOR PASS ENTRY         SS AUG86 01540000
+         MVC   SPFUSRX2,ISPBLK8   BLANK FOR PASS ENTRY         SS OCT88 01550000
+         MVC   SPFSTAXX(4),STAXPARM  SAVE STAX EXIT RTN ADDR   SS AUG86 01560000
+*  SETUP DEFAULTS                       *                      SS AUG86 01570000
+*        BAS   R2,ISPCERT         CONTROL ERRORS RETURN       DRK JUN19 01570133
+*        BAS   R2,ISPPTON         CONTROL PASSTHRU LRSCROLL   DRK JUN19 01570233
+*                                                  PASON      DRK JUN19 01570328
+*        BAS   R2,ISPCERC         CONTROL ERRORS CANCEL       DRK JUN19 01571033
+         MVC   SPFPASST,ISPPASST        SETUP PASSTHRU         SS JUL87 01580000
+         LA    R15,VPDFLTX              *                      SS AUG86 01590000
+         BAS   R2,ISPVGETP              GET FROM PROFILE       SS AUG86 01600000
+         LA    R15,VPDSSEL              *                      SS JUL87 01610000
+         BAS   R2,ISPVGETP              GET FROM PROFILE       SS JUL87 01620000
+         LA    R15,VSPFFX2              *                      SS JUL87 01630000
+         BAS   R2,ISPVGETP              GET FROM PROFILE       SS JUL87 01640000
+         LA    R15,VPDSTLIM             *                      SS NOV88 01650000
+         BAS   R2,ISPVGETP              GET FROM PROFILE       SS NOV88 01660000
+         LA    R1,SPFLKDT               FIRST TO PROCESS       SS MAY88 01670000
+         LA    R15,ISPDEFE1             FIRST DEFAULT          SS MAY88 01680000
+ISPVINT3 DS    0H                       *                      SS MAY88 01690000
+         CLI   0(R15),X'FF'             END OF LIST            SS MAY88 01700000
+         BE    ISPVINT4                 YES                    SS MAY88 01710000
+         CLI   0(R1),C' '               BLANK USER DEFAULT     SS MAY88 01720000
+         BNE   *+10                     NO, GOOD               SS MAY88 01730000
+         MVC   0(3,R1),0(R15)           YES, SUPPLY DEFAULT    SS MAY88 01740000
+         LA    R1,3(,R1)                NEXT                   SS MAY88 01750000
+         LA    R15,3(,R15)              NEXT                   SS MAY88 01760000
+         B     ISPVINT3                 WORK THE WHOLE LIST    SS MAY88 01770000
+ISPVINT4 DS    0H                       *                      SS MAY88 01780000
+         LA    R1,SPFSCSEL              FIRST TO PROCESS       SS MAY88 01790000
+         LA    R15,ISPDEFS1             FIRST DEFAULT          SS MAY88 01800000
+ISPVINT5 DS    0H                       *                      SS MAY88 01810000
+         CLI   0(R15),X'FF'             END OF LIST            SS MAY88 01820000
+         BE    ISPVINT6                 YES                    SS MAY88 01830000
+         CLI   0(R1),C' '               BLANK USER DEFAULT     SS MAY88 01840000
+         BNE   *+10                     NO, GOOD               SS MAY88 01850000
+         MVC   0(4,R1),0(R15)           YES, SUPPLY DEFAULT    SS MAY88 01860000
+         LA    R1,4(,R1)                NEXT                   SS MAY88 01870000
+         LA    R15,4(,R15)              NEXT                   SS MAY88 01880000
+         B     ISPVINT5                 WORK THE WHOLE LIST    SS MAY88 01890000
+ISPVINT6 DS    0H                       *                      SS MAY88 01900000
+         LA     R15,0                   *                      SS OCT88 01910000
+         C      R15,SPFCMAX         IS IT SET                  SS OCT88 01920000
+         BL     *+10                YES                        SS MAR89 01930000
+         MVC    SPFCMAX,ISPMAX      NO, SET IT                 SS OCT88 01940000
+         C      R15,SPFCCKPT        IS IT SET                  SS OCT88 01950000
+         BL     *+10                YES                        SS MAR89 01960000
+         MVC    SPFCCKPT,ISPCKPT    NO, SET IT                 SS OCT88 01970000
+         C      R15,SPFCSIZE        IS IT SET                  SS OCT88 01980000
+         BL     *+10                YES                        SS MAR89 01990000
+         MVC    SPFCSIZE,ISPSIZE    NO, SET IT                 SS OCT88 02000000
+         LA     R15,15              MINIMUM CKPT SIZE          SS OCT88 02010000
+         C      R15,SPFCCKPT        LESS THAN 15               SS OCT88 02020000
+         BNH    *+8                 NO, OK                     SS OCT88 02030000
+         ST     R15,SPFCCKPT        YES, SET TO 15             SS OCT88 02040000
+         LA     R15,100             MINIMUM SIZE               SS OCT88 02050000
+         C      R15,SPFCMAX         LESS THAN 100              SS MAR89 02060000
+         BNH    *+8                 NO, OK                     SS MAR89 02070000
+         ST     R15,SPFCMAX         YES, SET TO 100            SS MAR89 02080000
+         C      R15,SPFCSIZE        LESS THAN 100              SS OCT88 02090000
+         BNH    *+8                 NO, OK                     SS OCT88 02100000
+         ST     R15,SPFCSIZE        YES, SET TO 100            SS OCT88 02110000
+*  CREATE TABLE NAME FROM TIME OF DAY TO MAKE UNIQUE           SS JUL87 02120008
+         LA    R14,VCOPY            GET THE TIME               SS JUL84 02130005
+         ST    R14,PARMLIST                                    SS JUL84 02140000
+         LA    R14,VZTIME           GET TIME OF DATA           SS JUL84 02150000
+         L     R15,ISPL8            SET LENGTH                 SS JUL84 02160000
+         ST    R15,SPFFIXED            TO 8                    SS JUL84 02170000
+         LA    R15,SPFFIXED               USE AS PARM          SS JUL84 02180000
+         LA    R0,SPFTBL                                       SS JUL84 02190000
+         LA    R1,ISPMOVE                                      SS JUL84 02200000
+         STM   R14,R1,PARMLIST+4                               SS JUL84 02210000
+         OI    PARMLIST+16,X'80'                               SS JUL84 02220000
+         LA    R1,PARMLIST                                     SS JUL84 02230000
+         L     R15,ISPLINK                                     SS JUL84 02240000
+         BASR  R14,R15                                         SS JUL84 02250000
+         LTR   R15,R15                                         SS JUL84 02260000
+         BNZ   ISPERR                                          SS JUL84 02270000
+         MVC   SPFTBL+5(2),SPFTBL+3 MINUTES PART OF TABLE NAME SS JUL84 02280000
+         MVC   SPFTBL+3(2),SPFTBL   HOURS ALSO                 SS JUL84 02290000
+         MVC   SPFTBL(3),ISPPDS     TABLE NAME STARTS PDS      SS JUL84 02300000
+         MVI   SPFTBL+7,C'1'        FILL OUT TO 8 CHAR        DRK MAR03 02310014
+*        LA    R14,VCOPY            GET THE ISPF SCREEN #     DRK MAR03 02311014
+*        ST    R14,PARMLIST                                   DRK MAR03 02312014
+*        LA    R14,VZSCREEN         GET ISPF LOGICAL SCREEN   DRK MAR03 02313014
+*        L     R15,ISPL1            SET LENGTH                DRK MAR03 02314014
+*        ST    R15,SPFFIXED            TO 1                   DRK MAR03 02315014
+*        LA    R15,SPFFIXED               USE AS PARM         DRK MAR03 02316014
+*        LA    R0,SPFTBL+7          FILL OUT TO 8 CHAR        DRK MAR03 02317014
+*        LA    R1,ISPMOVE              PDSHHMM.ZSCREEN        DRK MAR03 02318014
+*        STM   R14,R1,PARMLIST+4                              DRK MAR03 02319014
+*        OI    PARMLIST+16,X'80'                              DRK MAR03 02319114
+*        LA    R1,PARMLIST                                    DRK MAR03 02319214
+*        L     R15,ISPLINK                                    DRK MAR03 02319314
+*        BASR  R14,R15                                        DRK MAR03 02319414
+*        LTR   R15,R15                                        DRK MAR03 02319514
+*        BNZ   ISPERR                                         DRK MAR03 02319614
+ISPCREAT DS    0H                                              SS AUG86 02320000
+         MVI   SPFTBL+2,C'S'      MAKE NAME "PDS"              SS SEP84 02330000
+         LA    R14,TBCREATE       CREATE TABLE                 SS JUL84 02340000
+         ST    R14,PARMLIST                                    SS JUL84 02350000
+         LA    R14,SPFTBL                                      SS JUL84 02360000
+         LA    R15,0                                           SS JUL84 02370000
+         LA    R0,VPDSLIN                                      SS AUG86 02380000
+         ST    R0,SPFTVARA              SAVE FOR LATER         SS AUG86 02390000
+         LA    R1,ISPNOWRT                                     SS JUL84 02400000
+         STM   R14,R1,PARMLIST+4                               SS JUL84 02410000
+         OI    PARMLIST+16,X'80'                               SS JUL84 02420000
+ISPCREA2 LA    R1,PARMLIST                                     SS JUL84 02430000
+         L     R15,ISPLINK                                     SS JUL84 02440000
+         BASR  R14,R15                                         SS JUL84 02450000
+         LTR   R15,R15                                         SS JUL84 02460000
+         BZ    ISPIDONE                                        SS JUL84 02470000
+         C     R15,ISPL8          DUPLICATE NAME               SS JUL84 02480000
+         BNE   ISPERR             NO, MUST BE SEVERE ERROR     SS JUL84 02490000
+         CLI   SPFTBL+6,C'9'      9 DIGIT                      SS OCT88 02500000
+         BE    ISPCREA3           YES, CARRY ONE               SS OCT88 02510000
+         SR    R15,R15                                         SS OCT88 02520000
+         IC    R15,SPFTBL+6       GET DIGIT                    SS OCT88 02530000
+         LA    R15,1(R15)         ADD ONE TO MAKE DIFFERENT    SS OCT88 02540000
+         STC   R15,SPFTBL+6                                    SS OCT88 02550000
+         B     ISPCREA2           TRY AGAIN                    SS OCT88 02560000
+ISPCREA3 DS    0H                       *                      SS OCT88 02570000
+         MVI   SPFTBL+6,C'0'      ZERO ONES DIGIT              SS OCT88 02580000
+         SR    R15,R15                                         SS OCT88 02590000
+         IC    R15,SPFTBL+5       GET DIGIT                    SS OCT88 02600000
+         LA    R15,1(R15)         ADD ONE TO 10S DIGIT         SS OCT88 02610000
+         STC   R15,SPFTBL+5                                    SS OCT88 02620000
+         B     ISPCREA2           TRY AGAIN                    SS OCT88 02630000
+ISPIDONE OI    SPFLAG0,SPFTABLE  GOOD TABLE CREATED            SS JUL84 02640000
+         XC    SPFTFLG1(4),SPFTFLG1                            SS NOV85 02650000
+         XC    SPFTFF(2),SPFTFF                                SS NOV85 02660000
+         OI    SPFTFLG1,SPFTACT   SET TABLE ACTIVE             SS AUG86 02670000
+         MVI   SPFFUNST,C'I'      INIT TO INACTIVE             SS AUG86 02680000
+         MVC   SPFFUNST+1(7),SPFFUNST   REPEL                  SS AUG86 02690000
+         BAS   R2,ISPSETST        INIT STATUS FOR LOG          SS AUG86 02700000
+         CLI   SPFLAG1,SPFPTGET   HAVE LINE TO ADD             SS SEP84 02710000
+         BNE   ISPIDON2                 *                      SS AUG86 02720000
+         BAS   R2,ISPADDLN                                     SS AUG86 02730000
+         B     ISPIDON3                 *                      SS AUG86 02740000
+ISPIDON2 CLI   SPFLAG1,SPFPUTL    LINE WILL BE ADDED SOON      SS AUG86 02750000
+         BE    *+8                                             SS AUG86 02760000
+         BAS   R2,ISPADD1        MAKE TABLE NON EMPTY          SS AUG86 02770000
+ISPIDON3 LA    R14,SPFPSTKT        TOP OF STACK                SS AUG86 02780000
+         ST    R14,SPFPANTT        SET TOP                     SS NOV85 02790000
+         ST    R14,SPFPANCT        SET CURRENT                 SS NOV85 02800000
+         LA    R14,SPFPSTKL        LAST OF STACK               SS NOV85 02810000
+         ST    R14,SPFPANBT        SET BOTTOM                  SS NOV85 02820000
+         MVC   SPFLOGNM(8),SPFTBL  MAKE IT THE SAME            SS OCT88 02830000
+         MVC   SPFCSUF,SPFTBL      SET SUFFIX                  SS NOV85 02840000
+         L     R1,SPFSEC4A         GET BASE                    SS OCT88 02850000
+         LA    R1,SPFLOGHM-SPFSEC4K(R1) HOME FOR LOG           SS NOV85 02860000
+         ST    R1,SPFTHOME         INIT HOME  POINTER          SS NOV85 02870000
+         ST    R1,SPFLOGHA         INIT LOG HOME ADDR          SS OCT88 02880000
+         MVC   0(8,R1),SPFTBL      SET NAME                    SS OCT88 02890000
+         MVI   SPFTBINX+1,255      DUMMY TB CONT INDEX         SS MAY89 02891000
+         LA    R1,1                PANEL INDEX 1               SS NOV85 02900000
+         LNR   R1,R1               NEG FOR SWAP                SS NOV85 02910000
+         BAS   R2,ISPSTKI          CALL STACK ROUTINE          SS NOV85 02920000
+         BAS   R2,ISPSETST         ALSO INIT STATUS FLAG       SS AUG86 02930000
+         LA    R14,VREPLACE        VREPLACE ISPF FUNCTION      SS DEC87 02940000
+         LA    R15,ISPZHTOP        THIS VARIABLE               SS DEC87 02950000
+         LA    R0,ISPL8            8  CHARS LONG               SS DEC87 02960000
+         LA    R1,ISPTOPH          FIND IT HEAR                SS DEC87 02970000
+         STM   R14,R1,PARMLIST     SET PARMLIST                SS DEC87 02980000
+         OI    PARMLIST+12,X'80'   END PARMLIST FLAG           SS DEC87 02990000
+         BAS   R2,ISPSXEQ8         CALL ISPLINK                SS DEC87 03000000
+         LA    R1,ISPEDREC         EDIT RECOVERY               SS JUL87 03010000
+         LA    R2,ISPQURY          QUERY OPTION                SS JUL87 03020000
+         STM   R1,R2,PARMLIST      SET PARMLIST 1/2            SS JUL87 03030000
+         OI    PARMLIST+4,X'80'    END PARMLIST FLAG           SS JUL87 03040000
+         BAS   R2,ISPSXEQ8         CALL ISPLINK                SS JUL87 03050000
+         LTR   R15,R15             RC ZERO                     SS JUL87 03060000
+         BZR   R3                  YES, DONE                   SS JUL87 03070000
+         LA    R15,ISPIRCVP        EDIT RECOVERY PENDING PANEL SS JUL87 03080000
+         LA    R1,ISPBLK8          NO MESSAGE                  SS JUL87 03090000
+         BAS   R2,ISPSINGI         DISPLAY PANEL               SS JUL87 03100000
+ISPIDON4 DS    0H                       *                      SS DEC87 03110000
+         LA    R1,ISPEDREC         EDIT RECOVERY               SS JUL87 03120000
+         LA    R2,ISPDEFER         DEFER HANDLING FOR NOW      SS JUL87 03130000
+         STM   R1,R2,PARMLIST      SET PARMLIST 1/2            SS JUL87 03140000
+         OI    PARMLIST+4,X'80'    END PARMLIST FLAG           SS JUL87 03150000
+         BAS   R2,ISPSXEQ0         CALL ISPLINK                SS JUL87 03160000
+         LA    R1,ISPEDREC         EDIT RECOVERY               SS DEC87 03170000
+         LA    R2,ISPQURY          QUERY OPTION                SS DEC87 03180000
+         STM   R1,R2,PARMLIST      SET PARMLIST 1/2            SS DEC87 03190000
+         OI    PARMLIST+4,X'80'    END PARMLIST FLAG           SS DEC87 03200000
+         BAS   R2,ISPSXEQ8         CALL ISPLINK                SS DEC87 03210000
+         LTR   R15,R15             RC ZERO                     SS DEC87 03220000
+         BZR   R3                  YES, DONE                   SS DEC87 03230000
+         B     ISPIDON4            LOOP THROUGH THEN           SS DEC87 03240000
+ISPSIZE  DC    F'&SPFSIZE'                                     SS JUL84 03250000
+ISPMAX   DC    F'&SPFMAX'                                      SS JUL84 03260000
+ISPCKPT  DC    F'&SPFCKPT'                                     SS JUL84 03270000
+ISPIRCVP DC    CL8'&P.RECO2'            *                      SS JUL87 03280000
+ISPEDREC DC    CL8'EDREC'               *                      SS JUL87 03290000
+ISPQURY  DC    CL8'QUERY'               *                      SS JUL87 03300000
+ISPDEFER DC    CL8'DEFER'               *                      SS JUL87 03310000
+ISPZHTOP DC    CL8'ZHTOP'          HELP TOP PANEL POINTER      SS DEC87 03320000
+ISPTOPH  DC    CL8'&P.PN@PO'       PDS TOP PANEL               SS DEC87 03330000
+ISPCOMPP DC    CL8'&CCAR'          PDS COMPARE PROGRAM        DRK SEP05 03331017
+VPDSMAIN DC    V(PDSMAIN)                                     DRK MAY13 03332020
+         DROP  R4                                              SS MAR85 03340000
+         SPACE 2                                               SS MAR85 03350000
+         TITLE 'ISPF - SET VARIABLES SUBROUTINE'               SS FEB89 03360000
+*                                                              SS JUL84 03370000
+*  SUPPORT ROUTE TO VDEFINE AND COPY DATA SET INFO             SS JUL84 03380000
+*    RETURN REG IS R3                                          SS JUL84 03390000
+*                                                              SS JUL84 03400000
+ISPSETVS DS    0H                                              SS SEP84 03410000
+         USING *,R4                                            SS MAR85 03420000
+         TM    SPFVFLGS,X'40'          VDEFINES DONE           SS NOV85 03430000
+         BO    ISPSETV2                                        SS NOV85 03440000
+         LA    R1,SPFPSTK                                      SS NOV85 03450000
+         ST    R1,SPFPANT                                      SS NOV85 03460000
+         ST    R1,SPFPANC                                      SS NOV85 03470000
+         LA    R1,SPFPSTKB                                     SS NOV85 03480000
+         ST    R1,SPFPANB                                      SS NOV85 03490000
+         LA    R1,ISPSETVZ                                     SS NOV85 03500000
+         BAS   R2,ISPVDEFX                                     SS NOV85 03510000
+ISPSETV2 DS    0H                                              SS SEP84 03520000
+         MVC   SPFDSNAM,DSNAME                                 SS SEP84 03530000
+         MVC   SPFPWD,PASSWORD                                 SS SEP84 03540000
+         MVC   SPFVOL,VOLUME       REQ VOL, MAY BE BLANK       SS NOV88 03550000
+         MVC   SPFVOLAL,VOLALLOC        ALLOCATED VOLUME       SS NOV88 03560000
+*              SPFMEMB SET BY CALLER                           SS NOV84 03570000
+*              MEMLNMSV SET BY CALLER                          SS NOV84 03580000
+         MVC   SPFDSORG,ISPPS          ASSUME DSORG=PS         SS SEP84 03590000
+         MVI   SPFTYPE,C' '            TYPE BLANK              SS NOV84 03600000
+         TM    DSORG,DS1DSGPO          IS IT PO                SS SEP84 03610000
+         BZ    ISPSETV4                NO                      SS NOV84 03620000
+         MVC   SPFDSORG,ISPPO          YES, SET TO PO          SS SEP84 03630000
+ISPSETV3 DS    0H                                              SS SEP84 03640000
+         TM    FLAGSCC,RECFMU              IS IT LOAD          SS SEP84 03650000
+         BZ    ISPSETV4                    NO                  SS SEP84 03660000
+         MVI   SPFTYPE,C'U'                YES, SET U          SS SEP84 03670000
+ISPSETV4 DS    0H                                              SS SEP84 03680000
+         MVI   SPFZSEL,C' '            CLEAR ZSEL              SS SEP84 03690000
+         MVC   SPFZSEL+1(249),SPFZSEL        RIPPLE            SS SEP84 03700000
+         BR    R3                                              SS SEP84 03710000
+         DROP  R4                                              SS MAR85 03720000
+         DS    0F                                              SS NOV85 03730000
+ISPSETVZ DC    H'0',X'40',X'00'                                SS NOV85 03740000
+         DC    A(VSPFDSN),AL2(SPFDSNAM-SPWRKC),H'44'           SS NOV85 03750000
+         DC    A(VSPFPWD),AL2(SPFPWD-SPWRKC),H'8'              SS NOV85 03760000
+         DC    A(VSPFVOL),AL2(SPFVOL-SPWRKC),H'6'              SS NOV85 03770000
+         DC    A(VSPFMEM),AL2(SPFMEMB-SPWRKC),H'8'             SS NOV85 03780000
+         DC    A(VSPFDATA),AL2(MEMLNMSV-SPWRKC),H'8'           SS NOV85 03790000
+         DC    A(VSPFDSG),AL2(SPFDSORG-SPWRKC),H'2'            SS NOV85 03800000
+         DC    A(VSPFTYPE),AL2(SPFTYPE-SPWRKC),H'1'            SS NOV85 03810000
+         DC    A(VSPFENTR),AL2(SPFENTER-SPWRKC),H'3'           SS DEC87 03820000
+         DC    A(VSPFSETA),AL2(SPFSETA-SPWRKC),H'3'            SS DEC87 03830000
+         DC    A(VSPFRCOP),AL2(SPFRCOPT-SPWRKC),H'46'          SS DEC87 03840000
+         DC    X'FF'                                           SS NOV85 03850000
+         SPACE 2                                               SS SEP84 03860000
+VSPFDSN  DC    C'PDSDSN '                                      SS JUL84 03870000
+VSPFPWD  DC    C'PDSPWD '                                      SS JUL84 03880000
+VSPFVOL  DC    C'(PDSVOL PDSVOLAL)'                            SS NOV88 03890000
+VSPFMEM  DC    C'PDSMEM '                                      SS JUL84 03900000
+VSPFDATA DC    C'PDSDATA '                                     SS NOV84 03910000
+VSPFDSG  DC    C'PDSDSORG '                                    SS JUL84 03920000
+VSPFTYPE DC    C'PDSTYPE '                                     SS JUL84 03930000
+VSPFENTR DC    C'PDSENTER '             *                      SS DEC87 03940000
+VSPFSETA DC    C'PDSSETA '              *                      SS DEC87 03950000
+VSPFRCOP DC    C'PDSRCOPT '             *                      SS DEC87 03960000

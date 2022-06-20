@@ -1,0 +1,220 @@
+//ONE   EXEC  PGM=ASMA90,REGION=2048K,                                  00010002
+//             PARM=(NORLD,RENT,TERM,'XREF(SHORT)')                     00020000
+//SYSLIB   DD  DSN=SYS1.MODGEN,DISP=SHR                                 00030001
+//         DD  DSN=SYS1.MACLIB,DISP=SHR                                 00040000
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(CYL,(10,5))                            00050000
+//SYSUT2   DD  UNIT=SYSDA,SPACE=(CYL,(10,5))                            00060000
+//SYSUT3   DD  UNIT=SYSDA,SPACE=(CYL,(10,5))                            00070000
+//SYSLIN   DD  UNIT=SYSDA,SPACE=(TRK,(5,5)),DISP=(,PASS),DSN=&&X,       00080002
+//         DCB=BLKSIZE=3120                                             00090000
+//SYSPRINT DD  SYSOUT=*                                                 00100000
+//SYSTERM  DD  SYSOUT=*                                                 00110000
+//SYSIN    DD  *                                                        00120000
+VTSOCMD  TITLE 'PDS TSO COMMAND VERIFICATION -- PCF VERSION'            00130000
+VTSOCMD  CSECT                                                          00140000
+*                                                                       00150000
+* SAMPLE TSO COMMAND AUTHORIZATION EXIT FOR PCF SYSTEMS WRITTEN BY:     00160000
+*   J MULTACH    AMERITECH SERVICES, INC.                               00170000
+*                                                                       00180000
+*                                                                       00190000
+*        TSO COMMAND VALIDATION EXIT                                    00200000
+*                                                                       00210000
+*        THIS ROUTINE IS CALLED BY THE TSO PROCESSOR TO VALIDATE THE    00220000
+*        TSO COMMAND USAGE.  CONTROL WILL BE RECEIVED IN THIS EXIT      00230000
+*        BEFORE EACH TSO COMMAND IS ATTACHED BY THE TSO SUBCOMMAND.     00240000
+*                                                                       00250000
+*        FUNCTIONS -                                                    00260000
+*            1) INVOKE IKJSCAN TO VALIDATE USERS ACCESS TO THE COMMAND. 00270000
+*               IKJSCAN HAS PREVIOUSLY BEEN CALLED BY PDS TO VALIDATE   00280000
+*               THE COMMAND.  THIS ONLY TRAPS COMMANDS WHICH PCF        00290000
+*               INDICATES ARE UNAUTHORIZED.  IT DOES NOT INDICATE THAT  00300000
+*               THE COMMAND SHOULD BE TRIED AS AN IMPLIED CLIST.        00310000
+*                                                                       00320000
+*               IKJSCAN IS CALLED WITH 'SPF' AS THE PRIMARY COMMAND     00330000
+*               NAME IN THE ECT.  THIS CAUSES PCF FRONT END TO IKJSCAN  00340000
+*               TO SET THE IMPLIED CLIST INDICATOR IF A COMMAND IS NOT  00350000
+*               FOUND OR IS BLOCKED.  PDS HAS BEEN MODIFIED TO ACCEPT   00360000
+*               A NEW RETURN CODE FROM THIS MODULE AND PDS WILL THEN    00370000
+*               SET THE IMPLIED EXEC INDICATOR TO BLOCK COMMANDS AS     00380000
+*               REQUIRED.                                               00390000
+*                                                                       00400000
+*            2) FOR UNAUTHORIZED ATTEMPTS, IKJSCAN (PCF) WILL ISSUE     00410000
+*               APPROPRIATE ERROR MESSAGES.                             00420000
+***                                                                     00430000
+***  THE ARGUMENT LIST FOR VTSOCMD HAS THE FOLLOWING ENTRIES:           00440000
+***                                                                     00450000
+***                                                                     00460000
+***  DISPLACEMENT    NAME         DESCRIPTION                           00470000
+***  ------------    ----         -----------                           00480000
+***             0    FULLTEXT     POINTS TO AL2(LENGTH),AL2(OFFSET),    00490000
+***                                         C'ORIGINAL SUBCOMMAND'      00500000
+***             4    UPT          UPT DSECT                             00510000
+***             8    PSCB         PSCB DSECT                            00520000
+***            12    ECT          ECT DSECT                             00530000
+***            16    COMMAND      THE 8 CHARACTER COMMAND NAME          00540000
+***                                                                     00550000
+***                                                                     00560000
+***                                                                     00570000
+*                                                                       00580000
+*        INPUT -                                                        00590000
+*            R1 POINTS TO A STANDARD TSO CPPL FOLLOWED BY A POINTER     00600000
+*            TO AN EIGHT BYTE AREA CONTAINING THE COMMAND NAME.         00610000
+*                                                                       00620000
+*        OUTPUT -                                                       00630000
+*            R15 CONTAINS A RETURN CODE WITH THE FOLLOWING MEANING:     00640000
+*               0 - COMMAND IS AUTHORIZED                               00650000
+*               4 - COMMAND IS NOT AUTHORIZED                           00660000
+*               8 - COMMAND NOT FOUND, TRY AS AN IMPLIED CLIST          00670000
+*                                                                       00680000
+***                                                                     00690000
+VTSOCMD  CSECT                                                          00700000
+         SAVE  (14,12),,*                                               00710000
+         LR    R6,R1                                                    00720000
+         LR    R12,R15                                                  00730000
+         USING VTSOCMD,R12                                              00740000
+         LA    R0,VTSOCMDL                  LENGTH OF SAVE AREA         00750000
+         GETMAIN RU,LV=(0),SP=0                                         00760000
+         ST    R1,8(,R13)                                               00770000
+         ST    R13,4(,R1)                                               00780000
+         LR    R13,R1                                                   00790000
+         USING VTSOCMDD,R13                                             00800000
+         SPACE 1                                                        00810000
+         LA    R14,REGEND                     START OF AREA TO CLEAR    00820000
+         LA    R15,VTSOCMDL-(REGEND-VTSOCMDD) LENGTH OF AREA TO CLEAR   00830000
+         SR    R4,R4                          SOURCE ADDRESS            00840000
+         SR    R5,R5                          PAD, LENGTH OF SOURCE     00850000
+         MVCL  R14,R4                         CLEAR THE DYNAMIC AREA    00860000
+         EJECT                                                          00870000
+***                                                                     00880000
+***  BUILD A DUMMY COMMAND BUFFER USING ONLY THE COMMAND AND NOT        00890000
+***  THE FULL COMMAND LINE                                              00900000
+***                                                                     00910000
+         LA    R4,13                                                    00920000
+         STH   R4,CMDBUFL                                               00930000
+         LA    R4,0                                                     00940000
+         STH   R4,CMDBUFO                                               00950000
+         L     R4,16(R6)                                                00960000
+         MVC   CMDBUF,0(R4)                                             00970000
+         MVI   CMDBUF+8,C' '                                            00980000
+         SPACE 3                                                        00990000
+***                                                                     01000000
+***  SAVE THE CURRENT SECONDARY COMMAND (TSO XXXX) AND REPLACE          01010000
+***  WITH THE TRUE SECONDARY COMMAND.                                   01020000
+***                                                                     01030000
+         L     R4,12(,R6)                                               01040000
+         USING ECT,R4                                                   01050000
+         MVC   SAVEPCMD,ECTPCMD                                         01060000
+         MVC   SAVESCMD,ECTSCMD                                         01070000
+         MVC   ECTPCMD,=CL8'SPF'                                        01080000
+         L     R3,16(R6)                                                01090000
+         MVC   ECTSCMD,0(R3)                                            01100000
+         SPACE 1                                                        01110000
+         LA    R3,BUFFER                                                01120000
+         ST    R3,CSPLCBUF           BUFFER ADDRESS IN CSPL             01130000
+         SPACE 1                                                        01140000
+         MVC   CSPLUPT,4(R6)         UPT ADDRESS                        01150000
+         MVC   CSPLECT,12(R6)        ECT ADDRESS                        01160000
+         SPACE 1                                                        01170000
+         LA    R3,CSOACNM            OUTPUT AREA ADDRESS                01180000
+         ST    R3,CSPLOA                                                01190000
+         SPACE 1                                                        01200000
+         LA    R3,TSOECB             ECB ADDRESS                        01210000
+         ST    R3,CSPLECB                                               01220000
+         SPACE 1                                                        01230000
+         LA    R3,FLAGAD             FLAG ADDRESS                       01240000
+         ST    R3,CSPLFLG                                               01250000
+         SPACE 1                                                        01260000
+         LA    R1,PARMLIST           PARAMETER LIST                     01270000
+         LINK  EP=IKJSCAN                                               01280000
+         SPACE 1                                                        01290000
+         MVC   ECTPCMD,SAVEPCMD                                         01300000
+         MVC   ECTSCMD,SAVESCMD                                         01310000
+         SPACE 1                                                        01320000
+         LTR   R15,R15                                                  01330000
+         BZ    CKEXEC                                                   01340000
+NOTAUTH  LA    R15,4           ***** BAD RETURN CODE OR NOT AUTHORIZED  01350000
+         B     DONE                                                     01360000
+         SPACE 1                                                        01370000
+CKEXEC   TM    CSOAFLG,CSOAEXEC      VALID COMMAND?                     01380000
+         BZ    DONE                  YES, BRANCH                        01390000
+ACLIST   LA    R15,8           ***** BLOCKED COMMAND                    01400000
+         SPACE 2                                                        01410000
+DONE     LR    R2,R13                SAVE AREA                          01420000
+         L     R13,4(R13)            PREVIOUS SAVE AREA                 01430000
+         STM   R15,R1,16(R13)        RESET REGISTERS R15, R0, R1        01440000
+         LA    R0,VTSOCMDL           LENGTH OF AREA                     01450000
+         FREEMAIN R,LV=(0),A=(2)     FREE THIS AREA                     01460000
+         LM    R14,R12,12(R13)                                          01470000
+         BR    R14                                                      01480000
+         EJECT                                                          01490000
+*********************************************************************** 01500000
+*                                                                     * 01510000
+*   DSECTS AND EQUATES                                                * 01520000
+*                                                                     * 01530000
+*********************************************************************** 01540000
+VTSOCMDD DSECT                                                          01550000
+         DS    18F       SAVE OF SAVE AREA                              01560000
+         SPACE 1                                                        01570000
+REGEND   DS    0F        END OF REGISTER SAVE AREA -- DO NOT MOVE       01580000
+         SPACE 3                                                        01590000
+TSOECB   DS    A                                                        01600000
+FLAGAD   DS    A                                                        01610000
+SAVEPCMD DS    CL8                                                      01620000
+SAVESCMD DS    CL8                                                      01630000
+BUFFER   DS    0F                                                       01640000
+CMDBUFL  DS    H                                                        01650000
+CMDBUFO  DS    H                                                        01660000
+CMDBUF   DS    CL8                                                      01670000
+         DS    CL1                                                      01680000
+PARMLIST DS    A                                                        01690000
+CSPLUPT  DS    A                                                        01700000
+CSPLECT  DS    A                                                        01710000
+CSPLECB  DS    A                                                        01720000
+CSPLFLG  DS    A                                                        01730000
+CSPLOA   DS    A                                                        01740000
+CSPLCBUF DS    A                                                        01750000
+CSOACNM  DS    A                                                        01760000
+CSOALNM  DS    H                                                        01770000
+CSOAFLG  DS    X                                                        01780000
+CSOAVWP  EQU   X'80'         VALID WITH PARAMETERS                      01790000
+CSOAVNP  EQU   X'40'         VALID NO PARAMETERS                        01800000
+CSOAQM   EQU   X'20'         QUESTION MARK                              01810000
+CSOANOC  EQU   X'10'         NO COMMAND                                 01820000
+CSOABAD  EQU   X'08'         BAD COMMAND NAME                           01830000
+CSOAEXEC EQU   X'04'         IMPLICIT EXEC COMMAND NAME                 01840000
+         DS    CL1           RESERVED                                   01850000
+VTSOCMDL EQU   *-VTSOCMDD                                               01860000
+         EJECT                                                          01870000
+R0       EQU   0                                                        01880000
+R1       EQU   1                                                        01890000
+R2       EQU   2                                                        01900000
+R3       EQU   3                                                        01910000
+R4       EQU   4                                                        01920000
+R5       EQU   5                                                        01930000
+R6       EQU   6                                                        01940000
+R7       EQU   7                                                        01950000
+R8       EQU   8                                                        01960000
+R9       EQU   9                                                        01970000
+R10      EQU   10                                                       01980000
+R11      EQU   11                                                       01990000
+R12      EQU   12                                                       02000000
+R13      EQU   13                                                       02010000
+R14      EQU   14                                                       02020000
+R15      EQU   15                                                       02030000
+         EJECT                                                          02040000
+         IKJUPT                                                         02050000
+         EJECT                                                          02060000
+         IKJPSCB                                                        02070000
+         EJECT                                                          02080000
+         IKJECT                                                         02090000
+         END   VTSOCMD                                                  02100000
+//LK1    EXEC  PGM=IEWL,PARM='MAP,RENT,REUS,REFR,LET,NCAL',COND=(5,LT)  02110000
+//SYSPRINT DD  SYSOUT=*                                                 02120000
+//SYSLMOD  DD  DISP=SHR,DSN=LINK.LIBRARY    <=== MODIFY                 02130000
+//IN       DD  DSN=&&X,DISP=(OLD,DELETE)                                02140000
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(TRK,(5,5))                             02150000
+//SYSLIN   DD  *                                                        02160000
+  INCLUDE  IN                                                           02170000
+  ENTRY    PDSMAIN                                                      02180000
+  INCLUDE  SYSLMOD(PDS45678)                <=== MODIFY                 02190000
+  NAME     PDS45678(R)                      <=== MODIFY                 02200000

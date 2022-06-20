@@ -1,0 +1,30 @@
+         TITLE 'P D S  --  PDS HELP                          09/28/88'  07035000
+*********************************************************************** 07036000
+***      HELP  SUBCOMMAND      ADDED BY BRUCE LELAND -- JAN, 1980   *** 07037000
+*********************************************************************** 07038000
+*                                                                       07039000
+         SPACE 2                                                        07040000
+HELP     CSECT                                                          07041001
+         USING *,R8                                                     07042000
+         MVC   DDNAMEH,DDNAME        SAVE ACTUAL DDNAME                 07043000
+         MVC   DDNAME,SYSHELP        DDNAME TO FREE                     07044000
+         BAS   R2,DEALLOCZ           FORCE A FREE OF SYSHELP            07045000
+         MVC   DDNAME,DDNAMEH        RESTORE ACTUAL DDNAME              07046000
+         L     R14,ADDRECT                                              07047000
+         MVC   ECTPCMD-ECT(8,R14),PDSNAME   SET PDS COMMAND NAME        07048000
+         MVC   ECTSCMD-ECT(8,R14),HELPLHEL  SET PDS SUBCOMMAND NAME     07049000
+         TM    SPFLAG0,SPFDON           ISPMODE ACTIVE?                 07050000
+         BNO   *+8                      NO, BRANCH                      07051000
+         MVI   ECTSCMD-ECT+4(R14),C'X'  YES, HELPX (FOR NO LINE MODE)   07052000
+         L     R2,ADDRCBUF           INPUT BUFFER ADDRESS               07053000
+         L     R1,ADDRCPPL                                              07054000
+         USING CPPL,R1               ACTUAL ADDRESS                     07055000
+         ST    R2,CPPLCBUF           SET COMMAND ADDRESS                07056000
+         DROP  R1                                                       07057000
+         LA    R3,##SUBCAL           TSO HELP COMMAND                   07058000
+         BAS   R2,ATTACH             GO ATTACH IT                       07059000
+         B     NEWSTAX               NEXT COMMAND                       07060000
+HELPLHEL DC    CL8'HELP'                                                07061000
+         SPACE 2                                                        07062000
+*  NOTE: THE SYSHELP FILE IS FREED BEFORE THE HELP                      07063000
+*        CALL IN CASE A PCF EXIT ALREADY REQUESTED HELP.                07064000

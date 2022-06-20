@@ -1,0 +1,638 @@
+         TITLE 'P D S  --  COBOL ANALYSIS INTERFACE          11/20/07'  00000299
+*********************************************************************** 00000316
+***      COBANAL SUBCOMMAND   ADDED BY JOHN KALINICH -- NOV., 2007  *** 00000499
+*********************************************************************** 00000516
+*                                                                       00050000
+COBANAL  CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         LA    R1,L530          ASSUME A NON-PARTITIONED DATA SET       00080199
+         TM    DSORG,DS1DSGPO   CORRECT?                                00080299
+         BZ    MSGNEW           YES, BRANCH                             00080399
+         LA    R1,L701          ASSUME NOT A LOAD LIBRARY               00080499
+         TM    FLAGSCC,RECFMU   CORRECT?                                00081099
+         BZ    MSGNEW           YES, BRANCH                             00090099
+         SPACE 1                                                        00120000
+*  FREE SYSIN, SYSPRINT, COBANAL, AND SUMMARY DATASETS                  00120199
+         LA    R1,SYSIN                 SYSIN DDNAME                    00120299
+         BAS   R2,COB8580               FREE THIS DATA SET              00120399
+         LA    R1,SYSPRINT              SYSPRINT DDNAME                 00120499
+         BAS   R2,COB8580               FREE THIS DATA SET              00120599
+         LA    R1,COBANDD               COBANAL DDNAME                  00120699
+         BAS   R2,COB8580               FREE THIS DATA SET              00120799
+         LA    R1,SUMMARY               SUMMARY DDNAME                  00120899
+         BAS   R2,COB8580               FREE THIS DATA SET              00120999
+*  ALLOCATE //COBANAL DATA SET                                          00121299
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00121399
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00121499
+         USING S99RBP,R1                                                00121599
+         SPACE 1                                                        00121699
+         LA    R4,M99RB                                                 00121799
+         USING S99RB,R4                                                 00121899
+         ST    R4,S99RBPTR                                              00121999
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00122099
+         SPACE 1                                                        00122199
+         LA    R5,M99TUPL                                               00122299
+         USING S99TUPL,R5                                               00122399
+         MVI   S99RBLN,20               LENGTH 20                       00122499
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00122599
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00122699
+         LA    R3,WORKTBL                        START OF TEXT          00122799
+         SPACE 1                                                        00122899
+         MVC   0(L'COBDDNAN+7,R3),COBDDNAN       SPECIFY DDNAME TEXT    00122999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123099
+         LA    R3,L'COBDDNAN+7(,R3)              START OF NEXT TEXT     00123199
+         SPACE 1                                                        00123299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123399
+         MVC   0(L'COBDSNAM,R3),COBDSNAM         SPECIFY DSNAME TEXT    00123499
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00123599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123699
+         LA    R3,L'COBDSNAM+44(,R3)             START OF NEXT TEXT     00123799
+         SPACE 1                                                        00123899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123999
+         MVC   0(L'COBALLOC,R3),COBALLOC         SPECIFY DISP TEXT      00124099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124199
+         LA    R3,L'COBALLOC(,R3)                START OF NEXT TEXT     00124299
+         SPACE 1                                                        00124399
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124499
+         MVC   0(L'COBNORM,R3),COBNORM           SPECIFY NORMAL TEXT    00124599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124699
+         LA    R3,L'COBNORM(,R3)                 START OF NEXT TEXT     00124799
+         SPACE 1                                                        00124899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124999
+         MVC   0(L'COBANORM,R3),COBANORM         SPECIFY ABNORMAL TEXT  00125099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00125199
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00125299
+         SPACE 1                                                        00125399
+         DYNALLOC                                                       00125499
+         SPACE 2                                                        00125599
+         DROP  R1,R4,R5                                                 00125699
+         LTR   R15,R15                       SUCCESSFUL?                00125799
+         BNZ   COBERROR                      NO, BRANCH                 00125899
+         SPACE 2                                                        00125999
+*  ALLOCATE //SYSPRINT DATA SET                                         00126099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00126199
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00126299
+         USING S99RBP,R1                                                00126399
+         SPACE 1                                                        00126499
+         LA    R4,M99RB                                                 00126599
+         USING S99RB,R4                                                 00126699
+         ST    R4,S99RBPTR                                              00126799
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00126899
+         SPACE 1                                                        00126999
+         LA    R5,M99TUPL                                               00127099
+         USING S99TUPL,R5                                               00127199
+         MVI   S99RBLN,20                 LENGTH 20                     00127299
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00127399
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00127499
+         SPACE 1                                                        00127599
+         MVC   #CMXSYS3(14),COBDDNPR      SYSPRINT DDNAME               00127699
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00127799
+         USING S99TUNIT,R3                                              00127899
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00127999
+         MVC   S99TUPTR+4(40),COBSYSPR    ADD OTHER LIST ELEMENTS       00128099
+         SPACE 1                                                        00128199
+         DYNALLOC                                                       00128299
+         SPACE 2                                                        00128399
+         MVC   #CMXDDPR(8),=CL8'SYSPRINT' MOVE IN THE DDNAME            00128499
+         DROP  R1,R3,R4,R5                                              00128599
+         LTR   R15,R15                    SUCCESSFUL?                   00128699
+         BNZ   COBERROR                   NO, BRANCH                    00128799
+         SPACE 3                                                        00128899
+*  ALLOCATE //SYSIN FILE                                                00134099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00140023
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00150023
+         USING S99RBP,R1                                                00160023
+         SPACE 1                                                        00170023
+         LA    R4,M99RB                                                 00180023
+         USING S99RB,R4                                                 00190023
+         ST    R4,S99RBPTR                                              00200023
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00210023
+         SPACE 1                                                        00220023
+         LA    R5,M99TUPL                                               00230023
+         USING S99TUPL,R5                                               00240023
+         MVI   S99RBLN,20                 LENGTH 20                     00250023
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00260023
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00270023
+         SPACE 1                                                        00280023
+         MVC   #CMXSYS3(11),COBDDNIN      SYSIN DDNAME                  00290099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00300023
+         USING S99TUNIT,R3                                              00310023
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00320023
+         MVC   S99TUPTR+4(40),COBSYSIN    ADD OTHER LIST ELEMENTS       00330099
+         SPACE 1                                                        00340023
+         DYNALLOC                                                       00350023
+         SPACE 2                                                        00370023
+         DROP  R1,R3,R4,R5                                              00380023
+         LTR   R15,R15                    SUCCESSFUL?                   00390023
+         BNZ   COBERROR                   NO, BRANCH                    00400099
+         SPACE 3                                                        00410023
+*  ALLOCATE //SUMMARY DATA SET                                          02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130099
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140099
+         USING S99RBP,R1                                                02150099
+         SPACE 1                                                        02160099
+         LA    R4,M99RB                                                 02170099
+         USING S99RB,R4                                                 02180099
+         ST    R4,S99RBPTR                                              02190099
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200099
+         SPACE 1                                                        02210099
+         LA    R5,M99TUPL                                               02220099
+         USING S99TUPL,R5                                               02230099
+         MVI   S99RBLN,20                 LENGTH 20                     02240099
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250099
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260099
+         SPACE 1                                                        02270099
+         MVC   #CMXSYS3(13),COBDDNSU      SUMMARY DDNAME                02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290099
+         USING S99TUNIT,R3                                              02300099
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310099
+         MVC   S99TUPTR+4(40),COBSYSPR    ADD OTHER LIST ELEMENTS       02311099
+         SPACE 1                                                        02330099
+         DYNALLOC                                                       02340099
+         SPACE 2                                                        02350099
+         DROP  R1,R3,R4,R5                                              02360099
+         LTR   R15,R15                    SUCCESSFUL?                   02370099
+         BNZ   COBERROR                   NO, BRANCH                    02380099
+         SPACE 3                                                        02390099
+         B     COB2000                                                  02661099
+         SPACE 3                                                        02670099
+COBERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    COB8550                    NO, BRANCH                    08700099
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     COB8550                                                  08780099
+         SPACE 3                                                        08790000
+COB2000  DS    0H                                                       08790199
+         SPACE 2                                                        08795599
+COB2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      08796299
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       08796399
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      08796499
+         BO    COB2200               YES, BRANCH                        08796599
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08796699
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08796799
+         BO    COB2110               YES, BRANCH                        08796899
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08796999
+         BO    COB2200               YES, BRANCH                        08797099
+COB2110  TM    #COBALI,#COBASS2      ASSOCIATES TOO?                    08797199
+         BO    COB2200               YES, BRANCH                        08797299
+         SPACE 1                                                        08797399
+COB2120  DS    0H                                                       08797499
+         TM    #COBALI,#COBASS2+2    ALIAS/NOALIAS SPECIFIED?           08797599
+         BM    COB2130               YES                                08797699
+*        OI    #COBALI,&COBALI       USE THE DEFAULT                    08797799
+         OI    #COBALI,2             USE THE DEFAULT                    08797899
+         TM    #COBALI,#COBASS2      ASSOCIATES TOO?                    08797999
+         BO    COB2200               YES                                08798099
+         SPACE 3                                                        08798199
+COB2130  DS    0H                                                       08798299
+         OI    #COBALI,#COBONE       ONLY A SINGLE MEMBER/DATA SET      08798399
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           08798499
+         MVC   0(8,R4),DIRNAME                                          08798599
+         ST    R4,#MEMPTR                                               08798699
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             08798799
+         B     COB2900                                                  08798899
+COB2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        08798999
+         TM    #COBALI,#COBASS2+2    ALIAS/NOALIAS SPECIFIED?           08799099
+         BM    *+8                   YES                                08799199
+*        OI    #COBALI,&COBALI       NO, USE THE DEFAULT                08799299
+         OI    #COBALI,2             NO, USE THE DEFAULT                08799399
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         08799499
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    08799599
+         LA    R5,256/2              256 MEMBERS INITIALLY              08799699
+         SPACE 1                                                        08799799
+COB2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            08799899
+         LR    R3,R5                                                    08799999
+         LR    R0,R5                                                    08800099
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              08800199
+         ICM   R0,B'1000',SUBPOOLT                                      08800299
+         GETMAIN R,LV=(0)                                               08800399
+         LR    R4,R1                 NEW TABLE ADDRESS                  08800499
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              08800599
+         BNZ   COB2220               YES, BRANCH                        08800699
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             08800799
+         B     COB2500                                                  08800899
+         SPACE 1                                                        08800999
+COB2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   08801099
+         LR    R14,R4                NEW TABLE START ADDRESS            08801199
+         LR    R15,R5                                                   08801299
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           08801399
+         LR    R2,R15                START OF NEW PART                  08801499
+         LR    R1,R15                                                   08801599
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             08801699
+         L     R1,#MEMPTR                                               08801799
+         LR    R0,R2                 LENGTH TO FREE                     08801899
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    08801999
+         FREEMAIN R,LV=(0),A=(1)                                        08802099
+         ST    R4,#MEMPTR            START OF NEW TABLE                 08802199
+         AR    R4,R2                 WHERE TO ADD MEMBERS               08802299
+         SPACE 3                                                        08802399
+COB2300  TM    #COBALI,#COBASSP      ASSOCIATES PHASE?                  08802499
+         BO    COB2320               YES, BRANCH                        08802599
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      08802699
+         BO    COB2320               YES, BRANCH                        08802799
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              08802899
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08802999
+         BNO   COB2500               NO, BRANCH                         08803099
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08803199
+         BO    COB2605               YES, BRANCH                        08803299
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08803399
+         BNO   COB2605               NO, BRANCH                         08803499
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               08803599
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   08803699
+         BNO   COB2605               NO, END OF LIST                    08803799
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              08803899
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       08803999
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               08804099
+         ST    R1,PMEMCURR                                              08804199
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         08804299
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  08804399
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              08804499
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      08804599
+         BO    COB2319               YES, BRANCH                        08804699
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08804799
+         MVC   DIRNAME,MEMBER1       MOVE TO BLDLLIST                   08804899
+         SPACE 2                                                        08804999
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           08805099
+         B     *+4(R15)                PROCESS RETURN CODE              08805199
+         B     COB2315                   00 - SUCCESSFUL                08805299
+         B     COB2310                   04 - MEMBER NOT FOUND          08805399
+         B     IOERROR                   08 - I/O ERROR                 08805499
+         SPACE 1                                                        08805599
+COB2310  MVC   INSERT#1(8),DIRNAME                                      08805699
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           08805799
+         B     COB2300                                                  08805899
+         SPACE 1                                                        08805999
+COB2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  08806099
+         B     COB2500                                                  08806199
+         SPACE 1                                                        08806299
+COB2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               08806399
+         SPACE 1                                                        08806499
+COB2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           08806599
+         B     COB2600               END OF MEMBERS -- BRANCH           08806699
+         SPACE 1                                                        08806799
+         TM    #COBALI,#COBASSP      ASSOCIATES PHASE?                  08806899
+         BO    COB2400               YES, BRANCH                        08806999
+         SPACE 1                                                        08807099
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 08807199
+         B     COB2600                 00 - SIMULATE DIRECTORY END      08807299
+         B     COB2300                 04 - MEMBER FAILED FILTERING     08807399
+         B     COB2500                 08 - MEMBER PASSED FILTERING     08807499
+         SPACE 3                                                        08807599
+COB2400  L     R1,#MEMPTR            START OF MEMBER LIST               08807699
+         B     COB2410+4             SKIP FIRST ADD                     08807799
+COB2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   08807899
+         CR    R1,R4                 END OF TABLE?                      08807999
+         BNL   COB2300               YES, IGNORE THIS ENTRY             08808099
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      08808199
+         BNE   COB2410               NO, BRANCH                         08808299
+         SPACE 3                                                        08808399
+COB2500  L     R1,#MEMPTR            START OF MEMBER LIST               08808499
+         B     COB2510+4             SKIP FIRST ADD                     08808599
+COB2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   08808699
+         CR    R1,R4                 END OF TABLE?                      08808799
+         BNL   COB2580               YES, ADD THIS ENTRY                08808899
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       08808999
+         BE    COB2300               YES, IGNORE THIS ENTRY             08809099
+         B     COB2510               NO, CONTINUE SEARCHING             08809199
+         SPACE 2                                                        08809299
+COB2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   08809399
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               08809499
+         S     R3,=F'1'              ANY MORE FIT?                      08809599
+         BNP   COB2210               NO, BRANCH                         08809699
+         B     COB2300               YES, GET NEXT MEMBER               08809799
+         SPACE 3                                                        08809899
+COB2600  TM    #COBALI,#COBASSP      ASSOCIATED MEMBERS?                08809999
+         BO    COB2605               YES, BRANCH                        08810099
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         08810199
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08810299
+         BO    COB2605               YES, BRANCH                        08810399
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08810499
+         BO    COB2300               YES, BRANCH                        08810599
+         SPACE 1                                                        08810699
+COB2605  TM    #COBALI,#COBASSP      ASSOCIATES PHASE STARTED?          08810799
+         BO    COB2700               YES, BRANCH                        08810899
+         TM    #COBALI,#COBASS2      ASSOCIATE MEMBERS TOO?             08810999
+         BNO   COB2700               NO, BRANCH                         08811099
+         OI    #COBALI,#COBASSP      YES, ASSOCIATES PHASE STARTED      08811199
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   08811299
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    08811399
+         B     COB2300               DO ANY ASSOCIATED MEMBERS          08811499
+         SPACE 3                                                        08811599
+COB2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   08811699
+         SPACE 3                                                        08811799
+COB2900  DS    0H                                                       08811899
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           08811999
+*  OPEN SYSIN DATA SET                                                  08812099
+         MVC   BAMDCB(COBDL),COBDCB           GET MODEL DCB             08812199
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),SYSIN                          08812299
+         MVI   OPENLIST,X'80'                                           08812399
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               08812499
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08812599
+         BO    COB2910                         YES, BRANCH              08812699
+         LA    R1,COB865E                      NO STATUS AVAILABLE      08812799
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08812899
+         B     COB8550                         EXIT                     08812999
+         SPACE 3                                                        08813099
+COB2910  DS    0H                                                       08813199
+         TM    FLAGSHH,FMEMALLM         ALL MEMBERS?                    08818199
+         BNO   COB4010                  NO                              08818299
+         B     COB4540                  YES                             08818399
+COB4010  DS    0H                                                       08819099
+         L     R3,#MEMPTR                 FIRST MEMBER POINTER          08819199
+         L     R4,#MEMLAST                LAST MEMBER POINTER           08819299
+         MVC   MSGTEXT1(136),MSGBL132     CLEAR THE MESSAGE AREA        08819399
+         SPACE 1                                                        08819499
+COB4530  CR    R3,R4                      END OF MEMBER TABLE?          08819599
+         BNL   COB4550                    YES                           08819699
+         LA    R5,MSGTEXT1+4                                            08819799
+         MVC   0(8,R5),0(R3)              MEMBER NAME                   08820099
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT MEMBER STATEMENT       08820199
+         LA    R3,16(,R3)                 NEXT MEMBER POSITION          08820299
+         B     COB4530                                                  08820399
+         SPACE 1                                                        08821099
+COB4540  DS    0H                                                       08830099
+         MVC   #COBPARM+2(8),BLANK128   CLEAR PARM AREA                 08831099
+         LA    R5,#COBPARM+2            PT AT PARM VALUE FIELD          08832099
+         MVC   0(3,R5),=C'ALL'          ALL MEMBERS                     08833099
+         LA    R5,3(,R5)                                                08834099
+         B     COB4620                                                  08835099
+         SPACE 2                                                        08836099
+COB4550  DS    0H                                                       08840099
+         MVC   #COBPARM+2(8),BLANK128   CLEAR PARM AREA                 08850099
+         LA    R5,#COBPARM+2            PT AT PARM VALUE FIELD          08860099
+         TM    SPFLAG2,SPFLNCD          LINE COMMAND?                   08861099
+         BNO   COB4555                  NO, BRANCH                      08862099
+         MVC   0(8,R5),MSGTEXT1+4       MOVE MEMBER NAME                08863099
+         LA    R5,8(,R5)                                                08864099
+         B     COB4620                                                  08865099
+COB4555  DS    0H                                                       08866099
+         MVC   0(5,R5),=C'SYSIN'        MEMBER NAMES FROM SYSIN         08870099
+         LA    R5,5(,R5)                                                08880099
+         B     COB4620                                                  08890099
+         SPACE 2                                                        10590169
+COB4620  DS    0H                                                       10598899
+         LA    R15,#COBPARM+2           START OF PARM                   10598999
+         SR    R5,R15                   PARM LENGTH                     10599099
+         STCM  R5,B'0011',#COBPARM                                      10599499
+         MVI   OPENLIST,X'80'                                           10599599
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   10599699
+         LA    R1,BAMDCB                                                10599799
+         FREEPOOL (1)                                                   10599899
+         SPACE 2                                                        10599999
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10600099
+         STAX  COBNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                  X10601099
+               OBUF=(COB484W,COB484WL),MF=(E,STAXPARM)                  10610099
+         LA    R1,#COBPARM                PARM=VALUE                    10830099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,COBPROG              2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950024
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,COB7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),COBEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   COBNLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+COBNLNK  BAS   R2,ATTACH                  COBANAL                       11440099
+         SPACE 3                                                        11490000
+COB7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        11820000
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 11820199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 11820299
+         BNE   COB8000                    NO                  DRK JAN07 11820399
+         MVC   INSERT#1(8),COBPROG        YES, ERROR          DRK JAN07 11820499
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 11820599
+         B     COB8550                                        DRK JAN07 11820699
+         SPACE 1                                                        11830099
+COB8000  DS    0H                                                       12310099
+         CLI   #COBLIST,2                   DO NOT LIST DETAILS?        12310199
+         BE    COB8025                      YES, THEN SUMMARY           12310299
+         TM    SPFLAG2,SPFLNCD              LINE COMMAND?               12310399
+         BO    COB8005                      YES, DEFAULT TO LIST        12310499
+         CLI   #COBLIST,1                   LIST DETAILS?               12310699
+         BNE   COB8025                      NO, THEN SUMMARY            12310799
+COB8005  DS    0H                                                       12310899
+         MVC   BAMDCB(COBDL),COBDCB         GET MODEL DCB               12311099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),SYSPRINT                       12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    COB8010                      YES, BRANCH                 12360099
+         LA    R1,COB865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     COB8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS SYSPRINT RECORDS                                             12400099
+COB8010  GET   BAMDCB                     GET LIST RECORD               12420099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(121),0(R1)      ADD THE COBANAL MESSAGE       12600099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640099
+         B     COB8010                                                  12650099
+         SPACE 3                                                        12660000
+COB8020  DS    0H                                                       12660199
+         MVI   OPENLIST,X'80'                                           12660399
+         CLOSE (BAMDCB),MF=(E,OPENLIST)     CLOSE THE SYSPRINT FILE     12660499
+         LA    R1,BAMDCB                                                12660599
+         FREEPOOL (1)                                                   12660699
+         SPACE 2                                                        12660799
+COB8025  DS    0H                                                       12660899
+         CLI   #COBSUMM,2                   DO NOT LIST SUMMARY?        12660999
+         BE    COB8510                      YES, SKIP                   12661099
+         MVC   BAMDCB(COBDL2),COBDCB2       GET MODEL DCB 2             12661199
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),SUMMARY                        12661299
+         MVI   OPENLIST,X'80'                                           12661399
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SUMMARY                12661499
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12661599
+         BO    COB8030                      YES, BRANCH                 12661699
+         LA    R1,COB865E                   NO STATUS AVAILABLE         12661799
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12661899
+         B     COB8550                      EXIT                        12661999
+         SPACE 3                                                        12662099
+*  PROCESS SUMMARY RECORDS                                              12662199
+COB8030  GET   BAMDCB                     GET LIST RECORD               12662299
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12662399
+         MVC   MSGTEXT1+4(121),0(R1)      ADD THE COBANAL MESSAGE       12662499
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12662599
+         B     COB8030                                                  12662699
+         SPACE 3                                                        12662799
+COB8500  DS    0H                                                       12662899
+         MVI   OPENLIST,X'80'                                           12662999
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SUMMARY FILE        12663099
+         LA    R1,BAMDCB                                                12663199
+         FREEPOOL (1)                                                   12663299
+         SPACE 2                                                        12663399
+COB8510  DS    0H                                                       12663499
+         CLC   ##SUBCAL(8),COBEFTSR       INVOKE IKJEFTSR?              12663599
+         BNE   COB8550                    NO, BRANCH                    12663699
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JAN07 12663799
+         BL    COB8550                    YES, VALID COB                12663899
+         MVI   MTLEN+4,21                                     DRK NOV07 12663999
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    12664099
+         SR    R15,R15                                                  12664185
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 12664299
+         CVD   R15,DOUBLE                                               12664385
+         MVC   INSERT#1(8),##SUBCOM                                     12664485
+         MVC   INSERT#2(4),=X'40202120'                                 12664585
+         ED    INSERT#2(4),DOUBLE+6                                     12664685
+         MVI   INSERT#2,C'='              RETURN CODE                   12664785
+         SPACE 1                                                        12664885
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12664999
+         BNE   COB8530                    NO, SKIP MESSAGE              12665099
+         SPACE 1                                                        12665299
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 12665499
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 12665599
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 12665699
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 12665799
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 12665899
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 12665999
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 12666099
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 12666199
+         SPACE 1                                              DRK NOV07 12666299
+         SRL   R1,20                    USER ABEND            DRK NOV07 12666399
+         CVD   R1,DOUBLE                                      DRK NOV07 12666499
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 12666599
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 12666699
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 12666799
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 12666899
+         SPACE 1                                                        12666999
+COB8530  DS    0H                                                       12668099
+         M$MSG L171$2                                                   12670085
+COB8550  M$ERRST MSGBLANK                                               12890099
+         LA    R1,SYSIN                 SYSIN DDNAME                    12890199
+         BAS   R2,COB8580               FREE THIS DATA SET              12890299
+         LA    R1,SYSPRINT              SYSPRINT DDNAME                 12890399
+         BAS   R2,COB8580               FREE THIS DATA SET              12890499
+         LA    R1,COBANDD               COBANAL DDNAME                  12891099
+         BAS   R2,COB8580               FREE THIS DATA SET              12900099
+         LA    R1,SUMMARY               SUMMARY DDNAME                  12900199
+         BAS   R2,COB8580               FREE THIS DATA SET              12900299
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+COB8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),COBFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,COBUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+COBNULL BR    R14                                                       13252099
+         SPACE 2                                                        13260000
+*  COBANAL CONSTANTS                                                    13460099
+         PRINT NOGEN                                                    13470000
+COBDCB   DCB   DSORG=PS,DDNAME=COB,MACRF=(GL,PM),EODAD=COB8020          13480099
+COBDL    EQU   *-COBDCB                                                 13490099
+COBDCB2  DCB   DSORG=PS,DDNAME=COB,MACRF=(GL,PM),EODAD=COB8500          13500099
+COBDL2   EQU   *-COBDCB2                                                13510099
+         PRINT NOGEN                                                    13550138
+COB484W  DC    C'PDS484W COBANAL SHOULD NOT BE INTERRUPTED'             13550399
+COB484WL EQU   *-COB484W                                                13550499
+COB865E  M$TX  'PDS865E THE COBANAL OUTPUT CAN NOT BE OPENED'           13550599
+         PRINT GEN                                                      13551038
+COBEFTSR DC    CL8'IKJEFTSR'                                            13710099
+COBPROG  DC    CL8'COBANAL'                      COBOL ANALYSIS         13720099
+SYSIN    DC    CL8'SYSIN'                                               13721399
+SYSPRINT DC    CL8'SYSPRINT'                                            13721499
+COBANDD  DC    CL8'COBANAL'                                             13721599
+SUMMARY  DC    CL8'SUMMARY'                                             13721699
+COBDDNIN DC    X'000100010005',C'SYSIN'          SYSIN    DDNAME        13722799
+COBDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722899
+COBDDNAN DC    X'000100010007',C'COBANAL'        COBANAL  DDNAME        13722999
+COBDDNSU DC    X'000100010007',C'SUMMARY'        SUMMARY DDNAME         13723099
+COBDSNAM DC    X'00020001002C'                   DSNAME                 13723299
+COBALLOC DC    X'00040001000108'                 DISP=SHR               13723399
+COBNORM  DC    X'00050001000108'                 DISP=(,KEEP)           13723499
+COBANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13723599
+COBDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13724099
+COBFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+COBNEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+COBDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+COBCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+COBPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+COBUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+         SPACE 2                                                        13840000
+COBPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+COBPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860099
+COBPRTIN DC    X'000900010003',AL3(27951)        SPACE=(27951)          13870099
+COBSINSP DC    X'000900010003',AL3(6480)         SPACE=(6480)           13880099
+         SPACE 1                                                        13920000
+COBPRTRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13930099
+COBPRTLR DC    X'004200010002',AL2(121)          DCB=LRECL=121          13940099
+COBPRTBL DC    X'003000010002',AL2(27951)        DCB=BLKSIZE=27951      13950099
+         SPACE 2                                                        13960000
+COBSINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13970099
+COBSINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980099
+COBSINBL DC    X'003000010002',AL2(6480)         DCB=BLKSIZE=6480       13990099
+         SPACE 2                                                        14000000
+COBSYSIN DC    A(COBPRTFI,COBPRTSE,COBSINSP)                            14020099
+         DC    A(COBSINRE,COBSINLR,COBSINBL)                            14030099
+         DC    A(COBNEW,COBDEL,COBCDEL),X'80',AL3(COBPERM)              14040099
+COBSYSPR DC    A(COBPRTFI,COBPRTSE,COBPRTIN)                            14080099
+         DC    A(COBPRTRE,COBPRTLR,COBPRTBL)                            14090099
+         DC    A(COBNEW,COBDEL,COBCDEL),X'80',AL3(COBPERM)              14100099
+         SPACE 2                                                        14102099
+#COBASSP EQU   X'80'            COB: ASSOCIATES PHASE                   14110099
+#COBONE  EQU   X'10'            COB: A SINGLE MEMBER                    14120099
+#COBASS2 EQU   X'01'            COB: ANALYZE ASSOCIATES TOO             14130099
+         SPACE 2                                                        14138499

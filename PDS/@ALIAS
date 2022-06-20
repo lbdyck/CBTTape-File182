@@ -1,0 +1,170 @@
+         TITLE 'P D S  --  PDS ALIAS                         09/28/88'  00010001
+*********************************************************************** 00011001
+***      ALIAS SUBCOMMAND                                           *** 00012001
+*********************************************************************** 00013001
+*                                                                       00014001
+ALIAS    CSECT                                                          00016420
+         ENTRY LIST170,DIRENTRY,REPLACE,FIND,PATTERN,INVABBR            00016500
+         ENTRY FAMS                                                     00016624
+         WXTRN VTSOCMD                                                  00016700
+R0       EQU   0                                                        00017200
+R1       EQU   1                                                        00017300
+R2       EQU   2                                                        00017400
+R3       EQU   3                                                        00017500
+R4       EQU   4                                                        00018000
+R5       EQU   5                                                        00019000
+R6       EQU   6                                                        00020000
+R7       EQU   7                                                        00021000
+R8       EQU   8                                                        00022000
+R9       EQU   9                                                        00023000
+R10      EQU   10                                                       00024000
+R11      EQU   11                                                       00025000
+R12      EQU   12                                                       00026000
+R13      EQU   13                                                       00027000
+R14      EQU   14                                                       00028000
+R15      EQU   15                                                       00029000
+         USING WORKAREA,R7                                              00030000
+         USING PDSCOMM,R12                                              00031000
+         SPACE 1                                                        00037000
+         USING *,R8                                                     00038000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK AUG05 00038106
+         BNO   ALIASC                   NO, CONTINUE          DRK AUG05 00038206
+         TM    FLAGSCC,RECFMU           RECFM=U?              DRK AUG05 00038306
+         BNO   ALIASC                   NO, CONTINUE          DRK AUG05 00038406
+         MVI   MTLEN,5                  LENGTH OF INSERT      DRK SEP05 00038516
+         MVC   INSERT#1(5),=C'ALIAS'    INSERT COMMAND NAME   DRK SEP05 00038616
+         M$MSG L996$1                   NOT SUPPORTED MSG     DRK SEP05 00038716
+         M$ERRST MSGBLANK               ONE BLANK LINE        DRK SEP05 00038817
+         B     NEWCMD                   NOBBLED               DRK AUG05 00039013
+         SPACE 1                                              DRK AUG05 00039806
+ALIASC   DS    0H                                             DRK AUG05 00039906
+         TM    SPFLAG2,SPFLNCD            LINE COMMAND?        SS AUG85 00040000
+         BNO   ALIAS0                     NO, BRANCH                    00040100
+         MVC   SPFSAVM2,MEMBER2           SAVE MEMBER NAME     SS AUG85 00041000
+         B     ALIAS1                     NO, BRANCH                    00042000
+         SPACE 2                                                        00043000
+ALIAS0   MVC   MEMBERD+1(2),LMEMBER2      CHANGE DEFAULT MEMBER LENGTH  00044000
+         MVC   MEMBERD+1+2(8),MEMBER2     CHANGE DEFAULT MEMBER NAME    00045000
+         MVI   MEMBERD,FMEMBER1           ONLY ONE MEMBER NAME NOW      00046000
+         NI    PMEMMIN,FF-X'80'           NO MEMBER LIST NOW            00047000
+         BAS   R14,DEFGROUP                    ADD DEFAULT GROUP        00048000
+         SPACE 2                                                        00049000
+ALIAS1   MVC   DIRNAME,MEMBER2            SET ALIAS NAME                00050000
+         MVI   ENTRYPT,C'?'               ENTRY POINT NOT KNOWN YET     00051000
+         TM    DIRFLAG,X'80'              MODULE A CURRENT ALIAS?       00052000
+         BZ    ALIAS2                     NO, BRANCH                    00053000
+         TM    FLAGSCC,RECFMU             LOAD MODULE?                  00054000
+         BO    ALIAS3                     YES, BRANCH                   00055000
+         B     ALIAS4                     NO, BRANCH                    00056000
+         SPACE 1                                                        00057000
+ALIAS2   TM    FLAGSCC,RECFMU             LOAD MODULE?                  00058000
+         BZ    ALIAS4                     NO, BRANCH                    00059000
+         SPACE 1                                                        00060000
+         TM    DIRATTR2,DIRAOSLE+DIRAPFLG VS LKED & APF DATA PRESENT?   00061000
+         BZ    ALIAS2Y                    NO, BRANCH                    00062000
+         SPACE 1                                                        00063000
+         LA    R2,DIRAPF                  POINT TO APF INFORMATION      00064000
+         TM    DIRATTR,ATTRSCTR           SCATTER LOADED?               00065000
+         BZ    *+8                        NO, BRANCH                    00066000
+         LA    R2,DIRAPF3                 YES, POINT TO APF DATA        00067000
+         LA    R4,11(,R2)                 POINT TO ALIAS APF DATA       00068000
+         TM    DIRATTR2,DIR2SSI           SSI PRESENT?                  00069000
+         BZ    ALIAS2B                    NO, BRANCH                    00070000
+         SPACE 1                                                        00071000
+         LA    R2,1(,R2)                  ROUND TO HALFWORD             00072000
+         N     R2,=F'-2'                  FFFFFFFE MASK                 00073000
+         LA    R4,1(,R4)                  ROUND TO HALFWORD             00074000
+         N     R4,=F'-2'                  FFFFFFFE MASK                 00075000
+         MVC   0(4,R4),0(R2)              MOVE SSI INFORMATION          00076000
+         LA    R4,4(,R4)                  MOVE PAST SSI INFORMATION     00077000
+         LA    R2,4(,R2)                  POINT TO APF DATA             00078000
+         SPACE 1                                                        00079000
+ALIAS2B  CLI   0(R2),1                    IS APF LENGTH OK?             00080000
+         BE    ALIAS2D                    YES, BRANCH                   00081000
+         M$MSG L710                       BAD APF INFORMATION FORMAT    00082000
+         LA    R2,ZERO                    SET APF=0                     00083000
+         SPACE 1                                                        00084000
+ALIAS2D  MVI   0(R4),1                    SET PROPER LENGTH             00085000
+         MVC   1(1,R4),1(R2)              MOVE IN APF DATA              00086000
+         SPACE 3                                                        00087000
+ALIAS2Y  LA    R4,DIREP                   POINT TO START OF ALIAS INFO. 00088000
+         LA    R5,(DIREND2-DIRUSER+1)/2   NUMBER OF HALFWORDS           00089000
+         TM    DIRATTR,ATTRSCTR           SCATTER LOADED?               00090000
+         BNO   ALIAS2Z                    NO, BRANCH                    00091000
+         LA    R4,DIREPSC                 POINT TO START OF ALIAS INFO. 00092000
+         LA    R5,(DIREND3-DIRUSER+1)/2   NUMBER OF HALFWORDS           00093000
+         SPACE 2                                                        00094000
+ALIAS2Z  MVC   0(3,R4),DIREPA             MOVE IN MAIN MODULE ENTRY     00095000
+         MVC   3(8,R4),MEMBER1            ADD MAIN MODULE NAME          00096000
+         TM    DIRATTR2,DIR2SSI           SSI INFORMATION?              00097000
+         BNO   *+8                        NO, BRANCH                    00098000
+         LA    R5,2(,R5)                  YES, TWO MORE HALFWORDS       00099000
+         NI    DIRFLAG,X'E0'              TURN OFF HALFWORD COUNT       00100000
+         OI    DIRFLAG,*-*                <<EXECUTED>>                  00101000
+         EX    R5,*-4                     MOVE IN NUMBER OF HALFWORDS   00102000
+         SPACE 1                                                        00103000
+ALIAS3   TM    DIRFLAG,X'80'              ALIAS ENTRY?                  00104000
+         BO    ALIAS3S                    YES, BRANCH                   00105000
+         NI    DIRATTR3,FF-DIRAA64-DIRAA31                              00106002
+         TM    DIRATTR3,DIRAM64           AMODE 64?           DRK OCT02 00107002
+         BNO   *+8                        NO, BRANCH                    00108000
+         OI    DIRATTR3,DIRAA64           YES, SET THE DIRECTORY        00109002
+         TM    DIRATTR3,DIRAM31           AMODE 31?                     00110000
+         BNO   *+8                        NO, BRANCH                    00111000
+         OI    DIRATTR3,DIRAA31           YES, SET THE DIRECTORY        00112000
+         SPACE 1                                                        00113000
+ALIAS3S  L     R15,=A(READESD)            SCAN ESD FOR MEMBER NAME      00114000
+         BASR  R14,R15                    MEMBER NAME IN ESD ENTRIES?   00115000
+         B     ALIAS4                     NO, PSEUDO ENTRY              00116000
+         SPACE 1                                                        00117000
+         OI    DIRATTR+1,ATTREP0          ASSUME ENTRY POINT ZERO       00118000
+         LTR   R1,R1                      CORRECT?                      00119000
+         BZ    *+8                        YES, BRANCH                   00120000
+         XI    DIRATTR+1,ATTREP0          NO, INSURE ATTR FLAG OFF      00121000
+         STCM  R1,B'0111',DIREPA          SAVE ENTRY ADDRESS            00122000
+         TM    DIRATTR,ATTRSCTR           SCATTER LOADED?               00123000
+         BNO   *+8                        NO, BRANCH                    00124000
+         STCM  R15,B'0011',DIRSCEP        YES, SAVE ESDID OF ENTRY PT.  00125000
+         STC   R0,#ALIAESD                SAVE MODE RMODE/AMODE INFO    00126000
+         TM    DIRATTR,ATTROVLY           OVERLAY ATTRIBUTES            00127000
+         BO    ALIAS4                     YES, BRANCH                   00128000
+         NI    DIRATTR3,FF-DIRAA64-DIRAA31                    DRK OCT02 00129004
+         TM    #ALIAESD,AMODE64           AMODE 64?           DRK OCT02 00130002
+         BNO   *+8                        NO, BRANCH                    00131000
+         OI    DIRATTR3,DIRAA64           YES, SET THE DIRECTORY        00132002
+         TM    #ALIAESD,AMODE31           AMODE 31?                     00133000
+         BNO   *+8                        NO, BRANCH                    00134000
+         OI    DIRATTR3,DIRAA31           YES, SET THE DIRECTORY        00135000
+         SPACE 1                                                        00136000
+         TM    DIRATTR3,DIRRMANY          RMODEANY?                     00137000
+         BNO   ALIAS4                     NO, BRANCH                    00138000
+         SPACE 1                                                        00139000
+         NI    DIRATTR3,FF-DIRAA64                            DRK OCT02 00140005
+         OI    DIRATTR3,DIRAA31           RESET AS AMODE31              00141000
+         SPACE 1                                                        00142000
+ALIAS4   OI    DIRFLAG,X'80'              SET ALIAS FLAG                00143000
+         BAS   R2,OPENSTOW                OPEN STOW DCB; ENQUEUES       00144000
+         B     NEWCMD                     COULD NOT OPEN -- ERROR       00145000
+         STOW  STOWDCB,DIRNAME,A          ADD ALIAS TO DIRECTORY        00146000
+         SPACE 1                                                        00147000
+         B     *+4(R15)                PROCESS RETURN CODE              00148000
+         B     ALIAS5                     00 - SUCCESSFUL               00149000
+         B     MEMEXIST                   04 - MEMBER ALREADY EXISTS    00150000
+         EX    0,*                        08 - SHOULD NOT HAPPEN - ADD  00151000
+         B     FULLDIR                    12 - DIRECTORY IS FULL        00152000
+         B     IOERROR                    16 - I/O ERROR IN DIRECTORY   00153000
+         SPACE 3                                                        00154000
+ALIAS5   M$MSG L010                       MSG - ALIAS ASSIGNED          00155000
+         TM    FLAGSCC,RECFMU             MUST WE GIVE ENTRY POINT?     00156000
+         BZ    NEWCMD                     NO, BRANCH                    00157000
+         UNPK  INSERT#1(7),DIREPA(4)                                    00158000
+         TR    INSERT#1(6),TRTABLE                                      00159000
+         MVC   INSERT#1+6(2),BLANKS                                     00160000
+         MVC   INSERT#2(8),ENTRYPT    NAME OF THE ENTRY POINT           00161000
+         TR    INSERT#2(8),TRLINE     MAKE PRINTABLE                    00162000
+         LA    R1,L102$1              ASSUME NONE FOUND                 00163000
+         CLI   ENTRYPT,C'?'           ANY FOUND?                        00164000
+         BE    *+8                    NO, BRANCH                        00165000
+         LA    R1,L103$2              YES, SHOW ENTRY SYMBOL            00166000
+         M$MSG (R1)                                                     00167000
+         B     NEWCMD                                                   00168000

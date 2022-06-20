@@ -1,0 +1,1002 @@
+         TITLE 'P D S  --  PDS IF                            09/28/88'  07916016
+*********************************************************************** 07917000
+***      IF SUBCOMMAND         ADDED BY BRUCE LELAND -- JAN., 1983  *** 07918000
+*********************************************************************** 07919000
+*                                                                       07920000
+         SPACE 1                                                        07921000
+IF       CSECT                                                          07922014
+         USING *,R8                                                     07923000
+         OI    FLAGSGG,FOUTSUB        SUBCOMMAND GAINED CONTROL         07924000
+         OC    #ACTIONT(8),#ACTIONT   ANY THEN OR ELSE?                 07925000
+         BNZ   *+10                   YES, BRANCH                       07926000
+         MVC   #ACTIONT(4),IFLA$ATT   DEFAULT THEN ACTION IS ATTRIB     07927000
+         SPACE 1                                                        07928000
+         TM    #OPTOPT,X'80'        PARSE INVOKED?                      07929000
+         BNO   IF996                NO, DONE                            07930000
+         CLC   #ATTRLO(3),DIRTTR    IN TTR LOWER BOUND?                 07931000
+         BH    IF997                NO, DO ANY ELSE                     07932000
+         CLC   #ATTRHI(3),DIRTTR    IN TTR UPPER BOUND?                 07933000
+         BL    IF997                NO, DO ANY ELSE                     07934000
+         SPACE 1                                                        07935000
+         TM    FLAGSCC,RECFMU       A LOAD LIBRARY?                     07936000
+         BO    IF006                YES, BRANCH                         07937000
+         LA    R1,L701              ASSUME LINKEDIT ATTRIBUTES          07938000
+         TM    #OPTOPT,X'01'        CORRECT?                            07939000
+         BO    MSGNEWXX             YES, ERROR                          07940000
+         B     IF016                                                    07941000
+         SPACE 2                                                        07942000
+IF006    MVC   MODESAVE(1),DIRATTR3 RMODE/AMODE BYTE                    07943000
+         TM    DIRATTR2,DIRAOSLE    VS LINKAGE EDITOR?                  07944000
+         BO    *+8                  YES, BRANCH                         07945000
+         MVI   MODESAVE,0           NO, NO MVS/XA BITS                  07946000
+         SR    R15,R15                                                  07947000
+         IC    R15,MODESAVE                                             07948000
+         SRA   R15,2                AMODE FOR ALIAS                     07949000
+         TM    DIRFLAG,X'80'        ALIAS?                              07950000
+         BNO   *+8                  NO, BRANCH                          07951000
+         STC   R15,MODESAVE         YES, USE ALIAS AMODE BITS           07952000
+         NI    MODESAVE,DIRAM64+DIRAM31 TURN OFF OTHER BITS             07953012
+         SPACE 3                                                        07954000
+IF016    CLI   #RMODE,X'01'         ANY RMODE SELECTION?                07955000
+         BL    IF036                NO, BRANCH                          07956000
+         MVC   DOUBLE(1),DIRATTR3   RMODE/AMODE BYTE                    07957000
+         NI    DOUBLE,DIRRMANY      TURN OFF OTHER BITS                 07958000
+         TM    DIRATTR2,DIRAOSLE    VS LINKAGE EDITOR?                  07959000
+         BO    *+8                  YES, BRANCH                         07960000
+         MVI   DOUBLE,0             NO, NO MVS/XA BITS                  07961000
+         SR    R15,R15                                                  07962000
+         IC    R15,#RMODE                                               07963000
+         SLA   R15,2                #RMODE*4                            07964000
+         B     *(R15)               CHECK FOR:                          07965000
+         B     IF020                  RMODE=24                          07966000
+         B     IF030                  RMODE=ANY                         07967000
+         B     IF030                  NO RMODE=24                       07968000
+         B     IF020                  NO RMODE=ANY                      07969000
+IF020    CLI   DOUBLE,0             RMODE=24?                           07970000
+         BNE   IF997                NO, DO ANY ELSE                     07971000
+         B     IF036                YES, BRANCH                         07972000
+IF030    CLI   DOUBLE,0             RMODE=24?                           07973000
+         BE    IF997                YES, DO ANY ELSE                    07974000
+         SPACE 3                                                        07975000
+IF036    CLI   #AMODE,X'01'         ANY AMODE SELECTION?                07976000
+         BL    IF102                NO, BRANCH                          07977000
+         SR    R15,R15                                                  07978000
+         IC    R15,#AMODE                                               07979000
+         SLA   R15,2                #AMODE*4                            07980000
+         B     *(R15)               CHECK FOR:                          07981000
+         B     IF040                  AMODE=24                          07982000
+         B     IF050                  AMODE=31                          07983000
+         B     IF055                  AMODE=64                DRK OCT02 07983113
+         B     IF060                  AMODE=ANY                         07984000
+         B     IF070                  NO AMODE=24                       07985000
+         B     IF080                  NO AMODE=31                       07986000
+         B     IF085                  NO AMODE=64             DRK OCT02 07986113
+         B     IF090                  NO AMODE=ANY                      07987000
+IF040    CLI   MODESAVE,DIRAM24     AMODE=24?                           07988000
+         BH    IF997                NO, DO ANY ELSE                     07989000
+         B     IF102                YES, BRANCH                         07990000
+IF050    CLI   MODESAVE,DIRAM31     AMODE=31?                           07991000
+         BNE   IF997                NO, DO ANY ELSE                     07992000
+         B     IF102                YES, BRANCH                         07993000
+IF055    CLI   MODESAVE,DIRAM64     AMODE=64?                 DRK OCT02 07993113
+         BNE   IF997                NO, DO ANY ELSE           DRK OCT02 07993213
+         B     IF102                YES, BRANCH               DRK OCT02 07993313
+IF060    CLI   MODESAVE,DIRAM64+DIRAM31  AMODE=ANY?                     07994012
+         BNE   IF997                     NO, DO ANY ELSE                07995000
+         B     IF102                     YES, BRANCH                    07996000
+         SPACE 1                                                        07996112
+IF070    CLI   MODESAVE,DIRAM24     AMODE=24?                           07997000
+         BNH   IF997                YES, DO ANY ELSE                    07998000
+         B     IF102                NO, BRANCH                          07999000
+IF080    CLI   MODESAVE,DIRAM31     AMODE=31?                           08000000
+         BE    IF997                YES, DO ANY ELSE                    08001000
+         B     IF102                NO, BRANCH                          08002000
+IF085    CLI   MODESAVE,DIRAM64     AMODE=64?                 DRK OCT02 08002113
+         BE    IF997                YES, DO ANY ELSE          DRK OCT02 08002213
+         B     IF102                NO, BRANCH                DRK OCT02 08002313
+IF090    CLI   MODESAVE,DIRAM64+DIRAM31  AMODE=ANY?                     08003012
+         BE    IF997                     YES, DO ANY ELSE               08004000
+         SPACE 3                                                        08005000
+IF102    CLI   #ALIAOPT,X'01'       "ALIAS" OR "NOALIAS"?               08006000
+         BL    IF106                NEITHER, BRANCH                     08007000
+         BH    IF104                "NOALIAS", BRANCH                   08008000
+         TM    DIRFLAG,X'80'        "ALIAS" -- CORRECT?                 08009000
+         BO    IF106                YES, BRANCH                         08010000
+         B     IF997                NO, DO ANY ELSE                     08011000
+IF104    TM    DIRFLAG,X'80'        ALIAS?                              08012000
+         BO    IF997                YES, DO ANY ELSE                    08013000
+         SPACE 3                                                        08014000
+IF106    CLI   #VSLKED,X'01'        "VSLKED" OR "NOVSLKED"?             08015000
+         BL    IF110                NEITHER, BRANCH                     08016000
+         BH    IF108                "NOVSLKED", BRANCH                  08017000
+         TM    DIRATTR2,DIRAOSLE    "VSLKED" -- CORRECT?                08018000
+         BO    IF110                YES, BRANCH                         08019000
+         B     IF997                NO, DO ANY ELSE                     08020000
+IF108    TM    DIRATTR2,DIRAOSLE    VSLKED?                             08021000
+         BO    IF997                YES, DO ANY ELSE                    08022000
+         SPACE 3                                                        08023000
+IF110    CLI   #AUTHOPT,X'01'       "AUTH" OR "NOAUTH"?                 08024000
+         BL    IF113                NEITHER, BRANCH                     08025000
+         LA    R2,ZERO              ASSUME NOT AUTHORIZED               08026000
+         TM    DIRATTR2,DIRAOSLE+DIRAPFLG  APF INFORMATION AVAILABLE?   08027000
+         BNO   IF111                       NO, NOT AUTHORIZED           08028000
+         LA    R2,DIRAPF            BASIC APF DATA START                08029000
+         TM    DIRATTR,ATTRSCTR     SCATTER LOADED?                     08030000
+         BNO   *+8                  NO, BRANCH                          08031000
+         LA    R2,8(,R2)            YES, EIGHT MORE BYTES               08032000
+         TM    DIRFLAG,X'80'        ALIAS?                              08033000
+         BO    IF110A               YES, BRANCH                         08034000
+***PDSMAN CHANGES: IF AUTH/NOAUTH                             ABL NOV86 08035000
+         TM    5(R2),X'0F'          PDSMAN DATE?              ABL NOV86 08036000
+         BO    IF110B               YES, BRANCH               ABL NOV86 08037000
+         TM    6(R2),X'0F'          PDSMAN DATE?              ABL NOV86 08038000
+         BO    IF110B               YES, BRANCH               ABL NOV86 08039000
+         TM    4+5(R2),X'0F'        PDSMAN DATE AND SSI?      ABL NOV86 08040000
+         BO    IF110B               YES, BRANCH               ABL NOV86 08041000
+         TM    4+6(R2),X'0F'        PDSMAN DATE AND SSI?      ABL NOV86 08042000
+         BO    IF110B               YES, BRANCH               ABL NOV86 08043000
+         CLI   8(R2),0              CONVERTED ALIAS ENTRY?              08044000
+*        BE    IF110B               NO, BRANCH                          08045008
+         B     IF110B               BRANCH                    DRK JAN98 08045108
+IF110A   LA    R2,11(,R2)           ADD ALIAS LENGTH          ABL NOV86 08046000
+IF110B   DS    0H                                             ABL NOV86 08047000
+         TM    DIRATTR2,DIR2SSI     SSI INFORMATION?                    08048000
+         BNO   IF111                NO, BRANCH                          08049000
+         LA    R2,5(,R2)            YES, FOUR MORE BYTES                08050000
+         N     R2,=F'-2'                                ROUNDED         08051000
+IF111    CLI   #AUTHOPT,X'01'       "AUTH" OR "NOAUTH"                  08052000
+         BH    IF112                "NOAUTH", BRANCH                    08053000
+         CLI   0(R2),X'01'          CORRECT APF LENGTH?                 08054000
+         BNE   IF997                NO, CANNOT BE AUTHORIZED            08055000
+         CLI   1(R2),0              "AUTH" -- CORRECT?                  08056000
+         BH    IF113                YES, BRANCH                         08057000
+         B     IF997                NO, DO ANY ELSE                     08058000
+IF112    CLI   0(R2),X'01'          CORRECT APF LENGTH?                 08059000
+         BNE   IF113                NO, CANNOT BE AUTHORIZED            08060000
+         CLI   1(R2),0              AUTHORIZED?                         08061000
+         BH    IF997                YES, DO ANY ELSE                    08062000
+         SPACE 3                                                        08063000
+IF113    CLI   #APFERR,X'01'        "APFERR" OR "NOAPFERR"?             08064000
+         BL    IF116                NEITHER, BRANCH                     08065000
+         LA    R2,=X'01010101'      ASSUME NO APF ERROR                 08066000
+         TM    DIRATTR2,DIRAOSLE+DIRAPFLG  APF INFORMATION AVAILABLE?   08067000
+         BNO   IF114                       NO, NO APF ERROR             08068000
+         LA    R2,DIRAPF            BASIC APF DATA START                08069000
+         TM    DIRATTR,ATTRSCTR     SCATTER LOADED?                     08070000
+         BNO   *+8                  NO, BRANCH                          08071000
+         LA    R2,8(,R2)            YES, EIGHT MORE BYTES               08072000
+         TM    DIRFLAG,X'80'        ALIAS?                              08073000
+         BO    IF113A               YES, BRANCH                         08074000
+***PDSMAN CHANGES: IF APFERR/NOAPFERR                         ABL NOV86 08075000
+         TM    5(R2),X'0F'          PDSMAN DATE?              ABL NOV86 08076000
+         BO    IF113B               YES, BRANCH               ABL NOV86 08077000
+         TM    6(R2),X'0F'          PDSMAN DATE?              ABL NOV86 08078000
+         BO    IF113B               YES, BRANCH               ABL NOV86 08079000
+         TM    4+5(R2),X'0F'        PDSMAN DATE AND SSI?      ABL NOV86 08080000
+         BO    IF113B               YES, BRANCH               ABL NOV86 08081000
+         TM    4+6(R2),X'0F'        PDSMAN DATE AND SSI?      ABL NOV86 08082000
+         BO    IF113B               YES, BRANCH               ABL NOV86 08083000
+         CLI   8(R2),0              CONVERTED ALIAS ENTRY?              08084000
+*        BE    IF113B               NO, BRANCH                          08085008
+         B     IF113B               BRANCH                    DRK JAN98 08085108
+IF113A   LA    R2,11(,R2)           ADD ALIAS LENGTH          ABL NOV86 08086000
+IF113B   DS    0H                                             ABL NOV86 08087000
+         TM    DIRATTR2,DIR2SSI     SSI INFORMATION?                    08088000
+         BNO   IF114                NO, BRANCH                          08089000
+         LA    R2,5(,R2)            YES, FOUR MORE BYTES                08090000
+         N     R2,=F'-2'                                ROUNDED         08091000
+IF114    CLI   #APFERR,X'01'        "APFERR" OR "NOAPFERR"              08092000
+         BH    IF115                "NOAPFERR", BRANCH                  08093000
+         CLI   0(R2),X'01'          CORRECT APF LENGTH?                 08094000
+         BE    IF997                YES, DO ANY ELSE                    08095000
+         B     IF116                NO, BRANCH                          08096000
+IF115    CLI   0(R2),X'01'          CORRECT APF LENGTH?                 08097000
+         BNE   IF997                NO, DO ANY ELSE                     08098000
+         SPACE 3                                                        08099000
+IF116    CLI   #PAGEOPT,X'01'       "PAGE" OR "NOPAGE"?                 08100000
+         BL    IF120                NEITHER, BRANCH                     08101000
+         BH    IF118                "NOPAGE", BRANCH                    08102000
+         TM    DIRATTR2,DIR2PAGA    "PAGE" -- CORRECT?                  08103000
+         BO    IF120                YES, BRANCH                         08104000
+         B     IF997                NO, DO ANY ELSE                     08105000
+IF118    TM    DIRATTR2,DIR2PAGA    PAGE?                               08106000
+         BO    IF997                YES, DO ANY ELSE                    08107000
+         SPACE 3                                                        08108000
+IF120    CLI   #SSIOPT,X'01'        "SSI" OR "NOSSI"?                   08109000
+         BL    IF130                NEITHER, BRANCH                     08110000
+         TM    FLAGSCC,RECFMU       RECFM=U?                            08111000
+         BO    IF122                YES, BRANCH                         08112000
+         LA    R2,ZERO              ASSUME NO SSI                       08113000
+         TM    DIRFLAG,X'0F'        SPF STATISTICS?                     08114000
+         BO    IF124                YES, NO SSI INFORMATION             08115000
+         TM    DIRFLAG,X'14'        EXT SPF STATISTICS?       DRK AUG09 08115119
+         BO    IF124                YES, NO SSI INFORMATION   DRK AUG09 08115219
+         LA    R2,DIRUSER           POINT TO SSI INFORMATION            08116000
+         B     IF124                CHECK FOR ANY SSI                   08117000
+IF122    LA    R2,DIRAPF            BASIC APF DATA START                08118000
+         TM    DIRATTR,ATTRSCTR     SCATTER LOADED?                     08119000
+         BNO   *+8                  NO, BRANCH                          08120000
+         LA    R2,8(,R2)            YES, EIGHT MORE BYTES               08121000
+         TM    DIRFLAG,X'80'        ALIAS?                              08122000
+         BO    IF122A               YES, BRANCH                         08123000
+***PDSMAN CHANGES: IF SSI/NOSSI                               ABL NOV86 08124000
+         TM    5(R2),X'0F'          PDSMAN DATE?              ABL NOV86 08125000
+         BO    IF122B               YES, BRANCH               ABL NOV86 08126000
+         TM    6(R2),X'0F'          PDSMAN DATE?              ABL NOV86 08127000
+         BO    IF122B               YES, BRANCH               ABL NOV86 08128000
+         TM    4+5(R2),X'0F'        PDSMAN DATE AND SSI?      ABL NOV86 08129000
+         BO    IF122B               YES, BRANCH               ABL NOV86 08130000
+         TM    4+6(R2),X'0F'        PDSMAN DATE AND SSI?      ABL NOV86 08131000
+         BO    IF122B               YES, BRANCH               ABL NOV86 08132000
+         CLI   8(R2),0              CONVERTED ALIAS ENTRY?              08133000
+*        BE    IF122B               NO, BRANCH                          08134008
+         B     IF122B               BRANCH                    DRK JAN98 08134108
+IF122A   LA    R2,11(,R2)           ADD ALIAS LENGTH          ABL NOV86 08135000
+IF122B   DS    0H                                             ABL NOV86 08136000
+         TM    DIRATTR2,DIRAOSLE    VS LINKAGE EDITOR?                  08137000
+         BNO   IF124                NO, BRANCH                          08138000
+         TM    DIRATTR2,DIR2SSI     SSI INFORMATION?                    08139000
+         BNO   IF128                NO, BRANCH                          08140000
+IF124    LA    R2,1(,R2)            ROUND TO START                      08141000
+         N     R2,=F'-2'                          OF NEXT HALFWORD      08142000
+         CLC   ZERO,0(R2)           ZERO?                               08143000
+         BE    IF128                YES, NO SSI                         08144000
+         CLC   =F'-1',0(R2)         ALL ONES?                           08145000
+         BE    IF128                YES, NO SSI                         08146000
+IF126    CLI   #SSIOPT,X'02'        SEARCH FOR "NOSSI"?                 08147000
+         BE    IF997                YES, BRANCH                         08148000
+         TM    #SSIOPT,X'01'+X'04'  SEARCH FOR "SSI(VALUE)"?            08149000
+         BNO   IF130                NO, BRANCH                          08150000
+         SR    R0,R0                                                    08150100
+         IC    R0,SHIFTSSI          # OF SHIFT POSITIONS FOR PARTSSI    08150200
+         L     R14,0(R2)            SAVE FOR LATER                      08150300
+         ICM   R15,B'1111',SSIMASK  SAVE FOR LATER                      08150400
+         L     R1,#SSITEXT          SAVE FOR LATER                      08150500
+         MVC   DOUBLE(4),0(R2)      GET THE SSI VALUE                   08151000
+         NC    DOUBLE(4),SSIMASK    MASK OFF LOWER BITS                 08151200
+         CLC   DOUBLE(4),#SSITEXT   THIS SSI?                           08151400
+         BE    IF130                YES, BRANCH                         08152100
+         TM    #SSIOPT,X'02'+X'04'  SEARCH FOR "PARTSSI(VALUE)"?        08152400
+         BNO   IF997                NO, BRANCH                          08152500
+IF127    A     R0,=F'-1'            ANY MORE DIGITS?                    08152600
+         BM    IF997                NO, BRANCH                          08152800
+         SRL   R15,4                GET THE NEXT NIBBLE                 08153000
+         SRL   R1,4                 GET THE NEXT NIBBLE                 08153100
+         LR    R2,R14               GET THE SSI VALUE                   08153200
+         NR    R2,R15               MASK OFF OTHER BITS                 08153300
+         CR    R2,R1                THIS SSI?                           08153400
+         BE    IF130                YES, BRANCH                         08153500
+         B     IF127                NO, KEEP LOOKING                    08153600
+         SPACE 1                                                        08153700
+IF128    CLI   #SSIOPT,X'02'        SEARCH FOR "NOSSI"?                 08154000
+         BNE   IF997                NO, DO ANY ELSE                     08155000
+         SPACE 3                                                        08156000
+IF130    TM    FLAGSCC,RECFMU       RECFM=U?                            08157000
+         BNO   IF140                NO, BRANCH                          08158000
+         SR    R1,R1                                                    08159000
+         ICM   R1,B'0001',#ATTRYES  ANY YES+0 ATTRIBUTES?               08160000
+         BZ    IF132                NO, BRANCH                          08161000
+         TM    DIRATTR,*-*          <<EXECUTED>>                        08162000
+         EX    R1,*-4               ALL ATTRIBUTES MATCH?               08163000
+         BNO   IF997                NO, DO ANY ELSE                     08164000
+         SPACE 1                                                        08165000
+IF132    ICM   R1,B'0001',#ATTRYES+1 ANY YES+1 ATTRIBUTES?              08166000
+         BZ    IF134                NO, BRANCH                          08167000
+         TM    DIRATTR+1,*-*        <<EXECUTED>>                        08168000
+         EX    R1,*-4               ALL ATTRIBUTES MATCH?               08169000
+         BNO   IF997                NO, DO ANY ELSE                     08170000
+         SPACE 1                                                        08171000
+IF134    ICM   R1,B'0001',#ATTRNO   NO+0 ATTRIBUTES                     08172000
+         TM    DIRATTR,*-*          <<EXECUTED>>                        08173000
+         EX    R1,*-4               ANY ATTRIBUTES MATCH?               08174000
+         BNZ   IF997                YES, DO ANY ELSE                    08175000
+         SPACE 1                                                        08176000
+         ICM   R1,B'0001',#ATTRNO+1 NO+1 ATTRIBUTES                     08177000
+         TM    DIRATTR+1,*-*        <<EXECUTED>>                        08178000
+         EX    R1,*-4               ANY ATTRIBUTES MATCH?               08179000
+         BNZ   IF997                YES, DO ANY ELSE                    08180000
+         SPACE 3                                                        08181000
+IF140    CLI   #USERIDO,X'01'       ID, NOID OR NOTID?                  08182000
+         BL    IF144                NO, BRANCH                          08183000
+         LA    R1,L702              ASSUME DATA SET IS A LOAD MODULE    08184000
+         TM    FLAGSCC,RECFMU       CORRECT?                            08185000
+         BO    MSGNEWXX             YES, ERROR                          08186000
+         TM    DIRFLAG,X'0F'        SPF STATISTICS?                     08187000
+         BO    IF140A               YES                                 08188020
+         TM    DIRFLAG,X'14'        EXT SPF STATISTICS?       DRK AUG09 08188120
+         BO    IF140A               YES                       DRK AUG09 08188220
+         B     IF143                NO, BRANCH                          08188320
+IF140A   DS    0H                                                       08188420
+         CLI   #USERIDO,X'02'       "NOID" DESIRED?                     08189000
+         BE    IF997                YES, DO ANY ELSE                    08190000
+         SR    R1,R1                                                    08191000
+         ICM   R1,B'0001',#USERIDL  ANY ID FILTERING?                   08192000
+         BP    IF141                YES, BRANCH                         08193000
+         CLI   #USERIDO,X'01'       "ID" DESIRED?                       08194000
+         BE    IF144                YES, BRANCH                         08195000
+         B     IF997                NO, DO ANY ELSE                     08196000
+         SPACE 1                                                        08197000
+IF141    BCTR  R1,0                 MACHINE LENGTH                      08198000
+         CLI   #USERIDO,X'01'       "ID" DESIRED?                       08199000
+         BNE   IF142                NO, BRANCH                          08200000
+         EX    R1,IF142             PARTIAL ID MATCH?                   08201000
+         BNE   IF997                NO, DO ANY ELSE                     08202000
+         B     IF144                YES, BRANCH                         08203000
+         SPACE 1                                                        08204000
+IF142    CLC   #USERTXT(*-*),DIRSPFID <<EXECUTED>>                      08205000
+         EX    R1,*-6               PARTIAL ID MATCH?                   08206000
+         BE    IF997                YES, DO ANY ELSE                    08207000
+         B     IF144                NO, BRANCH                          08208000
+         SPACE 1                                                        08209000
+IF143    CLI   #USERIDO,X'01'       "ID" DESIRED?                       08210000
+         BE    IF997                YES, DO ANY ELSE                    08211000
+         SPACE 3                                                        08212000
+IF144    TM    #OPTOPT,X'02'        NEED ANY MAP OR HISTORY DATA?       08213000
+         BNO   IF156                NO, BRANCH                          08214000
+         MVI   RLDCOUNT,X'FF'       ASSUME NO RLD/CONTROL DATA FOUND    08215000
+         SPACE 1                                                        08216000
+         L     R15,=A(READESD)                                          08217000
+         BASR  R14,R15              ANY ESD DATA?                       08218000
+         NOP   0(,R0)               NO, IGNORE                          08219000
+         SPACE 1                                                        08220000
+         ICM   R2,B'1110',#ZAPOPT       SAVE ZAP/USERDATA/TRANS         08221000
+         MVC   #ZAPOPT(3),=X'01010101'  CHECK ZAP/USERDATA/TRANS        08222000
+         SPACE 1                                              DRK MAY08 08222118
+         MVI   LKEDDATE+2,X'FF'         NO LINKAGE-EDIT DATE FOUND    " 08223018
+         L     R15,=A(READIDR)                                          08224000
+         BASR  R14,R15              ANY IDR DATA?                       08225000
+         B     IF145                NO, BRANCH                          08226000
+         SPACE 2                                                        08227000
+         MVI   #LKEDOPT,0           ASSUME LINKAGE-EDITOR FOUND         08228000
+         SR    R1,R1                                                    08229000
+         ICM   R1,B'0001',#LKEDLEN  ANY LKED NAME CHECK?                08230000
+         BZ    IF145                NO, BRANCH                          08231000
+         BCTR  R1,0                 MACHINE COMPARE LENGTH              08232000
+         CLC   LKEDNAME(*-*),#LKEDTXT  <<EXECUTED>>                     08233000
+         EX    R1,*-6               THIS PARTIAL LKED NAME?             08234000
+         BE    IF145                YES, BRANCH                         08235000
+         MVI   #LKEDOPT,1           NO, LINKAGE-EDITOR NOT FOUND        08236000
+         SPACE 1                                                        08237000
+IF145    OC    #IFCREIF(6),#IFCREIF        ANY CREATION DATE RANGE?     08238000
+         BZ    IF146                       NO, CONTINUE                 08239000
+         ICM   R1,B'0100',LKEDDATE+2       YY OF MMDDYY                 08239101
+         ICM   R1,B'0011',LKEDDATE         MMDD OF MMDDYY               08239201
+         ICM   R1,B'1000',=X'00'           ASSUME 19XX        Y2K AUG97 08239301
+         CLI   LKEDDATE+2,X'&WIN19XX'      BELOW 19XX WINDOW? Y2K AUG97 08239401
+         BNL   IF145A                      NO,  THEN 19XX     Y2K AUG97 08239501
+         ICM   R1,B'1000',=X'01'           YES, THEN 20XX     Y2K AUG97 08239601
+IF145A   DS    0H                                             Y2K AUG97 08239701
+         MVC   DOUBLE+1(3),#IFCREIF        YYMMDD WORK AREA   Y2K AUG97 08242101
+         MVI   DOUBLE,X'00'                ASSUME 19XX        Y2K AUG97 08242201
+         CLI   #IFCREIF,X'&WIN19XX'        BELOW 19XX WINDOW? Y2K AUG97 08242301
+         BNL   IF145B                      NO,  THEN 19XX     Y2K AUG97 08242401
+         MVI   DOUBLE,X'01'                YES, THEN 20XX     Y2K AUG97 08242501
+IF145B   DS    0H                                             Y2K AUG97 08242601
+         CLC   DOUBLE+1(3),=X'000100'    BEFORE/TO 1ST DATE?  Y2K AUG97 08242706
+         BE    *+12                      YES, IGNORE 1ST DATE Y2K AUG97 08242805
+         CLM   R1,B'1111',DOUBLE           VALUE < 1ST YYMMDD Y2K AUG97 08242901
+         BL    IF997                       YES, DO ANY ELSE             08243000
+         MVC   DOUBLE+5(3),#IFCREIF+3      YYMMDD WORK AREA   Y2K AUG97 08244101
+         MVI   DOUBLE+4,X'00'              ASSUME 19XX        Y2K AUG97 08244201
+         CLI   #IFCREIF+3,X'&WIN19XX'      BELOW 19XX WINDOW? Y2K AUG97 08244301
+         BNL   IF145C                      NO,  THEN 19XX     Y2K AUG97 08244401
+         MVI   DOUBLE+4,X'01'              YES, THEN 20XX     Y2K AUG97 08244501
+IF145C   DS    0H                                             Y2K AUG97 08244601
+         CLM   R1,B'1111',DOUBLE+4         VALUE > 2ND YYMMDD Y2K AUG97 08244701
+         BH    IF997                       YES, DO ANY ELSE             08245000
+         SPACE 2                                                        08246000
+IF146    STCM  R2,B'1110',#ZAPOPT   RESTORE ZAP/USERDATA/TRAN           08247000
+         USING ESDENTRY,R2                                              08248000
+         LA    R2,#ESDPTR           SCAN ESD CHAIN                      08249000
+         TM    #MODOPT,X'01'+X'02'  WKEXTERN OR EXTERN?                 08250000
+         BZ    IF148                NO, BRANCH                          08251000
+         OC    0(4,R2),0(R2)        ANY FOUND?                          08252000
+         BZ    IF148                NO, BRANCH                          08253000
+         MVI   #MODOPT,0            YES, DROP MODULE/WKEXTERN/EXTERN    08254000
+         SPACE 1                                                        08255000
+IF148    ICM   R2,B'1111',ESDLINK   ANY MORE ESD ENTRIES?               08256000
+         BZ    IF154                NO, BRANCH                          08257000
+         CLI   ESDTYPE,CODESD       CSECT ESD ENTRY?                    08258000
+         BNE   IF148                NO, BRANCH                          08259000
+         MVI   #MODOPT,0            YES, MODULE FOUND         ABL FEB87 08260000
+         SPACE 1                                                        08261000
+         USING IDRENTRY,R3                                              08262000
+         LA    R3,#IDRPTR           SCAN IDR CHAIN                      08263000
+         SPACE 1                                                        08264000
+IF150    ICM   R3,B'1111',IDRLINK   ANY MORE IDR ENTRIES?               08265000
+         BZ    IF148                NO, BRANCH                          08266000
+         CLC   ESDID,IDRESDID       THIS CSECT IDENTIFIER?              08267000
+         BNE   IF150                NO, BRANCH                          08268000
+         SPACE 1                                                        08269000
+***TEST  MVI   #MODOPT,0            YES, MODULE FOUND                   08270000
+         CLI   IDRTYPE,IDRTRAN      ZAP RECORD?                         08271000
+         BNL   IF152                NO, BRANCH                          08272000
+         MVI   #ZAPOPT,0            YES, ZAP RECORDS MATCH              08273000
+         OC    #IFMODIF(6),#IFMODIF       ANY MODIFICATION CHECK?       08274000
+         BE    IF152                      NO, BRANCH                    08275000
+         ICM   R1,B'0100',IDRDATE+2       YY OF MMDDYY                  08276000
+         ICM   R1,B'0011',IDRDATE         MMDD OF MMDDYY                08277000
+         ICM   R1,B'1000',=X'00'          ASSUME 19XX         Y2K AUG97 08277301
+         CLI   IDRDATE+2,X'&WIN19XX'      BELOW 19XX WINDOW?  Y2K AUG97 08277401
+         BNL   IF150A                     NO,  THEN 19XX      Y2K AUG97 08277501
+         ICM   R1,B'1000',=X'01'          YES, THEN 20XX      Y2K AUG97 08277601
+IF150A   DS    0H                                             Y2K AUG97 08277701
+         MVC   DOUBLE+1(3),#IFMODIF       YYMMDD WORK AREA    Y2K AUG97 08277801
+         MVI   DOUBLE,X'00'               ASSUME 19XX         Y2K AUG97 08277901
+         CLI   #IFMODIF,X'&WIN19XX'       BELOW 19XX WINDOW?  Y2K AUG97 08278001
+         BNL   IF150B                     NO,  THEN 19XX      Y2K AUG97 08278101
+         MVI   DOUBLE,X'01'               YES, THEN 20XX      Y2K AUG97 08278201
+IF150B   DS    0H                                             Y2K AUG97 08278301
+         CLC   DOUBLE+1(3),=X'000100'    BEFORE/TO 1ST DATE?  Y2K AUG97 08278406
+         BE    *+12                      YES, IGNORE 1ST DATE Y2K AUG97 08278505
+         CLM   R1,B'1111',DOUBLE          VALUE < 1ST YYMMDD  Y2K AUG97 08278601
+         BL    IF152                      YES, NO MATCH                 08278701
+         MVC   DOUBLE+5(3),#IFMODIF+3     YYMMDD WORK AREA    Y2K AUG97 08278801
+         MVI   DOUBLE+4,X'00'             ASSUME 19XX         Y2K AUG97 08278901
+         CLI   #IFMODIF+3,X'&WIN19XX'     BELOW 19XX WINDOW?  Y2K AUG97 08279001
+         BNL   IF150C                     NO,  THEN 19XX      Y2K AUG97 08279101
+         MVI   DOUBLE+4,X'01'             YES, THEN 20XX      Y2K AUG97 08279201
+IF150C   DS    0H                                             Y2K AUG97 08279301
+         CLM   R1,B'1111',DOUBLE+4        VALUE > 2ND YYMMDD  Y2K AUG97 08279401
+         BH    IF152                      YES, NO MATCH                 08279501
+         XC    #IFMODIF(6),#IFMODIF       A MODIFICATION RECORD MATCHES 08282000
+         SPACE 1                                                        08283000
+IF152    CLI   IDRTYPE,IDRTRAN      IDR RECORD TYPE:                    08284000
+         BNH   *+8                                                      08285000
+         MVI   #USEROPT,0              **USERDATA                       08286000
+         BNE   *+8                                                      08287000
+         MVI   #TRANOPT,0              **TRANSLATOR                     08288000
+         B     IF150                                                    08289000
+         DROP  R2,R3                                                    08290000
+IF154    OC    #IFMODIF(6),#IFMODIF ANY CHANGES MATCH?                  08291000
+         BNZ   IF997                NO, DO ANY ELSE CONDITIONS          08292000
+         SPACE 1                                                        08293000
+IF156    OC    #ZAPOPT(5),#ZAPOPT   ZAP/USER/TRAN/LKED/MODULE FOUND?    08294000
+         BNZ   IF997                NO, DO ANY ELSE                     08295000
+         SPACE 3                                                        08296000
+         TM    DIRATTR2,DIRAOSLE    OS/VS LINKAGE EDITOR?               08297000
+         BO    *+10                 YES, BRANCH                         08298000
+         MVC   RLDCOUNT(1),DIRATTR4 NO, WANT MATCHING RLD/CONTROL       08299000
+         CLI   #RLDERR,X'01'        "RLDERR" OR "NORLDERR"              08300000
+         BL    IF160                NEITHER, BRANCH                     08301000
+         BH    IF158                "NORLDERR", BRANCH                  08302000
+         CLC   DIRATTR4(1),RLDCOUNT "RLDERR" -- CORRECT?                08303000
+         BNE   IF160                YES, BRANCH                         08304000
+         B     IF997                NO, DO ANY ELSE                     08305000
+IF158    CLC   DIRATTR4(1),RLDCOUNT "NORLDERR" -- CORRECT?              08306000
+         BNE   IF997                YES, DO ANY ELSE                    08307000
+         SPACE 3                                                        08308000
+IF160    NI    #IFABOVE,FF-X'01'    ASSUME SIZE IS NOT AVAILABLE        08309000
+         TM    #IFABOVE,X'80'       ANY ABOVE CODED?                    08310000
+         BO    IF164                YES, BRANCH                         08311000
+         TM    #IFBELOW,X'80'       ANY BELOW CODED?                    08312000
+         BZ    IF170                NO, BRANCH                          08313000
+         SPACE 1                                                        08314000
+IF164    SR    R1,R1                                                    08315000
+         ICM   R1,B'0111',DIRSTORE  MODULE SIZE                         08316000
+         TM    FLAGSCC,RECFMU       RECFM=U?                            08317000
+         BO    IF168                YES, BRANCH                         08318000
+         TM    DIRFLAG,X'0F'        SPF STATISTICS?                     08319020
+         BO    IF164A               YES                                 08320020
+         TM    DIRFLAG,X'14'        EXT SPF STATISTICS?       DRK AUG09 08320120
+         BO    IF164A               YES                       DRK AUG09 08320220
+         B     IF180                NO, BRANCH                          08320320
+IF164A   DS    0H                                                       08320420
+         TM    DIRSPFCR,X'FE'       0C OF 0CYYDDDF ZEROS?     Y2K AUG97 08321009
+         BNZ   IF180                NO, BRANCH                Y2K AUG97 08322009
+         TM    DIRSPFCD,X'FE'       0C OF OTHER 0CYYDDDF ZERO?Y2K AUG97 08323009
+         BNZ   IF180                NO, BRANCH                Y2K AUG97 08324009
+         TM    DIRSPFFL,DIRSPFXS    EXTENDED STATS?           DRK AUG09 08324121
+         BNO   IF164B               NO                        DRK AUG09 08324221
+         L     R1,DIRSPXSI          YES                       DRK AUG09 08324324
+         B     IF168                                          DRK AUG09 08325021
+IF164B   DS    0H                                                       08325121
+         SR    R1,R1                                          DRK JAN98 08325207
+         ICM   R1,B'0011',DIRSPFSI  CURRENT SIZE              DRK JAN98 08325307
+         SPACE 1                                                        08326000
+IF168    OI    #IFABOVE,X'01'       SIZE IS AVAILABLE                   08327000
+         ST    R1,#IFLEN            LENGTH OF THE MEMBER                08328000
+         SPACE 1                                                        08329000
+IF170    TM    #OPTOPT,X'04'        NEED TO READ THE MEMBER?            08330000
+         BNO   IF300                NO, BRANCH                          08331000
+         SPACE 1                                                        08332000
+IF180    SR    R6,R6                COUNT OF INPUT LOGICAL RECORDS      08333000
+         OI    ##ADRPA#,$Q          QUIET MODE READ IS REQUIRED         08334000
+         MVC   STARTTR(3),DIRTTR    FIRST DISK ADDRESS TO READ          08335000
+         CLC   DIRTTR(3),DS1LSTAR   BEYOND END OF DATA MARKER?          08336000
+         BL    IF204                NO, BRANCH                          08337000
+*** PAST DS1LSTAR -- PERHAPS WE NEED TO REOPEN THE DATA SET             08338000
+         OI    FLAGSJJ,FNOREAD      CALL EXCP FOR OPEN ONLY             08339000
+         L     R15,=V(EXCP)                                             08340000
+         BASR  R14,R15                                                  08341000
+         NI    FLAGSJJ,FF-FNOREAD   EXCP CALL IS COMPLETE               08342000
+         SPACE 1                                                        08343000
+         CLC   DIRTTR(3),DS1LSTAR   BEYOND END OF DATA MARKER?          08344000
+         BNL   IF242                YES, REALLY PAST DS1LSTAR           08345000
+         MVC   STARTTR(3),DIRTTR    FIRST DISK ADDRESS TO READ          08346000
+         SPACE 3                                                        08347000
+IF204    L     R15,=V(EXCP)                                             08348000
+         BASR  R14,R15                                                  08349000
+         B     *+4(R15)             PROCESS RETURN CODE                 08350000
+         B     IF208                  00 - SUCCESSFUL READ              08351000
+         B     IF240                  04 - END OF MEMBER                08352000
+         B     IF240                  08 - END OF DATA SET              08353000
+         B     IF242                  12 - I/O ERROR                    08354000
+         SPACE 2                                                        08355000
+IF208    LR    R3,R0                BUFFER START                        08356000
+         L     R5,LS                BLOCK LENGTH                        08357000
+         CH    R5,#MAXBLKI          VALID BLKSIZE?                      08358000
+         BNH   IF220                YES, BRANCH                         08359000
+         OC    #MAXBLKI(2),#MAXBLKI ANY MAXBLK()?                       08360000
+         BNZ   IF210                YES, BRANCH                         08361000
+         CH    R5,BLKSI             BLKSIZE VALID?                      08362000
+         BNH   IF220                YES, BRANCH                         08363000
+IF210    OI    #OPTOPT,X'20'        NO, INDICATE A BLOCKSIZE ERROR      08364000
+         SPACE 1                                                        08365000
+IF220    TM    FLAGSCC,RECFMF       FIXED FORMAT?                       08366000
+         BNO   IF222                NO, BRANCH                          08367000
+         LH    R14,LRECL            CURRENT LRECL                       08368000
+         LR    R0,R5                BLOCK LENGTH                        08369000
+         SRDA  R0,32                                                    08370000
+         DR    R0,R14               BLKSIZE/LRECL                       08371000
+         LTR   R0,R0                ANY REMAINDER?                      08372000
+         BZ    IF222                YES, BRANCH                         08373000
+         OI    #OPTOPT,X'10'        NOTE: LRECL ERROR (BLKSIZE/LRECL)   08374000
+         SPACE 1                                                        08375000
+IF222    LR    R1,R5                                                    08376000
+         AR    R5,R3                END OF BUFFER                       08377000
+         BCTR  R5,0                 END OF BUFFER -1                    08378000
+         TM    FLAGSCC,RECFMF       RECFM=F?                            08379000
+         LH    R4,LRECL                                                 08380000
+         BO    IF228                YES, BRANCH                         08381000
+         TM    FLAGSCC,RECFMU       RECFM=U?                            08382000
+         LR    R4,R1                                                    08383000
+         BO    IF228                YES, BRANCH                         08384000
+         TM    FLAGSCC,RECFMV       RECFM=V?                            08385000
+         BNO   IF228                NO, ASSUME RECFM=U                  08386000
+         AH    R3,=H'4'             SKIP BLOCK LENGTH WORD              08387000
+         B     IF226                                                    08388000
+         SPACE 3                                                        08389000
+IF224    BXLE  R3,R4,IF226          GET THE NEXT LOGICAL RECORD         08390000
+         B     IF204                END OF BLOCK, BRANCH                08391000
+         SPACE 2                                                        08392000
+IF226    TM    FLAGSCC,RECFMV       RECFM=V?                            08393000
+         BNO   IF228                NO, BRANCH                          08394000
+         SR    R4,R4                                                    08395000
+         ICM   R4,B'0011',0(R3)     RECORD LENGTH +4                    08396000
+         LR    R14,R4               RECORD LENGTH +4                    08397000
+         AH    R3,=H'4'             SKIP RECORD LENGTH WORD             08398000
+         SH    R4,=H'4'             RECORD LENGTH VALID?                08399000
+         BNM   IF228                YES, BRANCH                         08400000
+         SR    R4,R4                NO, USE LENGTH 0                    08401000
+         OI    #OPTOPT,X'10'        NOTE: LRECL ERROR (SHORT RECORD)    08402000
+         B     IF224                SKIP THE RECORD                     08403000
+         SPACE 2                                                        08404000
+IF228    LA    R6,1(,R6)            ANOTHER OUTPUT RECORD               08405000
+         SPACE 1                                                        08405132
+         TM    FLAGSCC,RECFMU       RECFM=U?                  DRK APR18 08405232
+         BO    IF234                YES, SKIP                 DRK APR18 08405332
+         C     R6,=F'1'             FIRST LOGICAL?            DRK APR18 08405432
+         BNE   IF234                NO                        DRK APR18 08405532
+         CLI   #PACKED,0            PACKED/NOPACKED DESIRED?  DRK APR18 08405632
+         BE    IF234                NO                        DRK APR18 08405732
+         CLC   0(4,R3),=X'000140C6' ISPF PACK FORMAT?  FIXED  DRK APR18 08405833
+         BE    IF232                YES                       DRK APR18 08405932
+         CLC   0(4,R3),=X'000140E5' ISPF PACK FORMAT?  VARI   DRK APR18 08406033
+         BE    IF232                YES                       DRK APR18 08406132
+         B     IF234                                          DRK APR18 08406232
+IF232    DS    0H                                             DRK APR18 08406332
+         OI    #PACKED,X'80'        YES, MARK IT PACKED       DRK APR18 08406432
+IF234    DS    0H                                             DRK APR18 08406732
+         CH    R14,LRECL            VALID LRECL VALUE?                  08406832
+         BNH   IF224                YES, BRANCH                         08407000
+         OI    #OPTOPT,X'10'        NOTE: LRECL ERROR (LONG RECORD)     08408000
+         B     IF224                                                    08409000
+         SPACE 2                                                        08410000
+IF240    TM    DIRFLAG,DIR2TTR+DIR1TTR    ANY USER TTR?                 08411000
+         BZ    IF244                      NO, BRANCH                    08412000
+         STM   R14,R12,12(R13)            CONVERT CCHHR TO TTR          08413000
+         LA    R2,CURMBB                  CCHHR TO CONVERT              08414000
+         L     R1,INDCB+(DCBDEBAD-IHADCB) DEB ADDRESS                   08415000
+         L     R15,ADDRRLTV               ADDRESS OF CCHHR->TTR CONVERT 08416000
+         LR    R3,R13                     ADDRESS OF SAVE AREA          08417000
+         BASR  R14,R15                    CALL CONVERT ROUTINE          08418000
+         LR    R13,R3                     RESTORE SAVE AREA ADDRESS     08419000
+         ST    R0,12+4+4(R13)             RESULT TTR RETURNED IN R0     08420000
+         LM    R14,R12,12(R13)            RESTORE REGISTERS             08421000
+         CLM   R0,B'1110',DIRSTART        TTR ACTUALLY INPUT?           08422000
+         BNH   IF242                      NO, I/O ERROR                 08423000
+         TM    DIRFLAG,DIR2TTR            A SECOND TTR TOO?             08424000
+         BZ    IF244                      NO, BRANCH                    08425000
+         CLM   R0,B'1110',DIRNOTE         TTR ACTUALLY INPUT?           08426000
+         BH    IF244                      YES, BRANCH                   08427000
+         SPACE 1                                                        08428000
+IF242    OI    #OPTOPT,X'40'        PERMANENT I/O ERROR                 08429000
+         SPACE 2                                                        08430000
+IF244    LTR   R6,R6                ANY RECORDS?                        08431000
+         BNZ   IF246                YES, BRANCH                         08432000
+         OI    #OPTOPT,X'08'        NO, MARK AS NULL                    08433000
+         SPACE 3                                                        08434000
+IF246    NI    ##ADRPA#,FF-$Q       END OF QUIET MODE READ              08435000
+         CLI   #IOERROR,X'01'       "IOERROR" OR "NOIOERROR"?           08436000
+         BL    IF260                NEITHER, BRANCH                     08437000
+         BH    IF248                "NOIOERROR", BRANCH                 08438000
+         TM    #OPTOPT,X'40'        "IOERROR" -- CORRECT?               08439000
+         BO    IF260                YES, BRANCH                         08440000
+         B     IF997                NO, DO ANY ELSE                     08441000
+IF248    TM    #OPTOPT,X'40'        IOERROR?                            08442000
+         BO    IF997                YES, DO ANY ELSE                    08443000
+         SPACE 3                                                        08444000
+IF260    CLI   #BLOCKER,X'01'       BLOCKERR/MAXBLK(SIZE)/NOBLOCKERR?   08445000
+         BL    IF266                NONE, BRANCH                        08446000
+         CLI   #BLOCKER,X'02'       "BLOCKERR" OR "MAXBLK(SIZE)?        08447000
+         BH    IF262                NO, BRANCH                          08448000
+         TM    #OPTOPT,X'20'        "BLOCKERR" -- CORRECT?              08449000
+         BO    IF266                YES, BRANCH                         08450000
+         B     IF997                NO, DO ANY ELSE                     08451000
+IF262    TM    #OPTOPT,X'20'        BLOCKERR?                           08452000
+         BO    IF997                YES, DO ANY ELSE                    08453000
+         SPACE 3                                                        08454000
+IF266    CLI   #LRECLER,X'01'       "LRECLERR" OR "NOLRECLERR"?         08455000
+         BL    IF280                NEITHER, BRANCH                     08456000
+         BH    IF268                "NOLRECLERR", BRANCH                08457000
+         TM    #OPTOPT,X'10'        "LRECLERR" -- CORRECT?              08458000
+         BO    IF280                YES, BRANCH                         08459000
+         B     IF997                NO, DO ANY ELSE                     08460000
+IF268    TM    #OPTOPT,X'10'        LRECLERR?                           08461000
+         BO    IF997                YES, DO ANY ELSE                    08462000
+         SPACE 3                                                        08463000
+IF280    CLI   #NULL,X'01'          "NULL" OR "NONULL"?                 08464000
+         BL    IF300                NEITHER, BRANCH                     08465000
+         BH    IF282                "NONULL", BRANCH                    08466000
+         TM    #OPTOPT,X'08'        "NULL" -- CORRECT?                  08467000
+         BO    IF300                YES, BRANCH                         08468000
+         B     IF997                NO, DO ANY ELSE                     08469000
+IF282    TM    #OPTOPT,X'08'        NULL?                               08470000
+         BO    IF997                YES, DO ANY ELSE                    08471000
+         SPACE 3                                                        08472000
+IF300    TM    #IFABOVE,X'01'         SIZE AVAILABLE?                   08473000
+         BNO   *+8                    NO, BRANCH                        08474000
+         L     R6,#IFLEN              YES, USE THAT LENGTH              08475000
+         SPACE 1                                                        08476000
+         TM    #IFABOVE,X'80'         ABOVE CHECK?                      08477000
+         BNO   IF320                  NO, BRANCH                        08478000
+         CLM   R6,B'0111',#IFABOVE+1  ABOVE THE MINIMUM VALUE?          08479025
+         BNH   IF997                  NO, DO ANY ELSE                   08480000
+         SPACE 1                                                        08481000
+IF320    TM    #IFBELOW,X'80'         BELOW CHECK?                      08482000
+         BNO   IF360                  NO, BRANCH                        08483000
+         CLM   R6,B'0111',#IFBELOW+1  BELOW THE MAXIMUM VALUE?          08484025
+         BNL   IF997                  NO, DO ANY ELSE                   08485000
+         SPACE 3                                                        08486000
+IF360    CLI   #NAMEERR,X'01'       "NAMEERR" OR "NONAMEERR"?           08487000
+         BL    IF390                NO, BRANCH                          08488000
+         SPACE 1                                                        08489000
+         SR    R3,R3                RESULT REGISTER                     08490000
+         LA    R1,7                                                     08491000
+         LA    R14,DOUBLE+8                                             08492000
+         MVC   DOUBLE(8),DIRNAME                                        08493000
+         SPACE 1                                                        08494000
+IF382    BCTR  R14,0               SCAN                                 08495000
+         CLI   0(R14),X'40'            BACKWARDS                        08496000
+         BNE   *+8                              FOR FIRST               08497000
+         BCT   R1,IF382                                  NON-BLANK      08498000
+         SPACE 1                                                        08499000
+         CLI   DIRNAME,C'0'        NUMERIC FIRST CHARACTER?             08500000
+         BL    *+8                 NO, BRANCH                           08501000
+         LA    R3,1                YES, NON-STANDARD NAME               08502000
+         SPACE 1                                                        08503000
+         TRT   DOUBLE(*-*),TRTMEM  <<EXECUTED>>                         08504000
+         EX    R1,*-6              STANDARD MEMBER NAME?                08505000
+         BZ    *+8                 YES, BRANCH                          08506000
+         LA    R3,1                NO, NON-STANDARD NAME                08507000
+         SPACE 1                                                        08508000
+         CLI   #NAMEERR,X'01'       "NAMEERR" OR "NONAMEERR"?           08509000
+         BL    IF390                NEITHER, BRANCH                     08510000
+         BH    IF384                "NONAMEERR", BRANCH                 08511000
+         LTR   R3,R3                "NAMEERR" -- CORRECT?               08512000
+         BP    IF390                YES, BRANCH                         08513000
+         B     IF997                NO, DO ANY ELSE                     08514000
+IF384    LTR   R3,R3                NAMEERR?                            08515000
+         BP    IF997                YES, DO ANY ELSE                    08516000
+         SPACE 3                                                        08517000
+* CHECK EACH MODULE FOR LINKAGE EDIT ATTRIBUTE CONFLICTS IF REQUIRED    08518000
+IF390    CLI   #LKEDERR,X'01'              CONFLICT CHECK REQUESTED?    08519000
+         BL    IF400                       NO, BRANCH                   08520000
+         SPACE 1                                                        08521000
+         TM    DIRATTR,ATTRRENT            REENTRANT?                   08522000
+         BNO   IF392                       NO, BRANCH                   08523000
+         TM    DIRATTR,ATTRREUS            REUSABLE?                    08524000
+         BNO   IF399                       NO, CONFLICT FOUND           08525000
+         SPACE 1                                                        08526000
+IF392    TM    DIRATTR+1,ATTRSYMS+ATTRNE   TEST AND NOT EDIT            08527000
+         BO    IF399                       YES, CONFLICT FOUND          08528000
+         SPACE 1                                                        08529000
+         TM    DIRATTR,ATTRREUS+ATTRSCTR   REUSABLE AND SCATTER         08530000
+         BO    IF399                       YES, CONFLICT FOUND          08531000
+         SPACE 1                                                        08532000
+         TM    DIRATTR,ATTROVLY            OVERLAY ATTRIBUTE?           08533000
+         BNO   IF394                       NO, BRANCH                   08534000
+         TM    DIRATTR,ATTRRENT++ATTRREUS+ATTRSCTR  RENT/REUS/SCTR?     08535000
+         BNZ   IF399                                YES, CONFLICT       08536000
+         TM    DIRATTR+1,ATTRREFR          REFRESHABLE?                 08537000
+         BO    IF399                       YES, CONFLICT FOUND          08538000
+         TM    DIRATTR2,DIRAOSLE           MVS LINKAGE-EDITOR?          08539000
+         BNO   IF394                       NO, BRANCH                   08540000
+         TM    DIRATTR3,DIRRMANY           RMODE ANY?                   08541000
+         BO    IF399                       YES, CONFLICT FOUND          08542000
+         TM    MODESAVE,DIRAM31            AMODE 24?                    08543000
+         BNZ   IF399                       NO, CONFLICT FOUND           08544000
+         SPACE 1                                                        08545000
+IF394    TM    DIRATTR2,DIRAOSLE           MVS LINKAGE-EDITOR?          08546000
+         BNO   IF397                       NO, BRANCH                   08547000
+         TM    DIRATTR3,DIRRMANY           RMODE ANY?                   08548000
+         BNO   IF397                       NO, BRANCH                   08549000
+         TM    MODESAVE,DIRAM64+DIRAM31    AMODE ANY?         DRK OCT02 08550012
+         BO    IF399                       YES, CONFLICT FOUND          08551000
+         TM    MODESAVE,DIRAM31            AMODE 31?                    08552000
+         BNO   IF399                       NO, CONFLICT FOUND           08553000
+         TM    MODESAVE,DIRAM64            AMODE 64?          DRK OCT02 08553112
+         BNO   IF399                       NO, CONFLICT FOUND DRK OCT02 08553212
+         SPACE 1                                                        08554000
+IF397    CLI   #LKEDERR,1                  CONFLICT DESIRED?            08555000
+         BE    IF997                       YES, DO ANY ELSE             08556000
+         B     IF400                       NO, NONE FOUND               08557000
+         SPACE 1                                                        08558000
+IF399    CLI   #LKEDERR,1                  CONFLICT DESIRED?            08559000
+         BNE   IF997                       NO, DO ANY ELSE              08560000
+         SPACE 3                                                        08561000
+* LOAD EACH MODULE IF REQUIRED                                          08562000
+IF400    CLI   #LOADERR,X'01'      LOAD CHECK REQUESTED?                08563000
+         BL    IF420               NO, BRANCH                           08564000
+         SPACE 1                                                        08565000
+         OI    ##ADRPA#,$Q         QUIET MODE LOAD IS REQUIRED          08566000
+         L     R2,RECOVER          PREVIOUS RECOVERY ADDRESS            08567000
+         LA    R1,IF402            RESUME ADDRESS                       08568000
+         ST    R1,RECOVER          IN-LINE RECOVERY                     08569000
+         STM   R2,R8,MSGTEXT2      SAVE REGISTERS                       08570000
+         MVI   RECOVER,C'L'        LOAD RECOVERY FLAG                   08571000
+         LOAD   EPLOC=DIRNAME,DCB=INDCB                                 08572000
+         DELETE EPLOC=DIRNAME                                           08573000
+         ST    R2,RECOVER          RESET RECOVERY ADDRESS               08574000
+         MVI   RECOVER,0           LOAD WORKED                          08575000
+         B     IF404                                                    08576000
+         SPACE 1                                                        08577000
+IF402    LM    R2,R8,MSGTEXT2      SAVE REGISTERS                       08578000
+         ST    R2,RECOVER          RESTORE RECOVERY ADDRESS             08579000
+         MVI   RECOVER,1           LOAD DID NOT WORK                    08580000
+         SPACE 1                                                        08581000
+IF404    NI    ##ADRPA#,FF-$Q       END OF QUIET MODE LOAD              08582000
+         CLI   #LOADERR,X'01'       "LOADERR" OR "NOLOADERR"?           08583000
+         BL    IF420                NEITHER, BRANCH                     08584000
+         BH    IF406                "NOLOADERR", BRANCH                 08585000
+         CLI   RECOVER,1            "LOADERR" -- CORRECT?               08586000
+         BE    IF420                YES, BRANCH                         08587000
+         B     IF997                NO, DO ANY ELSE                     08588000
+IF406    CLI   RECOVER,1            LOAD ERROR?                         08589000
+         BE    IF997                YES, DO ANY ELSE                    08590000
+         SPACE 3                                                        08591000
+* CHECK IF THIS MEMBER IS IN USE BY AN SPF EDIT SESSION                 08592000
+IF420    CLI   #SPFEDIT,X'01'      INUSE CHECK REQUESTED?               08593000
+         BL    IF440               NO, BRANCH                           08594000
+         SPACE 1                                                        08595000
+         OI    ##ADRPA#,$Q         QUIET MODE SPF USE CHECK             08596000
+         SR    R3,R3               ASSUME NOT IN USE                    08597000
+         MVC   DSNMEMQ(8),MEMNAME  MEMBER NAME TO CHECK                 08598000
+         BAS   R2,ENQMTEST         MEMBER IN USE?                       08599000
+         LA    R3,1                YES, MARK AS SUCH                    08600000
+         NI    ##ADRPA#,FF-$Q      END OF QUIET MODE                    08601000
+         SPACE 1                                                        08602000
+         CLI   #SPFEDIT,X'01'       "SPFEDIT" OR "NOSPFEDIT"?           08603000
+         BL    IF440                NEITHER, BRANCH                     08604000
+         BH    IF422                "NOSPFEDIT", BRANCH                 08605000
+         LTR   R3,R3                "SPFEDIT" -- CORRECT?               08606000
+         BP    IF440                YES, BRANCH                         08607000
+         B     IF997                NO, DO ANY ELSE                     08608000
+IF422    LTR   R3,R3                SPFEDIT?                            08609000
+         BP    IF997                YES, DO ANY ELSE                    08610000
+         SPACE 3                                                        08611000
+IF440    CLI   #AALIAS,X'01'        APPARENT ALIAS MEMBER CHECK?        08612000
+         BL    IF450                NO, BRANCH                          08613000
+         SR    R3,R3                ASSUME NOT AN APPARENT ALIAS        08614000
+         TM    DIRFLAG,X'80'        MEMBER AN ALIAS?                    08615000
+         BO    IF444                YES, CANNOT BE AN APPARENT ALIAS    08616000
+         MVI   STARTTR+2,X'01'      TTR=000001 (START OF DIRECTORY)     08617000
+         SPACE 1                                                        08618000
+IF442    BAS   R14,READDIR          GET NEXT DIRECTORY MEMBER           08619000
+         B     IF444                LAST MEMBER PROCESSED               08620000
+         SPACE 1                                                        08621000
+         TM    MEMFLAG,X'80'        IS THIS AN ALIAS?                   08622000
+         BO    IF442                YES, IGNORE                         08623000
+         CLC   DIRTTR,MEMTTR        TTR MATCH?                          08624000
+         BNE   IF442                NO, BRANCH                          08625000
+         CLC   DIRNAME,MEMNAME      SAME MEMBER?                        08626000
+         BE    IF442                YES, BRANCH                         08627000
+         LA    R3,1                 AN APPARENT ALIAS MEMBER            08628000
+         SPACE 1                                                        08629000
+IF444    CLI   #AALIAS,X'01'        "APPARENTALIAS" OR "NOAPPAREN.."?   08630000
+         BL    IF450                NEITHER, BRANCH                     08631000
+         BH    IF446                "NOAPPARENTALIAS", BRANCH           08632000
+         LTR   R3,R3                "APPARENTALIAS" -- CORRECT?         08633000
+         BP    IF450                YES, BRANCH                         08634000
+         B     IF997                NO, DO ANY ELSE                     08635000
+IF446    LTR   R3,R3                APPARENT ALIAS?                     08636000
+         BP    IF997                YES, DO ANY ELSE                    08637000
+         SPACE 3                                                        08638000
+IF450    CLI   #HASALIA,X'01'       HAS ALIAS MEMBER CHECK?             08639000
+         BL    IF460                NO, BRANCH                          08640000
+         SR    R3,R3                ASSUME IT HAS NO ALIASES            08641000
+         TM    DIRFLAG,X'80'        MEMBER AN ALIAS?                    08642000
+         BO    IF454                YES, CANNOT HAVE ALIASES            08643000
+         MVI   STARTTR+2,X'01'      TTR=000001 (START OF DIRECTORY)     08644000
+         SPACE 1                                                        08645000
+IF452    BAS   R14,READDIR          GET NEXT DIRECTORY MEMBER           08646000
+         B     IF454                LAST MEMBER PROCESSED               08647000
+         SPACE 1                                                        08648000
+         TM    MEMFLAG,X'80'        IS THIS AN ALIAS?                   08649000
+         BNO   IF452                NO, IGNORE                          08650000
+         CLC   DIRTTR,MEMTTR        TTR MATCH?                          08651000
+         BNE   IF452                NO, BRANCH                          08652000
+         LA    R3,1                 YES, HAS AN ALIAS                   08653000
+         SPACE 1                                                        08654000
+IF454    CLI   #HASALIA,X'01'       "HASALIAS" OR "NOHASALIAS"?         08655000
+         BL    IF460                NEITHER, BRANCH                     08656000
+         BH    IF456                "NOHASALIAS", BRANCH                08657000
+         LTR   R3,R3                "HASALIAS" -- CORRECT?              08658000
+         BP    IF460                YES, BRANCH                         08659000
+         B     IF997                NO, DO ANY ELSE                     08660000
+IF456    LTR   R3,R3                HAS ALIAS?                          08661000
+         BP    IF997                YES, DO ANY ELSE                    08662000
+         SPACE 3                                                        08663000
+IF460    CLI   #ORPHAN,X'01'        ORPHAN MEMBER CHECK?                08664000
+         BL    IF470                NO, BRANCH                          08665000
+         TM    DIRFLAG,X'80'        MEMBER AN ALIAS?                    08666000
+         BNO   IF463                NO, CANNOT BE AN ORPHAN             08667000
+         MVI   STARTTR+2,X'01'      TTR=000001 (START OF DIRECTORY)     08668000
+         LA    R3,1                 ASSUME IT IS AN ORPHAN              08669000
+         SPACE 1                                                        08670000
+IF462    BAS   R14,READDIR          GET NEXT DIRECTORY MEMBER           08671000
+         B     IF464                LAST MEMBER PROCESSED               08672000
+         SPACE 1                                                        08673000
+         TM    MEMFLAG,X'80'        IS THIS AN ALIAS?                   08674000
+         BO    IF462                YES, IGNORE                         08675000
+         CLC   DIRTTR,MEMTTR        TTR MATCH?                          08676000
+         BNE   IF462                NO, BRANCH                          08677000
+IF463    SR    R3,R3                NOT AN ORPHAN                       08678000
+         SPACE 1                                                        08679000
+IF464    CLI   #ORPHAN,X'01'        "ORPHAN" OR "NOORPHAN"?             08680000
+         BL    IF470                NEITHER, BRANCH                     08681000
+         BH    IF466                "NOORPHAN", BRANCH                  08682000
+         LTR   R3,R3                "ORPHAN" -- CORRECT?                08683000
+         BP    IF470                YES, BRANCH                         08684000
+         B     IF997                NO, DO ANY ELSE                     08685000
+IF466    LTR   R3,R3                ORPHAN?                             08686000
+         BP    IF997                YES, DO ANY ELSE                    08687000
+         SPACE 3                                                        08688000
+IF470    CLI   #RLD0,X'01'          "RLDZERO" OR "NORLDZERO"            08689000
+         BL    IF476                NEITHER, BRANCH                     08690000
+         BH    IF472                "NORLDZERO", BRANCH                 08691000
+         CLI   DIRATTR4,0           "RLDZERO" -- CORRECT?               08692000
+         BE    IF476                YES, BRANCH                         08693000
+         B     IF997                NO, DO ANY ELSE                     08694000
+IF472    CLI   DIRATTR4,0           "NORLDZERO" -- CORRECT?             08695000
+         BE    IF997                YES, DO ANY ELSE                    08696000
+         SPACE 1                                                        08697000
+IF476    TM    FLAGSCC,RECFMU            LOAD MODULE?                   08698000
+         BO    IF600                     YES, BRANCH          DRK SEP18 08699043
+         CLI   #IFCREIF+2,0              ANY CREATION DATE?             08700000
+         BE    IF480                     NO, CHECK FOR MODIFICATION     08701000
+         TM    DIRFLAG,X'0F'             SPF STATISTICS?                08702000
+         BO    IF476A                    YES                            08703020
+         TM    DIRFLAG,X'14'             EXT SPF STATISTICS?  DRK AUG09 08703120
+         BO    IF476A                    YES                  DRK AUG09 08703220
+         B     IF997                     NO, DO ANY ELSE                08703320
+IF476A   DS    0H                                             Y2K AUG97 08703420
+         MVC   DOUBLE+1(3),#IFCREIF      YYDDDF WORK AREA     Y2K AUG97 08703520
+         MVI   DOUBLE,X'00'              ASSUME 19XX          Y2K AUG97 08703620
+         CLI   #IFCREIF,X'&WIN19XX'      BELOW 19XX WINDOW?   Y2K AUG97 08703720
+         BNL   IF476B                    NO,  THEN 19XX       Y2K AUG97 08703820
+         MVI   DOUBLE,X'01'              YES, THEN 20XX       Y2K AUG97 08703920
+IF476B   DS    0H                                             Y2K AUG97 08704020
+         CLC   DOUBLE+1(3),=X'00000F'    BEFORE/TO 1ST DATE?  Y2K AUG97 08704120
+         BE    *+14                      YES, IGNORE 1ST DATE Y2K AUG97 08704220
+         CLC   DOUBLE(4),DIRSPFCR+0      > DIRECTORY DATE?    Y2K AUG97 08704320
+         BH    IF997                     YES, DO ANY ELSE               08705000
+         MVC   DOUBLE+5(3),#IFCREIF+3    YYDDDF WORK AREA     Y2K AUG97 08705101
+         MVI   DOUBLE+4,X'00'            ASSUME 19XX          Y2K AUG97 08705201
+         CLI   #IFCREIF+3,X'&WIN19XX'    BELOW 19XX WINDOW?   Y2K AUG97 08705302
+         BNL   IF476C                    NO,  THEN 19XX       Y2K AUG97 08705420
+         MVI   DOUBLE+4,X'01'            YES, THEN 20XX       Y2K AUG97 08705501
+IF476C   DS    0H                                             Y2K AUG97 08705620
+         CLC   DOUBLE+4(4),DIRSPFCR+0    < DIRECTORY DATE?    Y2K AUG97 08706001
+         BL    IF997                     YES, DO ANY ELSE               08707000
+         SPACE 1                                                        08708000
+IF480    CLI   #IFMODIF+2,0              ANY MODIFICATION DATE?         08709000
+         BE    IF490                     NO, CONTINUE                   08710000
+         TM    DIRFLAG,X'0F'             SPF STATISTICS?                08711000
+         BO    IF480A                    YES                            08712020
+         TM    DIRFLAG,X'14'             EXT SPF STATISTICS?  DRK AUG09 08712120
+         BO    IF480A                    YES                  DRK AUG09 08712220
+         B     IF997                     NO, DO ANY ELSE                08712320
+IF480A   DS    0H                                             Y2K AUG97 08712420
+         MVC   DOUBLE+1(3),#IFMODIF      YYDDDF WORK AREA     Y2K AUG97 08712520
+         MVI   DOUBLE,X'00'              ASSUME 19XX          Y2K AUG97 08712620
+         CLI   #IFMODIF,X'&WIN19XX'      BELOW 19XX WINDOW?   Y2K AUG97 08712720
+         BNL   IF480B                    NO,  THEN 19XX       Y2K AUG97 08712820
+         MVI   DOUBLE,X'01'              YES, THEN 20XX       Y2K AUG97 08712920
+IF480B   DS    0H                                             Y2K AUG97 08713020
+         CLC   DOUBLE+1(3),=X'00000F'    BEFORE/TO 1ST DATE?  Y2K AUG97 08713120
+         BE    *+14                      YES, IGNORE 1ST DATE Y2K AUG97 08713220
+         CLC   DOUBLE(4),DIRSPFCD+0      > DIRECTORY DATE?    Y2K AUG97 08713320
+         BH    IF997                     YES, DO ANY ELSE               08713420
+         MVC   DOUBLE+5(3),#IFMODIF+3    YYDDDF WORK AREA     Y2K AUG97 08713520
+         MVI   DOUBLE+4,X'00'            ASSUME 19XX          Y2K AUG97 08713620
+         CLI   #IFMODIF+3,X'&WIN19XX'    BELOW 19XX WINDOW?   Y2K AUG97 08713720
+         BNL   IF480C                    NO,  THEN 19XX       Y2K AUG97 08713820
+         MVI   DOUBLE+4,X'01'            YES, THEN 20XX       Y2K AUG97 08713920
+IF480C   DS    0H                                             Y2K AUG97 08714020
+         CLC   DOUBLE+4(4),DIRSPFCD+0    < DIRECTORY DATE?    Y2K AUG97 08714120
+         BL    IF997                     YES, DO ANY ELSE               08715004
+         SPACE 3                                                        08715126
+IF490    DS    0H                                             DRK OCT09 08715226
+         CLI   #XSTATS,X'01'        "XSTATS" OR "NOXSTATS"?   DRK OCT09 08715440
+         BL    IF500                NO                        DRK OCT09 08715540
+*        LA    R1,L702              ASSUME DATA SET IS LOAD   DRK APR18 08715845
+*        TM    FLAGSCC,RECFMU       CORRECT?                  DRK APR18 08715945
+*        BO    MSGNEWXX             YES, ERROR                DRK APR18 08716045
+         CLI   #XSTATS,X'01'        "XSTATS"?                 DRK OCT09 08716127
+         BH    IF492                NO, "NOXSTATS"  X'02'     DRK OCT09 08716229
+         SPACE 1                                                        08716329
+IF490A   DS    0H                   <XSTATS>                  DRK OCT09 08716429
+         TM    DIRFLAG,X'14'        EXT SPF STATISTICS?       DRK OCT09 08716629
+         BNO   IF997                NO, DO ANY ELSE           DRK OCT09 08716729
+         TM    DIRSPFFL,DIRSPFXS    "XSTATS" -- CORRECT?      DRK OCT09 08716827
+         BO    IF500                YES, BRANCH               DRK OCT09 08716927
+         B     IF997                NO, DO ANY ELSE           DRK OCT09 08717027
+         SPACE 1                                                        08717129
+IF492    DS    0H                   <NOXSTATS>                DRK OCT09 08717229
+         TM    DIRFLAG,X'14'        EXT SPF STATISTICS?       DRK OCT09 08717329
+         BO    IF997                YES, DO ANY ELSE          DRK OCT09 08717429
+         SPACE 1                                                        08717542
+IF500    DS    0H                                             DRK APR18 08718042
+         CLI   #PACKED,X'01'        "PACKED" OR "NOPACKED"?   DRK APR18 08718140
+         BL    IF600                NO                        DRK APR18 08718240
+*        LA    R1,L702              ASSUME DATA SET IS LOAD   DRK APR18 08718445
+*        TM    FLAGSCC,RECFMU       CORRECT?                  DRK APR18 08718545
+*        BO    MSGNEWXX             YES, ERROR                DRK APR18 08718645
+         TM    #PACKED,X'01'        "PACKED"?                 DRK APR18 08718735
+         BNO   IF520                NO                        DRK APR18 08718835
+         SPACE 1                    <PACKED>                            08718935
+         TM    #PACKED,X'80'        PACKED FLAG?              DRK APR18 08719035
+         BO    IF600                YES                       DRK APR18 08719135
+         B     IF997                NO, DO ANY ELSE           DRK APR18 08719234
+         SPACE 1                                                        08719342
+IF520    DS    0H                   <NOPACKED>                          08719435
+         TM    #PACKED,X'80'        PACKED FLAG?              DRK APR18 08719535
+         BO    IF997                YES, DO ANY ELSE          DRK APR18 08719635
+IF600    DS    0H                                                       08719734
+         SPACE 1                                                        08719834
+IF996    MVC   DELAYMSG+25(4),=C'THEN'                                  08720000
+         L     R2,#ACTIONT          THEN ACTION                         08721000
+         B     IF998                                                    08722000
+         SPACE 1                                                        08723000
+IF997    MVC   DELAYMSG+25(4),=C'ELSE'                                  08724000
+         L     R2,#ACTIONE          ELSE ACTION                         08725000
+         SPACE 1                                                        08726000
+IF998    LTR   R2,R2                ANY ASSOCIATED ACTION?              08727000
+         BNP   NEWCMD               NO, BRANCH                          08728000
+         TM    ##ADRPA#-##SUBCOM(R2),$D  SUPRESS DEFAULT MESSAGE?       08729000
+         BO    IF999                     YES, BRANCH                    08730000
+         SPACE 1                                                        08731000
+         M$ERRST MSGBLANK                                               08732000
+         TM    FLAGSHH,FDELAYM      ANY HEADER MESSAGE?                 08733000
+         BNO   IF999                NO, BRANCH                          08734000
+         XI    FLAGSHH,FDELAYM      NO MORE MESSAGE                     08735000
+         MVC   DELAYMSG+30(8),0(R2) SUBCOMMAND NAME                     08736000
+         M$ERRST DELAYMSG           OUTPUT THE HEADER MESSAGE           08737000
+         SPACE 1                                                        08738000
+IF999    MVC   ##ANSWER(LISUBS),ISUBS INITIALIZE THE PDL SAVE AREA      08739000
+         MVC   ##SUBCOM(PTW),0(R2)    CHANGE THE SUBCOMMAND             08740000
+         OI    FLAGSGG,FOUTSOME       A MATCH WAS MADE                  08741000
+         B     CALLCMDZ               CALL THE SECONDARY SUBCOMMAND     08742000
+IFLA$ATT DC    V($ATT)                DEFAULT THEN ACTION               08743000

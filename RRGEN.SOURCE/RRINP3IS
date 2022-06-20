@@ -1,0 +1,31 @@
+RRINP3IS  CSECT                                                         00000010
+*  THIS  MODULE  IS CALLED BY THE GENERATOR PROGRAM                     00000020
+*         TO HANDLE READ INP1  / ONLY DIFF BETWEEN INP1 2 & 3 ARE       00000030
+*          REG USED FOR REC AREA AND DDNAME IN DCB                      00000040
+         SAVE  (2,12),T,*                                               00000050
+         BALR  12,0                                                     00000060
+         USING *,12                                                     00000070
+         ST    13,SAVEAREA+4                                            00000080
+         LR    4,13                                                     00000090
+         LA    13,SAVEAREA                                              00000100
+         ST    13,8(4)                                                  00000110
+ML01     B     ML03             1ST SWITCH                              00000120
+ML02     GET   DCBIN,RECAREA                                            00000130
+         LA    9,RECAREA      LOAD 7 WITH REC AREA ADR                  00000140
+ML02A    L     13,SAVEAREA+4  RELOAD HIS REGS                           00000150
+         LM    14,8,12(13)    BYPASS LOADING 9  SINCE IT IS             00000160
+         LM    10,12,60(13)    ASSIGN TO HIS INP1 REC AREA              00000170
+         LA    15,0(0,0)      SET RETURN CODE TO 0                      00000180
+         LA    14,12(0,14)    BUMP 14 BY 12 TO RETURN TO ADD TO REC CT  00000190
+         BR    14                                                       00000200
+ML03     OPEN  (DCBIN)                                                  00000210
+         MVI   ML01+1,X'00'   NOP 1ST TIME SWITCH                       00000220
+         B     ML02A                                                    00000230
+ML04     L     13,SAVEAREA+4                                            00000240
+         LM    14,12,12(13)                                             00000250
+         LA    15,0(0,0)                                                00000260
+         BR    14                                                       00000270
+SAVEAREA DC    18F'0'                                                   00000280
+RECAREA  DS    CL900                                                    00000290
+DCBIN    DCB   DDNAME=INP3,DSORG=IS,MACRF=GM,EODAD=ML04                 00000300
+         END                                                            00000310

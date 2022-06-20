@@ -1,0 +1,358 @@
+         TITLE 'P D S  --  PDS XMIT COMMAND INTERFACE        04/04/06'  00010047
+*********************************************************************** 00020000
+***      XMIT SUBCOMMAND      ADDED BY JOHN KALINICH -- APR., 2006  *** 00030008
+*********************************************************************** 00040000
+*                                                                       00050000
+         SPACE 1                                                        00060000
+XMIT     CSECT                                                          00070044
+         USING *,R8                                                     00080002
+XMI2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      00130000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       00140000
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      00150000
+         BO    XMI2200               YES, BRANCH                        00160000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00170000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00180000
+         BO    XMI2110               YES, BRANCH                        00190000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00200000
+         BO    XMI2200               YES, BRANCH                        00210000
+XMI2110  TM    #XMIALI,#XMIASS2      ASSOCIATES TOO?                    00220000
+         BO    XMI2200               YES, BRANCH                        00230000
+         SPACE 1                                                        00240000
+XMI2120  DS    0H                                                       00250009
+         TM    #XMIALI,#XMIASS2+2    ALIAS/NOALIAS SPECIFIED?           00260009
+         BM    XMI2130               YES                                00270009
+*        OI    #XMIALI,&XMITALI      USE THE DEFAULT                    00280009
+         OI    #XMIALI,1             USE THE DEFAULT          DRK APR06 00281009
+         TM    #XMIALI,#XMIASS2      ASSOCIATES TOO?                    00290009
+         BO    XMI2200               YES                                00300009
+         SPACE 3                                                        00310000
+XMI2130  DS    0H                                                       00320009
+         OI    #XMIALI,#XMIONE       ONLY A SINGLE MEMBER/DATA SET      00330003
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           00340003
+         MVC   0(8,R4),DIRNAME                                          00350003
+         ST    R4,#MEMPTR                                               00360003
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             00370003
+         B     XMI2900                                                  00380003
+XMI2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        00390000
+         TM    #XMIALI,#XMIASS2+2    ALIAS/NOALIAS SPECIFIED?           00400009
+         BM    *+8                   YES                                00410009
+*        OI    #XMIALI,&XMITALI      NO, USE THE DEFAULT                00420009
+         OI    #XMIALI,1             NO, USE THE DEFAULT      DRK APR06 00421009
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         00430000
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    00440000
+         LA    R5,256/2              256 MEMBERS INITIALLY              00450000
+         SPACE 1                                                        00460000
+XMI2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            00470000
+         LR    R3,R5                                                    00480000
+         LR    R0,R5                                                    00490000
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              00500000
+         ICM   R0,B'1000',SUBPOOLT                                      00510000
+         GETMAIN R,LV=(0)                                               00520000
+         LR    R4,R1                 NEW TABLE ADDRESS                  00530000
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              00540000
+         BNZ   XMI2220               YES, BRANCH                        00550000
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             00560000
+         B     XMI2500                                                  00570000
+         SPACE 1                                                        00580000
+XMI2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   00590000
+         LR    R14,R4                NEW TABLE START ADDRESS            00600000
+         LR    R15,R5                                                   00610000
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           00620000
+         LR    R2,R15                START OF NEW PART                  00630000
+         LR    R1,R15                                                   00640000
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             00650000
+         L     R1,#MEMPTR                                               00660000
+         LR    R0,R2                 LENGTH TO FREE                     00670000
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    00680000
+         FREEMAIN R,LV=(0),A=(1)                                        00690000
+         ST    R4,#MEMPTR            START OF NEW TABLE                 00700000
+         AR    R4,R2                 WHERE TO ADD MEMBERS               00710000
+         SPACE 3                                                        00720000
+XMI2300  TM    #XMIALI,#XMIASSP      ASSOCIATES PHASE?                  00730000
+         BO    XMI2320               YES, BRANCH                        00740000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00750000
+         BO    XMI2320               YES, BRANCH                        00760000
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              00770000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00780000
+         BNO   XMI2500               NO, BRANCH                         00790000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      00800000
+         BO    XMI2605               YES, BRANCH                        00810000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       00820000
+         BNO   XMI2605               NO, BRANCH                         00830000
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               00840000
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   00850000
+         BNO   XMI2605               NO, END OF LIST                    00860000
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              00870000
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       00880000
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               00890000
+         ST    R1,PMEMCURR                                              00900000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         00910000
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  00920000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              00930000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      00940000
+         BO    XMI2319               YES, BRANCH                        00950000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               00960000
+         MVC   DIRNAME,MEMBER1       MOVE TO BLDLLIST                   00970037
+         SPACE 2                                                        00980000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           00990000
+         B     *+4(R15)                PROCESS RETURN CODE              01000000
+         B     XMI2315                   00 - SUCCESSFUL                01010000
+         B     XMI2310                   04 - MEMBER NOT FOUND          01020000
+         B     IOERROR                   08 - I/O ERROR                 01030000
+         SPACE 1                                                        01040000
+XMI2310  MVC   INSERT#1(8),DIRNAME                                      01050000
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           01060000
+         B     XMI2300                                                  01070000
+         SPACE 1                                                        01080000
+XMI2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  01090000
+         B     XMI2500                                                  01100000
+         SPACE 1                                                        01110000
+XMI2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               01120000
+         SPACE 1                                                        01130000
+XMI2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           01140000
+         B     XMI2600               END OF MEMBERS -- BRANCH           01150000
+         SPACE 1                                                        01160000
+         TM    #XMIALI,#XMIASSP      ASSOCIATES PHASE?                  01170000
+         BO    XMI2400               YES, BRANCH                        01180000
+         SPACE 1                                                        01190000
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 01200000
+         B     XMI2600                 00 - SIMULATE DIRECTORY END      01210000
+         B     XMI2300                 04 - MEMBER FAILED FILTERING     01220000
+         B     XMI2500                 08 - MEMBER PASSED FILTERING     01230000
+         SPACE 3                                                        01240000
+XMI2400  L     R1,#MEMPTR            START OF MEMBER LIST               01250000
+         B     XMI2410+4             SKIP FIRST ADD                     01260000
+XMI2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   01270000
+         CR    R1,R4                 END OF TABLE?                      01280000
+         BNL   XMI2300               YES, IGNORE THIS ENTRY             01290000
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      01300000
+         BNE   XMI2410               NO, BRANCH                         01310000
+         SPACE 3                                                        01320000
+XMI2500  L     R1,#MEMPTR            START OF MEMBER LIST               01330000
+         B     XMI2510+4             SKIP FIRST ADD                     01340000
+XMI2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   01350000
+         CR    R1,R4                 END OF TABLE?                      01360000
+         BNL   XMI2580               YES, ADD THIS ENTRY                01370000
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       01380000
+         BE    XMI2300               YES, IGNORE THIS ENTRY             01390000
+         B     XMI2510               NO, CONTINUE SEARCHING             01400000
+         SPACE 2                                                        01410000
+XMI2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   01420000
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               01430000
+         S     R3,=F'1'              ANY MORE FIT?                      01440000
+         BNP   XMI2210               NO, BRANCH                         01450000
+         B     XMI2300               YES, GET NEXT MEMBER               01460000
+         SPACE 3                                                        01470000
+XMI2600  TM    #XMIALI,#XMIASSP      ASSOCIATED MEMBERS?                01480000
+         BO    XMI2605               YES, BRANCH                        01490000
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         01500000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      01510000
+         BO    XMI2605               YES, BRANCH                        01520000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       01530000
+         BO    XMI2300               YES, BRANCH                        01540000
+         SPACE 1                                                        01550000
+XMI2605  TM    #XMIALI,#XMIASSP      ASSOCIATES PHASE STARTED?          01560000
+         BO    XMI2700               YES, BRANCH                        01570000
+         TM    #XMIALI,#XMIASS2      ASSOCIATE MEMBERS TOO?             01580000
+         BNO   XMI2700               NO, BRANCH                         01590000
+         OI    #XMIALI,#XMIASSP      YES, ASSOCIATES PHASE STARTED      01600000
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   01610000
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    01620000
+         B     XMI2300               DO ANY ASSOCIATED MEMBERS          01630000
+         SPACE 3                                                        01640000
+XMI2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   01650000
+         SPACE 3                                                        01660000
+XMI2900  DS    0H                                                       01670000
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           01680000
+         SPACE 1                                                        02020009
+         L     R0,=A(32*1024)           LENGTH OF BUFFER                04261524
+         ICM   R0,B'1000',=AL1(26)      SUBPOOL 26                      04261624
+         GETMAIN R,LV=(0)               GET XMIT BUFFER                 04261724
+         ST    R1,XMIBUFFP              XMIT COMMAND BUFFER             04261824
+         LR    R5,R1                    BUFFER START                    04262324
+         MVC   0(5,R5),XMITCMD          XMIT COMMAND                    04262442
+         LA    R5,5(,R5)                                                04262546
+         MVC   0(20,R5),#XMIADD         ADDRESSEE LIST                  04263038
+         LA    R5,20(,R5)                                               04263146
+         MVC   0(5,R5),DSNL             DSN('                           04263643
+         MVC   5(44,R5),DSNAME          CURRENT DATASET                 04263738
+         LH    R15,DSNLEN               DSN LENGTH                      04263838
+         LA    R5,5(R15,R5)                                             04263938
+         MVC   0(3,R5),DSNR                 ')                          04264043
+         LA    R5,3(,R5)                                                04264146
+XMI2910  DS    0H                                                       04264238
+         CLI   #XMIDSN,C' '             OUTPUT DSN SPECIFIED?           04264338
+         BE    XMI2920                  NO, BRANCH                      04264438
+         MVC   0(7,R5),OUTDSN           YES                             04264542
+         MVC   7(46,R5),#XMIDSN         OUTDSN                          04264638
+         LH    R15,#XMIDSNL             OUTDSN LENGTH                   04264738
+         LA    R5,7(R15,R5)                                             04264838
+         MVC   0(2,R5),=CL2') '                                         04264942
+         LA    R5,2(,R5)                                                04265046
+         B     XMI3000                                                  04265138
+XMI2920  DS    0H                                                       04265238
+         CLI   #XMIDDN,C' '             OUTPUT DDNAME SPECIFIED?        04265338
+         BE    XMI3000                  NO, BRANCH                      04265438
+         MVC   0(7,R5),OUTDDN           YES                             04265542
+         MVC   7(8,R5),#XMIDDN          OUTDDN                          04265638
+         LH    R15,=H'8'                OUTDDN LENGTH                   04265738
+         LA    R5,7(R15,R5)                                             04265838
+         MVC   0(2,R5),=CL2') '                                         04265938
+         LA    R5,2(,R5)                                                04266046
+XMI3000  DS    0H                                                       04266138
+         CLI   #XMILOG,2                NOLOG?                          04266238
+         BNE   XMI3005                  NO, BRANCH                      04266355
+         MVC   0(6,R5),NOLOG                                            04266442
+         LA    R5,6(,R5)                                                04266546
+XMI3005  DS    0H                                             DRK APR09 04266655
+         CLI   #XMIWARN,2               NOWARN?               DRK APR09 04266755
+         BNE   XMI3007                  NO, BRANCH            DRK APR09 04266874
+         MVC   0(7,R5),NOWARN                                 DRK APR09 04266955
+         LA    R5,7(,R5)                                      DRK APR09 04267055
+XMI3007  DS    0H                                             DRK AUG19 04267174
+         CLI   #XMIMSG,1                MESSAGE?              DRK AUG19 04267274
+         BNE   XMI3010                  NO, BRANCH            DRK AUG19 04267374
+         MVC   0(8,R5),XMESSAGE                               DRK AUG19 04267474
+         LA    R5,8(,R5)                                      DRK AUG19 04267574
+XMI3010  DS    0H                                                       04268274
+         CLI   #XMINOT,2                NONOTIFY?                       04268374
+         BNE   XMI3020                  NO, BRANCH                      04268474
+         MVC   0(9,R5),NONOTIFY                                         04268574
+         LA    R5,9(,R5)                                                04268674
+XMI3020  DS    0H                                                       04268774
+         CLI   #XMIOUT,C' '             SYSOUT SPECIFIED?               04268874
+         BE    XMI3030                  NO, BRANCH                      04268974
+         MVC   0(10,R5),SYSOUTC                                         04269074
+         MVC   7(1,R5),#XMIOUT          SYSOUT CLASS                    04269174
+         LA    R5,10(,R5)                                               04269274
+XMI3030  DS    0H                                                       04269374
+         SPACE 1                                                        04269474
+         TM    FLAGSHH,FMEMALLM         ALL MEMBERS?                    04269574
+         BNO   XMI6000                  NO                              04269674
+         BCTR  R5,0                     YES, PT TO END                  04269774
+         B     XMI6585                                                  04269874
+XMI6000  DS    0H                                                       04269974
+         MVC   0(8,R5),MEMBERSL                                         04270074
+         LA    R5,8(,R5)                                                04270174
+         SPACE 1                                                        04270274
+XMI6010  DS    0H                                                       04270374
+         L     R3,#MEMPTR                 FIRST MEMBER POINTER          04270474
+         L     R4,#MEMLAST                LAST MEMBER POINTER           04270574
+         SPACE 1                                                        04270674
+         LA    R2,3620                    MAX NUMBER OF MEMBERS         04270774
+XMI6530  CR    R3,R4                      END OF MEMBER TABLE?          04270874
+         BNL   XMI6580                    YES                           04270974
+         MVC   0(8,R5),0(R3)              MEMBER NAME                   04271074
+         MVI   8(R5),C' '                 SPACE                         04271174
+         LA    R3,16(,R3)                 NEXT MEMBER POSITION          04271274
+         LA    R5,9(,R5)                  NEXT MEMBER SLOT              04271374
+         BCT   R2,XMI6530                 LOOP                          04271474
+         M$MSG L533                       MAX NUMBER OF MEMBERS MSG     04271574
+         SPACE 1                                                        04271674
+XMI6580  DS    0H                                                       04271774
+         MVI   0(R5),C')'                 END OF MEMBERS(...            04271874
+XMI6585  DS    0H                                                       04271974
+         L     R3,XMIBUFFP                XMIT COMMAND BUFFER           04272074
+         LA    R5,1(,R5)                  ADD ONE FOR LENGTH CALC       04273074
+         SR    R5,R3                      COMMAND BUFFER LENGTH         04280035
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          04430148
+         STAX  XMITNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X04440000
+               OBUF=(XMI484W,XMI484WL),MF=(E,STAXPARM)                  04450049
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 04560000
+         LA    R14,#SUBHOLD+28            POINT TO FLAGS                04570000
+         LR    R15,R3                     POINT TO COMMAND TEXT         04580024
+         LA    R0,#SUBHOLD+28+4           POINT TO COMMAND TEXT LEN     04590013
+         LA    R1,#SUBHOLD+28+8           POINT TO RETURN CODE          04600000
+         LA    R2,#SUBHOLD+28+12          POINT TO REASON CODE          04610000
+         LA    R3,#SUBHOLD+28+16          POINT TO ABEND CODE           04620000
+         STM   R14,R3,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     04640013
+         OI    #SUBHOLD+20,X'80'          INDICATE THE END OF THE LIST  04650014
+         MVI   #SUBHOLD+28+3,X'05'        A COMMAND IS BEING INVOKED    04660013
+         ST    R5,#SUBHOLD+28+4           COMMAND BUFFER LENGTH         04661024
+         SPACE 2                                                        04680000
+         L     R2,RECOVER                                               04690000
+         LA    R1,XMI7080                 RECOVERY ADDRESS              04700013
+         ST    R1,RECOVER                                               04710000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                04720013
+         SPACE 1                                                        04730013
+         LA    R3,##SUBCAL                WHO TO ATTACH                 04760000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            04770000
+         CLC   ##SUBCAL(8),XMIEFTSR       INVOKE IKJEFTSR?              04780000
+         BNE   XMINLNK                    NO, BRANCH                    04790013
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   04800000
+         SPACE 2                                                        04810000
+XMINLNK  BAS   R2,ATTACH                  XMIT                          04820013
+         SPACE 3                                                        04830000
+XMI7080  LM    R2,R8,#SUBHOLD+88                                        04840000
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        04850013
+         STAX  ,                                                        04860048
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        04870048
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       04880048
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      04890062
+         SPACE 1                                                        04920000
+XMI7500  DS    0H                                                       04930013
+         CLC   ##SUBCAL(8),XMIEFTSR       INVOKE IKJEFTSR?              04950000
+         BNE   XMI8550                    NO, BRANCH                    04960017
+         CLI   #SUBHOLD+28+11,8           RC:1                DRK JUL11 04980067
+         BL    XMI8550                    LOW, VALID XMIT               04990017
+         MVI   MTLEN+4,11                                               04990313
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    04990418
+         SR    R15,R15                                                  04990513
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 04990651
+         CVD   R15,DOUBLE                                               04990713
+         MVC   INSERT#1(8),##SUBCOM                                     04990813
+         MVC   INSERT#2(4),=X'40202120'                                 04990913
+         ED    INSERT#2(4),DOUBLE+6                                     04991013
+         MVI   INSERT#2,C'='              RETURN CODE                   04991113
+         SPACE 1                                                        04991213
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   04991363
+         BNE   XMI8530                    NO, SKIP MESSAGE              04991413
+         SPACE 1                                                        04991553
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 04991653
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 04991753
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 04991853
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 04991953
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 04992053
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 04992153
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 04992253
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 04992353
+         SPACE 1                                              DRK NOV07 04992453
+         SRL   R1,20                    USER ABEND            DRK NOV07 04992553
+         CVD   R1,DOUBLE                                      DRK NOV07 04992653
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 04992753
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 04992853
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 04992953
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 04993053
+         SPACE 1                                                        04993153
+XMI8530  DS    0H                                                       04993213
+         M$MSG L171$2                                                   04993367
+XMI8550  DS    0H                                                       04993417
+         L     R1,XMIBUFFP              XMIT COMMAND BUFFER             04994024
+         L     R0,=A(32*1024)           LENGTH OF BUFFER                04995024
+         ICM   R0,B'1000',=AL1(26)      SUBPOOL 26                      04996024
+         FREEMAIN R,LV=(0),A=(1)        FREE XMIT BUFFER                04997024
+         B     NEWSTAX                                                  05000013
+XMITNULL BR    R14                                                      05220000
+         SPACE 2                                                        05230000
+*  XMIT CONSTANTS                                                       05240000
+         SPACE 2                                                        05250000
+XMIEFTSR DC    CL8'IKJEFTSR'                                            05260000
+         SPACE 2                                                        05350000
+XMI484W  DC    C'PDS484W XMIT SHOULD NOT BE INTERRUPTED'                05360011
+XMI484WL EQU   *-XMI484W                                                05370012
+         SPACE 2                                                        05380000
+XMITCMD  DC    CL5'XMIT '                                               05381043
+DSNL     DC    CL5'DSN('''                                              05382043
+DSNR     DC    CL3''') '                                                05383043
+OUTDSN   DC    CL7'OUTDSN('                                             05384043
+OUTDDN   DC    CL7'OUTDDN('                                             05385043
+NOLOG    DC    CL6'NOLOG '                                              05386043
+NOWARN   DC    CL7'NOWARN '                                   DRK APR09 05386155
+XMESSAGE DC    CL8'MESSAGE '                                  DRK AUG19 05386274
+NONOTIFY DC    CL9'NONOTIFY '                                           05387043
+SYSOUTC  DC    CL10'SYSOUT( ) '                                         05388043
+MEMBERSL DC    CL8'MEMBERS('                                            05389043
+         SPACE 2                                                        05389143
+#XMIASSP EQU   X'80'            XMIT: ASSOCIATES PHASE                  05390000
+#XMIONE  EQU   X'10'            XMIT: A SINGLE MEMBER                   05420000
+#XMIASS2 EQU   X'01'            XMIT: XMIT ASSOCIATES TOO               05450000

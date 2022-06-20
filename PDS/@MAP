@@ -1,0 +1,1683 @@
+         TITLE 'P D S  --  PDS MAP                           09/28/88'  00010028
+*********************************************************************** 00020028
+***      MAP SUBCOMMAND                                             *** 00030028
+*********************************************************************** 00040028
+*                                                                       00050028
+         SPACE 1                                                        00060028
+MAP      CSECT                                                          00070028
+         USING *,R8                                                     00080028
+         LA    R1,L530          ASSUME A NON-PARTITIONED DATA SET       00090028
+         TM    DSORG,DS1DSGPO   CORRECT?                                00100028
+         BZ    MSGNEW           YES, BRANCH                             00110028
+         LA    R1,L701          ASSUME NOT A LOAD LIBRARY               00120028
+         TM    FLAGSCC,RECFMU   CORRECT?                                00130028
+         BZ    MSGNEW           YES, BRANCH                             00140028
+         OI    FLAGSGG,FOUTSUB  SUBCOMMAND GAINED CONTROL               00150028
+         MVI   ENTRYPT,C'?'     NO ENTRY POINT YET                      00160028
+         SPACE 1                                                        00170028
+         L     R15,=A(READESD)  FORMAT THE ESD DATA                     00180028
+         BASR  R14,R15          ANY ESD DATA?                           00190028
+         B     *+8              NO, BRANCH                              00200028
+         B     MAP04            YES, BRANCH                             00210028
+         SPACE 1                                                        00220028
+MAPNOESD TM    FLAGSHH,FDELAYM  DELAYED MESSAGE AVAILABLE?              00230028
+         BNO   MAP02            NO, BRANCH                              00240028
+         TM    PMEMMIN,X'80'    MEMBER LIST?                            00250028
+         BO    *+12             YES, BRANCH                             00260028
+         TM    FLAGSAA,FMEM#MEM MEMBER GROUP?                           00270028
+         BNO   MAP02            NO, BRANCH                              00280028
+         CLI   #MODLEN,0        ANY FILTERING?                          00290028
+         BH    NEWCMD           NO, BRANCH                              00300028
+         M$ERRST MSGBLANK                                               00310028
+         M$ERRST DELAYMSG                                               00320028
+         XI    FLAGSHH,FDELAYM  MESSAGE WAS WRITTEN                     00330028
+         SPACE 1                                                        00340028
+MAP02    LA    R1,MSGTEXT1               MESSAGE IDENTIFIER             00350028
+         M$MSG (R1)                                                     00360028
+         B     MAPNOMSG                                                 00370028
+         SPACE 1                                                        00380028
+MAP04    LA    R4,#ESDPTR       ESD TABLE CHAIN POINTER                 00390028
+         OI    FLAGSGG,FOUTSOME SOME OUTPUT WAS GENERATED               00400028
+         USING ESDENTRY,R4      BASE FOR TABLE                          00410028
+         TM    FLAGSHH,FDELAYM  ANY DELAYED MESSAGE AVAILABLE?          00420028
+         BNO   MAPESD           NO, BRANCH                              00430028
+         M$ERRST MSGBLANK                                               00440028
+         M$ERRST DELAYMSG                                               00450028
+         XI    FLAGSHH,FDELAYM  MESSAGE WAS WRITTEN                     00460028
+         SPACE 2                                                        00470028
+MAPESD   MVC   MSGTEXT1(136),MSGBL132                                   00480028
+         ICM   R4,B'1111',ESDLINK    END OF CHAIN?                      00490028
+         BZ    MAPLAST               YES, BRANCH                        00500028
+         SPACE 1                                                        00510028
+         CLI   #MAPOPT,X'04'         RELINK FORMAT?                     00520028
+         BE    MAP600                YES, BRANCH                        00530028
+         CLI   ESDTYPE,CODELR        EXTERNAL REFERENCE?                00540028
+         BE    MAPLR                 YES, BRANCH                        00550028
+         CLI   ESDTYPE,CODEER        $UNRESOLVED EXTERNAL REFERENCE?    00560028
+         BE    MAPER                 YES, BRANCH                        00570028
+         CLI   ESDTYPE,CODEWK        $UNRESOLVED WEAK EXTERNAL REF?     00580028
+         BE    MAPWK                 YES, BRANCH                        00590028
+         CLI   ESDTYPE,C'*'          CLASS ENTRY?              GP APR18 00600031
+         BE    MAPCLASS              YES, BRANCH               GP APR18 00610031
+         SPACE 1                                                        00620028
+         CLC   ESDADDR(3),DIREPA     ENTRY POINT?                       00630028
+         BNE   *+10                  NO, BRANCH                         00640028
+         MVC   ENTRYPT,ESDNAME       SAVE THE ENTRY POINT NAME          00650028
+         MVC   MSGTEXT1+4(8),ESDNAME                                    00660028
+         UNPK  MSGTEXT1+14(7),ESDADDR(4)                                00670028
+         TR    MSGTEXT1+14(6),TRTABLE                                   00680028
+         MVI   MSGTEXT1+20,X'40'     CLEAR GARBAGE BYTE                 00690028
+         UNPK  MSGTEXT1+22(7),ESDLEN(4)                                 00700028
+         TR    MSGTEXT1+22(6),TRTABLE                                   00710028
+         MVI   MSGTEXT1+28,X'40'     CLEAR GARBAGE BYTE                 00720028
+         SPACE 1                                                        00730028
+         TM    DIRATTR,ATTROVLY      OVERLAY PROGRAM?                   00740028
+         BZ    MAPNOVLY              NO, BRANCH                         00750028
+         SR    R0,R0                                                    00760028
+         IC    R0,ESDSEG#                                               00770028
+         CVD   R0,DOUBLE                                                00780028
+         OI    DOUBLE+7,X'0F'                                           00790028
+         UNPK  MSGTEXT1+30(2),DOUBLE+6(2)                               00800028
+         B     MAPPRINT                                                 00810028
+         SPACE 1                                                        00820028
+MAPNOVLY MVC   DOUBLE(1),ESDXAFLG    COPY FLAG BYTE            GP APR18 00830031
+         NI    DOUBLE,X'3F'-RSECT    GET AMODE/RMODE BITS      GP APR18 00840031
+         CLI   DOUBLE,AMODE24        RMODE 24 AND AMODE 24?    GP APR18 00850031
+         BNH   MAPROCHK              YES, GO CHECK READ-ONLY   GP APR18 00860031
+         TM    DIRATTR2,DIR2LFMT     PROGRAM OBJECT?           GP APR18 00870032
+         BZ    MAPDORMD              NO, GO SHOW RMODE         GP APR18 00880032
+         TM    DIRATTR4,X'80'        NONMIGRATABLE?            GP APR18 00890032
+         BO    MAPDOAMD              YES, RMODE NOT DETERMINED GP APR18 00900032
+MAPDORMD EQU   *                                               GP APR18 00910032
+         MVC   MSGTEXT1+30(5),=C'RMODE'                                 00920032
+         MVC   MSGTEXT1+36(3),=C'ANY'                                   00930032
+         TM    ESDXAFLG,RMODEANY         RMODE ANY?                     00940032
+         BO    MAPDOAMD                  YES, BRANCH          DRK JUL20 00950033
+         MVC   MSGTEXT1+36(3),=C'64 '    RMODE 64              GP APR18 00960032
+         TM    ESDXAFLG,RMODE64          RMODE 64?             GP APR18 00970032
+         BO    MAPDOAMD                  YES, BRANCH          DRK JUL20 00971034
+         MVC   MSGTEXT1+36(3),=C'24 '    RMODE 24                       00990032
+MAPDOAMD EQU   *                                               GP APR18 01000032
+         MVC   MSGTEXT1+40(5),MAPLAMOD                                  01010032
+         MVC   MSGTEXT1+46(3),=C'24 '                                   01020032
+         TM    ESDXAFLG,AMODE31          AMODE 31?                      01030032
+         BNO   *+10                      NO, BRANCH                     01040032
+         MVC   MSGTEXT1+46(3),=C'31 '    AMODE 31                       01050032
+         TM    ESDXAFLG,AMODE64          AMODE 64?            DRK OCT02 01060032
+         BNO   *+10                      NO, BRANCH           DRK OCT02 01070032
+         MVC   MSGTEXT1+46(3),=C'64 '    AMODE 64             DRK OCT02 01080032
+         TM    ESDXAFLG,AMODE24+AMODE31  AMODE ANY?                     01090032
+         BNO   *+10                      NO, BRANCH                     01100032
+         MVC   MSGTEXT1+46(3),=C'ANY'    AMODE ANY                      01110032
+MAPROCHK TM    ESDXAFLG,RSECT            RSECT?                GP APR18 01120032
+         BNO   *+10                      NO, BRANCH            GP APR18 01130032
+         MVC   MSGTEXT1+50(3),=C'R-O'    RSECT                 GP APR18 01140032
+         B     MAPPRINT                                                 01150032
+         SPACE 2                                                        01160032
+MAPWK    MVC   INSERT#1(8),ESDNAME                                      01170032
+         M$MSG L441$1                                                   01180032
+         B     MAPESD                                                   01190032
+         SPACE 2                                                        01200032
+MAPER    MVC   INSERT#1(8),ESDNAME                                      01210032
+         M$MSG L442$1                                                   01220032
+         B     MAPESD                                                   01230032
+         SPACE 1                                               GP APR18 01240032
+MAPCLASS MVC   MSGTEXT1+4(8),MAPCLSLB                          GP APR18 01250032
+         MVC   MSGTEXT1+14(8),ESDNAME                          GP APR18 01260032
+         UNPK  MSGTEXT1+24(7),ESDLEN(4)                        GP APR18 01270032
+         TR    MSGTEXT1+24(6),TRTABLE                          GP APR18 01280032
+         MVI   MSGTEXT1+30,X'40'     CLEAR GARBAGE BYTE        GP APR18 01290032
+         TM    ESDXAFLG,X'40'        DEFERRED LOAD CLASS?      GP APR18 01300032
+         BNO   MAPCHKRO              NO                        GP APR18 01310032
+         MVC   MSGTEXT1+50(3),=C'R-O'                          GP APR18 01320032
+MAPCHKRO TM    ESDXAFLG,X'40'        READ-ONLY CLASS?          GP APR18 01330032
+         BNO   MAPPRINT              NO                        GP APR18 01340032
+         MVC   MSGTEXT1+32(15),MAPDEFER                        GP APR18 01350032
+         B     MAPPRINT                                        GP APR18 01360032
+MAPCLSLB DC    CL8'*  CLASS'                                   GP APR18 01370032
+MAPDEFER DC    CL16'(DEFERRED LOAD)'                           GP APR18 01380032
+         SPACE 1                                                        01390032
+MAPLR    CLC   ESDADDR(3),DIREPA     ENTRY POINT?                       01400032
+         BNE   *+10                  NO, BRANCH                         01410032
+         MVC   ENTRYPT,ESDNAME       SAVE THE ENTRY POINT NAME          01420032
+         MVC   MSGTEXT1+56(8),ESDNAME                                   01430032
+         UNPK  MSGTEXT1+66(7),ESDADDR(4)                                01440032
+         TR    MSGTEXT1+66(6),TRTABLE                                   01450032
+         MVI   MSGTEXT1+66+6,X'40'   CLEAR GARBAGE BYTE                 01460032
+         SPACE 1                                                        01470032
+MAPPRINT M$ERRST MSGTEXT1                                               01480032
+         B     MAPESD                                                   01490032
+         SPACE 1                                                        01500032
+MAPLAST  M$ERRST MSGBLANK                                               01510032
+MAPNOMSG UNPK  INSERT#1(7),DIREPA(4)                                    01520032
+         TR    INSERT#1(6),TRTABLE                                      01530032
+         MVC   INSERT#1+6(2),BLANKS                                     01540032
+         MVI   MTLEN,8             RESTORE MTLEN FOR INSERT#1  GP JAN08 01550032
+         MVC   INSERT#2(8),ENTRYPT NAME OF THE ENTRY POINT              01560032
+         TR    INSERT#2(8),TRLINE     MAKE PRINTABLE                    01570032
+         LA    R1,L102$1              ASSUME NONE FOUND                 01580032
+         CLI   ENTRYPT,C'?'           ANY FOUND?                        01590032
+         BE    *+8                    NO, BRANCH                        01600032
+         LA    R1,L103$2              YES, SHOW ENTRY SYMBOL            01610032
+         M$MSG (R1)                                                     01620032
+         SPACE 1                                                        01630032
+         UNPK  INSERT#1(7),DIRSTORE(4)                                  01640032
+         TR    INSERT#1(6),TRTABLE                                      01650032
+         MVC   INSERT#1+6(2),BLANKS                                     01660032
+         ICM   R1,B'0111',DIRSTORE    ACTUAL MODULE LENGTH              01670032
+         LA    R1,1023(,R1)           NEXT HIGHER                       01680032
+         SRL   R1,10                             1K VALUE               01690032
+         CVD   R1,DOUBLE                                                01700032
+         MVC   INSERT#2(8),=X'402020202120D2404040'                     01710032
+         ED    INSERT#2(6),DOUBLE+5                                     01720032
+         M$MSG L104$2                                                   01730032
+         SPACE 1                                                        01740032
+         TM    DIRFLAG,X'80'      IS MODULE AN ALIAS?                   01750032
+         BZ    NEWCMD             NO, NO ALIAS INFORMATION              01760032
+         CLI   #MAPOPT,X'01'      SHORT OR ENTRY POINT MAP?             01770032
+         BH    NEWCMD             YES, DONE                             01780032
+         TM    FLAGSGG,FALINCON   NO ALIAS INFORMATION DEFAULT?         01790032
+         BO    NEWCMD             YES, DONE                             01800032
+         EJECT                                                          01810032
+*        FIND THE CORRESPONDING MAIN MODULE                             01820032
+         MVI   STARTTR+2,X'01'    TTR=000001 (START OF DIRECTORY)       01830032
+         XC    INSERT#1(8),INSERT#1  NO MAIN(S) FOUND                   01840032
+         SPACE 1                                                        01850032
+MAPAREAL BAS   R14,READDIR        GET NEXT DIRECTORY MEMBER             01860032
+         B     MAPNREAL           LAST MEMBER PROCESSED                 01870032
+         SPACE 1                                                        01880032
+         TM    MEMFLAG,X'80'      THIS MODULE AN ALIAS?                 01890032
+         BO    MAPAREAL           YES, IGNORE                           01900032
+         CLC   DIRTTR,MEMTTR      TTR MATCH?                            01910032
+         BNE   MAPAREAL           NO, BRANCH                            01920032
+         SPACE 1                                                        01930032
+         MVC   INSERT#1(8),MEMNAME                                      01940032
+         M$MSG L066$1                                                   01950032
+         B     MAPAREAL                                                 01960032
+         SPACE 2                                                        01970032
+MAPNREAL OC    INSERT#1(8),INSERT#1  ANY MAIN(S) FOUND?                 01980032
+         BNZ   NEWCMD                YES, QUIT                          01990032
+         M$MSG L860                                                     02000032
+         TM    FLAGSCC,RECFMU     LOAD MODULE?                          02010032
+         BNO   NEWCMD             NO, BRANCH                            02020032
+         MVC   INSERT#1(8),DIRREAL                                      02030032
+         SPACE 1                                                        02040032
+         TM    DIRATTR,ATTRSCTR   SCATTER LOADED?                       02050032
+         BNO   *+10               NO, BRANCH                            02060032
+         MVC   INSERT#1(8),DIRREALS                                     02070032
+         LA    R1,L861$1                                                02080032
+         B     MSGNEW                                                   02090032
+         SPACE 1                                                        02100032
+* GENERATE JCL AND CONTROL CARDS TO LINKAGE EDIT A MODULE               02110032
+MAP600   TM    DIRFLAG,X'80'                     ALIAS?                 02120032
+         BNO   MAP604                            NO, BRANCH             02130032
+         MVI   STARTTR+2,X'01'                   READ THE DIRECTORY     02140032
+         SPACE 1                                                        02150032
+MAP602   BAS   R14,READDIR                       GET NEXT MEMBER ENTRY  02160032
+         B     MAP604                            END OF MEMBERS, BRANCH 02170032
+         SPACE 1                                                        02180032
+         CLC   DIRTTR(3),MEMTTR                  THIS TTR?              02190032
+         BNE   MAP602                            NO, LOOP               02200032
+         TM    MEMTTR+3,X'80'                    ALIAS?                 02210032
+         BO    MAP602                            YES, LOOP              02220032
+         L     R14,DIRPTRS                       START OF ENTRY         02230032
+*        MVC   DIRNAME(DIREND-DIRNAME),0(R14)    REPLACE THIS  GP JUL15 02240032
+         LA    R0,X'1F'                            TO FIX      GP JUL15 02250032
+         IC    R15,11(,R14)                        S0C4-11     GP JUL15 02260032
+         NR    R15,R0                            GET USER H/W  GP JUL15 02270032
+         SLA   R15,1                             H/W -> BYTES  GP JUL15 02280032
+         LA    R15,12(,R15)                      SOURCE LEN    GP JUL15 02290032
+         LA    R0,DIRNAME                        TARGET ADDR   GP JUL15 02300032
+         LA    R1,DIREND-DIRNAME                 TARGET LEN    GP JUL15 02310032
+         MVCL  R0,R14                            LOAD ENTRY    GP JUL15 02320032
+         SPACE 2                                                        02330032
+MAP604   DS    0H                                                       02340032
+         CLI   #MAPMCS,X'01'         IEBUPDTE SEPARATOR?      DRK MAR16 02350032
+         BNE   MAP604J               NO                       DRK MAR16 02360032
+         MVC   MSGTEXT1(136),MSGBL132                         DRK MAR16 02370032
+         MVC   MSGTEXT1+4(12),MAPLUPDT           ./ ADD NAME= DRK MAR16 02380032
+         MVC   MSGTEXT1+4+12(8),DIRNAME          MEMBER NAME  DRK MAR16 02390032
+         M$ERRST MSGTEXT1                                     DRK MAR16 02400032
+MAP604J  DS    0H                                                       02410032
+         MVC   MSGTEXT1+4(L'MAPLLKED),MAPLLKED   //LKED  EXEC PGM=IEWL, 02420032
+         M$ERRST MSGTEXT1                                               02430032
+         MVC   MSGTEXT1(136),MSGBL132                                   02440032
+         SPACE 2                                                        02450032
+         MVC   MSGTEXT1+4(L'MAPLPARM),MAPLPARM   //      PARM='NCAL, .. 02460032
+         LA    R1,MSGTEXT1+4+L'MAPLPARM                                 02470032
+         SPACE 1                                                        02480032
+         TM    DIRATTR,ATTRRENT                  REENTRANT?             02490032
+         BNO   *+14                              NO, BRANCH             02500032
+         MVC   0(5,R1),MAPLATTR+00               YES, ADD ,RENT         02510032
+         LA    R1,5(,R1)                                                02520032
+         SPACE 1                                                        02530032
+         TM    DIRATTR,ATTRREUS                  REUSABLE?              02540032
+         BNO   *+14                              NO, BRANCH             02550032
+         MVC   0(5,R1),MAPLATTR+05               YES, ADD ,REUS         02560032
+         LA    R1,5(,R1)                                                02570032
+         SPACE 1                                                        02580032
+         TM    DIRATTR+1,ATTRREFR                REFRESHABLE?           02590032
+         BNO   *+14                              NO, BRANCH             02600032
+         MVC   0(5,R1),MAPLATTR+10               YES, ADD ,REFR         02610032
+         LA    R1,5(,R1)                                                02620032
+         SPACE 1                                                        02630032
+         TM    DIRATTR,ATTROVLY                  OVERLAY?               02640032
+         BNO   *+14                              NO, BRANCH             02650032
+         MVC   0(5,R1),MAPLATTR+15               YES, ADD ,OVLY         02660032
+         LA    R1,5(,R1)                                                02670032
+         SPACE 1                                                        02680032
+         TM    DIRATTR,ATTRTEST                  TEST SYMBOLS?          02690032
+         BNO   *+14                              NO, BRANCH             02700032
+         MVC   0(5,R1),MAPLATTR+20               YES, ADD ,TEST         02710032
+         LA    R1,5(,R1)                                                02720032
+         SPACE 1                                                        02730032
+         TM    DIRATTR,ATTRSCTR                  SCATTER LOADED?        02740032
+         BNO   *+14                              NO, BRANCH             02750032
+         MVC   0(5,R1),MAPLATTR+25               YES, ADD ,SCTR         02760032
+         LA    R1,5(,R1)                                                02770032
+         SPACE 1                                                        02780032
+         TM    DIRATTR,ATTRLOAD                  ONLY LOADABLE?         02790032
+         BNO   *+14                              NO, BRANCH             02800032
+         MVC   0(3,R1),MAPLATTR+30               YES, ADD ,OL           02810032
+         LA    R1,3(,R1)                                                02820032
+         SPACE 1                                                        02830032
+         TM    DIRATTR+1,ATTRNE                  NOT EDITABLE?          02840032
+         BNO   *+14                              NO, BRANCH             02850032
+         MVC   0(3,R1),MAPLATTR+33               YES, ADD ,NE           02860032
+         LA    R1,3(,R1)                                                02870032
+         SPACE 1                                                        02880032
+         MVI   0(R1),C''''                       ADD FINAL QUOTE        02890032
+         M$ERRST MSGTEXT1                                               02900032
+         MVC   MSGTEXT1(136),MSGBL132                                   02910032
+         SPACE 1                                                        02920032
+         MVC   MSGTEXT1+4(L'MAPLSUT1),MAPLSUT1   //SYSUT1               02930032
+         M$ERRST MSGTEXT1                                               02940032
+         MVC   MSGTEXT1(136),MSGBL132                                   02950032
+         SPACE 1                                                        02960032
+         MVC   MSGTEXT1+4(L'MAPLSPRT),MAPLSPRT   //SYSPRINT             02970032
+         M$ERRST MSGTEXT1                                               02980032
+         MVC   MSGTEXT1(136),MSGBL132                                   02990032
+         SPACE 1                                                        03000032
+         MVC   MSGTEXT1+4(L'MAPLSLIB),MAPLSLIB   //SYSLIB               03010032
+         MVC   MSGTEXT1+4+L'MAPLSLIB(44),DSNAME  ADD DSNAME             03020032
+         M$ERRST MSGTEXT1                                               03030032
+         MVC   MSGTEXT1(136),MSGBL132                                   03040032
+         SPACE 1                                                        03050032
+         MVC   MSGTEXT1+4(L'MAPLSMOD),MAPLSMOD   //SYSLMOD              03060032
+         MVC   MSGTEXT1+4+L'MAPLSMOD(44),DSNAME  ADD DSNAME             03070032
+         M$ERRST MSGTEXT1                                               03080032
+         MVC   MSGTEXT1(136),MSGBL132                                   03090032
+         SPACE 1                                                        03100032
+         MVC   MSGTEXT1+4(L'MAPLSLIN),MAPLSLIN   //SYSLIN               03110032
+         M$ERRST MSGTEXT1                                               03120032
+         MVC   MSGTEXT1(136),MSGBL132                                   03130032
+         SPACE 1                                                        03140032
+         MVC   MSGTEXT1+4(L'MAPLINCL),MAPLINCL   ADD "INCLUDE SYSLIB("  03150032
+         MVC   MSGTEXT1+4+L'MAPLINCL(8),DIRNAME  ADD MEMBER NAME        03160032
+         LA    R1,MSGTEXT1+4+L'MAPLINCL+8                               03170032
+         CLI   0(R1),X'40'                                              03180032
+         BNE   *+8                                                      03190032
+         BCT   R1,*-8                                                   03200032
+         MVI   1(R1),C')'                                               03210032
+         M$ERRST MSGTEXT1                                               03220032
+         MVC   MSGTEXT1(136),MSGBL132                                   03230032
+         SPACE 1                                                        03240032
+         TM    DIRATTR,ATTROVLY                  OVERLAY MODULE?        03250032
+         BO    MAP700                            YES, BRANCH            03260032
+         SPACE 3                                                        03270032
+         LA    R4,#ESDPTR                                               03280032
+         SPACE 1                                                        03290032
+MAP610   LA    R1,MSGTEXT1+4+8                   START OF CSECT NAMES   03300032
+         LA    R0,MSGTEXT1+4+60                  END OF CSECT NAMES     03310032
+         MVC   MSGTEXT1(136),MSGBL132                                   03320032
+         MVC   MSGTEXT1+4+1(5),MAPLORD           ADD " ORDER"           03330032
+         SPACE 1                                                        03340032
+MAP620   ICM   R4,B'1111',ESDLINK                NEXT ESD ELEMENT?      03350032
+         BZ    MAP670                            NO, BRANCH             03360032
+         CLI   ESDTYPE,CODESD                    CSECT?                 03370032
+         BE    MAP630                            YES, BRANCH            03380032
+         CLI   ESDTYPE,CODELR                    EXTERNAL REFERENCE?    03390032
+         BE    MAP630                            YES, BRANCH            03400032
+         CLC   ESDNAME(8),MAPL$BLK               BLANK COMMON?          03410032
+         BE    MAP620                            YES, BRANCH            03420032
+         CLI   ESDTYPE,CODECM                    COMMON?                03430032
+         BNE   MAP620                            NO, BRANCH             03440032
+         B     MAP640                            NO, BRANCH             03450032
+         SPACE 1                                                        03460032
+MAP630   CLC   ESDADDR(3),DIREPA                 ENTRY POINT?           03470032
+         BNE   *+10                              NO, BRANCH             03480032
+         MVC   ENTRYPT,ESDNAME                   YES, SAVE THE NAME     03490032
+         CLI   ESDTYPE,CODELR                    EXTERNAL REFERENCE?    03500032
+         BE    MAP620                            YES, BRANCH            03510032
+         SPACE 1                                                        03520032
+MAP640   MVC   1(8,R1),ESDNAME                   ADD THE ESDNAME        03530032
+         LA    R14,8(,R1)                                               03540032
+         SPACE 1                                                        03550032
+         CLI   0(R14),X'40'                      BLANK?                 03560032
+         BNE   *+8                               NO, BRANCH             03570032
+         BCT   R14,*-8                                                  03580032
+         SPACE 1                                                        03590032
+         TM    DIRATTR2,DIR2PAGA                 PAGE ALIGN?  ABL NOV86 03600032
+         BNO   MAP660                            NO, BRANCH   ABL NOV86 03610032
+         TM    ESDADDR+1,X'0F'                   POSSIBLE 4K MULTIPLE?  03620032
+         BNZ   MAP660                            NO, BRANCH             03630032
+         TM    ESDADDR+2,X'FF'                   4K MULTIPLE?           03640032
+         BNZ   MAP660                            NO, BRANCH             03650032
+         MVC   1(3,R14),MAPLPAG                  YES, ADD "(P)"         03660032
+         LA    R14,3(,R14)                                              03670032
+         SPACE 1                                                        03680032
+MAP660   MVI   1(R14),C','                       ADD A COMMA            03690032
+         LA    R1,1(,R14)                                               03700032
+         CR    R1,R0                             END OF CARD?           03710032
+         BNH   MAP620                            NO, BRANCH             03720032
+         SPACE 2                                                        03730032
+         MVI   0(R1),X'40'                       CLEAR THE LAST COMMA   03740032
+         M$ERRST MSGTEXT1                                               03750032
+         MVC   MSGTEXT1(136),MSGBL132                                   03760032
+         B     MAP610                                                   03770032
+         SPACE 2                                                        03780032
+MAP670   CLI   MSGTEXT1+4+9,X'40'                ANY TEXT TO OUTPUT?    03790032
+         BE    MAP800                            NO, BRANCH             03800032
+         MVI   0(R1),X'40'                       CLEAR THE LAST COMMA   03810032
+         M$ERRST MSGTEXT1                                               03820032
+         MVC   MSGTEXT1(136),MSGBL132                                   03830032
+         B     MAP800                                                   03840032
+         SPACE 2                                                        03850032
+MAP700   MVC   STARTTR(3),DIRSTART               ADDRESS OF NOTELIST    03860032
+         L     R15,=V(EXCP)                                             03870032
+         BASR  R14,R15                                                  03880032
+         LA    R1,L751                           NOTELIST NOT FOUND     03890032
+         LTR   R15,R15                           ANY ERROR?             03900032
+         BP    MSGNEW                            YES, BRANCH            03910032
+         SPACE 1                                                        03920032
+         LR    R2,R0                             START OF RECORD        03930032
+         LR    R5,R0                             START OF RECORD        03940032
+         LA    R14,24(,R2)                       FIRST SEGMENT          03950032
+         LA    R0,4                              INCREMENT              03960032
+         LR    R1,R2                                                    03970032
+         A     R1,LS                             LAST SEGMENT           03980032
+         SR    R1,R0                             FOR BXLE               03990032
+         SR    R15,R15                                                  04000032
+         SPACE 1                                                        04010032
+MAP710   LA    R15,1(,R15)                       NEXT SEGMENT #         04020032
+         STC   R15,3(,R14)                       STORE IN SEGTAB        04030032
+         BXLE  R14,R0,MAP710                     DO ALL ENTRIES         04040032
+         SPACE 2                                                        04050032
+         MVI   0(R14),X'FF'                      MARK END OF TABLE      04060032
+         MVC   FULLWORD,=F'1'                    REGION = 1             04070032
+         LA    R2,24(,R5)                        BEGIN SEGMENT 1        04080032
+         LA    R6,8(,R5)                         BEGIN REGION 1         04090032
+         SPACE 1                                                        04100032
+MAP720   SR    R1,R1                                                    04110032
+         IC    R1,0(,R6)                         # OF LAST SEGMENT      04120032
+         LTR   R1,R1                             END OF STRUCTURE?      04130032
+         BZ    MAP800                            YES, BRANCH            04140032
+         SLL   R1,2                              SEGMENT * 4            04150032
+         LA    R3,20(R1,R5)                      LAST SEGMENT           04160032
+         SPACE 2                                                        04170032
+MAP724   LA    R4,#ESDPTR                        START OF ESD ELEMENTS  04180032
+         SPACE 1                                                        04190032
+MAP730   LA    R1,MSGTEXT1+4+8                   START OF CSECT NAMES   04200032
+         LA    R0,MSGTEXT1+4+62                  END OF CSECT NAMES     04210032
+         MVC   MSGTEXT1(136),MSGBL132                                   04220032
+         MVC   MSGTEXT1+4+1(6),MAPLINS           ADD " INSERT"          04230032
+         SPACE 1                                                        04240032
+MAP732   ICM   R4,B'1111',ESDLINK                NEXT ESD ELEMENT?      04250032
+         BZ    MAP742                            NO, BRANCH             04260032
+         CLC   ESDSEG#(1),3(R2)                  THIS SEGMENT?          04270032
+         BNE   MAP732                            NO, BRANCH             04280032
+         CLI   ESDTYPE,CODESD                    CSECT?                 04290032
+         BE    MAP734                            YES, BRANCH            04300032
+         CLI   ESDTYPE,CODELR                    EXTERNAL REFERENCE?    04310032
+         BE    MAP734                            YES, BRANCH            04320032
+         CLC   ESDNAME(8),MAPL$BLK               BLANK COMMON?          04330032
+         BE    MAP732                            YES, BRANCH            04340032
+         CLI   ESDTYPE,CODECM                    COMMON?                04350032
+         BNE   MAP732                            NO, BRANCH             04360032
+         B     MAP740                                                   04370032
+         SPACE 1                                                        04380032
+MAP734   CLC   ESDADDR(3),DIREPA                 ENTRY POINT?           04390032
+         BNE   *+10                              NO, BRANCH             04400032
+         MVC   ENTRYPT,ESDNAME                   YES, SAVE THE NAME     04410032
+         CLI   ESDTYPE,CODELR                    EXTERNAL REFERENCE?    04420032
+         BE    MAP732                            YES, BRANCH            04430032
+         SPACE 1                                                        04440032
+MAP740   MVC   1(8,R1),ESDNAME                   ADD THE ESDNAME        04450032
+         LA    R14,8(,R1)                                               04460032
+         SPACE 1                                                        04470032
+         CLI   0(R14),X'40'                      BLANK?                 04480032
+         BNE   *+8                               NO, BRANCH             04490032
+         BCT   R14,*-8                                                  04500032
+         SPACE 1                                                        04510032
+         MVI   1(R14),C','                       ADD A COMMA            04520032
+         LA    R1,1(,R14)                                               04530032
+         CR    R1,R0                             END OF CARD?           04540032
+         BNH   MAP732                            NO, BRANCH             04550032
+         SPACE 2                                                        04560032
+         MVI   0(R1),X'40'                       CLEAR THE LAST COMMA   04570032
+         M$ERRST MSGTEXT1                                               04580032
+         MVC   MSGTEXT1(136),MSGBL132                                   04590032
+         B     MAP730                                                   04600032
+         SPACE 1                                                        04610032
+MAP742   CLI   MSGTEXT1+4+9,X'40'                ANY TEXT TO OUTPUT?    04620032
+         BE    MAP750                            NO, BRANCH             04630032
+         MVI   0(R1),X'40'                       CLEAR THE LAST COMMA   04640032
+         M$ERRST MSGTEXT1                                               04650032
+         MVC   MSGTEXT1(136),MSGBL132                                   04660032
+         SPACE 2                                                        04670032
+MAP750   CLI   4(R2),X'FF'                       END OF SEGTAB?         04680032
+         BE    MAP800                            YES, BRANCH            04690032
+         CR    R2,R3                             END OF REGION?         04700032
+         BE    MAP764                            YES, BRANCH            04710032
+         SPACE 1                                                        04720032
+         MVC   MSGTEXT1+4+1(7),MAPLOVER          ADD " OVERLAY"         04730032
+         MVC   MSGTEXT1+4+1+7+1(6),MAPLREG+1     ADD " REGION"          04740032
+         MVC   MSGTEXT1+4+1+7+1+6(1),FULLWORD+3  ADD REGION NUMBER      04750032
+         OI    MSGTEXT1+4+1+7+1+6,X'F0'          MAKE PRINTABLE         04760032
+         SPACE 1                                                        04770032
+         SR    R1,R1                                                    04780032
+         ICM   R1,B'0001',4(R2)                  ANY PREVIOUS SEGMENT?  04790032
+         BZ    MAP760                            NO, BRANCH             04800032
+         MVC   MSGTEXT1+4+1+7+1(6),MAPLOVLY      ADD " OVLY"            04810032
+         CVD   R1,DOUBLE                                                04820032
+         OI    DOUBLE+7,X'0F'                                           04830032
+         UNPK  MSGTEXT1+4+1+7+1+4(3),DOUBLE+6(2) ADD SEGMENT NUMBER     04840032
+MAP760   M$ERRST MSGTEXT1                                               04850032
+         MVC   MSGTEXT1(136),MSGBL132                                   04860032
+         SPACE 1                                                        04870032
+MAP764   LA    R0,4                                                     04880032
+         LR    R1,R3                                                    04890032
+         BXLE  R2,R0,MAP724                      DO EACH SEGMENT        04900032
+         SPACE 2                                                        04910032
+         LA    R6,2(,R6)                                                04920032
+         CLI   0(R6),X'00'                       ANY SEGMENTS IN RGN?   04930032
+         BE    MAP800                            NO, BRANCH             04940032
+         L     R1,FULLWORD                                              04950032
+         LA    R0,4                                                     04960032
+         CR    R1,R0                             FOURTH REGION DONE?    04970032
+         BNL   MAP800                            YES, BRANCH            04980032
+         LA    R1,1(,R1)                         NEXT REGION            04990032
+         ST    R1,FULLWORD                                              05000032
+         MVC   MSGTEXT1+4+1(7),MAPLOVER          ADD " OVERLAY"         05010032
+         MVC   MSGTEXT1+4+1+7+1(6),MAPLREG+1     ADD "REGION"           05020032
+         STC   R1,MSGTEXT1+4+1+7+1+6             ADD REGION NUMBER      05030032
+         OI    MSGTEXT1+4+1+7+1+6,X'F0'          MAKE PRINTABLE         05040032
+         MVC   MSGTEXT1+4+1+7+1+6+1(8),MAPLREG   ADD "(REGION)"         05050032
+         MVC   MSGTEXT1+4+1+7+1(6),MAPLREG+1     ADD "REGION"           05060032
+         M$ERRST MSGTEXT1                                               05070032
+         MVC   MSGTEXT1(136),MSGBL132                                   05080032
+         B     MAP720                                                   05090032
+         SPACE 2                                                        05100032
+MAP800   LA    R2,DIRAPF               POINT TO APF INFORMATION         05110032
+         SPACE 1                                                        05120032
+         TM    DIRATTR,ATTRSCTR        SCATTER FORMAT?                  05130032
+         BNO   *+8                     NO, BRANCH                       05140032
+         LA    R2,8(,R2)               YES, ADD SCATTER SIZE BYTES      05150032
+         SPACE 1                                                        05160032
+         TM    DIRFLAG,X'80'           ALIAS?                           05170032
+         BO    MAP802                  YES, BRANCH                      05180032
+***PDSMAN CHANGES: MAP JCL (APF AND SSI)                      ABL NOV86 05190032
+         TM    5(R2),X'0F'             PDSMAN DATE?           ABL NOV86 05200032
+         BO    MAP803                  YES, BRANCH            ABL NOV86 05210032
+         TM    6(R2),X'0F'             PDSMAN DATE?           ABL NOV86 05220032
+         BO    MAP803                  YES, BRANCH            ABL NOV86 05230032
+         TM    4+5(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 05240032
+         BO    MAP803                  YES, BRANCH            ABL NOV86 05250032
+         TM    4+6(R2),X'0F'           PDSMAN DATE AND SSI?   ABL NOV86 05260032
+         BO    MAP803                  YES, BRANCH            ABL NOV86 05270032
+         CLI   8(R2),0                 CONVERTED ALIAS ENTRY?           05280032
+*        BE    *+8                     NO, BRANCH                       05290032
+         B     *+8                     BRANCH                 DRK JAN98 05300032
+MAP802   LA    R2,11(,R2)              ADD ALIAS LENGTH                 05310032
+MAP803   DS    0H                                             ABL NOV86 05320032
+         SPACE 1                                                        05330032
+         TM    DIRATTR2,DIRAOSLE       VS LINKAGE EDITOR?               05340032
+         BNO   MAP804                  NO, BRANCH                       05350032
+         SPACE 1                                                        05360032
+         TM    DIRATTR2,DIR2SSI        SSI PRESENT?                     05370032
+         BNO   MAP820                  NO, SKIP SSI PROCESSING          05380032
+         SPACE 1                                                        05390032
+MAP804   LA    R2,1(,R2)               ROUND UP TO HALFWORD             05400032
+         N     R2,=F'-2'                                                05410032
+         SPACE 1                                                        05420032
+         CLC   ZERO,0(R2)              ZERO?                            05430032
+         BE    MAP820                  YES, NO SSI                      05440032
+         CLC   =F'-1',0(R2)            FFFFFFFF?                        05450032
+         BE    MAP820                  YES, NO SSI                      05460032
+         SPACE 1                                                        05470032
+         MVC   MSGTEXT1+5(6),MAPLSET   ADD " SETSSI"                    05480032
+         UNPK  MSGTEXT1+5+6+2(9),0(5,R2)                                05490032
+         TR    MSGTEXT1+5+6+2(8),TRTABLE                                05500032
+         MVI   MSGTEXT1+5+6+2+8,X'40'                                   05510032
+         LA    R2,4(,R2)               ADD SSI SIZE                     05520032
+         M$ERRST MSGTEXT1                                               05530032
+         MVC   MSGTEXT1(136),MSGBL132                                   05540032
+         SPACE 2                                                        05550032
+MAP820   TM    DIRATTR2,DIRAOSLE           VS LINKAGE EDITOR?           05560032
+         BZ    MAP860                      NO, CANNOT BE AUTHORIZED     05570032
+         SR    R1,R1                                                    05580032
+         IC    R1,DIRATTR3                 AMODE BITS                   05590032
+         TM    DIRFLAG,X'80'               ALIAS?                       05600032
+         BNO   *+8                         NO, BRANCH                   05610032
+         SRL   R1,2                        YES, SHIFT AMODE BITS        05620032
+         STC   R1,MODESAVE                 SAVE CURRENT AMODE           05630032
+         TM    DIRATTR3,DIRRMANY           RMODE ANY?                   05640032
+         BNO   *+8                         NO, BRANCH                   05650032
+         OI    MODESAVE,DIRRMANY           YES, SET RMODE AGAIN         05660032
+         SPACE 1                                                        05670032
+         TM    MODESAVE,DIRRMANY+DIRAM31+DIRAM64 UNUSUAL RMODE/AMODE?   05680032
+         BZ    MAP840                      NO, BRANCH                   05690032
+         MVC   DOUBLE(8),BLANKS            RMODE/AMODE FILLER           05700032
+         MVC   DOUBLE(3),=C'24 '           MOVE IN THE RMODE TEXT       05710032
+         TM    MODESAVE,DIRRMANY           RMODE ANY?                   05720032
+         BZ    *+10                        NO, BRANCH                   05730032
+         MVC   DOUBLE(3),=C'ANY'           MOVE IN THE RMODE TEXT       05740032
+         MVC   DOUBLE+4(3),=C'24 '         MOVE IN THE AMODE TEXT       05750032
+         TM    MODESAVE,DIRAM31            AMODE 31?                    05760032
+         BZ    *+10                        NO, BRANCH                   05770032
+         MVC   DOUBLE+4(3),=C'31 '         MOVE IN THE AMODE TEXT       05780032
+         TM    MODESAVE,DIRAM64            AMODE 64?                    05790032
+         BNO   *+10                        NO, BRANCH                   05800032
+         MVC   DOUBLE+4(3),=C'64 '         MOVE IN THE AMODE TEXT       05810032
+         TM    MODESAVE,DIRAM64+DIRAM31    AMODE ANY?                   05820032
+         BNO   *+10                        NO, BRANCH                   05830032
+         MVC   DOUBLE+4(3),=C'ANY'         MOVE IN THE AMODE TEXT       05840032
+         MVC   MSGTEXT1+4(L'MAPLMODE),MAPLMODE                          05850032
+         LA    R1,MSGTEXT1+4+L'MAPLMODE                                 05860032
+         MVC   0(3,R1),DOUBLE              ADD 24/ANY                   05870032
+         CLI   2(R1),X'40'                 ANY DATA?                    05880032
+         BE    *+8                         NO, BRANCH                   05890032
+         LA    R1,1(,R1)                   YES, ADD 1                   05900032
+         MVC   2(L'MAPLAMO,R1),MAPLAMO     ADD "),AMODE("               05910032
+         LA    R1,2+L'MAPLAMO(,R1)                                      05920032
+         MVC   0(3,R1),DOUBLE+4            ADD 24/31/64 OR ANY          05930032
+         CLI   2(R1),X'40'                 ANY DATA?                    05940032
+         BE    *+8                         NO, BRANCH                   05950032
+         LA    R1,1(,R1)                   YES, ADD 1                   05960032
+         MVI   2(R1),C')'                  ADD FINAL PARENTHESIS        05970032
+         M$ERRST MSGTEXT1                                               05980032
+         MVC   MSGTEXT1(136),MSGBL132                                   05990032
+         SPACE 2                                                        06000032
+MAP840   TM    DIRATTR2,DIRAPFLG       APF DATA PRESENT AND VALID?      06010032
+         BNO   MAP860                  NO, BRANCH                       06020032
+         SPACE 1                                                        06030032
+         LA    R1,L721                 ASSUME APF LENGTH INCORRECT      06040032
+         CLI   0(R2),1                 APF DATA LENGTH OK?              06050032
+         BNE   MAP860                  NO, BRANCH                       06060032
+         SPACE 3                                                        06070032
+         LA    R1,L021                 ASSUME AUTHORIZED                06080032
+         CLI   1(R2),1                 AUTHORIZED?                      06090032
+         BL    MAP860                  NO, BRANCH                       06100032
+         MVC   MSGTEXT1+4(L'MAPLAUTH),MAPLAUTH                          06110032
+         M$ERRST MSGTEXT1                                               06120032
+         MVC   MSGTEXT1(136),MSGBL132                                   06130032
+         SPACE 2                                                        06140032
+MAP860   MVC   MSGTEXT1+4(L'MAPLENTR),MAPLENTR                          06150032
+         CLI   ENTRYPT,C'?'           ANY ENTRY POINT?                  06160032
+         BE    *+10                   NO, BRANCH                        06170032
+         MVC   MSGTEXT1+4+L'MAPLENTR-8(8),ENTRYPT                       06180032
+         M$ERRST MSGTEXT1                                               06190032
+         MVC   MSGTEXT1(136),MSGBL132                                   06200032
+         SPACE 2                                                        06210032
+         MVC   ENTRYPT(8),DIRNAME      DEFAULT MODULE NAME              06220032
+         MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  06230032
+         SPACE 2                                                        06240032
+MAP880   LA    R2,MSGTEXT1+4+8                   START OF CSECT NAMES   06250032
+         LA    R3,MSGTEXT1+4+62                  END OF CSECT NAMES     06260032
+         MVC   MSGTEXT1(136),MSGBL132                                   06270032
+         MVC   MSGTEXT1+4+1(5),MAPLALIA          ADD " ALIAS"           06280032
+         SPACE 1                                                        06290032
+MAP890   BAS   R14,READDIR        GET NEXT DIRECTORY MEMBER             06300032
+         B     MAP910             LAST MEMBER PROCESSED                 06310032
+         SPACE 1                                                        06320032
+         CLC   DIRTTR,MEMTTR      TTR MATCH?                            06330032
+         BNE   MAP890             NO, BRANCH                            06340032
+         TM    MEMFLAG,X'80'      ALIAS ENTRY FOUND?                    06350032
+         BO    MAP900             YES, BRANCH                           06360032
+         TM    DIRFLAG,X'80'      ALIAS ORIGINALLY?                     06370032
+         BNO   MAP890             NO, BRANCH                            06380032
+         MVC   ENTRYPT(8),MEMNAME SAVE REAL MEMBER NAME                 06390032
+         B     MAP890                                                   06400032
+         SPACE 1                                                        06410032
+MAP900   MVC   1(8,R2),MEMNAME                   ADD THE ALIAS NAME     06420032
+         LA    R14,8(,R2)                                               06430032
+         SPACE 1                                                        06440032
+         CLI   0(R14),X'40'                      BLANK?                 06450032
+         BNE   *+8                               NO, BRANCH             06460032
+         BCT   R14,*-8                                                  06470032
+         SPACE 1                                                        06480032
+         MVI   1(R14),C','                       ADD A COMMA            06490032
+         LA    R2,1(,R14)                                               06500032
+         CR    R2,R3                             END OF CARD?           06510032
+         BNH   MAP890                            NO, BRANCH             06520032
+         SPACE 2                                                        06530032
+         MVI   0(R2),X'40'                       CLEAR THE LAST COMMA   06540032
+         M$ERRST MSGTEXT1                                               06550032
+         MVC   MSGTEXT1(136),MSGBL132                                   06560032
+         B     MAP880                                                   06570032
+         SPACE 2                                                        06580032
+MAP910   CLI   MSGTEXT1+4+9,X'40'                ANY TEXT TO OUTPUT?    06590032
+         BE    MAP920                            NO, BRANCH             06600032
+         MVI   0(R2),X'40'                       CLEAR THE LAST COMMA   06610032
+         M$ERRST MSGTEXT1                                               06620032
+         SPACE 1                                                        06630032
+MAP920   MVC   MSGTEXT1(136),MSGBL132                                   06640032
+         MVC   MSGTEXT1+5(L'MAPLNAME),MAPLNAME                          06650032
+         MVC   MSGTEXT1+5+8(8),ENTRYPT                                  06660032
+         LA    R1,MSGTEXT1+5+8+8                                        06670032
+         SPACE 1                                                        06680032
+         CLI   0(R1),X'40'                       BLANK?                 06690032
+         BNE   *+8                               NO, BRANCH             06700032
+         BCT   R1,*-8                                                   06710032
+         SPACE 1                                                        06720032
+         MVC   1(3,R1),MAPLREP                                          06730032
+         SPACE 1                                                        06740032
+         M$ERRST MSGTEXT1                                               06750032
+         SPACE 1                                                        06760032
+         CLI   #MAPMCS,X'01'         IEBUPDTE SEPARATOR?      DRK MAR16 06770032
+         BNE   MAP930                NO                       DRK MAR16 06780032
+         MVC   MSGTEXT1(136),MSGBL132                         DRK MAR16 06790032
+         MVC   MSGTEXT1+4(15),MAPLUPDE  ./ ADD TERM=YES ERROR DRK MAR16 06800032
+         M$ERRST MSGTEXT1                                     DRK MAR16 06810032
+MAP930   DS    0H                                                       06820032
+         B     NEWCMD                                                   06830032
+MAPLUPDT DC    C'./ ADD NAME='                                          06840032
+MAPLUPDE DC    C'./ ADD TERM=YES'  <--- FORCE END OF ./ ADD             06850032
+MAPLLKED DC    C'//LKED   EXEC  PGM=IEWL,'                              06860032
+MAPLPARM DC    C'//       PARM=''NCAL,MAP,LIST,LET'                     06870032
+MAPLATTR DC    C',RENT,REUS,REFR,OVLY,TEST,SCTR,OL,NE'                  06880032
+*MAPLSUT1 DC   C'//SYSUT1   DD  UNIT=SYSDA,SPACE=(1024,(200,20))'       06890032
+MAPLSUT1 DC    C'//SYSUT1   DD  UNIT=&TUNIT,SPACE=(1024,(200,20))'      06900032
+MAPLSPRT DC    C'//SYSPRINT DD  SYSOUT=*'                               06910032
+MAPLSLIB DC    C'//SYSLIB   DD  DISP=SHR,DSN='                          06920032
+MAPLSMOD DC    C'//SYSLMOD  DD  DISP=SHR,DSN='                          06930032
+MAPLSLIN DC    C'//SYSLIN   DD  *'                                      06940032
+MAPLINCL DC    C' INCLUDE SYSLIB('                                      06950032
+MAPLAUTH DC    C' SETCODE AC(1)'                                        06960032
+MAPLENTR DC    C' ENTRY   ????????'                                     06970032
+MAPLMODE DC    C' MODE    RMODE('                                       06980032
+MAPLAMO  DC    C'),AMODE('                                              06990032
+MAPLNAME DC    C'NAME'                                                  07000032
+MAPLSET  DC    C'SETSSI'                                                07010032
+MAPLALIA DC    C'ALIAS'                                                 07020032
+MAPLORD  DC    C'ORDER'                                                 07030032
+MAPLPAG  DC    C'(P)'                                                   07040032
+MAPLREP  DC    C'(R)'                                                   07050032
+MAPLREG  DC    C'(REGION)'                                              07060032
+MAPLOVER DC    C'OVERLAY'                                               07070032
+MAPLOVLY DC    C'OVLY'                                                  07080032
+MAPLINS  DC    C'INSERT'                                                07090032
+         DROP  R4                                                       07100032
+         SPACE 3                                                        07110032
+*                                                                       07120032
+*        ESD SCAN SUBROUTINE                                            07130032
+*                                                                       07140032
+         SPACE 2                                                        07150032
+READESD  STM   R14,R12,ESDIDRSV   SAVE REGISTERS FOR RETURN             07160032
+         LR    R8,R15             ENTRY POINT ADDRESS                   07170032
+         USING READESD,R8         SUBROUTINE BASE REGISTER              07180032
+         TM    DIRATTR+1,ATTRNE   REDITABLE MODULE?            GP JAN08 07190032
+         BO    ESDNOED            NO, AVOID UNNECESSARY I/O    GP JAN08 07200032
+         LA    R2,#ESDPTR         ROOT OF ESD CHAIN                     07210032
+         TM    DS1SMSFG,DS1PDSE   PDSE DATASET?               DRK AUG05 07220032
+         AIF   ('&MVSLEV' LT 'MVS510').NOBAPI3                 GP SEP05 07230032
+         BO    ESDBAPI0           YES, NEED BINDER API         GP SEP05 07240032
+         AGO   .BAPIOK3                                        GP SEP05 07250032
+.NOBAPI3 ANOP  ,                                               GP SEP05 07260032
+         BO    ESDEXIT            YES, LEAVE                  DRK AUG05 07270032
+.BAPIOK3 ANOP  ,                                               GP SEP05 07280032
+         MVC   STARTTR(3),DIRTTR  FIRST TTR                             07290032
+         SPACE 1                                                        07300032
+ESDEXCP  L     R15,=V(EXCP)                                             07310032
+         BASR  R14,R15                                                  07320032
+         B     *+4(R15)           PROCESS RETURN CODE                   07330032
+         B     ESDEXCP1             00 - GOOD READ                      07340032
+         B     ESDLAST              04 - END OF MEMBER                  07350032
+         B     ESDLAST              08 - END OF DATA SET                07360032
+         B     NEWCMD               12 - I/O ERROR                      07370032
+         SPACE 1                                                        07380032
+ESDEXCP1 LR    R3,R0              START OF RECORD                       07390032
+         CLI   0(R3),X'40'        TEST SYM RECORD?                      07400032
+         BE    ESDEXCP            YES, SKIP RECORD                      07410032
+         CLI   0(R3),X'20'        CESD RECORD?                          07420032
+         BNE   ESDLAST            NO, BRANCH                            07430032
+         SPACE 1                                                        07440032
+         LH    R6,4(,R3)          RELATIVE # OF 1ST ESD ID              07450032
+         LH    R5,6(,R3)          LENGTH OF DATA IN BUFFER              07460032
+         LA    R3,8(,R3)          START OF ESD DATA                     07470032
+         AR    R5,R3                                                    07480032
+         LA    R4,16              LENGTH OF ONE ENTRY                   07490032
+         SR    R5,R4                                                    07500032
+         SPACE 2                                                        07510032
+         USING ESDNAME,R3                                               07520032
+ESDSCAN  CLI   ESDTYPE,CODESEG    SEGTAB OR ENTAB?             GP APR18 07530032
+         BE    *+8                YES, PRESERVE ENTRY TYPE     GP APR18 07540032
+         NI    ESDTYPE,X'0F'                                            07550032
+         CLI   #MAPOPT,X'03'      ENTRY POINT ONLY?                     07560032
+         BE    ESDSCAN2           YES, BRANCH                           07570032
+         CLC   ##SUBCOM(8),$ATTL  ATTRIBUTE ENTRY(NAME) OPERAND?        07580032
+         BE    ESDSCAN2           YES, BRANCH                           07590032
+         CLC   ##SUBCOM(8),$ALI   ALIAS SEARCH REQUEST?                 07600032
+         BNE   ESDMAP             NO, BRANCH                            07610032
+ESDSCAN2 CLI   ESDTYPE,CODESD     VALID EXTERNAL SYMBOL?                07620032
+         BE    ESDCHK             YES, BRANCH                           07630032
+         CLI   ESDTYPE,CODELR     ANOTHER VALID ENTRY                   07640032
+         BNE   NEXTESD            NO, GET THE NEXT ESD                  07650032
+         SPACE 1                                                        07660032
+ESDCHK   TM    DIRATTR,ATTROVLY   OVERLAY ATTRIBUTE?                    07670032
+         BNO   ESDCHK1            NO, BRANCH                            07680032
+         CLI   ESDSEG#,1          SYMBOL IN ROOT SEGMENT?               07690032
+         BNE   NEXTESD            NO, IGNORE                            07700032
+ESDCHK1  CLC   ESDADDR(3),DIREPA  THIS ENTRY POINT ADDRESS?             07710032
+         BNE   ESDCHK2            NO, BRANCH                            07720032
+         MVC   ENTRYPT,ESDNAME    YES, ENTRY POINT NAME IF NO ESD MATCH 07730032
+         CLI   #MAPOPT,X'03'      ENTRY POINT MAP ONLY?                 07740032
+         BE    ESDUSE3            YES, BRANCH                           07750032
+ESDCHK2  CLC   ESDNAME,DIRNAME    THIS NAME?                            07760032
+         BNE   NEXTESD            NO, BRANCH                            07770032
+         CLI   #MAPOPT,X'03'      ENTRY POINT MAP ONLY?                 07780032
+         BE    NEXTESD            YES, BRANCH                           07790032
+         IC    R0,ESDXAFLG        GET MVS/XA ESD FLAGS                  07800032
+         SR    R1,R1                                                    07810032
+         ICM   R1,B'0111',ESDADDR GET SYMBOL OFFSET                     07820032
+         ST    R6,ESDIDRSV+4      RETURN ESDID IN REG 15                07830032
+         STM   R0,R1,ESDIDRSV+4+4 RETURN ESD FLAGS, OFFSET IN REGS 0,1  07840032
+         MVC   ENTRYPT,ESDNAME    USE THIS ESDNAME FOR THE ENTRY POINT  07850032
+         B     ESDOUT             FOUND THE SYMBOL                      07860032
+         SPACE 1                                                        07870032
+ESDMAP   CLC   ##SUBCOM(8),$IFX   IF SUBCOMMAND?                        07880032
+         BNE   ESDMAP2            NO, BRANCH                            07890032
+         TM    #MODOPT,X'01'      WKEXTERN?                             07900032
+         BNO   ESDMAP0            NO, BRANCH                            07910032
+         CLI   ESDTYPE,CODEWK     FOUND?                                07920032
+         BE    ESDUSE2            YES, BRANCH                           07930032
+         B     NEXTESD            NO, BRANCH                            07940032
+         SPACE 1                                                        07950032
+ESDMAP0  TM    #MODOPT,X'02'      EXTERN?                               07960032
+         BNO   ESDMAP2            NO, BRANCH                            07970032
+         CLI   ESDTYPE,CODEER     FOUND?                                07980032
+         BE    ESDUSE2            YES, BRANCH                           07990032
+         B     NEXTESD            NO, BRANCH                            08000032
+         SPACE 1                                                        08010032
+ESDMAP2  CLI   ESDTYPE,CODESEG    THIS SEGTAB/ENTAB ENTRY?     GP APR18 08020032
+         BE    ESDUSE1            YES, BRANCH                           08030032
+         CLI   ESDTYPE,CODESD     SD ENTRY?                             08040032
+         BE    ESDUSE2            YES, BRANCH                           08050032
+         CLI   ESDTYPE,CODECM     COMMON BLOCK CODE?                    08060032
+         BE    ESDUSE0            YES, BRANCH                           08070032
+         CLC   ##SUBCOM(8),$MAP   MAP SUBCOMMAND?                       08080032
+         BNE   ESDMAP4            NO, BRANCH                            08090032
+         CLI   ESDTYPE,CODEER     $UNRESOLVED EXTERNAL REFERENCE?       08100032
+         BE    ESDUSE2            YES, BRANCH                           08110032
+         CLI   #MAPOPT,X'02'      SHORT MAP?                            08120032
+         BE    ESDMAP4            YES, BRANCH                           08130032
+         CLI   ESDTYPE,CODEWK     $UNRESOLVED WEAK EXTERNAL REFERENCE?  08140032
+         BE    ESDUSE2            YES, BRANCH                           08150032
+         SPACE 1                                                        08160032
+ESDMAP4  CLI   ESDTYPE,CODELR     LR ENTRY?                             08170032
+         BNE   ESDMAPPC           NO, BRANCH                            08180032
+         CLI   #MAPOPT,X'02'      SHORT MAP?                            08190032
+         BL    ESDUSE2            NO, BRANCH                            08200032
+         CLI   #MAPOPT,X'04'      RELINK?                               08210032
+         BE    ESDUSE2            YES, BRANCH                           08220032
+         CLC   ESDADDR(3),DIREPA  THIS ENTRY POINT?                     08230032
+         BE    ESDUSE2            NO, BRANCH                            08240032
+ESDMAPPC CLI   ESDTYPE,CODEPC     PC ENTRY?                             08250032
+         BNE   NEXTESD            NO, BRANCH                            08260032
+         MVC   ESDNAME,MAPL$PRI        PRIVATE CODE                     08270032
+         B     ESDUSE2                                                  08280032
+         SPACE 1                                                        08290032
+ESDUSE0  CLC   ESDNAME(8),BLANKS                   BLANK COMMON?        08300032
+         BNE   ESDUSE2                             NO, BRANCH           08310032
+         MVC   ESDNAME(8),MAPL$BLK                 YES, USE $BLKCOM     08320032
+         B     ESDUSE2                                                  08330032
+         SPACE 1                                                        08340032
+ESDUSE1  EQU   *                                               GP APR18 08350032
+         MVC   ESDNAME(8),MAPL$SEG                 ASSUME SEGMENT TABLE 08360032
+         OC    ESDADDR(3),ESDADDR                  CORRECT?             08370032
+         BZ    ESDUSE2                             YES, BRANCH          08380032
+         MVC   ESDNAME(8),MAPL$ENT                 NO, ENTRY TABLE      08390032
+ESDUSE2  SR    R1,R1                                                    08400032
+         CLC   ##SUBCOM(8),$LIS                    LIST SUBCOMMAND?     08410032
+         BE    ESDUSE3                             YES, BRANCH          08420032
+         ICM   R1,B'0001',#MODLEN                  ANY MODULE FILTER?   08430032
+         BZ    ESDUSE3                             NO, BRANCH           08440032
+         BCTR  R1,0                                MACHINE LENGTH       08450032
+         CLC   ESDNAME(*-*),#MODTXT                <<EXECUTED>>         08460032
+         EX    R1,*-6                              THIS PARTIAL NAME?   08470032
+         BNE   NEXTESD                             NO, BRANCH           08480032
+ESDUSE3  BAS   R14,GETESD                                               08490032
+         ST    R1,ESDLINK-ESDENTRY(R2)             SAVE LINK POINTER    08500032
+         STH   R6,ESDID-ESDENTRY(R1)               SAVE ESD ID          08510032
+         USING ESDNAME,R3                                      GP APR18 08520032
+         CLI   ESDNAME+1,C'_'            CLASS ENTRY?          GP APR18 08530032
+         BNE   ESDCLSOK                  NO                    GP APR18 08540032
+         CLI   ESDNAME,C'B'              CLASS ENTRY?          GP APR18 08550032
+         BL    ESDCLSOK                  NO                    GP APR18 08560032
+         CLI   ESDNAME,C'C'              CLASS ENTRY?          GP APR18 08570032
+         BH    ESDCLSOK                  NO                    GP APR18 08580032
+         MVI   ESDTYPE,C'*'              YES, FLAG THIS        GP APR18 08590032
+ESDCLSOK EQU   *                                               GP APR18 08600032
+         MVC   ESDNAME-ESDENTRY(LENESD1,R1),0(R3)  SAVE ESD ENTRY       08610032
+         LR    R2,R1                               CHAIN TO NEXT ONE    08620032
+NEXTESD  EQU   *                                                        08630032
+         AIF   ('&MVSLEV' LT 'MVS510').NOBAPI5                 GP SEP05 08640032
+         TM    DS1SMSFG,DS1PDSE   PDSE DATASET?                GP SEP05 08650032
+         BO    BESDRTRN           YES, NEED BINDER API         GP SEP05 08660032
+.NOBAPI5 ANOP  ,                                               GP SEP05 08670032
+         LA    R6,1(R6)                                                 08680032
+         BXLE  R3,R4,ESDSCAN                                            08690032
+         B     ESDEXCP            GET NEXT ESD RECORD                   08700032
+         DROP  R3                                                       08710032
+         SPACE 2                                                        08720032
+         USING ESDENTRY,R2                                              08730032
+ESDLAST  SR    R0,R0              REQUEST ESD SORTING          GP APR18 08740032
+ESDLAST2 EQU   *                                               GP APR18 08750032
+         MVC   MSGTEXT1(3),L740                                         08760032
+         L     R14,ESDIDRSV                                             08770032
+         LA    R2,#ESDPTR                                               08780032
+         OC    #ESDPTR,#ESDPTR    ANY ESD DATA AVAILABLE?               08790032
+         BZ    ESDNOED            NO, BRANCH                   GP APR18 08800032
+         LTR   R0,R0              NEED TO SORT THE RESULTS?    GP APR18 08810032
+         BZ    ESDSORT            YES, BRANCH                  GP APR18 08820032
+         B     ESDOUT             NO, SKIP SORT                GP APR18 08830032
+ESDNOED  EQU   *                                               GP JAN08 08840032
+         CLI   #MODLEN,0          ANY ESD FILTERING?                    08850032
+         BH    ESDEXIT            YES, BRANCH                           08860032
+         MVC   MSGTEXT1(3),L703                                         08870032
+         B     ESDEXIT                                                  08880032
+         SPACE 1                                                        08890032
+ESDSORT  L     R2,ESDLINK                                               08900032
+         ICM   R1,B'1111',ESDLINK END OF ESD ENTRIES?                   08910032
+         BZ    ESDOUT             YES, BRANCH                           08920032
+         SPACE 1                                                        08930032
+ESDSORT2 TM    DIRATTR,ATTROVLY             OVERLAY ATTRIBUTE?          08940032
+         BNO   ESDNOSEG                                                 08950032
+         CLC   ESDSEG#,ESDSEG#-ESDENTRY(R1) CHECK ENTRY SEGMENT         08960032
+         BL    ESDSORT3                                                 08970032
+         BH    ESDSWAP                                                  08980032
+         SPACE 1                                                        08990032
+ESDNOSEG CLC   ESDADDR,ESDADDR-ESDENTRY(R1)                             09000032
+         BL    ESDSORT3                                                 09010032
+         BH    ESDSWAP                                                  09020032
+         CLC   ESDTYPE,ESDTYPE-ESDENTRY(R1)                             09030032
+         BL    ESDSORT3                                                 09040032
+         BH    ESDSWAP                                                  09050032
+         CLC   ESDNAME,ESDNAME-ESDENTRY(R1)                             09060032
+         BNH   ESDSORT3                                                 09070032
+         SPACE 1                                                        09080032
+ESDSWAP  XC    ESDNAME(LENESD2),ESDNAME-ESDENTRY(R1)                    09090032
+         XC    ESDNAME-ESDENTRY(LENESD2,R1),ESDNAME                     09100032
+         XC    ESDNAME(LENESD2),ESDNAME-ESDENTRY(R1)                    09110032
+         SPACE 1                                                        09120032
+ESDSORT3 ICM   R1,B'1111',ESDLINK-ESDENTRY(R1)                          09130032
+         BNZ   ESDSORT2                                                 09140032
+         B     ESDSORT                                                  09150032
+         DROP  R2                                                       09160032
+         SPACE 2                                                        09170032
+GETESD   MVI   SUBPOOLT,21                                              09180032
+         LA    R0,LENESD                                                09190032
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL 21                         09200032
+         GETMAIN R,LV=(0)                                               09210032
+         XC    0(LENESD,R1),0(R1)                                       09220032
+         BR    R14                                                      09230032
+         SPACE 1                                                        09240032
+ESDOUT   L     R14,ESDIDRSV                                             09250032
+         LA    R14,4(,R14)         ADJUST EXIT ADDRESS                  09260032
+ESDEXIT  LM    R15,R12,ESDIDRSV+4                                       09270032
+         BR    R14                 EXIT                                 09280032
+MAPLAMOD DC    C'AMODE'                                                 09290032
+MAPL$BLK DC    CL8'$BLKCOM'                                             09300032
+MAPL$PRI DC    CL8'$PRIVATE'                                            09310032
+MAPL$SEG DC    CL8'$SEGTAB'                                             09320032
+MAPL$ENT DC    CL8'$ENTAB'                                              09330032
+         AIF   ('&MVSLEV' LT 'MVS510').NOBAPI4                 GP SEP05 09340032
+ESDBAPI0 L     R15,CVTPTR(,R0)                                 GP SEP05 09350032
+         CLI   CVTDCB-CVT(R15),X'9B'                           GP SEP05 09360032
+         BNE   ESDEXIT               OS IS TOO OLD FOR THIS    GP SEP05 09370032
+         TM    CVTOSLV1-CVT(R15),CVTH5510  ARBITRARY TEST      GP SEP05 09380032
+         BNO   ESDEXIT               OS IS TOO OLD FOR THIS    GP SEP05 09390032
+         LA    R0,1                                            GP SEP05 09400032
+         SLL   R0,31                 GET A HIGH BIT            GP SEP05 09410032
+         LA    R15,ESDBAPI2          SET ADDRESS               GP SEP05 09420032
+         OR    R15,R0                SET AMODE=31 FOR API      GP SEP05 09430032
+         BSM   0,R15                 SET 31-BIT ADDRESSING     GP SEP05 09440032
+ESDBAPI2 BAS   R14,ESDBAPI4                                    GP SEP05 09450032
+         LA    R15,ESDLAST2          R0 SET BEFORE PR          GP APR18 09460032
+         BSM   0,R15                 SET 24-BIT ADDRESSING     GP SEP05 09470032
+         SPACE 1                                               GP SEP05 09480032
+ESDBAPI4 BAKR  R14,0                 SAVE STATUS               GP SEP05 09490032
+         LHI   R0,IDRAPIWL                                     GP APR18 09500032
+         GETMAIN RU,LV=(0),LOC=(31,64),SP=21                   GP SEP05 09510032
+         LR    R13,R1                                          GP SEP05 09520032
+         LR    R0,R1                                           GP SEP05 09530032
+         LHI   R1,IDRAPIWL                                     GP APR18 09540032
+         SR    R15,R15                                         GP SEP05 09550032
+         MVCL  R0,R14                ZERO NEW STORAGE          GP SEP05 09560032
+         USING IDRAPIWK,R13                                    GP SEP05 09570032
+         MVC   4(4,R13),=CL4'F1SA'   FLAG LINKAGE STACK USAGE  GP JUN10 09580032
+         SPACE 1                                               GP SEP05 09590032
+         MVI   IDRBLDL+1,1           NEED BLDL FORMAT,         GP SEP05 09600032
+         MVI   IDRBLDL+3,76           NOT STOW FORMAT          GP SEP05 09610032
+         MVC   IDRBLDL+4(8),DIRNAME   FOR DESERV GET           GP SEP05 09620032
+         BLDL  INDCB,IDRBLDL                                   GP SEP05 09630032
+         LTR   R15,R15               ALL AS IT SHOULD BE?      GP SEP05 09640032
+         BNZ   ESDBAPIX              NO, THAT'S STRANGE        GP SEP05 09650032
+         SPACE 1                                               GP SEP05 09660032
+         MVC   BNDDATA(ISITMGDL),ISITMGDE                      GP SEP05 09670032
+         USING ISM,BNDDATA                                     GP SEP05 09680032
+         ISITMGD DCB=INDCB,DATATYPE=YES,MF=(E,BNDDATA)         GP SEP05 09690032
+         TM    ISMOFLG3,ISMDTPGM     PROGRAM OBJECT LIBRARY?   GP SEP05 09700032
+         BNO   ESDBAPIX              NO, SKIP BINDER API CALLS GP SEP05 09710032
+         TM    IDRBLDL+27,DIRNOED    NOT EDITABLE?             GP JUN10 09720032
+         BO    ESDBAPIX              YES, CANNOT GET A MAP     GP JUN10 09730032
+         SPACE 1                                               GP JUN10 09740032
+         MVC   BNDDATA(DESRVGL),DESRVGE                        GP JUN10 09750032
+         DESERV FUNC=GET,            GET A DIRECTORY ENTRY     GP JUN10+09760032
+               AREAPTR=BNDCURSR,     RETURNED POINTER AREA     GP JUN10+09770032
+               BYPASS_LLA=YES,       GET LATEST FROM DISK      GP JUN10+09780032
+               CONN_ID=MODDEPTR,     SAVE FOR RELEASE          GP JUN10+09790032
+               CONN_INTENT=HOLD,     COMPULSORY                GP JUN10+09800032
+               DCB=INDCB,            SUPPLY OPEN BPAM DCB      GP JUN10+09810032
+               PDSDE=IDRBLDL+4,      POINT TO BLDL RESULTS     GP JUN10+09820032
+               RETCODE=BNDRETCD,     SUPPLY RETURN CODE AREA   GP JUN10+09830032
+               RSNCODE=BNDRSNCD,     SUPPLY REASON CODE AREA   GP JUN10+09840032
+               SUBPOOL=21,           SUPPLY SUBPOOL ID         GP JUN10+09850032
+               MF=(E,BNDDATA,COMPLETE)                         GP JUN10 09860032
+         ICM   R15,15,BNDRETCD       SUCCESS?                  GP JUN10 09870032
+         BNZ   ESDBAPIX              NO, NO DATA TO LOOK AT    GP JUN10 09880032
+         DESERV FUNC=RELEASE,        RELEASE THE CONNECTION    GP JUN10+09890032
+               CONN_ID=MODDEPTR,       THAT WAS JUST ACQUIRED  GP JUN10+09900032
+               DCB=INDCB,            SUPPLY OPEN BPAM DCB      GP JUN10+09910032
+               MF=(E,BNDDATA,COMPLETE)                         GP JUN10 09920032
+         L     R2,BNDCURSR           YES, POINT TO DESB        GP JUN10 09930032
+         USING DESB,R2                                         GP JUN10 09940032
+         LA    R3,DESB_DATA          POINT TO THE ACTUAL ENTRY GP JUN10 09950032
+         USING SMDE,R3                                         GP JUN10 09960032
+         SR    R4,R4                 CLEAR FOR INSERT          GP JUN10 09970032
+         ICM   R4,3,SMDE_PMAR_OFF    GET OFFSET TO PMAR        GP JUN10 09980032
+         ALR   R4,R3                 POINT TO PMAR SECTION     GP JUN10 09990032
+         USING PMAR,R4                                         GP JUN10 10000032
+         USING PMARL,PMAR_END                                  GP APR18 10010032
+*        MVI   IDR_FLGS,0            CLEAR FLAGS (MVCL DID)    GP APR18 10020032
+         TM    PMAR_ATR2,PMAR_NREP   REPROCESSABLE BY BINDER?  GP JUN10 10030032
+         BO    ESDDSRVX              NO, CANNOT GET A MAP      GP JUN10 10040032
+         OI    IDR_FLGS,$POREP       YES, CAN USE BINDER API   GP JUN10 10050032
+         TM    PMARL_ATR1,PMARL_NMIG COULD IT LIVE IN A PDS?   GP APR18 10060032
+         BZ    ESDDSRVX              YES, IT IS MIGRATABLE     GP APR18 10070032
+         OI    IDR_FLGS,$PONMIG      NO, USE MAP VERSION=2     GP APR18 10080032
+ESDDSRVX DS    0H                    CLEAN UP DESERV STORAGE   GP JUN10 10090032
+         L     R0,DESB_LEN           RETURNED BUFFER LENGTH    GP JUN10 10100032
+         LR    R1,R2                 RETURNED BUFFER ADDRESS   GP JUN10 10110032
+         FREEMAIN RU,LV=(0),A=(1),SP=21                        GP JUN10 10120032
+         TM    IDR_FLGS,$POREP       REPROCESSABLE MODULE?     GP APR18 10130032
+         BZ    ESDBAPIX              NO, SO NO MORE TO DO      GP JUN10 10140032
+         DROP  R2,R3,R4              DESB, SMDE, PMAR+PMARL    GP JUN10 10150032
+         SPACE 1                                               GP SEP05 10160032
+         LA    R0,8                                            GP APR18 10170032
+         STH   R0,BNDDDNAM           SET DDNAME LENGTH         GP APR18 10180032
+         MVC   BNDDDNAM+2(8),DDNAME  SET DDNAME                GP APR18 10190032
+         STH   R0,BNDMEMBR           SET MEMBER LENGTH         GP APR18 10200032
+         MVC   BNDMEMBR+2(8),DIRNAME SET MEMBER                GP APR18 10210032
+         ICM   R0,15,IEWBIND         LOAD ISSUED?              GP APR18 10220032
+         BNZ   MAPBNDLD              YES                       GP APR18 10230032
+         LOAD  EPLOC=MIEWBIND        GET IEWBIND EPA           GP APR18 10240032
+         ST    R0,IEWBIND            SAVE IEWBIND EPA          GP APR18 10250032
+MAPBNDLD DS    0H                                              GP APR18 10260032
+         XC    DIATOKEN,DIATOKEN                               GP APR18 10270032
+         ST    R0,DIATOKEN         SET UP DIALOG TOKEN         GP APR18 10280032
+         MVC   MODTOKEN,DIATOKEN      AND MODULE TOKEN         GP APR18 10290032
+         TM    IDR_FLGS,$PONMIG    CHECK DESERV RESULT         GP APR18 10300032
+         BO    BMAPMAP             GO HANDLE PDSE ONLY STUFF   GP APR18 10310032
+         SPACE 1                                               GP APR18 10320032
+*        IEWBIND FUNC=STARTD,      START A BINDER DIALOG       GP APR18 10330032
+*              VERSION=1,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 10340032
+*              DIALOG=DISTOKEN,                                GP APR18 10350032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 10360032
+         LR    R15,R0              COPY THE EPA                GP APR18 10370032
+         CALL  (15),(STARTD1,      FUNCTION CODE               GP APR18+10380032
+               BNDRETCD,           RETURN CODE                 GP APR18+10390032
+               BNDRSNCD,           REASON CODE                 GP APR18+10400032
+               DIATOKEN,           DIALOG TOKEN                GP APR18+10410032
+               MAPZERO,MAPZERO,MAPZERO),                       GP APR18+10420032
+               VL,MF=(E,BNDPARMS)                              GP APR18 10430032
+         CLC   BNDRETCD,=F'8'      MAJOR FAILURE?              GP APR18 10440032
+         BH    ESDBAPIX            YES, GIVE UP                GP APR18 10450032
+         SPACE 1                                               GP APR18 10460032
+*        IEWBIND FUNC=CREATEW,     CREATE A WORKMOD            GP APR18 10470032
+*              VERSION=1,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 10480032
+*              WORKMOD=MODTOKEN,DIALOG=DIATOKEN,INTENT=ACCESS, GP APR18 10490032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 10500032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 10510032
+         CALL  (15),(CREATEW1,     FUNCTION CODE               GP APR18+10520032
+               BNDRETCD,           RETURN CODE                 GP APR18+10530032
+               BNDRSNCD,           REASON CODE                 GP APR18+10540032
+               DIATOKEN,           DIALOG TOKEN                GP APR18+10550032
+               MODTOKEN,           MODULE TOKEN                GP APR18+10560032
+               MAPCODEA),          INTENT (ACCESS)             GP APR18+10570032
+               VL,MF=(E,BNDPARMS)                              GP APR18 10580032
+         SPACE 1                                               GP APR18 10590032
+*        IEWBIND FUNC=INCLUDE,     INCLUDE A PROGRAM OBJECT    GP APR18 10600032
+*              VERSION=1,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 10610032
+*              WORKMOD=MODTOKEN,INTYPE=NAME,                   GP APR18 10620032
+*              DDNAME=BNDDDNAM,MEMBER=BNDMEMBR,                GP APR18 10630032
+*              ATTRIB=NO,ALIASES=NO,                           GP APR18 10640032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 10650032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 10660032
+         CALL  (15),(INCLUDE1,     FUNCTION CODE               GP APR18+10670032
+               BNDRETCD,           RETURN CODE                 GP APR18+10680032
+               BNDRSNCD,           REASON CODE                 GP APR18+10690032
+               MODTOKEN,           MODULE TOKEN                GP APR18+10700032
+               MAPCODEN,           INTYPE (NAME) (CONCAT OK)   GP APR18+10710032
+               BNDDDNAM,           DDNAME                      GP APR18+10720032
+               BNDMEMBR,           MEMBER                      GP APR18+10730032
+               MAPZERO,MAPZERO,MAPZERO,0,                      GP APR18+10740032
+               MAPCODEN,           ATTRIB                      GP APR18+10750032
+               MAPCODEN),          ALIASES                     GP APR18+10760032
+               VL,MF=(E,BNDPARMS)                              GP APR18 10770032
+         CLC   BNDRETCD,MAPFOUR    MAJOR FAILURE?              GP APR18 10780032
+         BH    BESDDONE            YES, GIVE UP                GP APR18 10790032
+         USING IEWBESD,BNDDATA                                 GP SEP05 10800032
+         USING IEWBBNL,BNDDATA                                 GP APR18 10810032
+         USING IEWBMAP,BNDDATA                                 GP JUN10 10820032
+         LA    R2,#ESDPTR          ORIGIN FOR ESD CHAIN        GP SEP05 10830032
+         SPACE 1                                               GP SEP05 10840032
+         XC    BNDCURSR,BNDCURSR   FIRST CALL FOR THIS CLASS   GP SEP05 10850032
+         L     R3,IOBUFF1          POINT TO A BUFFER           GP SEP05 10860032
+         USING ESDNAME,R3                                      GP JUN10 10870032
+         XC    ESDNAME(LENESD1),ESDNAME  CLEAR SEG# ETC.       GP JUN10 10880032
+         DROP  R3                  ESDNAME                     GP JUN10 10890032
+         SR    R6,R6               RESET ESDID                 GP APR18 10900032
+BESDREDO EQU   *                                               GP SEP05 10910032
+         MVC   IEWBESD(ESDH_LENG),ESDI_INIT_VALUES             GP SEP05 10920032
+*        IEWBIND FUNC=GETD,        MODULE ESD DATA             GP APR18 10930032
+*              VERSION=1,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 10940032
+*              WORKMOD=MODTOKEN,CLASS=CLS_ESD,                 GP APR18 10950032
+*              AREA=BNDDATA,CURSOR=BNDCURSR,COUNT=BNDCOUNT,    GP APR18 10960032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 10970032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 10980032
+         CALL  (15),(GETD1,        FUNCTION CODE               GP APR18+10990032
+               BNDRETCD,           RETURN CODE                 GP APR18+11000032
+               BNDRSNCD,           REASON CODE                 GP APR18+11010032
+               MODTOKEN,           MODULE TOKEN                GP APR18+11020032
+               CLS_ESD,            CLASS                       GP APR18+11030032
+               MAPZERO,                                        GP APR18+11040032
+               BNDDATA,            AREA                        GP APR18+11050032
+               BNDCURSR,           CURSOR                      GP APR18+11060032
+               BNDCOUNT),          COUNT                       GP APR18+11070032
+               VL,MF=(E,BNDPARMS)                              GP APR18 11080032
+         CLC   BNDRETCD,=F'8'      MAJOR FAILURE?              GP SEP05 11090032
+         BNL   BESDDONE            YES, GIVE UP                GP APR18 11100032
+         LA    R4,IEWBESD+ESDH_LENG                            GP SEP05 11110032
+         USING ESD_ENTRY,R4                                    GP SEP05 11120032
+         ICM   R5,15,BNDCOUNT      GET RETURNED RECORD COUNT   GP SEP05 11130032
+         BNP   BESDDONE            NO ENTRIES WERE RETURNED    GP SEP05 11140032
+BESDLOOP EQU   *                                               GP SEP05 11150032
+         L     R3,IOBUFF1          POINT TO A BUFFER           GP SEP05 11160032
+         USING ESDNAME,R3                                      GP SEP05 11170032
+         LH    R15,ESD_NAME_CHARS                              GP SEP05 11180032
+         L     R14,ESD_NAME_PTR                                GP SEP05 11190032
+         LA    R0,C' '                                         GP SEP05 11200032
+         SLL   R0,24                                           GP SEP05 11210032
+         OR    R15,R0                                          GP SEP05 11220032
+         LA    R0,ESDNAME                                      GP SEP05 11230032
+         LA    R1,L'ESDNAME                                    GP SEP05 11240032
+         MVCL  R0,R14              COPY SYMBOL NAME            GP SEP05 11250032
+         MVC   ESDSEG#,ESD_SEGMENT+1                           GP APR18 11260032
+         TM    DIRATTR,ATTROVLY    OVERLAY PROGRAM?            GP APR18 11270032
+         BO    BESDXAOK            YES, SKIP AMODE/RMODE STUFF GP APR18 11280032
+         MVC   ESDXAFLG,ESD_AMODE  COPY ADDRESSING MODE        GP SEP05 11290032
+         NI    ESDXAFLG,X'03'      GET A24/A31 FLAGS SETTLED   GP APR18 11300032
+         TM    ESD_AMODE,X'04'     MINIMUM AMODE?              GP SEP05 11310032
+         BNO   *+8                 NO                          GP SEP05 11320032
+         MVI   ESDXAFLG,X'03'      YES, ANY IS BETTER THAN 24  GP SEP05 11330032
+         TM    ESD_AMODE,X'06'     AMODE=64?                   GP APR18 11340032
+         BNO   *+8                 NO                          GP APR18 11350032
+         MVI   ESDXAFLG,AMODE64    YES                         GP APR18 11360032
+         TM    ESD_RMODE,X'03'     RMODE=ANY?                  GP SEP05 11370032
+         BNO   *+8                 NO                          GP SEP05 11380032
+         OI    ESDXAFLG,RMODEANY   YES                         GP SEP05 11390032
+         TM    ESD_RMODE,X'04'     RMODE=64?                   GP APR18 11400032
+         BNO   *+8                 NO                          GP APR18 11410032
+         OI    ESDXAFLG,RMODE64    YES                         GP APR18 11420032
+         TM    ESD_STORAGE,X'10'   READ-ONLY SECTION?          GP APR18 11430032
+         BNO   BESDXAOK            NO                          GP APR18 11440032
+         OI    ESDXAFLG,RSECT      YES                         GP APR18 11450032
+BESDXAOK EQU   *                                               GP APR18 11460032
+         CLC   =C'SD',ESD_TYPE                                 GP SEP05 11470032
+         BNE   BESDNTSD                                        GP SEP05 11480032
+         MVI   ESDTYPE,CODESD                                  GP SEP05 11490032
+         MVC   IDRDBL(1),ESD_SEGMENT+1                         GP APR18 11500032
+         CLI   ESD_SCOPE,C'M'      SCOPE=MODULE                GP SEP05 11510032
+         BE    BESDTYPE            SECTION DEFINITION          GP SEP05 11520032
+         MVI   ESDTYPE,CODEPC      SCOPE=SECTION               GP SEP05 11530032
+         B     BESDTYPE            PRIVATE CODE                GP SEP05 11540032
+BESDNTSD MVI   ESDTYPE,CODELR                                  GP SEP05 11550032
+         CLC   =C'LD',ESD_TYPE                                 GP SEP05 11560032
+         BNE   BESDNTLD            NOT A LABEL DEFINITION      GP APR18 11570032
+         TM    DIRATTR,ATTROVLY    OVERLAY PROGRAM?            GP APR18 11580032
+         BZ    BESDTYPE            NO, SEGMENT IRRELEVANT      GP APR18 11590032
+         MVC   ESDSEG#,IDRDBL      YES, LOAD SECTION'S SEG#    GP APR18 11600032
+         B     BESDTYPE                                        GP APR18 11610032
+BESDNTLD MVI   ESDTYPE,CODEER                                  GP SEP05 11620032
+         CLC   =C'ER',ESD_TYPE                                 GP SEP05 11630032
+         BNE   BESDNTER                                        GP SEP05 11640032
+         CLI   ESD_SCOPE,C'L'      SCOPE=LIBRARY               GP SEP05 11650032
+         BE    BESDTYPE            EXTERNAL REFERENCE          GP SEP05 11660032
+         MVI   ESDTYPE,CODEWK      SCOPE=MODULE                GP SEP05 11670032
+         B     BESDTYPE            WEAK EXTERNAL REFERENCE     GP SEP05 11680032
+BESDNTER MVI   ESDTYPE,CODECM                                  GP SEP05 11690032
+         CLC   =C'CM',ESD_TYPE                                 GP SEP05 11700032
+         BE    BESDTYPE            COMMON SECTION              GP SEP05 11710032
+         MVI   ESDTYPE,CODEPR                                  GP SEP05 11720032
+         CLC   =C'PR',ESD_TYPE                                 GP SEP05 11730032
+         BE    BESDTYPE            PSEUDOREGISTER              GP SEP05 11740032
+         CLC   =C'PD',ESD_TYPE                                 GP SEP05 11750032
+         BE    BESDTYPE            PSEUDOREGISTER DEFINITION   GP SEP05 11760032
+         MVI   ESDTYPE,CODENL                                  GP SEP05 11770032
+         CLC   =C'  ',ESD_TYPE                                 GP SEP05 11780032
+         BE    BESDTYPE            NULL ENTRY                  GP SEP05 11790032
+         MVI   ESDTYPE,CODESEG                                 GP SEP05 11800032
+         CLC   =C'ST',ESD_TYPE                                 GP SEP05 11810032
+         BE    BESDTYPE            SEGMENT TABLE               GP SEP05 11820032
+         CLC   =C'ET',ESD_TYPE                                 GP SEP05 11830032
+         BE    BESDTYPE            ENTRY TABLE                 GP SEP05 11840032
+         B     BESDNEXT            UNKNOWN TYPE                GP SEP05 11850032
+BESDTYPE MVC   ESDLEN,ESD_LENG+1                               GP SEP05 11860032
+         MVC   ESDADDR,ESD_MODULE_OFFSET+1                     GP SEP05 11870032
+         LA    R6,1(,R6)           INCREMENT ESDID             GP APR18 11880032
+         B     ESDSCAN             PROCESS MOCKED UP CESD      GP SEP05 11890032
+         DROP  R3                  ESDNAME                     GP SEP05 11900032
+BESDRTRN TM    IDR_FLGS,$PONMIG    PROCESSING B_MAP CLASS?     GP APR18 11910032
+         BNZ   BMAPNEXT            YES, GO BACK TO IT          GP JUN10 11920032
+BESDNEXT A     R4,ESDH_ENTRY_LENG  POINT TO NEXT RETURNED ENTRYGP SEP05 11930032
+         BCT   R5,BESDLOOP         PROCESS NEXT ENTRY          GP SEP05 11940032
+         ICM   R0,15,BNDRETCD      MORE DATA TO FETCH?         GP APR18 11950032
+         BZ    BESDREDO            YES, GO REQUEST MORE        GP APR18 11960032
+         DROP  R4                  ESD_ENTRY                   GP SEP05 11970032
+BESDDONE EQU   *                                               GP SEP05 11980032
+*        IEWBIND FUNC=DELETEW,     DELETE THE WORKMOD          GP APR18 11990032
+*              VERSION=1,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 12000032
+*              WORKMOD=MODTOKEN,PROTECT=NO,                    GP APR18 12010032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 12020032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 12030032
+         CALL  (15),(DELETEW1,     FUNCTION CODE               GP APR18+12040032
+               BNDRETCD,           RETURN CODE                 GP APR18+12050032
+               BNDRSNCD,           REASON CODE                 GP APR18+12060032
+               MODTOKEN,           MODULE TOKEN                GP APR18+12070032
+               MAPCODEN),          PROTECT                     GP APR18+12080032
+               VL,MF=(E,BNDPARMS)                              GP APR18 12090032
+         SPACE 1                                               GP APR18 12100032
+*  END THE DIALOG                                              GP APR18 12110032
+         L     R2,DIATOKEN         SAVE IEWBIND ADDRESS        GP APR18 12120032
+*        IEWBIND FUNC=ENDD,        END THE BINDER DIALOG       GP APR18 12130032
+*              VERSION=1,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 12140032
+*              DIALOG=DIATOKEN,PROTECT=NO,                     GP APR18 12150032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 12160032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 12170032
+         CALL  (15),(ENDD1,        FUNCTION CODE               GP APR18+12180032
+               BNDRETCD,           RETURN CODE                 GP APR18+12190032
+               BNDRSNCD,           REASON CODE                 GP APR18+12200032
+               DIATOKEN,           DIALOG TOKEN                GP APR18+12210032
+               MAPCODEN),          PROTECT                     GP APR18+12220032
+               VL,MF=(E,BNDPARMS)                              GP APR18 12230032
+*        DELETE EPLOC=MIEWBIND     DISCARD IEWBIND             GP APR18 12240032
+         SPACE 1                                               GP SEP05 12250032
+         LA    R2,#ESDPTR                                      GP SEP05 12260032
+         USING ESDENTRY,R3                                     GP SEP05 12270032
+ESDRESLP ICM   R3,15,0(R2)                                     GP SEP05 12280032
+         BZ    ESDBAPIX            END OF CHAIN                GP SEP05 12290032
+         CLI   ESDTYPE,CODEER                                  GP SEP05 12300032
+         BE    ESDRESIT            UNRESOLVED                  GP SEP05 12310032
+         CLI   ESDTYPE,CODEWK                                  GP SEP05 12320032
+         BE    ESDRESIT            UNRESOLVED                  GP SEP05 12330032
+ESDRESOK LR    R2,R3               POINT TO THIS ENTRY         GP SEP05 12340032
+         B     ESDRESLP                                        GP SEP05 12350032
+         DROP  R3                  ESDENTRY                    GP SEP05 12360032
+         SPACE 1                                               GP SEP05 12370032
+*   R3 POINTS TO A REFERENCE WHICH MAY BE UNRESOLVED           GP SEP05 12380032
+ESDRESIT LA    R15,#ESDPTR                                     GP SEP05 12390032
+         USING ESDENTRY,R15                                    GP SEP05 12400032
+ESDCHKLP ICM   R15,15,ESDLINK                                  GP SEP05 12410032
+         BZ    ESDRESOK            REALLY IS UNRESOLVED        GP SEP05 12420032
+         CLI   ESDTYPE,CODEER                                  GP SEP05 12430032
+         BE    ESDCHKLP            SKIP EXTERNAL REFERENCE     GP SEP05 12440032
+         CLI   ESDTYPE,CODEWK                                  GP SEP05 12450032
+         BE    ESDCHKLP            SKIP WEAK EXTERNAL          GP SEP05 12460032
+         CLI   ESDTYPE,CODENL                                  GP SEP05 12470032
+         BE    ESDCHKLP            SKIP NULL                   GP SEP05 12480032
+         CLI   ESDTYPE,CODEPC                                  GP SEP05 12490032
+         BE    ESDCHKLP            SKIP $PRIVATE               GP SEP05 12500032
+         CLC   ESDNAME,ESDNAME-ESDENTRY(R3)                    GP SEP05 12510032
+         BNE   ESDCHKLP            NAME DOES NOT MATCH         GP SEP05 12520032
+         DROP  R15                 ESDENTRY                    GP SEP05 12530032
+         SPACE 1                                               GP SEP05 12540032
+*   HAVE NOW FOUND AN ENTRY WITH A MATCHING NAME SO THE WEAK   GP SEP05 12550032
+*   OR STRONG EXTERNAL REFERENCE IS NOT REALLY UNRESOLVED.     GP SEP05 12560032
+         MVC   0(4,R2),0(R3)       DISCARD MATCHED LINK        GP SEP05 12570032
+         B     ESDRESLP            GO LOOK FOR OTHERS          GP SEP05 12580032
+         SPACE 1                                               GP APR18 12590032
+BMAPMAP  EQU   *                                               GP APR18 12600032
+*        IEWBIND FUNC=STARTD,      START A BINDER DIALOG       GP APR18 12610032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 12620032
+*              DIALOG=DISTOKEN,                                GP APR18 12630032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 12640032
+         LR    R15,R0              COPY THE EPA                GP APR18 12650032
+         CALL  (15),(STARTD2,      FUNCTION CODE               GP APR18+12660032
+               BNDRETCD,           RETURN CODE                 GP APR18+12670032
+               BNDRSNCD,           REASON CODE                 GP APR18+12680032
+               DIATOKEN,           DIALOG TOKEN                GP APR18+12690032
+               MAPZERO,MAPZERO,MAPZERO),                       GP APR18+12700032
+               VL,MF=(E,BNDPARMS)                              GP APR18 12710032
+         CLC   BNDRETCD,=F'8'      MAJOR FAILURE?              GP APR18 12720032
+         BH    ESDBAPIX            YES, GIVE UP                GP APR18 12730032
+         SPACE 1                                               GP APR18 12740032
+*        IEWBIND FUNC=CREATEW,     CREATE A WORKMOD            GP APR18 12750032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 12760032
+*              WORKMOD=MODTOKEN,DIALOG=DIATOKEN,INTENT=ACCESS, GP APR18 12770032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 12780032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 12790032
+         CALL  (15),(CREATEW2,     FUNCTION CODE               GP APR18+12800032
+               BNDRETCD,           RETURN CODE                 GP APR18+12810032
+               BNDRSNCD,           REASON CODE                 GP APR18+12820032
+               DIATOKEN,           DIALOG TOKEN                GP APR18+12830032
+               MODTOKEN,           MODULE TOKEN                GP APR18+12840032
+               MAPCODEA),          INTENT (ACCESS)             GP APR18+12850032
+               VL,MF=(E,BNDPARMS)                              GP APR18 12860032
+         SPACE 1                                               GP APR18 12870032
+*        IEWBIND FUNC=INCLUDE,     INCLUDE A PROGRAM OBJECT    GP APR18 12880032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 12890032
+*              WORKMOD=MODTOKEN,INTYPE=NAME,                   GP APR18 12900032
+*              DDNAME=BNDDDNAM,MEMBER=BNDMEMBR,                GP APR18 12910032
+*              ATTRIB=NO,ALIASES=NO,                           GP APR18 12920032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 12930032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 12940032
+         CALL  (15),(INCLUDE2,     FUNCTION CODE               GP APR18+12950032
+               BNDRETCD,           RETURN CODE                 GP APR18+12960032
+               BNDRSNCD,           REASON CODE                 GP APR18+12970032
+               MODTOKEN,           MODULE TOKEN                GP APR18+12980032
+               MAPCODEN,           INTYPE (NAME) (CONCAT OK)   GP APR18+12990032
+               BNDDDNAM,           DDNAME                      GP APR18+13000032
+               BNDMEMBR,           MEMBER                      GP APR18+13010032
+               MAPZERO,MAPZERO,MAPZERO,0,                      GP APR18+13020032
+               MAPCODEN,           ATTRIB                      GP APR18+13030032
+               MAPCODEN),          ALIASES                     GP APR18+13040032
+               VL,MF=(E,BNDPARMS)                              GP APR18 13050032
+         CLC   BNDRETCD,MAPFOUR    MAJOR FAILURE?              GP APR18 13060032
+         BH    BMAPDONE            YES, GIVE UP                GP APR18 13070032
+         SPACE 1                                               GP APR18 13080032
+         XC    IDRBLDL,IDRBLDL     CLEAR WORK AREA             GP APR18 13090032
+         MVC   BNDCURSR,MAPZERO    RESET CURSOR FOR FIRST CALL GP APR18 13100032
+         LA    R2,MAPCLS@          POINT TO CLASS CHAIN ORIGIN GP APR18 13110032
+         USING MPCLS,R2                                        GP APR18 13120032
+BBNLREDO EQU   *                                               GP APR18 13130032
+         MVC   IEWBBNL(BNLH_LENG),BNLI_INIT_VALUES             GP APR18 13140032
+*        IEWBIND FUNC=GETN,        MODULE CLASS NAME DATA      GP APR18 13150032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 13160032
+*              WORKMOD=MODTOKEN,TCOUNT=MAPCLST#,NTYPE=CLASS,   GP APR18 13170032
+*              AREA=BNDDATA,CURSOR=BNDCURSR,COUNT=BNDCOUNT,    GP APR18 13180032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 13190032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 13200032
+         CALL  (15),(GETN2,        FUNCTION CODE               GP APR18+13210032
+               BNDRETCD,           RETURN CODE                 GP APR18+13220032
+               BNDRSNCD,           REASON CODE                 GP APR18+13230032
+               MODTOKEN,           MODULE TOKEN                GP APR18+13240032
+               BNDDATA,            AREA                        GP APR18+13250032
+               BNDCURSR,           CURSOR                      GP APR18+13260032
+               BNDCOUNT,           COUNT                       GP APR18+13270032
+               MAPCLST#,           TCOUNT                      GP APR18+13280032
+               MAPCODEC),          NTYPE                       GP APR18+13290032
+               VL,MF=(E,BNDPARMS)                              GP APR18 13300032
+         CLC   BNDRETCD,=F'8'      MAJOR FAILURE?              GP JUN10 13310032
+         BNL   BMAPDONE            YES, GIVE UP                GP APR18 13320032
+         LA    R4,IEWBBNL+BNLH_LENG                            GP APR18 13330032
+         USING BNL_ENTRY,R4                                    GP APR18 13340032
+         ICM   R5,15,BNDCOUNT      GET RETURNED RECORD COUNT   GP APR18 13350032
+         BNP   BBNLDONE            NO ENTRIES WERE RETURNED    GP APR18 13360032
+BBNLLOOP EQU   *                                               GP APR18 13370032
+         LA    R0,MPCLSLEN         GET CHAIN ELEMENT SIZE      GP APR18 13380032
+         GETMAIN RU,LV=(0),LOC=(31,64),SP=21                   GP APR18 13390032
+         XC    0(MPCLSLEN,R1),0(R1)                            GP APR18 13400032
+         ST    R1,MPCLSNXT         ENCHAIN NEW ELEMENT         GP APR18 13410032
+         L     R0,MPCLSOFF         GET PREVIOUS OFFSET         GP APR18 13420032
+         A     R0,MPCLSSIZ         ADD ROUNDED SIZE            GP APR18 13430032
+         LR    R2,R1               POINT TO NEW ELEMENT        GP APR18 13440032
+         ST    R0,MPCLSOFF         SAVE NEW OFFSET             GP APR18 13450032
+         SR    R1,R1               CLEAR FOR INSERT            GP APR18 13460032
+         IC    R1,BNL_PAD1         GET LOAD FLAGS              GP APR18 13470032
+         STC   R1,MPCLSPAD         SAVE IT                     GP APR18 13480032
+         NILL  R1,X'000F'          EXTRACT ALIGNMENT           GP APR18 13490032
+         LA    R14,1                                           GP APR18 13500032
+         SLA   R14,0(R1)           GET ALIGNMENT               GP APR18 13510032
+         L     R0,BNL_CLS_LENGTH   GET CLASS SEGMENT LENGTH    GP APR18 13520032
+         AR    R0,R14              ADD ALIGNMENT SIZE          GP APR18 13530032
+         BCTR  R0,0                SUBTRACT 1                  GP APR18 13540032
+         LNR   R14,R14                                         GP APR18 13550032
+         NR    R0,R14              GET ROUNDED ALIGNED SIZE    GP APR18 13560032
+         ST    R0,MPCLSSIZ         SAVE THIS SIZE              GP APR18 13570032
+         L     R14,BNL_NAME_PTR    POINT TO THE CLASS NAME     GP APR18 13580032
+         LH    R15,BNL_NAME_CHARS  GET THE CLASS NAME LENGTH   GP APR18 13590032
+         LA    R0,MPCLSNM          POINT TO TARGET             GP APR18 13600032
+         LA    R1,L'MPCLSNM        GET TARGET LENGTH LIMIT     GP APR18 13610032
+         STH   R15,MPCLSNML        SAVE THE CLASS NAME LENGTH  GP APR18 13620032
+         OILH  R15,C' '*256        SET PAD TO BLANK            GP APR18 13630032
+         MVCL  R0,R14              LOAD THE CLASS NAME         GP APR18 13640032
+         SPACE 1                                               GP APR18 13650032
+BBNLNEXT A     R4,BNLI_ENTRY_LENG  POINT TO NEXT RETURNED ENTRYGP APR18 13660032
+         BCT   R5,BBNLLOOP         PROCESS NEXT ENTRY          GP APR18 13670032
+         ICM   R0,15,BNDRETCD      MORE DATA TO FETCH?         GP APR18 13680032
+         BZ    BBNLREDO            YES, GO REQUEST MORE        GP APR18 13690032
+         DROP  R4,R2               BNL_ENTRY, MPCLS            GP APR18 13700032
+BBNLDONE EQU   *                                               GP APR18 13710032
+         SPACE 1                                               GP JUN10 13720032
+         LA    R2,#ESDPTR          ORIGIN FOR ESD CHAIN        GP APR18 13730032
+         MVC   BNDCURSR,MAPZERO    FIRST CALL FOR THIS CLASS   GP APR18 13740032
+BMAPREDO EQU   *                                               GP JUN10 13750032
+         MVC   IEWBMAP(MAPH_LENG),MAPI_INIT_VALUES             GP JUN13 13760032
+*        IEWBIND FUNC=GETD,        MODULE MAP DATA             GP APR18 13770032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 13780032
+*              WORKMOD=MODTOKEN,CLASS=CLS_MAP,                 GP APR18 13790032
+*              AREA=BNDDATA,CURSOR=BNDCURSR,COUNT=BNDCOUNT,    GP APR18 13800032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 13810032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 13820032
+         CALL  (15),(GETD2,        FUNCTION CODE               GP APR18+13830032
+               BNDRETCD,           RETURN CODE                 GP APR18+13840032
+               BNDRSNCD,           REASON CODE                 GP APR18+13850032
+               MODTOKEN,           MODULE TOKEN                GP APR18+13860032
+               CLS_MAP,            CLASS                       GP APR18+13870032
+               MAPZERO,                                        GP APR18+13880032
+               BNDDATA,            AREA                        GP APR18+13890032
+               BNDCURSR,           CURSOR                      GP APR18+13900032
+               BNDCOUNT),          COUNT                       GP APR18+13910032
+               VL,MF=(E,BNDPARMS)                              GP APR18 13920032
+         CLC   BNDRETCD,=F'8'      MAJOR FAILURE?              GP JUN10 13930032
+         BNL   BMAPDONE            YES, GIVE UP                GP APR18 13940032
+         LA    R4,IEWBMAP+MAPH_LENG                            GP JUN10 13950032
+         USING MAP_ENTRY,R4                                    GP JUN10 13960032
+         ICM   R5,15,BNDCOUNT      GET RETURNED RECORD COUNT   GP JUN10 13970032
+         BNP   BMAPDONE            NO ENTRIES WERE RETURNED    GP JUN10 13980032
+BMAPLOOP EQU   *                                               GP JUN10 13990032
+         CLI   MAP_TYPE,C'C'       CLASS ENTRY?                GP JUN10 14000032
+         BNE   BMAPSYM             NO, PROCESS SYMBOL          GP APR18 14010032
+         NI    IDR_FLGS,255-$B_TXT YES, RESET SELECTION FLAG   GP APR18 14020032
+         TM    MAP_FLAGS,X'40'     SHOW THIS CLASS?            GP APR18 14030032
+         BO    BMAPNEXT            NO, FLUSH THIS CLASS        GP APR18 14040032
+         OI    IDR_FLGS,$B_TXT     YES, FLAG AS SUCH           GP APR18 14050032
+BMAPSYM  TM    IDR_FLGS,$B_TXT     SHOWING THIS CLASS?         GP APR18 14060032
+         BZ    BMAPNEXT            NO, FLUSH THIS ENTRY        GP APR18 14070032
+         L     R3,IOBUFF1          POINT TO A BUFFER           GP JUN10 14080032
+         USING ESDNAME,R3                                      GP JUN10 14090032
+         NI    ESDXAFLG,RSECT      RESET ADDRESS MODE BITS     GP APR18 14100032
+         CLI   MAP_TYPE,C'C'       CLASS ENTRY?                GP JUN10 14110032
+         BE    BMAPNAME            YES, GET THE CLASS NAME     GP APR18 14120032
+         CLI   MAP_TYPE,C'E'       END OF MODULE MAP?          GP JUN10 14130032
+         BE    BMAPDONE            YES, END OF DATA            GP JUN10 14140032
+         CLI   MAP_TYPE,C'S'       SECTION ENTRY?              GP JUN10 14150032
+         BE    BMAPNAME            YES, GET ITS NAME           GP JUN10 14160032
+         CLI   MAP_TYPE,C'L'       LABEL ENTRY?                GP JUN10 14170032
+         BE    BMAPNAME            YES, GET ITS NAME           GP JUN10 14180032
+         CLI   MAP_TYPE,C'O'       OVERLAY SEGMENT ENTRY?      GP JUN10 14190032
+         BNE   BMAPNEXT            NO, DISCARD ENTRY           GP JUN10 14200032
+         IC    R15,ESDSEG#         YES, GET SEGMENT NUMBER     GP JUN10 14210032
+         LA    R15,1(,R15)         INCREMENT IT                GP JUN10 14220032
+         STC   R15,ESDSEG#         SAVE UPDATED NUMBER         GP JUN10 14230032
+         B     BMAPNEXT            ENTRY PROCESSED             GP JUN10 14240032
+BMAPNAME LH    R15,MAP_NAME_CHARS                              GP JUN10 14250032
+         L     R14,MAP_NAME_PTR                                GP JUN10 14260032
+         CHI   R15,4               IS THE NAME LENGTH 4?       GP APR18 14270032
+         BNE   BMAPNMLD            NO, GO LOAD THE NAME        GP APR18 14280032
+         CLI   0(R14),0            IS IT A FULLWORD NUMBER?    GP APR18 14290032
+         BNE   BMAPNMLD            NO, GO LOAD THE NAME        GP APR18 14300032
+         MVC   ESDNAME+6(2),2(R14) YES, COPY IT (S0C4 SAFETY)  GP APR18 14310032
+         UNPK  ESDNAME(5),ESDNAME+6(3)                         GP APR18 14320032
+         TR    ESDNAME(4),TRTABLE  MAKE IT HEX                 GP APR18 14330032
+         MVC   ESDNAME+4(4),ESDNAME                            GP APR18 14340032
+         MVC   ESDNAME(4),BMAP$PRV TIDY UP THE NAME            GP APR18 14350032
+         B     BMAPNMOK                                        GP APR18 14360032
+BMAP$PRV DC    CL4'$PRV'           NUMBERED $PRIVATE PREFIX    GP APR18 14370032
+BMAPNMLD EQU   *                   LOAD VARIABLE-LENGTH NAME   GP APR18 14380032
+         LA    R0,C' '                                         GP JUN10 14390032
+         SLL   R0,24                                           GP JUN10 14400032
+         OR    R15,R0                                          GP JUN10 14410032
+         LA    R0,ESDNAME                                      GP JUN10 14420032
+         LA    R1,L'ESDNAME                                    GP JUN10 14430032
+         MVCL  R0,R14              COPY SYMBOL NAME            GP JUN10 14440032
+BMAPNMOK EQU   *                   SYMBOL NAME NOW LOADED      GP APR18 14450032
+         ICM   R0,15,MAP_QUANTITY  GET ITS SIZE                GP JUN10 14460032
+         STCM  R0,7,ESDLEN         SET ITS SIZE                GP JUN10 14470032
+         ICM   R0,15,MAP_OFFSET    GET ITS OFFSET              GP JUN10 14480032
+         CLI   MAP_TYPE,C'S'       SECTION ENTRY?              GP JUN10 14490032
+         BE    BMAPSECT            YES                         GP JUN10 14500032
+         CLI   MAP_TYPE,C'C'       CLASS ENTRY?                GP APR18 14510032
+         BE    BMAPCLAS            YES, TREAT AS A SECTION     GP APR18 14520032
+         CLI   MAP_TYPE,C'L'       LABEL ENTRY?                GP JUN10 14530032
+         BNE   BMAPNEXT            NO, NOT INTERESTED          GP JUN10 14540032
+         CLC   IDRDBL,ESDNAME      LABEL FOR SECTION?          GP JUN10 14550032
+         BE    BMAPNEXT            YES, ALREADY HAVE SECTION   GP JUN10 14560032
+         MVI   ESDTYPE,CODELR      NO, SET SYMBOL TYPE         GP JUN10 14570032
+         A     R0,ESDSOFST         ADD SECTION OFFSET          GP JUN10 14580032
+         STCM  R0,7,ESDADDR        SAVE MODULE OFFSET          GP JUN10 14590032
+         B     BMAPSCAN            GO FINISH ESD ENTRY         GP APR18 14600032
+BMAPCLAS LA    R9,MAPCLS@          POINT TO CHAIN ORIGIN       GP APR18 14610032
+         USING MPCLS,R9                                        GP APR18 14620032
+BMPCLSLP SR    R0,R0               A BIT LESS BAD IF NO MATCH  GP APR18 14630032
+         MVI   ESDXAFLG,0          RESET FLAGS FOR NEW CLASS   GP APR18 14640032
+         ICM   R9,15,MPCLSNXT      POINT TO NEXT CHAIN ELEMENT GP APR18 14650032
+         BZ    BMAPSECT            END OF CHAIN REACHED        GP APR18 14660032
+         LH    R15,MAP_NAME_CHARS  GET CURRENT CLASS NAME SIZE GP JUN10 14670032
+         L     R14,MAP_NAME_PTR    POINT TO CLASS ENTRY'S NAME GP JUN10 14680032
+         LA    R0,MPCLSNM          POINT TO NAME IN ELEMENT    GP JUN10 14690032
+         LA    R1,L'MPCLSNM        GET NAME FIELD'S LENGTH     GP JUN10 14700032
+         OILH  R15,C' '*256        SET PAD TO BLANK            GP APR18 14710032
+         CLCL  R0,R14              FOUND MATCHING ELEMENT?     GP APR18 14720032
+         BNE   BMPCLSLP            NO, SEARCH ALONG CHAIN      GP APR18 14730032
+         L     R0,MPCLSOFF         YES, GET CLASS OFFSET       GP APR18 14740032
+         ST    R0,ESDCOFST         SAVE CLASS OFFSET IN MODULE GP APR18 14750032
+         SR    R0,R0               RESET OFFSET WITHIN CLASS   GP APR18 14760032
+         TM    MAP_FLAGS,X'10'     DEFERRED LOAD CLASS?        GP APR18 14770032
+         BZ    BCLSROCK            NO                          GP APR18 14780032
+         OI    ESDXAFLG,X'40'      YES, FLAG THIS              GP APR18 14790032
+BCLSROCK TM    MPCLSPAD,X'80'      READ-ONLY CLASS?            GP APR18 14800032
+         BNO   BMAPSECT            NO                          GP APR18 14810032
+         OI    ESDXAFLG,RSECT      YES                         GP APR18 14820032
+BMAPSECT MVI   ESDTYPE,CODESD      SET SYMBOL TYPE             GP JUN10 14830032
+         MVC   IDRDBL,ESDNAME      SAVE CURRENT SECTION NAME   GP JUN10 14840032
+         A     R0,ESDCOFST         CLASS OFST -> MODULE OFST   GP JUN10 14850032
+         ST    R0,ESDSOFST         SAVE OFFSET OF SECTION      GP JUN10 14860032
+         STCM  R0,7,ESDADDR        SAVE MODULE OFFSET          GP APR18 14870032
+         CLI   MAP_TYPE,C'S'       SECTION ENTRY?              GP APR18 14880032
+         BNE   BMAPSCAN            NO, PROBABLY A CLASS ENTRY  GP APR18 14890032
+         SPACE 1                                               GP APR18 14900032
+         LH    R15,MAP_NAME_CHARS  GET SECTION NAME LENGTH     GP APR18 14910032
+         L     R14,MAP_NAME_PTR    POINT TO SECTION NAME       GP APR18 14920032
+         STH   R15,BSECTNM         SAVE THE NAME LENGTH        GP APR18 14930032
+         LA    R0,BSECTNM+2        POINT TO NAME TEXT TARGET   GP APR18 14940032
+         LA    R1,256              GET TARGET AREA LENGTH      GP APR18 14950032
+         MVCL  R0,R14              GET SECTION NAME AS VARCHAR GP APR18 14960032
+         USING V2_IEWBESD,BND1ESD                              GP SEP05 14970032
+         MVC   V2_IEWBESD(V2_ESDH_LENG),V2_ESDI_INIT_VALUES    GP APR18 14980032
+         MVC   ESDCURSR,MAPZERO    RESET CALL CURSOR           GP APR18 14990032
+*        IEWBIND FUNC=GETE,        MODULE ESD DATA             GP APR18 15000032
+*              VERSION=2,RETCODE=ESDRETCD,RSNCODE=ESDRSNCD,    GP APR18 15010032
+*              WORKMOD=MODTOKEN,SECTION=BSECTNM,               GP APR18 15020032
+*              RECTYPE=ESDRTYPE,CLASS=MPCLSNML,                GP APR18 15030032
+*              AREA=BND1ESD,CURSOR=ESDCURSR,COUNT=ESDCOUNT,    GP APR18 15040032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 15050032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 15060032
+         CALL  (15),(GETE2,        FUNCTION CODE               GP APR18+15070032
+               ESDRETCD,           RETURN CODE                 GP APR18+15080032
+               ESDRSNCD,           REASON CODE                 GP APR18+15090032
+               MODTOKEN,           MODULE TOKEN                GP APR18+15100032
+               BSECTNM,            SECTION                     GP APR18+15110032
+               ESDRTYPE,           RECTYPE                     GP APR18+15120032
+               MAPNEG1,            OFFSET                      GP APR18+15130032
+               MAPZERO,            SYMBOL                      GP APR18+15140032
+               BND1ESD,            AREA                        GP APR18+15150032
+               ESDCURSR,           CURSOR                      GP APR18+15160032
+               ESDCOUNT,           COUNT                       GP APR18+15170032
+               MPCLSNML),          CLASS                       GP APR18+15180032
+               VL,MF=(E,BNDPARMS)                              GP APR18 15190032
+         CLC   BNDRETCD,MAPFOUR    MAJOR FAILURE?              GP APR18 15200032
+         BH    BMAPSCAN            YES, GIVE UP ON THIS BIT    GP APR18 15210032
+         ICM   R0,15,ESDCOUNT      WERE ANY ENTRIES FOUND      GP APR18 15220032
+         BNP   BMAPSCAN            NO, GIVE UP ON THIS BIT     GP APR18 15230032
+         LA    R1,V2_IEWBESD+V2_ESDH_LENG                      GP APR18 15240032
+         USING V2_ESD_ENTRY,R1                                 GP APR18 15250032
+         CLI   V2_ESD_AMODE,X'06'  KNOWN VALUE?                GP APR18 15260032
+         BH    BMAPSCAN            NO, IGNORE IT               GP APR18 15270032
+         MVC   24(1,R13),V2_ESD_AMODE  YES, COPY IT            GP APR18 15280032
+         TR    24(1,R13),BEAMTB    CONVERT TO FLAG BITS        GP APR18 15290032
+         OC    ESDXAFLG,24(R13)    SET THOSE FLAGS             GP APR18 15300032
+         DROP  R1                  V2_ESD_ENTRY                GP APR18 15310032
+         DROP  R9                  MPCLS                       GP APR18 15320032
+BMAPSCAN LA    R6,1(,R6)           INCREMENT ESDID             GP APR18 15330032
+         B     ESDSCAN             PROCESS MOCKED UP CESD      GP JUN10 15340032
+         DROP  R3                  ESDNAME                     GP APR18 15350032
+         SPACE 1                                               GP JUN10 15360032
+BMAPNEXT A     R4,MAPH_ENTRY_LENG  POINT TO NEXT RETURNED ENTRYGP JUN10 15370032
+         BCT   R5,BMAPLOOP         PROCESS NEXT ENTRY          GP JUN10 15380032
+         ICM   R0,15,BNDRETCD      MORE DATA TO FETCH?         GP APR18 15390032
+         BZ    BMAPREDO            YES, GO REQUEST MORE        GP APR18 15400032
+         DROP  R4                  MAP_ENTRY                   GP JUN13 15410032
+BMAPDONE EQU   *                                               GP SEP05 15420032
+*        IEWBIND FUNC=DELETEW,     DELETE THE WORKMOD          GP APR18 15430032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 15440032
+*              WORKMOD=MODTOKEN,PROTECT=NO,                    GP APR18 15450032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 15460032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 15470032
+         CALL  (15),(DELETEW2,     FUNCTION CODE               GP APR18+15480032
+               BNDRETCD,           RETURN CODE                 GP APR18+15490032
+               BNDRSNCD,           REASON CODE                 GP APR18+15500032
+               MODTOKEN,           DIALOG TOKEN                GP APR18+15510032
+               MAPCODEN),          PROTECT                     GP APR18+15520032
+               VL,MF=(E,BNDPARMS)                              GP APR18 15530032
+         SPACE 1                                               GP APR18 15540032
+*  END THE DIALOG                                              GP APR18 15550032
+         L     R2,DIATOKEN         SAVE IEWBIND ADDRESS        GP APR18 15560032
+*        IEWBIND FUNC=ENDD,        END THE BINDER DIALOG       GP APR18 15570032
+*              VERSION=2,RETCODE=BNDRETCD,RSNCODE=BNDRSNCD,    GP APR18 15580032
+*              DIALOG=DIATOKEN,PROTECT=NO,                     GP APR18 15590032
+*              MF=(E,BNDPARMS,COMPLETE)                        GP APR18 15600032
+         L     R15,DIATOKEN        GET IEWBIND ENTRY POINT     GP APR18 15610032
+         CALL  (15),(ENDD2,        FUNCTION CODE               GP APR18+15620032
+               BNDRETCD,           RETURN CODE                 GP APR18+15630032
+               BNDRSNCD,           REASON CODE                 GP APR18+15640032
+               DIATOKEN,           DIALOG TOKEN                GP APR18+15650032
+               MAPCODEN),          PROTECT                     GP APR18+15660032
+               VL,MF=(E,BNDPARMS)                              GP APR18 15670032
+*        DELETE EPLOC=MIEWBIND     DISCARD IEWBIND             GP APR18 15680032
+         SPACE 1                                               GP APR18 15690032
+         USING MPCLS,R1                                        GP APR18 15700032
+ESDFREMP ICM   R1,15,MAPCLS@       POINT TO FIRST ELEMENT      GP APR18 15710032
+         BZ    ESDBAPIX            CHAIN NOW FREED             GP APR18 15720032
+         MVC   MAPCLS@,MPCLSNXT    DECHAIN FIRST ELEMENT       GP APR18 15730032
+         LA    R0,MPCLSLEN         FREE THE ELEMENT            GP APR18 15740032
+         FREEMAIN RU,LV=(0),A=(1),SP=21                        GP APR18 15750032
+         B     ESDFREMP            CONTINUE FREEING CHAIN      GP APR18 15760032
+         SPACE 1                                               GP SEP05 15770032
+ESDBAPIX LR    R1,R13                                          GP SEP05 15780032
+         LHI   R0,IDRAPIWL                                     GP APR18 15790032
+         SR    R3,R3               CLEAR FOR INSERT            GP APR18 15800032
+         IC    R3,IDR_FLGS         LOAD FLAG BYTE              GP APR18 15810032
+         NILL  R3,$PONMIG          ZERO IF B_ESD, NOT IF B_MAP GP APR18 15820032
+         FREEMAIN RU,LV=(0),A=(1),SP=21                        GP SEP05 15830032
+         LR    R0,R3               PASS FLAG BACK TO ESDLAST2  GP APR18 15840032
+         PR    ,                   BACK TO THE 370 WORLD       GP SEP05 15850032
+         SPACE 2                                               GP SEP05 15860032
+         DROP  R13                 IDRAPIWK                    GP SEP05 15870032
+         SPACE 2                                               GP SEP05 15880032
+MAPCODEA DC    C'A'                                            GP APR18 15890032
+MAPCODEC DC    C'C'                                            GP APR18 15900032
+MAPCODEN DC    C'N'                                            GP APR18 15910032
+MAPZERO  DC    F'0'                ZERO                        GP APR18 15920032
+MAPFOUR  DC    F'4'                FOUR                        GP APR18 15930032
+MAPNEG1  DC    F'-1'               NEGATIVE ONE                GP APR18 15940032
+STARTD1  DC    Y(01,1)             VERSION 1 - STARTDIALOG     GP APR18 15950032
+CREATEW1 DC    Y(10,1)             VERSION 1 - CREATEWORKMOD   GP APR18 15960032
+INCLUDE1 DC    Y(40,1)             VERSION 1 - INCLUDE         GP APR18 15970032
+GETD1    DC    Y(61,1)             VERSION 1 - GETDATA         GP APR18 15980032
+DELETEW1 DC    Y(15,1)             VERSION 1 - DELETEWORKMOD   GP APR18 15990032
+ENDD1    DC    Y(05,1)             VERSION 1 - ENDDIALOG       GP APR18 16000032
+STARTD2  DC    Y(01,2)             VERSION 2 - STARTDIALOG     GP APR18 16010032
+CREATEW2 DC    Y(10,2)             VERSION 2 - CREATEWORKMOD   GP APR18 16020032
+INCLUDE2 DC    Y(40,2)             VERSION 2 - INCLUDE         GP APR18 16030032
+GETN2    DC    Y(60,2)             VERSION 2 - GETNAMES        GP APR18 16040032
+GETD2    DC    Y(61,2)             VERSION 2 - GETDATA         GP APR18 16050032
+GETE2    DC    Y(62,2)             VERSION 2 - GETESD          GP APR18 16060032
+DELETEW2 DC    Y(15,2)             VERSION 2 - DELETEWORKMOD   GP APR18 16070032
+ENDD2    DC    Y(05,2)             VERSION 2 - ENDDIALOG       GP APR18 16080032
+MIEWBIND DC    CL8'IEWBIND '                                   GP APR18 16090032
+CLS_ESD  DC    H'5',CL6'B_ESD '                                GP SEP05 16100032
+CLS_MAP  DC    H'5',CL6'B_MAP '                                GP JUN10 16110032
+B_TEXT   DC    CL6'B_TEXT'                                     GP JUN10 16120032
+ESDRTYPE DC    Y(7),CL7'(SD,CM)'   GETE RECORD TYPES           GP APR18 16130032
+BEAMTB   DC    X'00010203030010'   ESD_AMODE -> ESDXAFLG TABLE GP APR18 16140032
+         SPACE 1                                               GP SEP05 16150032
+ISITMGDE ISITMGD DCB=0,DATATYPE=YES,MF=L                       GP SEP05 16160032
+DESRVGE  DESERV FUNC=GET,MF=L                                  GP JUN10 16170032
+         SPACE 1                                               GP SEP05 16180032
+         IEWBUFF FUNC=MAPBUF,BYTES=01280,TYPE=ESD,VERSION=2,   GP APR18+16190032
+               PREFIX=V2                                       GP APR18 16200032
+         IEWBUFF FUNC=MAPBUF,BYTES=30720,TYPE=ESD,VERSION=1    GP APR18 16210032
+         IEWBUFF FUNC=MAPBUF,BYTES=30720,TYPE=NAME,VERSION=2   GP APR18 16220032
+         IEWBUFF FUNC=MAPBUF,BYTES=30720,TYPE=MAP,VERSION=2    GP APR18 16230032
+         SPACE 2                                               GP APR18 16240032
+IDRAPIWK DSECT ,                                               GP SEP05 16250032
+         DS    0D                                              GP SEP05 16260032
+         DS    18F                 REGISTER SAVE AREA          GP SEP05 16270032
+IDRDBL   DS    D                                               GP SEP05 16280032
+IDRBLDL  DS    XL80                BLDL RESULTS AREA           GP SEP05 16290032
+         ORG   IDRBLDL             REUSE SOME STORAGE          GP APR18 16300032
+MAPCLS@  DS    A                   CLASS NAME CHAIN ORIGIN     GP APR18 16310032
+         DS    F                   PRETEND TO BE MPCLSOFF      GP APR18 16320032
+         DS    F                   PRETEND TO BE MPCLSSIZ      GP APR18 16330032
+MAPCLST# DS    F                   TOTAL CLASS COUNT           GP APR18 16340032
+ESDSOFST DS    F                   CURRENT SECTION OFFSET      GP APR18 16350032
+ESDCOFST DS    F                   CURRENT CLASS OFFSET        GP APR18 16360032
+ESDCURSR DS    A                   GETE CURSOR                 GP APR18 16370032
+ESDCOUNT DS    A                   GETE ENTRY COUNT            GP APR18 16380032
+ESDGOTE# DS    F                   GETE RECORD COUNT           GP APR18 16390032
+ESDRETCD DS    F                   GETE RETURN CODE            GP APR18 16400032
+ESDRSNCD DS    F                   GETE REASON CODE            GP APR18 16410032
+         ORG   ,                                               GP APR18 16420032
+DIATOKEN DS    D                   DIALOG TOKEN                GP APR18 16430032
+MODTOKEN DS    D                   MODULE TOKEN                GP SEP05 16440032
+BNDRETCD DS    F                   RETURN CODE                 GP SEP05 16450032
+BNDRSNCD DS    F                   REASON CODE                 GP SEP05 16460032
+MODDCBPT DS    A                   POINTER TO THE OPEN DCB     GP SEP05 16470032
+MODDEPTR DS    A                   POINTER TO BLDL DATA        GP SEP05 16480032
+BNDCURSR DS    A                   CURSOR                      GP SEP05 16490032
+BNDCOUNT DS    A                   ENTRY COUNT                 GP SEP05 16500032
+         SPACE 1                                               GP SEP05 16510032
+BNDPARMS DS    14F                 CALL PARAMETER LIST AREA    GP APR18 16520032
+BNDDDNAM DS    XL2,CL8             DDNAME FOR INCLUDE          GP JUN13 16530032
+BNDMEMBR DS    XL2,CL8             MEMBER FOR INCLUDE          GP JUN13 16540032
+IDR_FLGS DS    X                   LOCAL FLAG BYTE             GP JUN13 16550032
+$B_TXT   EQU   X'80'               DOING B_MAP B_TEXT SECTIONS GP JUN13 16560032
+$POREP   EQU   X'40'               BINDER CAN REPROCESS OBJECT GP APR18 16570032
+$PONMIG  EQU   X'20'               OBJECT MUST BE IN A PDSE    GP APR18 16580032
+         SPACE 1                                               GP SEP05 16590032
+BSECTNM  DS    H,CL256             SECTION NAME FOR GETE       GP APR18 16600032
+         SPACE 1                                               GP SEP05 16610032
+BND1ESD  DS    0D,XL1280           RETURNED API DATA AREA      GP APR18 16620032
+         SPACE 1                                               GP SEP05 16630032
+BNDDATA  DS    0D,XL30720          RETURNED API DATA AREA      GP APR18 16640032
+IDRAPIWL EQU   *-IDRAPIWK                                      GP SEP05 16650032
+         SPACE 1                                               GP SEP05 16660032
+         IGWCISM DSECT=YES         ISITMGD PLIST               GP SEP05 16670032
+         SPACE 2                                               GP APR18 16680032
+MPCLS    DSECT ,                   BINDER CLASS CHAIN ELEMENT  GP APR18 16690032
+MPCLSNXT DS    A                   CHAIN FORWARD POINTER       GP APR18 16700032
+MPCLSOFF DS    F                   CLASS OFFSET IN MODULE      GP APR18 16710032
+MPCLSSIZ DS    F                   ROUNDED CLASS SEGMENT SIZE  GP APR18 16720032
+MPCLSNML DS    H                   CLASS NAME LENGTH           GP APR18 16730032
+MPCLSNM  DS    CL16                CLASS NAME                  GP APR18 16740032
+MPCLSPAD DS    X                   FLAG BYTE                   GP APR18 16750032
+         DS    0D                  END OF ELEMENT STRUCTURE    GP APR18 16760032
+MPCLSLEN EQU   *-MPCLS             SIZE OF ELEMENT             GP APR18 16770032
+         SPACE 2                                               GP SEP05 16780032
+MAP      CSECT ,                                               GP SEP05 16790032
+         DC    0D'0'               BACK TO FETCHABLE CODE      GP SEP05 16800032
+         DROP  R8                  READESD                     GP APR18 16810032
+         SPACE 1                                               GP SEP05 16820032
+.NOBAPI4 ANOP  ,                                               GP SEP05 16830028

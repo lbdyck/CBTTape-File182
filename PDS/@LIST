@@ -1,0 +1,1958 @@
+         TITLE 'P D S  --  PDS LIST, DIRENTRY, FIND, REPLACE 09/28/88'  00010000
+*********************************************************************** 00020000
+***      LIST SUBCOMMAND    MODIFIED BY BRUCE LELAND -- JUNE, 1982  *** 00030000
+***                                                                 *** 00040000
+***      DIRENTRY SUBCOMMAND   ADDED BY BRUCE LELAND -- JUNE, 1982  *** 00050000
+***                                                                 *** 00060000
+***      FIND SUBCOMMAND    MODIFIED BY BRUCE LELAND -- APR,  1985  *** 00070000
+***                                                                 *** 00080000
+***      REPLACE SUBCOMMAND    ADDED BY BRUCE LELAND -- APR,  1985  *** 00090000
+*********************************************************************** 00100000
+*                                                                       00110000
+LIST     CSECT                                                          00120059
+         USING *,R8                                                     00130000
+         MVI   ##HELOFF,C'L'       LIST SUBCOMMAND                      00140000
+         B     LIST010                                                  00150000
+*                                                                       00160000
+         SPACE 1                                                        00170000
+DIRENTRY L     R8,=A(LIST)         BASE REGISTER FOR LIST               00180000
+         LA    R1,L530             ASSUME A NON-PARTITIONED DATA SET    00190000
+         TM    DSORG,DS1DSGPO      CORRECT?                             00200000
+         BZ    MSGNEW              YES, ERROR                           00210000
+         SPACE 1                                                        00220000
+         MVI   ##HELOFF,C'D'       DIRENTRY SUBCOMMAND                  00230000
+         IC    R1,DIRFLAG                                               00240000
+         N     R1,=XL4'0000001F'   NUMBER OF HALFWORDS                  00250000
+         LA    R5,12(R1,R1)        LENGTH IN BYTES                      00260000
+         LA    R6,DIRNAME          START OF DIRECTORY ENTRY             00270000
+         LA    R4,16               DUMP FORMAT, WIDTH=16                00280000
+         MVI   MTLEN+4,2                                                00290000
+         MVC   MSGTEXT1(3),L143$2  DIRECTORY DUMP HEADER                00300000
+         MVC   INSERT#1(8),DIRNAME                                      00310000
+         CVD   R5,DOUBLE                                                00320000
+         MVC   INSERT#2-2(4),=X'40202120'                               00330000
+         ED    INSERT#2-2(4),DOUBLE+6                                   00340000
+         AR    R5,R6                                                    00350000
+         BCTR  R5,0                                                     00360000
+         LA    R3,LIST600          PROCESSING ROUTINE                   00370000
+         BR    R3                                                       00380000
+         SPACE 2                                                        00390000
+*                                                                       00400000
+FIND     L     R8,=A(LIST)         BASE REGISTER FOR LIST               00410000
+         MVI   ##HELOFF,C'F'       FIND SUBCOMMAND                      00420000
+         MVI   ##HELOFF+3,C'D'     NO OUTPUT YET                        00430000
+         B     LIST008                                                  00440000
+         SPACE 2                                                        00450000
+*                                                                       00460000
+REPLACE  L     R8,=A(LIST)         BASE REGISTER FOR LIST               00470000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK SEP05 00470145
+         BNO   REPLC                    NO, CONTINUE          DRK SEP05 00470245
+         TM    FLAGSCC,RECFMU           RECFM=U?              DRK SEP05 00470345
+         BNO   REPLC                    NO, CONTINUE          DRK SEP05 00470445
+         TM    #REPFLAG,LIST#REP        WRITE SPECIFIED?      DRK SEP05 00470545
+         BNO   REPLC                    NO, CONTINUE          DRK SEP05 00470645
+         MVI   MTLEN,7                  LENGTH OF INSERT      DRK SEP05 00470745
+         MVC   INSERT#1(7),=C'REPLACE'  INSERT COMMAND NAME   DRK SEP05 00470845
+         M$MSG L996$1                   NOT SUPPORTED MSG     DRK SEP05 00470945
+         M$ERRST MSGBLANK               ONE BLANK LINE        DRK SEP05 00471045
+         B     NEWCMD                   NOBBLED               DRK SEP05 00471145
+         SPACE 1                                              DRK SEP05 00471245
+REPLC    DS    0H                                             DRK SEP05 00472045
+         TM    #REPFLAG,LIST#REP   WRITE SPECIFIED?           DRK NOV06 00473061
+         BO    REPLC2              YES, CONTINUE              DRK NOV06 00474062
+         TM    FLAGSZZ,LIST#MSG    MESSAGE ISSUED?            DRK NOV06 00474174
+         BO    REPLC2              YES, CONTINUE              DRK NOV06 00474265
+         OI    FLAGSZZ,LIST#MSG    NO, TURN ON FLAG           DRK NOV06 00474374
+         M$MSG L246                ISSUE NO UPDATES MSG       DRK NOV06 00474465
+REPLC2   DS    0H                                             DRK NOV06 00474565
+         MVI   ##HELOFF,C'R'       REPLACE SUBCOMMAND                   00480000
+         MVI   ##HELOFF+3,C'D'     NO OUTPUT YET                        00490000
+         MVC   DSNMEMQ(8),DIRNAME  MEMBER NAME TO CHECK                 00500000
+         BAS   R2,ENQMTEST         MEMBER IN USE?                       00510000
+         B     NEWCMD              YES, OUTPUT AN IN-USE MESSAGE        00520000
+         SPACE 1                                                        00530000
+         CLI   REPLTH+1,X'FF'      REPLACEMENT STRING EVER CODED?       00540000
+         BNE   LIST002             YES, BRANCH                          00550000
+         LA    R1,L772             NO, CHECK WHICH MESSAGE TO OUTPUT    00560000
+         CLI   FINDLTH+1,0         SEARCH STRING EVER CODED?            00570000
+         BNE   MSGNEWXX            YES, TERMINATE THIS GROUP            00580000
+         SPACE 1                                                        00590000
+LIST002  MVC   FLAGSDD(1),HFLAGSDD INITIALIZE FLAGSDD                   00600000
+         TM    DSORG,DS1DSGPO        DSORG=PO?                          00610000
+         BNO   LIST004               NO, BRANCH                         00620000
+         TM    FLAGSCC,RECFMU        LOAD MODULE?                       00630000
+         BNO   LIST004               NO, BRANCH                         00640000
+         TM    FLAGSDD,LBLOCK+LDUMP+BLOCK+DUMP  ANY LOAD FORMAT?        00650000
+         BM    LIST004                          YES, BRANCH             00660000
+         MVI   FLAGSDD,LDUMP                    NO, USE LDUMP           00670000
+LIST004  TM    FLAGSDD,LBLOCK+LDUMP+BLOCK+DUMP  ANY LOAD FORMAT?        00680000
+         BNM   LIST006                          NO, BRANCH              00690000
+         LA    R1,L773                                                  00700000
+         CLC   FINDLTH(2),REPLTH   EQUAL LENGTH STRINGS?                00710000
+         BNE   MSGNEWXX            NO, TERMINATE THIS GROUP             00720000
+         SPACE 1                                                        00730000
+LIST006  TM    #REPFLAG,LIST#REP   REPLACE SPECIFIED?                   00740000
+         BNO   LIST008             NO, BRANCH                           00750000
+         BAS   R2,SHUTSTW2         CLOSE AND FREE THE STOW DCB          00760000
+         SPACE 1                                                        00770000
+LIST008  LA    R1,L770                                                  00780000
+         CLI   FINDLTH+1,0         STRING EVER CODED?                   00790000
+         BZ    MSGNEWXX            NO, TERMINATE THIS GROUP             00800000
+         OI    FLAGSGG,FOUTSUB     SUBCOMMAND GAINED CONTROL            00810000
+         XC    WORKTBL,WORKTBL     RESET THE TRT TABLE                  00820000
+         SR    R15,R15                                                  00830000
+         IC    R15,FINDSTR         FIRST CHARACTER OF NEW STRING        00840000
+         LA    R1,WORKTBL(R15)     ADDRESS OF NEW TRT BYTE              00850000
+         MVI   0(R1),X'77'         SET TRT BYTE TO NON-ZERO             00860000
+         SPACE 1                                                        00870027
+         CLI   #IGNCASE,1          IGNORE CASE OPTION?        DRK DEC02 00880034
+         BNE   LIST010             NO                         DRK DEC02 00890034
+         TM    FINDSTR,X'F0'       POSSIBLE NUMERIC           DRK DEC02 00900028
+         BO    LIST010             YES                        DRK DEC02 00910028
+         TM    FINDSTR,X'C0'       POSSIBLE ALPHA             DRK DEC02 00920028
+         BNO   LIST010             NO                         DRK DEC02 00930028
+         N     R15,=X'FFFFFFBF'    YES, UNFOLD 1ST CHARACTER  DRK DEC02 00940030
+         LA    R1,WORKTBL(R15)     ADDRESS OF NEW TRT BYTE    DRK DEC02 00950047
+         MVI   0(R1),X'77'         SET TRT BYTE TO NON-ZERO   DRK DEC02 00960028
+         SPACE 2                                                        00970028
+LIST010  MVC   FLAGSDD(1),HFLAGSDD INITIALIZE FLAGSDD                   00980000
+         OC    #MAXIN,#MAXIN       ANY INPUT DESIRED?                   00990000
+         BZ    LIST910             NO, BRANCH                           01000000
+         SPACE 2                                                        01010000
+         TM    DSORG,DS1DSGPO        DSORG=PO?                          01020000
+         BNO   LIST090               NO, BRANCH                         01030000
+         TM    FLAGSCC,RECFMU        LOAD MODULE?                       01040000
+         BNO   LIST090               NO, BRANCH                         01050000
+         TM    FLAGSDD,LBLOCK+LDUMP+BLOCK+DUMP  ANY LOAD FORMAT?        01060000
+         BM    LIST020                          YES, BRANCH             01070000
+         MVI   FLAGSDD,LDUMP                    NO, USE LDUMP           01080000
+LIST020  TM    FLAGSDD,LBLOCK+LDUMP  LBLOCK OR LDUMP FORMAT?            01090000
+         BZ    LIST090               NO, BRANCH                         01100000
+         TM    DS1SMSFG,DS1PDSE      PDSE DATASET?             GP AUG05 01110041
+         BO    LIST090               YES, BRANCH               GP AUG05 01120041
+         SPACE 1                                                        01130000
+         LA    R2,#ESDPTR          START OF ESD LIST                    01140000
+         L     R15,=A(READESD)     ESD SYMBOL ROUTINE                   01150000
+         BASR  R14,R15             ANY SYMBOLS?                         01160000
+         B     *+8                 NO, "NO EXTERNAL SYMBOLS"            01170000
+         B     LIST030             YES, BRANCH                          01180000
+         SPACE 2                                                        01190000
+         CLI   #MODLEN,0           ANY ESD FILTERING?         DRK SEP18 01191096
+         BH    LIST090             YES, BYPASS MESSAGE        DRK SEP18 01192096
+         MVC   INSERT#1(8),DIRNAME MEMBER NAME IN ERROR                 01200000
+         M$MSG L704$1              OUTPUT AN ERROR MESSAGE              01210000
+         B     LIST090             CONTINUE, BUT NO CSECT IDENTIFIERS   01220000
+         SPACE 2                                                        01230000
+         USING ESDENTRY,R2                                              01240000
+*  LOOPS TO SET MAXIMUM LENGTH FIELDS FOR LABEL REFERENCE ENTRIES       01250000
+*  AND TO ASSOCIATE ENTRY RECORDS WITH THE APPROPRIATE CSECT NAMES      01260000
+LIST030  OI    #LISTFLG,X'01'      CSECT OPERATION FLAG                 01270000
+         ICM   R2,B'1111',ESDLINK  ANY MORE ENTRIES?                    01280000
+         BZ    LIST060             NO, BRANCH                           01290000
+         MVI   ESDSEG#,0           CLEAR THE SEGMENT NUMBER             01300000
+         CLI   ESDTYPE,CODESD      CSECT ENTRY?                         01310000
+         BNE   LIST030             NO, BRANCH                           01320000
+         LR    R1,R2                                                    01330000
+         SPACE 1                                                        01340000
+LIST040  ICM   R1,B'1111',ESDLINK-ESDENTRY(R1)                          01350000
+         BZ    LIST060                                                  01360000
+         CLI   ESDTYPE-ESDENTRY(R1),CODELR  ASSOCIATED EXTERNAL LABEL?  01370000
+         BNE   LIST030                      NO, BRANCH                  01380000
+         MVI   ESDSEG#-ESDENTRY(R1),0       CLEAR THE SEGMENT NUMBER    01390000
+         ST    R2,ESDCSECT-ESDENTRY(R1)     SAVE POINTER TO NAME        01400000
+         SR    R14,R14                                                  01410000
+         LH    R0,ESDID                     RELATIVE ESDID OF CSECT     01420000
+         STH   R0,ESDID-ESDENTRY(R1)        SAVE FOR ENTRY              01430000
+         L     R0,ESDADDR-1                 BASE START ADDRESS          01440000
+         ST    R0,ESDMAIN-ESDENTRY(R1)      SAVE MAIN OFFSET            01450000
+         A     R0,ESDLEN-1                  BASE MAXIMUM REFERENCE      01460000
+         ICM   R14,B'0111',ESDADDR-ESDENTRY(R1)                         01470000
+         SR    R0,R14                                                   01480000
+         ST    R0,ESDLEN-ESDENTRY-1(R1)     MAXIMUM SYMBOL LENGTH       01490000
+         B     LIST040                                                  01500000
+         SPACE 2                                                        01510000
+*  LOOP TO FILTER THE SYMBOL NAMES                                      01520000
+LIST060  LA    R2,#ESDPTR          START OF ESD LIST                    01530000
+         SR    R3,R3                                                    01540000
+         ICM   R3,B'0001',#MODLEN  ANY FILTERING?                       01550000
+         BZ    LIST090             NO, BRANCH                           01560000
+         BCTR  R3,0                MACHINE LENGTH                       01570000
+         SPACE 1                                                        01580000
+LIST070  LR    R1,R2                                                    01590000
+         ICM   R2,B'1111',ESDLINK  END OF LIST?                         01600000
+         BZ    LIST090             YES, BRANCH                          01610000
+         CLC   ESDNAME(*-*),#MODTXT  <<EXECUTED>>                       01620000
+         EX    R3,*-6              MATCH THE PARTIAL NAME?              01630000
+         BE    LIST070             YES, BRANCH                          01640000
+         MVC   ESDLINK-ESDENTRY(4,R1),ESDLINK                           01650000
+         LR    R2,R1                    DROP THIS SYMBOL                01660000
+         B     LIST070                                                  01670000
+         SPACE 1                                                        01680000
+LIST090  MVC   STARTTR(3),DIRTTR   FIRST TTR                            01690000
+         SPACE 2                                                        01700000
+LIST100  L     R15,=V(EXCP)                                             01710000
+         BASR  R14,R15                                                  01720000
+         B     *+4(R15)                 PROCESS RETURN CODE             01730000
+         B     LIST120                    00 - GOOD READ                01740000
+         B     LIST110                    04 - END OF MEMBER            01750000
+         B     LIST900                    08 - END OF DATA SET          01760000
+         B     LIST910                    12 - I/O ERROR                01770000
+         SPACE 1                                                        01780000
+LIST110  TM    DSORG,DS1DSGIS           ISAM DATA SET?                  01790000
+         BNO   LIST900                  NO, BRANCH                      01800000
+         M$MSG L005                     YES, OUTPUT A MESSAGE           01810000
+         B     LIST100                  CONTINUE                        01820000
+         SPACE 1                                                        01830000
+LIST120  NI    #LISTFLG,FF-X'20'        TURN OFF THE CSECT DATA FLAG    01840000
+         L     R5,LS                    CURRENT LENGTH                  01850000
+         LR    R6,R0                    START OF BUFFER                 01860000
+         LR    R1,R5                    SAVE BLOCKSIZE FOR LATER        01870000
+         LM    R14,R15,#LISTN0          SAVE IF NOT PHYSICAL BLOCKS     01880000
+         L     R0,#LISTN0               PREVIOUS MEMBER DISPLACEMENT    01890000
+         ST    R0,#LISTN1               UPDATE MEMBER DISPLACEMENT      01900000
+         AR    R0,R5                    ADD CURRENT LENGTH FOR NEXT     01910000
+         ST    R0,#LISTN0               UPDATE FOR NEXT ENTRY           01920000
+         TM    FLAGSDD,BLOCK            BLOCK OUTPUT DESIRED?           01930000
+         BO    LIST400                  YES, BRANCH                     01940000
+         TM    FLAGSDD,DUMP             DUMP OUTPUT DESIRED?            01950000
+         BO    LIST420                  YES, BRANCH                     01960000
+         STM   R14,R15,#LISTN0          NOT PHYSICAL BLOCKS             01970000
+         AR    R5,R6                    ADDRESS OF END OF BUFFER        01980000
+         BCTR  R5,0                     END OF BUFFER ADDRESS           01990000
+         LA    R3,LIST200               ASSUME FIXED OR UNDEFINED       02000000
+         TM    FLAGSCC,RECFMF           RECFM=F?                        02010000
+         LH    R4,LRECL                 GET RECORD LENGTH               02020000
+         BOR   R3                       YES, BRANCH                     02030000
+         SPACE 1                                                        02040000
+         TM    FLAGSCC,RECFMU           RECFM=U?                        02050000
+         LR    R4,R1                    BLOCK LENGTH                    02060000
+         BOR   R3                       YES, BRANCH                     02070000
+         TM    FLAGSCC,RECFMV           RECFM=V?                        02080000
+         BNOR  R3                       NO, PROCESS LIKE RECFM=U        02090000
+         SPACE 1                        SET END OF BUFFER ADDRESS       02100000
+         AH    R6,=H'4'                 RECFM=V; START OF LRECL'S       02110000
+         LA    R3,LIST150               VARIABLE LEN RECORD PROCESSOR   02120000
+         SPACE 2                                                        02130000
+LIST150  SR    R4,R4                                                    02140000
+         ICM   R4,B'0011',0(R6)         RECORD LENGTH +4                02150000
+         AH    R6,=H'4'                 SKIP OVER HEADER                02160000
+         SH    R4,=H'4'                 SUBTRACT HEADER LENGTH          02170000
+         BP    LIST200                  BRANCH IF RECORD EXISTS         02180000
+         SR    R4,R4                    NO, RESET LENGTH TO ZERO        02190000
+         SPACE 1                                                        02200000
+LIST160  LR    R0,R4                    PREVIOUS RECORD LENGTH          02210000
+         A     R0,#LISTN1               OFFSET IN CURRENT RECORD        02220000
+         ST    R0,#LISTN1               UPDATE                          02230000
+         ICM   R0,B'1111',#MAXFIND      DONE WITH FIND/REPLACE?         02240000
+         BP    LIST166                  NO, BRANCH                      02250000
+         TM    #REPFLAG,LIST#REP        WRITE SPECIFIED?                02260000
+         BNO   NEWCMD                   NO, BRANCH                      02270000
+         TM    #REPFLAG,LISTUPDE        UPDATE ERROR?                   02280000
+         BO    NEWCMD                   YES, BRANCH                     02290000
+         TM    #REPFLAG,LISTUPDR        REPLACED DATA IN THIS BLOCK?    02300000
+         BO    LIST170                  YES, BRANCH                     02310000
+         B     NEWCMD                                                   02320000
+         SPACE 1                                                        02330000
+LIST166  BXLE  R6,R4,0(R3)              SKIP TO NEXT RECORD             02340000
+         L     R2,=A(DIR000)            DIRENTRY ELEMENT LIST DRK DEC02 02350026
+         CLI   ##HELOFF,C'D'            DIRENTRY SUBCOMMAND?            02360000
+         BER   R2                       YES, BRANCH           DRK DEC02 02370025
+*        BE    DIR000                   YES, BRANCH                     02380025
+         TM    FLAGSDD,LBLOCK+LDUMP     LBLOCK OR LDUMP?                02390000
+         BZ    LIST170                  NO, GET A NEW BLOCK             02400000
+         LM    R3,R6,#LFSAVE4           RESTORE R3-R6                   02410000
+         BXLE  R6,R4,0(R3)              SKIP TO NEXT RECORD             02420000
+         SPACE 3                                                        02430000
+*  REWRITE ANY UPDATED RECORDS FOR REPLACE                              02440000
+LIST170  CLI   ##HELOFF,C'R'            REPLACE SUBCOMMAND?             02450000
+         BNE   LIST100                  NO, BRANCH                      02460000
+         TM    #REPFLAG,LIST#REP        WRITE SPECIFIED?                02470000
+         BNO   LIST100                  NO, BRANCH                      02480000
+         TM    #REPFLAG,LISTUPDE        UPDATE ERROR?                   02490000
+         BO    LIST198                  YES, BRANCH                     02500000
+         TM    #REPFLAG,LISTUPDR        REPLACED DATA IN THIS BLOCK?    02510000
+         BNO   LIST198                  NO, BRANCH                      02520041
+         XI    #REPFLAG,LISTUPDR        YES, NO DATA UPDATED NOW        02530070
+         SPACE 1                                                        02540000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?          GP AUG05 02550041
+         BNO   LIST172                  NO, BRANCH             GP AUG05 02560041
+         LA    R2,LISTUPOE-2048         POINT PDSE UPDT RTN    GP AUG05 02570042
+         B     2048(R2)                 INVOKE IT              GP AUG05 02580042
+LIST172  EQU   *                                               GP AUG05 02590041
+         SPACE 1                                                        02600041
+         TM    #REPFLAG,LISTUPDO        OPEN FOR UPDATE?                02610000
+         BO    LIST190                  YES, BRANCH                     02620000
+         OI    #REPFLAG,LISTUPDO        OPEN FOR UPDATE NOW             02630070
+         SPACE 1                                                        02640000
+         OI    FLAGSCC,FUPDATE          MARK FOR STOW OPEN ROUTINE      02650000
+         BAS   R2,OPENSTOW              OPEN OUTPUT DCB AND RESERVE     02660000
+         B     NEWCMD                   COULD NOT OPEN -- ERROR         02670000
+         SPACE 1                                                        02680000
+         MVI   SUBPOOLT,21              MARK TEMPORARY STORAGE OBTAINED 02690000
+         LH    R0,=H'32760'             MAXIMUM BUFFER SIZE             02700000
+         ICM   R0,B'1000',SUBPOOLT      SUBPOOL                         02710000
+         GETMAIN R,LV=(0)                                               02720000
+         ST    R1,#LISTBUF              POINTER TO BUFFER AREA          02730000
+         SPACE 1                                                        02740000
+* UPDATE IDR RECORDS FOR LOAD MODULES IF REQUIRED                       02750000
+*  IDR FOR SUPERZAP TAKES THE FOLLOWING FORM:                           02760000
+*        BYTE  0.....'80' FOR ID                                        02770000
+*        BYTE  1.....LENGTH OF IDR (USUALLY X'FA' = 250.)               02780000
+*        BYTE  2.....WHO'S IDR IT IS (X'01' FOR SUPERZAP AND PDS)       02790000
+*        BYTE  3.....NUMBER OF 13-BYTE IDR DATA ENTRIES (BITS 2-7)      02800000
+*        BYTES 4-16, 17-29,... IDR DATA ENTRY AS FOLLOWS:               02810000
+*              BYTES 0-1 --- ESD ID IN BINARY (FIRST IF NOT KNOWN)      02820000
+*              BYTES 2-4 --- DATE ('YYDDDF')                            02830000
+*              BYTES 5-12 -- INFO ('USERID' WHERE USERID=TSO USERID)    02840000
+         SPACE 2                                                        02850000
+         TM    DSORG,DS1DSGPO          PARTITIONED?                     02860000
+         BNO   LIST190                 NO, BRANCH                       02870000
+         TM    #REPFLAG,LISTUPQT       QUIET MODE UPDATE?               02880000
+         BO    LIST190                 YES, BRANCH                      02890000
+         TM    FLAGSCC,RECFMU          RECFM=U?                         02900000
+         BNO   LIST188                 NO, BRANCH                       02910000
+         ICM   R0,B'0111',DIRTTR       TTR TO START WITH                02920000
+         SLL   R0,8                    Z OF TTRZ IS ZERO                02930000
+         ST    R0,DOUBLE               SAVE TTRZ TEMPORARILY            02940000
+         SPACE 1                                                        02950000
+         LA    R0,DOUBLE               POINT TO TTRZ VALUE              02960000
+         POINT STOWDCB,(0)             POINT TO BLOCK TO BE UPDATED     02970000
+         SPACE 1                                                        02980000
+LIST174  LH    R0,=H'32760'            MAXIMUM BUFFER SIZE              02990000
+         STH   R0,STOWDCB+DCBBLKSI-IHADCB  UPDATE IN THE DCB            03000000
+         SPACE 1                                                        03010000
+         L     R2,=A(LISTREAD)          POINT TO READ ROUTINE  GP AUG05 03020042
+         BASR  R14,R2                   READ INTO #LISTBUF     GP AUG05 03030042
+         SPACE 1                                                        03040000
+         LR    R1,R2                                                    03050000
+         TM    0(R1),X'01'              CONTROL RECORD OF SOME KIND?    03060000
+         BO    LIST190                  YES, CANNOT FIND THE ZAP IDR    03070000
+         SPACE 1                                                        03080000
+         CLI   0(R1),X'20'              CESD?                           03090000
+         BNE   LIST180                  NO, BRANCH                      03100000
+         OC    #LISTIDU(2),#LISTIDU     ANY ESDID?                      03110000
+         BNZ   LIST174                  YES, BRANCH                     03120000
+         LH    R3,4(R2)                 FIRST ESDID                     03130000
+LIST178  LA    R2,16(,R2)               NEXT ESD ENTRY                  03140000
+         LA    R3,1(,R3)                NEXT ESDID                      03150000
+         CLI   0(R2),0                  CSECT ENTRY?                    03160000
+         BNE   LIST178                  NO, BRANCH                      03170000
+         OC    5(3,R2),5(R2)            VALID LENGTH?                   03180000
+         BZ    LIST178                  NO, BRANCH                      03190000
+         BCTR  R3,0                     LESS ONE                        03200000
+         STH   R3,#LISTIDU              UPDATE THE ESDID                03210000
+         B     LIST174                                                  03220000
+         SPACE 1                                                        03230000
+LIST180  CLI   0(R1),X'40'              TEST SYMBOLS?                   03240000
+         BE    LIST174                  YES, READ ANOTHER               03250000
+         CLI   0(R1),X'80'              IDR?                            03260000
+         BNE   LIST190                  NO, BYPASS IDR MARKING          03270000
+         TM    2(R1),X'01'              YES - BUT DONE BY SUPERZAP?     03280000
+         BNO   LIST174                  NO - FORGET THIS ONE            03290000
+         SR    R2,R2                    CLEAR WORK REG                  03300000
+         IC    R2,3(R1)                 PICK UP # OF IDR DATA ENTRIES   03310000
+         LA    R2,1(R2)                 INCREMENT # OF IDR ENTRIES...   03320000
+         LR    R4,R2                    SAVE IT FOR LATER               03330000
+         N     R2,=XL4'0000003F'        WE JUST WANT BITS 2-7           03340000
+         MH    R2,=H'13'                EACH ENTRY IS 13 BYTES LONG     03350000
+         LA    R2,3(R2)                 IDR HDR IS 3 BYTES LONG         03360000
+         MVC   FULLWORD(2),0(R1)        CURRENT COUNTS                  03370000
+         MVI   FULLWORD,0               CLEAR FIRST BYTE                03380000
+         NI    FULLWORD,X'3F'           MASK SECOND BYTE                03390000
+*  SO NOW R2 HAS AN OFFSET TO THE NEXT AVAILABLE POSITION IN THE IDR    03400000
+         CLM   R2,B'0011',FULLWORD      AT END OF THE IDR RECORD?       03410000
+         BH    LIST174                  YES, BRANCH                     03420000
+         SH    R2,=H'13'                BACK UP OFFSET                  03430000
+         STC   R4,3(R1)                 UPDATE COUNT                    03440000
+         AR    R2,R1                    NEXT IDR POSITION               03450000
+         MVC   1(2,R2),#LISTIDU         MOVE IN ESDID                   03460000
+         TIME  ,                        GET THE DATE                    03470000
+         STCM  R1,B'0111',3(R2)         SAVE YYDDDF IN IDR DATA FIELD   03480000
+*        L     R1,ADDRPSCB              ADDRESS OF THE PSCB             03490092
+*        MVC   6(7,R2),PSCBUSER-PSCB(R1)  LOGON USERID                  03500092
+*        MVI   6+7(R2),X'40'              FOLLOWING BLANK               03510092
+         LA    R1,@4K                       BASE FOR TSOUID   DRK JUL17 03511092
+         MVC   6(8,R2),TSOUID-@4K(R1)       USERID            DRK JUL17 03512093
+*        MVI   6+7(R2),X'40'                SKIP BLANK        DRK JUL17 03513092
+         SPACE 1                                                        03520000
+         L     R2,#LISTBUF             START OF BUFFER                  03530000
+         WRITE FIXPDSD,SF,STOWDCB,(2),'S',MF=E                          03540000
+         CHECK FIXPDSD                                                  03550000
+         B     LIST190                                                  03560000
+         SPACE 1                                                        03570000
+LIST188  TM    DIRFLAG,X'0F'           ISPF STATISTICS?                 03580000
+         BNO   LIST190                 NO, BRANCH                       03590000
+         TIME  DEC                     GOT THE TIME?                    03600000
+         STCM  R1,B'1111',DIRSPFCD     CHANGED DATE                     03610000
+         STCM  R0,B'1100',DIRSPFCT     TIME OF LAST CHANGE              03620000
+         SR    R1,R1                                                    03630000
+         IC    R1,DIRSPFR              MODIFICATION NUMBER              03640000
+         LA    R1,1(,R1)               ADD ONE                          03650000
+         CLI   DIRSPFR,99              VALID TO ADD?                    03660000
+         BNL   *+8                     NO, BRANCH                       03670000
+         STC   R1,DIRSPFR              YES, UPDATE THE MOD NUMBER       03680000
+*        L     R1,ADDRPSCB             ADDRESS OF THE PSCB              03690092
+*        MVC   DIRSPFID(7),PSCBUSER-PSCB(R1)  LOGON USERID              03700092
+         LA    R1,@4K                       BASE FOR TSOUID   DRK JUL17 03701092
+         MVC   DIRSPFID(8),TSOUID-@4K(R1)   USERID            DRK JUL17 03702093
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR                        03710000
+         STOW  STOWDCB,DIRNAME,R       REPLACE OPTION                   03720000
+         LR    R5,R15                  SAVE RETURN CODE                 03730000
+         SPACE 1                                                        03740000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 03740143
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 03741043
+         B     *+4(R5)                 PROCESS RETURN CODE              03750000
+         B     LIST190                   00 - SUCCESSFUL                03760000
+         EX    0,*                       04 - SHOULD NOT OCCUR          03770000
+         EX    0,*                       08 - SHOULD NOT OCCUR          03780000
+         B     FULLDIR                   12 - DIRECTORY FULL            03790000
+*        B     IOERROR                   16 - I/O ERROR                 03800044
+         SPACE 2                                                        03810000
+LIST190  LH    R1,#REPCNT                                               03820000
+         LA    R1,1(,R1)                                                03830000
+         STH   R1,#REPCNT                                               03840000
+         STM   R14,R12,12(R13)            CONVERT CCHHR TO TTR          03850000
+         LA    R2,CURMBB                  CCHHR TO CONVERT              03860000
+         L     R1,INDCB+(DCBDEBAD-IHADCB) DEB ADDRESS                   03870000
+         L     R15,ADDRRLTV               ADDRESS OF CCHHR->TTR CONVERT 03880000
+         LR    R3,R13                     ADDRESS OF SAVE AREA          03890000
+         BASR  R14,R15                    CALL CONVERT ROUTINE          03900000
+         LR    R13,R3                     RESTORE SAVE AREA ADDRESS     03910000
+         ST    R0,12+4+4(R13)             RESULT TTR RETURNED IN R0     03920000
+         LM    R14,R12,12(R13)            RESTORE REGISTERS             03930000
+         ST    R0,DOUBLE                  SAVE TTRZ TEMPORARILY         03940000
+         SPACE 1                                                        03950000
+         POINT STOWDCB,DOUBLE             POINT TO BLOCK TO BE UPDATED  03960000
+         SPACE 1                                                        03970000
+         L     R0,LS                      RECORD LENGTH                 03980000
+         STH   R0,STOWDCB+DCBBLKSI-IHADCB UPDATE IN THE DCB             03990000
+         L     R2,=A(LISTREAD)          POINT TO READ ROUTINE  GP AUG05 04000042
+         BASR  R14,R2                   READ INTO #LISTBUF     GP AUG05 04010042
+         SPACE 1                                                        04020042
+         L     R2,EXCPBUFF                EXCHANGE FOR THE UPDATED DATA 04030000
+         WRITE FIXPDSD,SF,STOWDCB,(2),'S',MF=E                          04040000
+         CHECK FIXPDSD                                                  04050000
+         SPACE 1                                                        04060000
+LIST198  TM    #REPFLAG,LISTTERM                 TERMINATE AFTER BLOCK? 04070000
+         BNO   LIST199                           NO, BRANCH             04080000
+         XI    #REPFLAG,LISTTERM                 TURN OFF FLAG          04090070
+         B     NEWCMD                                                   04100000
+         SPACE 1                                                        04110000
+LIST199  CLI   OPENLIST,X'7C'                    REPLACE TERMINATION?   04120000
+         BNE   LIST100                           NO, BRANCH             04130000
+         MVI   MTLEN,L'MSGBLKU-1                                        04140000
+         MVC   INSERT#1-1(L'MSGBLKU),MSGBLKU                            04150000
+         LH    R0,#REPCNT                                               04160000
+         CVD   R0,DOUBLE                                                04170000
+         ED    INSERT#1-1(10),DOUBLE+4                                  04180000
+         M$MSG L145$1                                                   04190000
+         BAS   R2,SHUTSTW2                       FORCE STOW DCB CLOSE   04200000
+         B     NEWCMD                                                   04210000
+         SPACE 3                                                        04220000
+LIST200  L     R0,#LISTN0               PREVIOUS MEMBER DISPLACEMENT    04230000
+         ST    R0,#LISTN1               UPDATE MEMBER DISPLACEMENT      04240000
+         AR    R0,R4                    ADD CURRENT LENGTH FOR NEXT     04250000
+         ST    R0,#LISTN0               UPDATE FOR NEXT ENTRY           04260000
+         L     R0,#BLKCNT                                               04270000
+         A     R0,=F'1'                                                 04280000
+         ST    R0,#BLKCNT                                               04290000
+         STM   R3,R6,#LFSAVE4             SAVE FOR LBLOCK/LDUMP         04300000
+         L     R0,#SKIPREC                                              04310000
+         S     R0,=F'1'                   SKIP THIS RECORD?             04320000
+         ST    R0,#SKIPREC                                              04330000
+         BNM   LIST160                    YES, BRANCH                   04340000
+         L     R0,#MAXIN                                                04350000
+         S     R0,=F'1'                   SUFFICIENT INPUT RECORDS?     04360000
+         ST    R0,#MAXIN                                                04370000
+         BM    LIST910                    YES, BRANCH                   04380000
+LIST210  LR    R1,R4                      LENGTH OF DATA AREA           04390000
+         TM    FLAGSDD,LBLOCK             LBLOCK?                       04400000
+         BO    LIST400                    YES, BRANCH                   04410000
+         TM    FLAGSDD,LDUMP              LDUMP?                        04420000
+         BO    LIST420                    YES, BRANCH                   04430000
+         LA    R0,8                       WIDTH OF LINE NUMBER FIELD    04440000
+         LR    R15,R6                     MOVE START POSITION           04450000
+         LR    R14,R15                    LINE NUMBER FOR RECFM=V OR U  04460000
+         AH    R15,#SKIPCOL               ADJUST START FOR START COLUMN 04470000
+         SH    R1,#SKIPCOL                ADJUST LEN FOR START COLUMN   04480000
+         TM    FLAGSDD,NONUM+DONONUM      NONUM FORMAT?                 04490000
+         BNZ   LIST330                    YES, BRANCH                   04500000
+         AR    R15,R0                     ADJUST START FOR RECFM=V OR U 04510000
+         SR    R1,R0                      ADJUST LENGTH, RECFM=V U OR F 04520000
+         TM    FLAGSCC,RECFMF             RECFM=F?                      04530000
+         BNO   LIST230                    NO, BRANCH                    04540000
+         SR    R15,R0                     CORRECT DATA START POINTER    04550000
+         LA    R14,0(R4,R6)               END OF LINE                   04560000
+         SR    R14,R0                     START OF LINE NUMBER          04570000
+LIST230  TM    FLAGSDD,SNUM               SNUM FORMAT?                  04580000
+         BO    LIST330                    YES, BRANCH                   04590000
+         MVC   MSGLINE+4(8),0(R14)        NUM FORMAT -- GET LINE NUMBER 04600000
+         NC    MSGLINE+4(8),LISTL000      DROP NUMERIC PART             04610000
+         CLC   MSGLINE+4(8),LISTL000      ZONE DIGITS FOR ALL BYTES?    04620000
+         BE    LIST240                    YES, BRANCH                   04630000
+         OI    FLAGSDD,DONONUM            CONTINUE WITH NONUM FORMAT    04640000
+         B     LIST210                                                  04650000
+         SPACE 1                                                        04660000
+LIST240  MVC   MSGLINE+4(6),0(R14)        SPF LINE NUMBER FIELD         04670000
+         TM    DIRFLAG,X'0F'              SPF ATTRIBUTES STORED?        04680000
+         BO    LIST320                    YES, BRANCH                   04690000
+         LA    R0,5                       MAXIMUM OF 5 DIGITS TO BLANK  04700000
+         LA    R2,MSGLINE+3               START OF FIELD TO BLANK       04710000
+         MVC   MSGLINE+4(6),2(R14)        LINE NUMBER FIELD             04720000
+LIST310  LA    R2,1(,R2)                                                04730000
+         CLI   0(R2),C'0'                 BLANK LEADING ZEROES IN THE   04740000
+         BNE   LIST320                       LINE NUMBER FIELD          04750000
+         MVI   0(R2),X'40'                                              04760000
+         BCT   R0,LIST310                 DO UP TO 5 DIGITS             04770000
+LIST320  LA    R0,249                     MAXIMUM ALLOWED DATA LENGTH   04780000
+         MVI   MSGLINE+10,X'40'           BLANK AFTER LINE NUMBER       04790000
+         LA    R14,MSGLINE+11             WHERE TO MOVE DATA            04800000
+         B     LIST340                                                  04810000
+         SPACE 2                                                        04820000
+LIST330  LA    R0,256                   MAXIMUM LRECL TO DISPLAY        04830000
+         LA    R14,MSGLINE+4            WHERE TO MOVE OUTPUT DATA       04840000
+         SPACE 1                                                        04850000
+LIST340  CR    R1,R0                    LENGTH>MAXIMUM ALLOWED?         04860000
+         BL    *+6                      NO, BRANCH                      04870000
+         LR    R1,R0                    YES, USE MAXIMUM                04880000
+         S     R1,=F'1'                 MACHINE LENGTH VALID?           04890000
+         BM    LIST360                  NO, BRANCH                      04900000
+         STM   R14,R1,#LUSAVE4          SAVE R14, R15, R0, R1           04910000
+***      MVC   0(*-*,R14),0(R15)        <<EXECUTED>>                    04920000
+***      EX    R1,*-6                   MOVE DATA INTO LINE             04930000
+         SPACE 1                                                        04940000
+LIST360  LR    R2,R1                    MACHINE LENGTH                  04950000
+         LA    R1,MSGLINE+4             START OF DATA                   04960000
+         CR    R14,R1                   NUM MODE?                       04970000
+         BE    *+8                      NO, BRANCH                      04980000
+         AH    R2,=H'7'                 YES, ACCOUNT FOR LINE NO, BLANK 04990000
+         A     R2,=F'1'                 ACTUAL DATA LENGTH              05000000
+         C     R2,#MAXLEN               LENGTH>#MAXLEN?                 05010000
+         BL    *+8                      NO, BRANCH                      05020000
+         L     R2,#MAXLEN               YES, USE #MAXLEN INSTEAD        05030000
+         S     R2,=F'1'                 MACHINE LENGTH VALID?           05040000
+         BM    LIST160                  LENGTH=0, BRANCH                05050000
+         LA    R0,5(,R2)                ACTUAL LINE LENGTH + HALFWORDS  05060000
+         SLL   R0,16                                                    05070000
+         ST    R0,MSGLINE               CREATE OUTPUT LINE HEADER       05080000
+         L     R1,#LUSAVE4+4            START OF DATA                   05090000
+         L     R2,#LUSAVE4+12           MACHINE LENGTH                  05100000
+         STH   R2,#LUSAVE4+12           MACHINE LENGTH LEFT             05110000
+         LA    R14,1(R1,R2)             END OF DATA                     05120000
+         ST    R14,#LUSAVE4+8           END OF DATA                     05130000
+         MVI   ##HELOFF+1,C'N'          N OF FN.D OR RN.D               05140000
+         CLI   ##HELOFF,C'F'            FIND OPERATION?                 05150000
+         BE    LIST370                  YES, BRANCH                     05160000
+         CLI   ##HELOFF,C'R'            REPLACE OPERATION?              05170000
+         BNE   LIST399                  NO, LIST -- BRANCH              05180000
+         SPACE 1                                                        05190000
+         CNOP  0,8                      ALIGN FOR LOOP        DRK DEC02 05200035
+LIST370  L     R14,#LUSAVE4+8           END OF DATA                     05210000
+         LH    R2,#LUSAVE4+12           MACHINE LENGTH LEFT             05220000
+         LH    R15,FINDLTH              STRING LENGTH                   05230000
+         ICM   R0,B'1111',#MAXFIND      DONE WITH FIND/REPLACE?         05240000
+         BNP   LIST398                  YES, BRANCH                     05250000
+         BCTR  R15,0                    MACHINE LENGTH                  05260000
+         CLI   #REPINCR+1,0             INCREMENT BY 1?       ABL NOV86 05270000
+         BH    LIST372                  NO, BRANCH            ABL NOV86 05280000
+         EX    R2,LISTTRT               FIRST CHARACTER FOUND?          05290022
+         BZ    LIST398                  NO, NOT IN STRING, QUIT         05300022
+LIST372  DS    0H                                             ABL NOV86 05310000
+         LR    R2,R14                                                   05320000
+         SR    R2,R1                    MACHINE LENGTH LEFT             05330000
+         C     R2,=F'256'               MAX LRECL/1ST BYTE =  DRK DEC02 05340036
+         BNE   *+4+2                    NO                    DRK DEC02 05350036
+         BCTR  R2,0                     YES, ADJUST FOR TRT   DRK DEC02 05360036
+         STH   R2,#LUSAVE4+12           MACHINE LENGTH LEFT             05370000
+         CR    R15,R2                   POSSIBLY IN STRING?             05380000
+         BNL   LIST398                  NO, QUIT                        05390000
+         CLI   #IGNCASE,1               IGNORE CASE OPTION?   DRK DEC02 05400034
+         BNE   LIST372A                 NO                    DRK DEC02 05410034
+         MVC   PARMLIST(32),0(R1)       SAVE INPUT AREA       DRK DEC02 05420018
+         OC    PARMLIST(32),BLANK128    FOLD SAVED AREA       DRK DEC02 05430018
+         CLC   PARMLIST(*-*),FINDSTR    <<EXECUTED>>          DRK DEC02 05440018
+         EX    R15,*-6                  ENTIRE STRING FOUND?  DRK DEC02 05450015
+         BNE   LIST397                  NO, TRY THE DATA AGAINDRK DEC02 05460015
+         B     *+4+6+4+4                YES                   DRK DEC02 05470015
+LIST372A DS    0H                                             DRK DEC02 05480015
+         CLC   0(*-*,R1),FINDSTR        <<EXECUTED>> -- COMPLETE STRING 05490000
+         EX    R15,*-6                  ENTIRE STRING FOUND?            05500000
+         BNE   LIST397                  NO, TRY THE DATA AGAIN          05510000
+         SPACE 2                                                        05520000
+**       IF RECFM=F, LRECL=80 AND NUM OR SNUM FORMAT,                   05530000
+**       THEN DO NOT USE THE CONTINUATION COLUMN (COLUMN 72)            05540000
+         LR    R0,R2                                                    05550000
+         TM    FLAGSCC,RECFMF           RECFM=F?                        05560000
+         BNO   LIST374                  NO, BRANCH                      05570000
+         CLI   LRECL+1,80               LRECL=80?                       05580000
+         BNE   LIST374                  NO, BRANCH                      05590000
+         TM    FLAGSDD,NONUM            NONUM FORMAT SPECIFIED?         05600000
+         BO    LIST374                  YES, BRANCH                     05610000
+         S     R0,=F'1'                 DROP THE CONTINUATION COLUMN    05620000
+         CR    R15,R0                   POSSIBLY IN STRING?             05630000
+         BNL   LIST397                  NO, BRANCH                      05640000
+LIST374  L     R15,#MAXFIND             FOUND                           05650000
+         S     R15,=F'1'                     ANOTHER                    05660000
+         ST    R15,#MAXFIND                         ONE                 05670000
+         SPACE 1                                                        05680000
+*** ADDED FOR  REPLACE MEMBER /BEFORE/AFTER/ . . . .                    05690000
+         CLI   ##HELOFF,C'R'            REPLACE OPERATION?              05700000
+         BE    LIST376                  YES, BRANCH                     05710000
+         MVI   ##HELOFF+1,C'F'          NO, FIND                        05720000
+         AH    R1,FINDLTH               POINT AFTER THE STRING          05730000
+         BCTR  R1,0                     POINT AT END OF STRING          05740000
+         B     LIST397                                                  05750000
+         SPACE 1                                                        05760000
+LIST376  AR    R0,R1                    LAST MOVABLE BYTE               05770000
+         LR    R15,R1                   REPLACEMENT LENGTH              05780000
+         AH    R15,REPLTH               TARGET OF MOVE                  05790000
+         LR    R2,R1                    REPLACEMENT LENGTH              05800000
+         AH    R2,FINDLTH               SOURCE OF MOVE                  05810000
+         CR    R15,R2                   REPLACE LENGTH:FIND LENGTH      05820000
+         BL    LIST390                    LOW: REDUCE THE STRING        05830000
+         BE    LIST394                    EQUAL: REPLACE THE STRING     05840000
+*                                         HIGH:  EXPAND THE STRING      05850000
+LIST380  CR    R2,R15                   COMPLETED?                      05860000
+         BE    LIST394                  YES, BRANCH                     05870000
+         LR    R14,R2                   START A NEW SCAN                05880000
+         BCTR  R14,0                    LESS ONE                        05890000
+LIST382  LA    R14,1(,R14)              NEXT BYTE                       05900000
+         CR    R14,R0                   POSSIBLY ANY BLANKS?            05910000
+         BNL   LIST388                  NO, BRANCH                      05920000
+         CLI   0(R14),X'40'             BLANK?                          05930000
+         BNE   LIST382                  NO, BRANCH                      05940000
+         CLI   1(R14),X'40'             FOLLOWED BY ANOTHER BLANK?      05950000
+         BNE   LIST382                  NO, BRANCH                      05960000
+         SPACE 1                                                        05970000
+LIST384  BCTR  R14,0                                                    05980000
+         MVC   1(1,R14),0(R14)          MOVE THE PREVIOUS CHARACTER     05990000
+         CR    R14,R2                   DONE WITH THE MOVE?             06000000
+         BH    LIST384                  NO, BRANCH                      06010000
+         LA    R2,1(,R2)                NEXT TARGET BYTE                06020000
+         B     LIST380                  REPLACE THE STRING              06030000
+         SPACE 1                                                        06040000
+LIST388  DS    0H                                                       06050029
+         L     R15,=A(LIST996)                                DRK DEC02 06060033
+         BASR  R2,R15                   OUTPUT ANY MEMBER HDR DRK DEC02 06070033
+*        BAS   R2,LIST996               OUTPUT ANY MEMBER HEADER        06080029
+         M$MSG L774                     ERROR MESSAGE                   06090000
+         OI    #REPFLAG,LISTUPDE        MARK AN UPDATE ERROR            06100070
+         B     LIST399                                                  06110000
+         SPACE 2                                                        06120000
+LIST390  CR    R15,R2                   COMPLETED?                      06130000
+         BE    LIST394                  YES, BRANCH                     06140000
+         MVI   0(R15),X'40'             MOVE IN A BLANK                 06150000
+         CR    R2,R0                    CAN IT BE MOVED?                06160000
+         BNL   *+10                     NO, BRANCH                      06170000
+         MVC   0(1,R15),0(R2)           YES, MOVE IT DOWN               06180000
+         LA    R15,1(,R15)              NEXT TARGET BYTE                06190000
+         CLI   0(R2),X'40'              FOUND FIRST BLANK?              06200000
+         BE    LIST390                  YES, BRANCH                     06210000
+         CR    R2,R0                    NEXT SOURCE BYTE VALID?         06220000
+         BNL   LIST390                  NO, LOOP                        06230000
+         LA    R2,1(,R2)                YES, INCREMENT                  06240000
+         B     LIST390                                                  06250000
+         SPACE 1                                                        06260000
+LIST394  LH    R15,REPLTH               ACTUAL LENGTH OF STRING         06270000
+         S     R15,=F'1'                MACHINE LENGTH OF STRING VALID? 06280000
+         BM    LIST395                  NO, BRANCH                      06290000
+         MVC   0(*-*,R1),REPLSTR        <<EXECUTED>> -- MOVE IN STRING  06300000
+         EX    R15,*-6                  MOVE IN THE REPLACEMENT         06310000
+LIST395  DS    0H                                             ABL NOV86 06320000
+         CLI   #REPINCR+1,0             INCREMENT>1?          ABL NOV86 06330000
+         BE    *+6                      NO, BRANCH            ABL NOV86 06340000
+         SR    R15,R15                  YES, USE OTHER        ABL NOV86 06350000
+         AR    R1,R15                   POSITION AFTER REPLACED STRING  06360000
+         MVI   ##HELOFF+1,C'R'          REPLACED DATA                   06370000
+         OI    #REPFLAG,LISTUPDR        REPLACED DATA IN THIS BLOCK     06380070
+         L     R2,#LUSAVE4+8            END OF DATA                     06390000
+         LA    R0,1(,R1)                TRY NEXT CHARACTER              06400000
+         SR    R2,R0                    MACHINE LENGTH LEFT             06410000
+         STH   R2,#LUSAVE4+12           MACHINE LENGTH LEFT             06420000
+         SPACE 2                                                        06430000
+LIST397  AH    R1,#REPINCR              INCREMENT WIDTH -1    ABL NOV86 06440000
+         LA    R1,1(,R1)                INCREMENT WIDTH       ABL NOV86 06450000
+         L     R2,#LUSAVE4+8            END OF DATA                     06460000
+         SR    R2,R1                    MACHINE LENGTH LEFT NEGATIVE?   06470000
+         BNM   LIST370                  NO, KEEP SEARCHING              06480000
+         SPACE 2                                                        06490000
+LIST398  CLI   ##HELOFF+1,C'N'          UNSUCCESSFUL FIND OR REPLACE?   06500000
+         BE    LIST160                  YES, BRANCH                     06510000
+         SPACE 1                                                        06520000
+LIST399  L     R14,#LUSAVE4+0           WHERE OUTPUT GOES               06530000
+         L     R15,#LUSAVE4+4           DATA START                      06540000
+         LH    R1,#LUSAVE4+14           ORIGINAL MACHINE LENGTH         06550000
+         MVC   0(*-*,R14),0(R15)        <<EXECUTED>>                    06560000
+         EX    R1,*-6                   MOVE DATA INTO LINE             06570000
+         B     LIST730                  OUTPUT THIS LINE                06580000
+         SPACE 3                                                        06590000
+LIST400  LA    R4,64                    BLOCK FORMAT, WIDTH=64          06600000
+         B     LIST430                  FORMAT HEADER                   06610000
+         SPACE 1                                                        06620000
+LIST420  LA    R4,16                    DUMP FORMAT, WIDTH=16           06630000
+         SPACE 1                                                        06640000
+LIST430  LA    R3,LIST600               PROCESSING ROUTINE              06650000
+         LH    R0,#SKIPCOL              CHARACTERS TO SKIP              06660000
+         ST    R0,#LISTN2               UPDATE BLOCK OFFSET             06670000
+         A     R0,#LISTN1               CURRENT DATA                    06680000
+         ST    R0,#LISTN1                           DISPLACEMENT        06690000
+         MVI   MTLEN,5                                                  06700000
+         MVI   MTLEN+4,L'MSGDUMP-1                                      06710000
+         MVC   MSGTEXT1(3),L140$2                                       06720000
+         MVC   INSERT#1(5),LISTLBLO                                     06730000
+         MVC   INSERT#2-1(40),MSGDUMP   HEADER FOR BLOCK OR DUMP        06740000
+         NI    FLAGSDD,FF-OVERLAP       TURN OFF THE OVERLAP INDICATOR  06750000
+         LR    R5,R1                    DATA LENGTH                     06760000
+         C     R5,#MAXLEN               RESTRICT DATA LENGTH?           06770000
+         BL    *+8                      NO, BRANCH                      06780000
+         L     R5,#MAXLEN               YES, USE MAX LENGTH             06790000
+         AR    R5,R6                    COMPUTE NEW END-OF-BLOCK        06800000
+         BCTR  R5,0                     COMPUTE NEW END-OF-BLOCK -1     06810000
+         AH    R6,#SKIPCOL              ADJUST FOR START COLUMN         06820000
+         TM    FLAGSDD,LBLOCK+LDUMP     LBLOCK OR LDUMP?                06830000
+         BM    LIST450                  YES, BRANCH                     06840000
+         L     R0,#BLKCNT                                               06850000
+         A     R0,=F'1'                                                 06860000
+         ST    R0,#BLKCNT                                               06870000
+         CVD   R0,DOUBLE                                                06880000
+         ED    INSERT#2-1(10),DOUBLE+4                                  06890000
+         L     R0,#SKIPREC                                              06900000
+         S     R0,=F'1'                 SKIP THIS RECORD?               06910000
+         ST    R0,#SKIPREC                                              06920000
+         BNM   LIST170                  YES, BRANCH                     06930000
+         L     R0,#MAXIN                                                06940000
+         S     R0,=F'1'                 SUFFICIENT INPUT RECORDS?       06950000
+         ST    R0,#MAXIN                                                06960000
+         BM    LIST910                  YES, BRANCH                     06970000
+         CVD   R1,DOUBLE                  RECORD LENGTH                 06980000
+         ED    INSERT#2+MSGDUMPL-MSGDUMP-1(7),DOUBLE+5                  06990000
+         STM   R14,R12,12(R13)            CONVERT CCHHR TO TTR          07000000
+         LA    R2,CURMBB                  CCHHR TO CONVERT              07010000
+         L     R1,INDCB+(DCBDEBAD-IHADCB) DEB ADDRESS                   07020000
+         L     R15,ADDRRLTV               ADDRESS OF CCHHR->TTR CONVERT 07030000
+         LR    R3,R13                     ADDRESS OF SAVE AREA          07040000
+         BASR  R14,R15                    CALL CONVERT ROUTINE          07050000
+         LR    R13,R3                     RESTORE SAVE AREA ADDRESS     07060000
+         ST    R0,12+4+4(R13)             RESULT TTR RETURNED IN R0     07070000
+         LM    R14,R12,12(R13)            RESTORE REGISTERS             07080000
+         ST    R0,DOUBLE                SAVE RESULTING TTR              07090000
+         UNPK  INSERT#2+MSGDUMPT-MSGDUMP-1(7),DOUBLE(4)                 07100000
+         TR    INSERT#2+MSGDUMPT-MSGDUMP-1(6),TRTABLE                   07110000
+         MVI   INSERT#2+MSGDUMPT-MSGDUMP+6-1,X'40'                      07120000
+         TM    FLAGSDD,DUMP                                             07130076
+         BNOR  R3                                                       07140000
+         MVC   INSERT#1(5),LISTLDUM                                     07150000
+         BR    R3                                                       07160000
+         SPACE 2                                                        07170000
+LIST450  TM    #LISTFLG,X'01'           CSECT FORMATTING?               07180000
+         BNOR  R3                       NO, BRANCH                      07190000
+         OI    #LISTFLG,X'08'           NEED A HEADER CHANGE            07200000
+         STH   R4,#LISTWD               WIDTH OF EACH LINE              07210000
+         L     R6,EXCPBUFF              BUFFER START                    07220000
+         L     R5,LS                    BUFFER LENGTH                   07230000
+         AR    R5,R6                    END OF BUFFER                   07240000
+         BCTR  R5,0                     END OF BUFFER -1                07250000
+         TM    #LISTFLG,X'40'           ANY CSECT ADDRESS YET?          07260000
+         BO    LIST460                  YES, BRANCH                     07270000
+         TM    0(R6),X'F0'              TEST, SCATTER, CESD OR IDR?     07280000
+         BM    LIST170                  YES, BRANCH                     07290000
+LIST460  TM    #LISTFLG,X'C0'           ANY CURRENT ESD RECORD?         07300000
+         BO    LIST470                  YES, THIS IS A DATA RECORD      07310000
+         CLI   8(R6),X'06'              AN ESD RECORD?                  07320000
+         BNE   LIST170                  NO, BRANCH                      07330000
+         OI    #LISTFLG,X'C0'           FLAGS FOR ESD RECORD INPUT      07340000
+         MVI   #LISTVIR,00              CLEAR THE HIGH-ORDER DIGIT      07350000
+         MVC   #LISTVIR+1(3),9(R6)      SAVE THE OFFSET ADDRESS         07360000
+         LH    R15,6(R6)                OFFSET TO ESDID                 07370000
+         LA    R5,16(R15,R6)            FIRST ESDID FOR THIS BLOCK      07380000
+         LH    R6,4(R6)                 ESDID ENTRIES *4                07390000
+         SRL   R6,2                     ESDID ENTRIES                   07400000
+         LA    R2,#ESDPTR               START OF ESD ADDRESSES          07410000
+         SPACE 2                                                        07420000
+*  LOOP TO MARK ENTRIES FOR THE NEXT PHYSICAL BLOCK                     07430000
+LIST464  ICM   R2,B'1111',ESDLINK       NEXT ENTRY?                     07440000
+         BZ    LIST170                  NO, DONE                        07450000
+         MVI   ESDIDIN,0                TURN OFF FIRST                  07460000
+         LR    R14,R5                   START OF ESDID LIST             07470000
+         LR    R15,R6                   NUMBER OF ESDID ENTRIES         07480000
+         SPACE 1                                                        07490000
+LIST468  CLC   0(2,R14),ESDID           THIS ENTRY?                     07500000
+         BNE   *+8                      NO, BRANCH                      07510000
+         MVI   ESDIDIN,1                YES, MARK IT                    07520000
+         LA    R14,4(,R14)              NEXT ESDID ENTRY                07530000
+         BCT   R15,LIST468              MARK ALL ENTRIES THAT MATCH     07540000
+         B     LIST464                  CHECK ALL ESD ENTRIES           07550000
+         SPACE 3                                                        07560000
+LIST470  XI    #LISTFLG,X'A0'           OFF CURRENT ESD; ON CSECT DATA  07570000
+         L     R0,#LISTVIR              BLOCK OFFSET                    07580000
+         L     R14,#LISTOFF             LIST OFFSET QUANTITY            07590000
+         ST    R14,#LISTN2              BLOCK OFFSET                    07600000
+         A     R14,#LISTN1              DATA                            07610000
+         ST    R14,#LISTN1                  DISPLACEMENT                07620000
+         ICM   R14,B'1111',#LISTOFF     LIST OFFSET?                    07630000
+         BP    *+6                      YES, BRANCH                     07640000
+         LR    R14,R0                   NO, USE NORMAL BLOCK OFFSET     07650000
+         SR    R6,R0                                                    07660000
+         ST    R6,#LISTVIR              VIRTUAL BUFFER START ADDRESS    07670000
+         LA    R2,#ESDPTR               START OF ESD ADDRESSES          07680000
+         AR    R6,R14                   OFFSET --> ACTUAL ADDRESS       07690000
+         SPACE 2                                                        07700000
+*  LOOP TO FIND A START ENTRY                                           07710000
+LIST480  ICM   R2,B'1111',ESDLINK       NEXT ENTRY?                     07720000
+         BZ    LIST170                  NO, DONE                        07730000
+         SR    R14,R14                                                  07740000
+         ICM   R14,B'0111',ESDADDR      START ADDRESS OF SYMBOL         07750000
+         LR    R15,R14                  CSECT START OFFSET              07760000
+         A     R14,#LISTVIR             OFFSET --> ADDR OF CSECT START  07770000
+         A     R15,ESDLEN-1             CSECT END OFFSET                07780000
+         A     R15,#LISTVIR             OFFSET --> ADDRESS OF CSECT END 07790000
+         CR    R6,R15                   CURRENT:CSECT END               07800000
+         BNL   LIST480                    HIGH OR EQUAL, LOOP FOR NEXT  07810000
+         CR    R5,R14                   END:CSECT START                 07820000
+         BL    LIST480                    LOW, LOOP FOR NEXT            07830000
+         CLI   ESDIDIN,1                THIS CSECT ACTIVE?              07840000
+         BNE   LIST480                  NO, LOOP FOR NEXT               07850000
+         MVC   #LISTID(2),ESDID         YES, MARK THE CURRENT ESDID     07860000
+         ST    R2,#LISTENT              SAVE THIS ENTRY START           07870000
+         LR    R1,R2                                                    07880000
+         SPACE 1                                                        07890000
+LIST490  ICM   R1,B'1111',ESDLINK-ESDENTRY(R1)  NEXT ENTRY?             07900000
+         BZR   R3                               NO, DONE                07910000
+         CLC   #LISTID(2),ESDID-ESDENTRY(R1)    SAME ESDID ON NEXT ONE? 07920000
+         BNER  R3                               NO, DONE                07930000
+         ICM   R15,B'0111',ESDADDR-ESDENTRY(R1) NEXT ENTRY START        07940000
+         A     R15,#LISTVIR                     OFFSET --> NEXT START   07950000
+         CR    R14,R15                          CSECT START:NEXT ENTRY  07960000
+         BE    LIST490                            SAME, IGNORE ENTRY    07970000
+         CR    R15,R6                           NEXT START:CURRENT      07980000
+         BNH   LIST480                            NOT ABOVE, USE NEXT   07990000
+         BR    R3                                                       08000000
+         SPACE 3                                                        08010000
+LIST600  BAS   R14,LIST800              PERFORM ANY CSECT POSITIONING   08020000
+         LR    R2,R4                    DATA LENGTH                     08030000
+         LR    R14,R5                                                   08040000
+         SR    R14,R6                   MACHINE LENGTH VALID?           08050000
+         BM    LIST160                  NO, BRANCH                      08060000
+         CR    R2,R14                                                   08070000
+         BNH   *+8                                                      08080000
+         LA    R2,1(,R14)               DATA LENGTH FOR THIS SEGMENT    08090000
+         BCTR  R2,0                     MACHINE LENGTH FOR THE SEGMENT  08100000
+         ST    R2,#LUSAVE4+8            SAVE FOR REPLACE                08110000
+         CLI   ##HELOFF,C'R'            REPLACE OPERATION?              08120000
+         BE    LIST644                  YES, BRANCH                     08130000
+         CLI   ##HELOFF,C'F'            FIND OPERATION?                 08140000
+         BNE   LIST690                  NO, LIST -- BRANCH              08150000
+LIST644  XC    #LUSAVE4(8),#LUSAVE4                                     08160000
+         LR    R1,R6                    START OF DATA                   08170000
+         LA    R14,0(R6,R2)             END OF DATA -1                  08180000
+         LH    R15,FINDLTH              STRING LENGTH                   08190000
+         ST    R14,#LUSAVE4             END OF DISPLAYED PART           08200000
+         AR    R14,R15                  MAXIMUM ACCESS                  08210000
+         BCTR  R15,0                    MACHINE LENGTH OF STRING        08220000
+         CR    R14,R5                   BEYOND RECORD END?              08230000
+         BL    LIST660                  NO, BRANCH                      08240000
+         LR    R14,R5                   YES, USE END OF RECORD -1       08250000
+         SPACE 1                                                        08260000
+         CNOP  0,8                      ALIGN FOR LOOP        DRK DEC02 08270035
+LIST660  ICM   R0,B'1111',#MAXFIND      ANY MORE TO FIND?               08280000
+         BNP   LIST670                  NO, BRANCH                      08290000
+         CLI   #REPINCR+1,0             INCREMENT BY 1?       ABL NOV86 08300000
+         BH    LIST662                  NO, BRANCH            ABL NOV86 08310000
+         EX    R2,LISTTRT               FIRST CHARACTER FOUND?          08320022
+         BZ    LIST670                  NO, NOT IN STRING               08330022
+LIST662  DS    0H                                             ABL NOV86 08340000
+         LR    R2,R14                                                   08350000
+         SR    R2,R1                    MACHINE LENGTH LEFT             08360000
+         CR    R15,R2                   POSSIBLY IN STRING?             08370000
+         BH    LIST670                  NOT IN STRING                   08380000
+         CLI   #IGNCASE,1               IGNORE CASE OPTION?   DRK DEC02 08390034
+         BNE   LIST662A                 NO                    DRK DEC02 08400034
+         MVC   PARMLIST(32),0(R1)       SAVE INPUT AREA       DRK DEC02 08410031
+         OC    PARMLIST(32),BLANK128    FOLD SAVED AREA       DRK DEC02 08420031
+         CLC   PARMLIST(*-*),FINDSTR    <<EXECUTED>>          DRK DEC02 08430031
+         EX    R15,*-6                  ENTIRE STRING FOUND?  DRK DEC02 08440031
+         BNE   LIST666                  NO, BRANCH            DRK DEC02 08450031
+         B     *+4+6+4+4                YES                   DRK DEC02 08460031
+LIST662A DS    0H                                             DRK DEC02 08470031
+         CLC   0(*-*,R1),FINDSTR        <<EXECUTED>> -- COMPLETE STRING 08480000
+         EX    R15,*-6                  ENTIRE STRING FOUND?            08490000
+         BNE   LIST666                  NO, BRANCH                      08500000
+         ST    R1,#LUSAVE4+4            YES, SAVE THE LAST ADDRESS      08510000
+         L     R0,#MAXFIND              FOUND                           08520000
+         S     R0,=F'1'                      ONE                        08530000
+         ST    R0,#MAXFIND                      MORE                    08540000
+         CLI   ##HELOFF,C'R'            REPLACE SUBCOMMAND?             08550000
+         BNE   LIST664                  NO, BRANCH                      08560000
+         MVC   0(*-*,R1),REPLSTR        <<EXECUTED>> -- REPLACE STRING  08570000
+         EX    R15,*-6                  MOVE IN THE REPLACEMENT         08580000
+         OI    #REPFLAG,LISTUPDR        REPLACED DATA IN THIS BLOCK     08590070
+         SPACE 1                                                        08600000
+LIST664  DS    0H                                             ABL NOV86 08610000
+         CLI   #REPINCR+1,0             INCREMENT>1?          ABL NOV86 08620000
+         BE    *+6                      NO, BRANCH            ABL NOV86 08630000
+         SR    R15,R15                  YES, USE OTHER        ABL NOV86 08640000
+         AR    R1,R15                   SKIP OVER THE REPLACED DATA     08650000
+         OC    #LISTIDU(2),#LISTIDU     ANY ESDID YET?                  08660000
+         BNZ   LIST666                  YES, BRANCH                     08670000
+         MVC   #LISTIDU(2),#LISTID      NO, SAVE THIS ONE               08680000
+LIST666  AH    R1,#REPINCR              INCREMENT WIDTH -1    ABL NOV86 08690000
+         LA    R1,1(,R1)                INCREMENT WIDTH       ABL NOV86 08700000
+         L     R2,#LUSAVE4              LAST ACCESS BYTE                08710000
+         SR    R2,R1                    MACHINE LENGTH LEFT NEGATIVE?   08720000
+         BNM   LIST660                  NO, CONTINUE SEARCHING          08730000
+         SPACE 2                                                        08740000
+LIST670  ICM   R1,B'1111',#LUSAVE4+4    ANY STRING FOUND?               08750000
+         BZ    LIST680                  NO, BRANCH                      08760000
+         SR    R1,R6                    DISPLACEMENT INTO DISPLAY       08770000
+         AH    R1,FINDLTH               LENGTH AT END OF COMPARE        08780000
+         CR    R1,R4                    BEYOND DISPLAYED LENGTH?        08790000
+         BNH   LIST684                  NO, BRANCH                      08800000
+         OI    FLAGSDD,OVERLAP          YES, MARK AS AN OVERLAP         08810000
+         B     LIST690                                                  08820000
+         SPACE 1                                                        08830000
+LIST680  TM    FLAGSDD,OVERLAP          NO STRING FOUND -- OVERLAP SET? 08840000
+         BO    LIST684                  YES, BRANCH                     08850000
+         L     R2,#LUSAVE4+8            MACHINE LENGTH OF THIS SEGMENT  08860000
+         L     R1,#LISTN2               CSECT                           08870000
+         LA    R1,1(R1,R2)                   BYTE                       08880000
+         ST    R1,#LISTN2                        DISPLACEMENT           08890000
+         B     LIST160                                                  08900000
+         SPACE 1                                                        08910000
+LIST684  NI    FLAGSDD,FF-OVERLAP       CLEAR THE OVERLAP FLAG          08920000
+         B     LIST690                                                  08930000
+         SPACE 1                                                        08940000
+LISTTRT  TRT   0(*-*,R1),WORKTBL        <<EXECUTED>> -- FIND FIRST BYTE 08950000
+         SPACE 2                                                        08960000
+LIST690  L     R2,#LUSAVE4+8            MACHINE LENGTH                  08970000
+         LA    R0,20(,R2)               LINE OUTPUT LENGTH              08980000
+         LA    R1,MSGLINE+17            OUTPUT DATA START ADDRESS       08990000
+         CLI   ##HELOFF,C'D'            DIRENTRY?                       09000000
+         BE    LIST691                  YES, BRANCH                     09010000
+         LA    R15,MSGLINE              OUTPUT START FOR OFFSETS        09020000
+         TM    FLAGSDD,LBLOCK+BLOCK     ANY BLOCK FORMAT?               09030000
+         BM    LIST692                  YES, BRANCH                     09040000
+LIST691  LA    R0,62(,R2)               LINE OUTPUT LENGTH              09050000
+         LA    R1,MSGLINE+57            OUTPUT CHARACTER DUMP ADDRESS   09060000
+         LA    R15,MSGLINE+2            OUTPUT START FOR OFFSETS        09070000
+         MVC   MSGLINE(80),MSGBL132     CLEAR THE OUTPUT LINE           09080000
+         SPACE 2                                                        09090000
+LIST692  SLL   R0,16                                                    09100000
+         ST    R0,MSGLINE               OUTPUT LENGTH                   09110000
+         MVI   0(R1),C'*'               FIRST *                         09120000
+         MVC   1(*-*,R1),0(R6)          <<EXECUTED>>                    09130000
+         EX    R2,*-6                   MOVE IN THE DATA                09140000
+         LA    R1,2(R1,R2)              POSITION OF FINAL ASTERISK      09150000
+         MVI   0(R1),C'*'               FINAL *                         09160000
+         SPACE 1                                                        09170000
+         UNPK  4(7,R15),#LISTN1+1(4)    UNPACK ADDRESS                  09180000
+         TR    4(6,R15),TRTABLE         CONVERT TO HEXADECIMAL          09190000
+         MVI   10(R15),X'40'            BLANK THE FOLLOWING BYTE        09200000
+         CLI   ##HELOFF,C'D'            DIRENTRY?                       09210000
+         BNE   *+10                     NO, BRANCH                      09220000
+         MVC   4(6,R15),BLANKS          YES, BLANK THIS FIELD           09230000
+         UNPK  DOUBLE(7),#LISTN2+1(4)   UNPACK ADDRESS                  09240000
+         TR    DOUBLE(7),TRTABLE        CONVERT TO HEXADECIMAL          09250000
+         MVC   11(4,R15),DOUBLE+2       MOVE IN ADDRESS                 09260000
+         MVI   15(R15),X'40'            BLANK THE FOLLOWING BYTE        09270000
+         CLI   DOUBLE+1,C'0'            LESS THAN 64K?                  09280000
+         BE    *+10                     YES, BRANCH                     09290000
+         MVC   11(5,R15),DOUBLE+1       MOVE IN ADDRESS                 09300000
+         MVI   16(R15),X'40'            BLANK ANOTHER BYTE              09310000
+         CLI   ##HELOFF,C'D'            DIRENTRY?                       09320000
+         BE    LIST694                  YES, BRANCH                     09330000
+         TM    FLAGSDD,LBLOCK+BLOCK     ANY BLOCK FORMAT?               09340000
+         BM    LIST700                  YES, BRANCH                     09350000
+LIST694  LA    R15,MSGLINE+11           WHERE TO PUT OUTPUT             09360000
+         LR    R1,R6                    CURRENT DATA POINTER            09370000
+         LA    R14,1(,R2)               NUMBER OF BYTES TO FORMAT       09380000
+         SR    R0,R0                    CURRENT FORMATTED CHARACTER     09390000
+         SPACE 2                                                        09400000
+LIST696  MVC   DOUBLE(1),0(R1)          AVOID 0C5 FOR LAST BUFFER BYTE  09410000
+         UNPK  8(3,R15),DOUBLE(2)       UNPACK DATA                     09420000
+         TR    8(2,R15),TRTABLE         CONVERT TO HEXADECIMAL          09430000
+         MVI   10(R15),X'40'            CLEAR FOLLOWING BYTE            09440000
+         LA    R15,2(,R15)              INCR INTO PRINT AREA            09450000
+         A     R1,=F'1'                 INCREMENT INTO DATA             09460000
+         A     R0,=F'1'                 NEXT FORMATTED CHARACTER        09470000
+         ST    R0,DOUBLE                                                09480000
+         TM    DOUBLE+3,X'03'           4, 8, 12, 16, ...?              09490000
+         BNZ   LIST698                  NO, BRANCH                      09500000
+         LA    R15,1(,R15)              YES, INCREMENT ONE              09510000
+         TM    DOUBLE+3,X'07'           8, 16, 24, 32, ...?             09520000
+         BNZ   LIST698                  NO, BRANCH                      09530000
+         LA    R15,1(,R15)              YES, INCREMENT ONE              09540000
+LIST698  BCT   R14,LIST696              GO FORMAT                       09550000
+         SPACE 3                                                        09560000
+LIST700  L     R2,#LUSAVE4+8            MACHINE LENGTH OF THIS SEGMENT  09570000
+         L     R1,#LISTN2               CSECT                           09580000
+         LA    R1,1(R1,R2)                   BYTE                       09590000
+         ST    R1,#LISTN2                        DISPLACEMENT           09600000
+         CLI   INSERT#1,X'FF'           ANY HEADER?                     09610000
+         BE    LIST760                  NO, BRANCH                      09620000
+         CLI   ##HELOFF,C'D'            DIRENTRY SUBCOMMAND?            09630000
+         BE    LIST720                  YES, BRANCH                     09640000
+         ICM   R0,B'1111',#MAXOUT       ANY MORE OUTPUT?                09650000
+         BNP   LIST910                  NO, ALL DONE                    09660000
+         CLI   ##HELOFF+3,C'Y'          ANY OUTPUT YET?                 09670000
+         BNE   LIST710                  NO, BRANCH                      09680000
+         LA    R15,MSGBLANK                                             09690000
+         BAS   R14,LIST770              OUTPUT A BLANK LINE             09700000
+LIST710  TM    #LISTFLG,X'01'           CSECT OUTPUT?                   09710000
+         BO    LIST720                  YES, BRANCH                     09720000
+         TM    FLAGSDD,LBLOCK+LDUMP     LBLOCK OR LDUMP?                09730000
+         BM    LIST730                  YES, BRANCH                     09740000
+LIST720  LA    R15,MSGTEXT1             OUTPUT THE HEADER LINE          09750000
+         BAS   R14,LIST770                                              09760000
+LIST730  MVI   INSERT#1,X'FF'           TURN OFF THE HEADER             09770000
+         OI    FLAGSGG,FOUTSOME         SOME OUTPUT WAS GENERATED       09780000
+         L     R0,#MAXOUT               DECREMENT                       09790000
+         S     R0,=F'1'                          THE #MAXOUT            09800000
+         ST    R0,#MAXOUT                                   COUNTER     09810000
+         BM    LIST910                  NEGATIVE, ALL DONE              09820000
+LIST760  TR    MSGLINE+4(256),TRLINE    UNPRINTABLES --> PERIODS        09830000
+         LA    R15,MSGLINE              OUTPUT THE NEXT LINE            09840000
+         BAS   R14,LIST770              OUTPUT THE NEXT LINE            09850000
+         TM    ##ADRPA#,$F              FINDLIST MODIFICATION?          09860000
+         BNO   *+8                      NO, BRANCH                      09870000
+         MVI   ##HELOFF,C'L'            YES, NOW LIST THE REST          09880000
+         B     LIST160                  YES, CONTINUE                   09890000
+         SPACE 1                                                        09900000
+LIST770  STM   R14,R15,#LFSAVE2         SAVE REGISTERS 14 AND 15        09910000
+         CLI   ##HELOFF+3,C'D'          FIND AND NO OUTPUT YET?         09920000
+         BNE   LIST780                  NO, BRANCH                      09930000
+         SPACE 1                                                        09940000
+         LA    R1,=C'THEN'                                              09950000
+         L     R15,=A(LIST980)                                DRK NOV06 09951066
+         ICM   R2,B'1111',#ACTIONT      ANY THEN ACTION?                09960000
+         BPR   R15                      YES, BRANCH           DRK NOV06 09971066
+*        BP    LIST980                  YES, BRANCH                     09972066
+         SPACE 1                                                        09980000
+         ICM   R0,B'1111',#ACTIONE      ANY ELSE ACTION?                09990000
+         BP    NEWCMD                   YES, IGNORE THIS MEMBER         10000000
+         SPACE 1                                                        10010000
+         L     R15,=A(LIST996)                                DRK DEC02 10020033
+         BASR  R2,R15                   OUTPUT ANY MEMBER HDR DRK DEC02 10030033
+*        BAS   R2,LIST996               OUTPUT ANY MEMBER HEADER        10040029
+         SPACE 1                                                        10050000
+LIST780  L     R1,#LFSAVE2+4            POINT TO MESSAGE                10060000
+         MVI   ##HELOFF+3,C'Y'          OUTPUT WAS GENERATED            10070000
+         M$MSG (R1)                     OUTPUT THE MESSAGE              10080000
+         L     R14,#LFSAVE2             RESTORE REGISTER 14             10090000
+         BR    R14                                                      10100000
+         SPACE 3                                                        10110000
+LIST800  TM    #LISTFLG,X'60'           CSECT DATA?                     10120000
+         BNOR  R14                      NO, RETURN                      10130000
+         TM    #LISTFLG,X'08'           NEED ADJUSTMENT?                10140000
+         BNO   LIST830                  NO, BRANCH                      10150000
+         XI    #LISTFLG,X'08'           RESET THE ADJUSTMENT FLAG       10160000
+LIST804  LH    R4,#LISTWD               DISPLAY CHARACTER WIDTH         10170000
+         ICM   R2,B'1111',#LISTENT      END OF CSECT ENTRIES?           10180000
+         BZ    LIST170                  YES, BRANCH                     10190000
+         L     R15,ESDLEN-1             CSECT LENGTH          DRK JUN07 10191077
+         LTR   R15,R15                  ZERO?                 DRK JUN07 10192077
+         BZ    LIST804Z                 YES                   DRK JUN07 10193078
+         CLI   ESDIDIN,1                THIS CSECT ACTIVE?              10200000
+         BNE   LIST170                  NO, GET THE NEXT INPUT BLOCK    10210000
+         SPACE 1                                                        10220000
+*  ADJUST TO BEGINNING BOUNDARY                                         10230000
+LIST804Z DS    0H                                             DRK JUN07 10231078
+         SR    R0,R0                                                    10240000
+         ICM   R0,B'0111',ESDADDR       CURRENT OFFSET                  10250000
+         A     R0,#LISTVIR              OFFSET --> ACTUAL ADDRESS       10260000
+         A     R0,#LISTMFF              ADD THE MODULE OFFSET           10270000
+         CR    R0,R6                    VALID ADJUSTMENT?               10280000
+         BNH   *+6                      NO, BRANCH                      10290000
+         LR    R6,R0                    YES, POSITION TO SYMBOL START   10300000
+         LR    R1,R6                                                    10310000
+         BCTR  R1,0                                                     10320000
+         CR    R1,R5                    IN THIS DATA RECORD?            10330000
+         BNL   LIST170                  NO, IGNORE THIS RECORD          10340000
+         XC    #LISTOFF(4),#LISTOFF     LIST OFFSET IS SATISFIED        10350000
+         MVC   #LISTID(2),ESDID         SAVE THE CURRENT ESD ID         10360000
+         MVI   MTLEN,39                                                 10370000
+         MVC   MSGTEXT1(3),L141$1                                       10380000
+         MVC   INSERT#1(39),MSGLDUMP    "AT 123456  CSECT 12345678 .."  10390000
+         UNPK  INSERT#1(7),ESDADDR(4)                                   10400000
+         TR    INSERT#1(6),TRTABLE      OFFSET OF CSECT OR ENTRY        10410000
+         MVI   INSERT#1+6,X'40'                                         10420000
+         MVC   INSERT#1+14(8),ESDNAME   PRIVATE, COMMON OR CSECT NAME   10430000
+         UNPK  INSERT#1+31(7),ESDLEN(4)                                 10440000
+         TR    INSERT#1+31(6),TRTABLE   LENGTH OF CSECT                 10450000
+         MVI   INSERT#1+31+6,X'40'                                      10460000
+         LR    R0,R6                                                    10470000
+         S     R0,#LISTVIR              ACTUAL ADDRESS --> OFFSET       10480000
+         ST    R0,#LISTN1               OFFSET IN LOAD MODULE           10490000
+         SR    R1,R1                                                    10500000
+         ICM   R1,B'0111',ESDADDR       ENTRY ADDRESS                   10510000
+         SR    R0,R1                                                    10520000
+         ST    R0,#LISTN2               OFFSET IN CSECT                 10530000
+         CLI   ESDTYPE,CODESD           CSECT ENTRY?                    10540000
+         BE    LIST810                  YES, BRANCH                     10550000
+         TM    ESDTYPE,CODEPC           PRIVATE CODE OR OVERLAY?        10560000
+         BO    LIST810                  YES, BRANCH                     10570000
+         L     R15,ESDCSECT             ADDRESS OF MAIN ENTRY           10580000
+         MVC   INSERT#1+14(8),4(R15)    CSECT NAME                      10590000
+         MVC   INSERT#1+24(6),LISTLENT   ENTRY WITHIN A CSECT           10600000
+         MVC   INSERT#1+31(8),ESDNAME                                   10610000
+         AR    R0,R1                                                    10620000
+         ICM   R1,B'0111',ESDMAIN+1     CSECT START ADDRESS             10630000
+         SR    R0,R1                                                    10640000
+         ST    R0,#LISTN2               OFFSET IN CSECT                 10650000
+         SPACE 2                                                        10660000
+LIST810  ICM   R0,B'0111',ESDADDR       ENTRY ADDRESS                   10670000
+         LR    R15,R0                   SAVE THE ENTRY ADDRESS          10680000
+         A     R0,ESDLEN-1              LAST ADDRESS TO BE ACCESSED     10690000
+LIST814  LTR   R2,R2                    AT END OF LIST?                 10700000
+         BZ    LIST820                  YES, BRANCH                     10710000
+         ICM   R2,B'1111',ESDLINK       ANOTHER ESD ENTRY?              10720000
+         ST    R2,#LISTENT                                              10730000
+         BZ    LIST820                  NO, BRANCH                      10740000
+         CLC   #LISTID(2),ESDID         ENTRY FOR THIS CSECT?           10750000
+         BNE   LIST820                  NO, USE THE CURRENT ENTRY       10760000
+         CLM   R15,B'0111',ESDADDR      START:NEXT START                10770000
+         BNL   LIST814                    HIGH OR EQUAL, DISCARD IT     10780000
+         CLM   R0,B'0111',ESDADDR       END:NEXT START                  10790000
+         BNH   LIST820                    LOW OR EQUAL, USE THIS LIMIT  10800000
+         ICM   R0,B'0111',ESDADDR         HIGH, USE THE LOWER LIMIT     10810000
+         SPACE 1                                                        10820000
+LIST820  LR    R1,R0                    CSECT OR ENTRY END              10830000
+         SR    R1,R15                   CSECT OR ENTRY LENGTH           10840000
+         C     R1,#MAXLEN               ABOVE MAXIMUM CSECT LENGTH?     10850000
+         BL    *+8                      NO, BRANCH                      10860000
+         L     R1,#MAXLEN               YES, USE THE REQUESTED MAXIMUM  10870000
+         AR    R1,R15                   END OF CSECT OR ENTRY           10880000
+         A     R1,#LISTVIR              OFFSET --> ACTUAL ADDRESS       10890000
+         ST    R1,#LISTE1               SAVE END ADDRESS                10900000
+         SPACE 2                                                        10910000
+*  CHECK FOR END OF CSECT OR EXTERNAL LABEL                             10920000
+LIST830  LR    R1,R4                    DATA LENGTH                     10930000
+         LR    R15,R5                                                   10940000
+         SR    R15,R6                   MACHINE LENGTH VALID?           10950000
+         BM    LIST170                  NO, IGNORE THIS RECORD          10960000
+         CR    R1,R15                                                   10970000
+         BNH   *+8                                                      10980000
+         LA    R1,1(,R15)               R1=MIN(16 OR 64,LENGTH LEFT)    10990000
+         AR    R1,R6                    END OF THIS LINE                11000000
+         C     R1,#LISTE1               END ON THIS LINE?               11010000
+         BLR   R14                      NO, RETURN                      11020000
+         OI    #LISTFLG,X'08'           NEW HEADER IS NEEDED            11030000
+         L     R4,#LISTE1               MAXIMUM ADDRESS OF CSECT        11040000
+         SR    R4,R6                    DISPLAY LENGTH VALID?           11050000
+         BPR   R14                      YES, BRANCH                     11060000
+         LTR   R2,R2                    AT END OF LIST?                 11070000
+         BZ    LIST170                  YES, IGNORE THIS MEMBER         11080000
+         B     LIST804                  NO, TRY THE NEXT CSECT          11090000
+         SPACE 3                                                        11100000
+LIST900  MVI   ##HELOFF+2,X'EF'         END OF FILE ENCOUNTERED         11110000
+         LA    R2,LISTSPFU-2048         POINT PDSE STATS RTN   GP AUG05 11120042
+         B     2048(R2)                 INVOKE IT              GP AUG05 11130042
+*                                                                       11140000
+LIST910  CLI   ##HELOFF+3,C'D'          FIND AND NO OUTPUT?             11150000
+         BNE   LIST920                  NO, BRANCH                      11160000
+         LA    R1,=C'ELSE'                                              11170000
+         L     R15,=A(LIST980)                                DRK NOV06 11171066
+         ICM   R2,B'1111',#ACTIONE      ANY ELSE ACTION?                11180000
+         BPR   R15                      YES, BRANCH           DRK NOV06 11190066
+*        BP    LIST980                  YES, BRANCH                     11191066
+         TM    FLAGSAA,FMEM#MEM         MEMBER GROUP IN PROGRESS?       11200000
+         BO    NEWCMD                   YES, DONE                       11210000
+         TM    DSORG,DS1DSGPO           PARTITIONED?                    11220000
+         BNO   LIST940                  NO, BRANCH                      11230000
+         TM    PMEMMIN,X'80'            MEMBER LIST AND NO OUTPUT?      11240000
+         BO    NEWCMD                   YES, BRANCH                     11250000
+         L     R15,=A(LIST996)                                DRK DEC02 11260033
+         BASR  R2,R15                   OUTPUT ANY MEMBER HDR DRK DEC02 11270033
+*        BAS   R2,LIST996               OUTPUT ANY MEMBER HEADER        11280029
+         B     LIST940                                                  11290000
+         SPACE 1                                                        11300000
+LIST920  TM    FLAGSDD,LBLOCK+LDUMP+BLOCK+DUMP SEGMENT FORMAT?          11310000
+         BZ    LIST940                         NO, BRANCH               11320000
+         M$ERRST MSGBLANK               OUTPUT A BLANK LINE             11330000
+         SPACE 1                                                        11340000
+LIST940  CLI   ##HELOFF+2,X'EF'            END OF FILE ENCOUNTERED?     11350000
+         BE    LIST950                     YES, DONE                    11360000
+*                                                                       11370000
+         OI    #REPFLAG,LISTTERM           TERMINATE AFTER THIS BLOCK   11380070
+         TM    #REPFLAG,LIST#REP+LISTUPDR  WRITE AND DATA TO REPLACE?   11390000
+         BO    LIST170                     YES, UPDATE THIS RECORD      11400000
+         B     NEWCMD                      TERMINATE                    11410000
+*                                                                       11420000
+LIST950  MVI   MTLEN,L'MSGBLK-1                                         11430000
+         LA    R1,L142$1                                                11440000
+         MVC   INSERT#1-1(34),MSGBLK                                    11450000
+         L     R0,#BLKCNT                                               11460000
+         CVD   R0,DOUBLE                                                11470000
+         ED    INSERT#1-1(10),DOUBLE+4                                  11480000
+         L     R15,=A(LIST960)                                DRK NOV06 11481067
+         TM    #LISTFLG,X'01'           CSECT FORMATTING?               11490000
+         BOR   R15                      YES, BRANCH           DRK NOV06 11500068
+*        BO    LIST960                  YES, BRANCH                     11501067
+         TM    FLAGSDD,DUMP+BLOCK                                       11510000
+         BNZR  R15                                            DRK NOV06 11520068
+*        BNZ   LIST960                                                  11521067
+         MVC   INSERT#1+MSGBLKL-MSGBLK-1(6),LISTLLIN                    11530000
+LIST960  TM    DSORG,DS1DSGPO                                           11540000
+         BO    MSGNEW                                                   11550000
+         MVC   INSERT#1+MSGBLKS-MSGBLK-1(8),LISTLDAT                    11560000
+         B     MSGNEW                                                   11570000
+         SPACE 2                                                        11580000
+LIST980  MVC   DELAYMSG+25(4),0(R1)     ADD "THEN" OR "ELSE"            11590000
+         L     R15,=A(LIST990)                                DRK DEC02 11600033
+         TM    ##ADRPA#-##SUBCOM(R2),$D SUPPRESS DEFAULT MESSAGE?       11610000
+         BOR   R15                                            DRK DEC02 11620033
+*        BO    LIST990                  YES, BRANCH                     11630032
+         SPACE 1                                                        11640000
+         M$ERRST MSGBLANK               OUTPUT A BLANK LINE             11650000
+         L     R15,=A(LIST990)                                DRK DEC02 11660033
+         TM    FLAGSHH,FDELAYM          ANY MESSAGE TO OUTPUT?          11670000
+         BNOR  R15                                            DRK DEC02 11680033
+*        BNO   LIST990                  NO, BRANCH                      11690032
+         XI    FLAGSHH,FDELAYM          NO MORE MESSAGE                 11700000
+         MVC   DELAYMSG+30(8),0(R2)     SUBCOMMAND TO EXECUTE           11710000
+         M$ERRST DELAYMSG               IDENTIFICATION LINE             11720000
+         SPACE 1                                                        11730000
+LIST990  MVC   ##ANSWER(LISUBS),ISUBS   INITIALIZE THE PDL SAVE AREA    11740000
+         MVC   ##SUBCOM(PTW),0(R2)      CHANGE THE SUBCOMMAND           11750000
+         MVI   MTLEN,8                                                  11760000
+         MVI   MTLEN+4,8                                                11770000
+         OI    FLAGSGG,FOUTSOME         SOME OUTPUT WAS GENERATED       11780000
+         B     CALLCMDZ                 CALL THE SECONDARY SUBCOMMAND   11790000
+         SPACE 3                                                        11800000
+* OUTPUT A FIND OR REPLACE HEADER MESSAGE IF REQUIRED                   11810000
+LIST996  TM    DSORG,DS1DSGPO           PARTITIONED?                    11820000
+         BNOR  R2                       NO, NO MESSAGE                  11830000
+         TM    FLAGSHH,FDELAYM          ANY HEADER MESSAGE?             11840000
+         BNOR  R2                       NO, NO MESSAGE                  11850000
+         M$ERRST MSGBLANK               OUTPUT A BLANK LINE             11860000
+         M$ERRST DELAYMSG               OUTPUT THE HEADER LINE          11870000
+         NI    FLAGSHH,FF-FDELAYM       TURN OFF THE HEADER LINE        11880000
+         BR    R2                                                       11890000
+LISTUPDE EQU   X'80'                    #REPFLAG -- UPDATE ERROR        11900000
+LISTUPDO EQU   X'40'                    #REPFLAG -- UPDATE OPEN         11910000
+LISTUPDR EQU   X'20'                    #REPFLAG -- UPDATE THIS BLOCK   11920000
+LISTUPQT EQU   X'10'                    #REPFLAG -- QUIET MODE UPDATE   11930000
+LISTTERM EQU   X'08'                    #REPFLAG -- TERMINATE UPDATE    11940000
+LIST#REP EQU   X'01'                    #REPFLAG -- WRITE FLAG          11951063
+         DROP  R2                                                       11960000
+         SPACE 3                                                        11970042
+LISTSPFU BASR  R2,0                     UPDATE ISPF STATS      GP AUG05 11980042
+         USING *,R2                                            GP AUG05 11990042
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?          GP AUG05 12000042
+         BNO   LIST910                  NO, NO WRITE VIA INDCB GP AUG05 12010042
+         TM    #REPFLAG,LIST#REP        REPLACE SPECIFIED?     GP AUG05 12020042
+         BNO   LIST910                  NO, INDCB INPUT ONLY   GP AUG05 12030042
+         TM    FLAGSAA,FAINUPD          ANY REWRITE DONE?      GP AUG05 12040042
+         BNO   LIST910                  NOT FOR THIS MEMBER    GP AUG05 12050042
+         NI    FLAGSAA,FF-FAINUPD       YES, RESET FLAG        GP AUG05 12060042
+         TM    #REPFLAG,LISTUPQT        QUIET MODE UPDATE?     GP AUG05 12070042
+         BO    LIST910                  YES, BRANCH            GP AUG05 12080042
+         TM    DIRFLAG,X'0F'            ISPF STATISTICS?       GP AUG05 12090042
+         BNO   LIST910                  NO, BRANCH             GP AUG05 12100042
+         TIME  DEC                      GOT THE TIME?          GP AUG05 12110042
+         STCM  R1,B'1111',DIRSPFCD      CHANGED DATE           GP AUG05 12120042
+         STCM  R0,B'1100',DIRSPFCT      TIME OF LAST CHANGE    GP AUG05 12130042
+         SR    R1,R1                                           GP AUG05 12140042
+         IC    R1,DIRSPFR               MODIFICATION NUMBER    GP AUG05 12150042
+         LA    R1,1(,R1)                ADD ONE                GP AUG05 12160042
+         CLI   DIRSPFR,99               VALID TO ADD?          GP AUG05 12170042
+         BNL   *+8                      NO, BRANCH             GP AUG05 12180042
+         STC   R1,DIRSPFR               YES, INCREMENT MOD     GP AUG05 12190042
+*        L     R1,ADDRPSCB              ADDRESS OF THE PSCB    GP AUG05 12200092
+*        MVC   DIRSPFID(7),PSCBUSER-PSCB(R1)  LOGON USERID     GP AUG05 12210092
+         LA    R1,@4K                       BASE FOR TSOUID   DRK JUL17 12211092
+         MVC   DIRSPFID(8),TSOUID-@4K(R1)   USERID            DRK JUL17 12212093
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR               GP AUG05 12220042
+         STOW  INDCB,DIRNAME,R          REPLACE OPTION         GP AUG05 12230042
+         B     LIST910                  DON'T CARE ABOUT RC    GP AUG05 12240042
+         DROP  R2                                              GP AUG05 12250042
+         SPACE 2                                                        12260042
+LISTUPOE BASR  R2,0                     UPDATE DSORG PO-E      GP AUG05 12270042
+         USING *,R2                                            GP AUG05 12280042
+         L     R15,EXCPBUFF             POINT TO BUFFER        GP AUG05 12290042
+         WRITE FIXPDSD,SF,INDCB,(R15),'S',MF=E                 GP AUG05 12300042
+         CHECK FIXPDSD                                         GP AUG05 12310042
+         OI    FLAGSAA,FAINUPD          NEED TO UPDATE STATS   GP AUG05 12320042
+         B     LIST198                  PDSE UPDATE ALL DONE   GP AUG05 12330042
+         DROP  R2                                              GP AUG05 12340042
+         SPACE 2                                                        12350042
+LISTREAD BASR  R2,0                     READ                   GP AUG05 12360042
+         USING *,R2                                            GP AUG05 12370042
+         ST    R14,R14EXCP              SAVE RETURN ADDRESS    GP AUG05 12380042
+         L     R15,#LISTBUF             POINT TO BUFFER        GP AUG05 12390042
+         READ  FIXPDSD,SF,STOWDCB,(R15),'S',MF=E  READ & CHECK GP AUG05 12400042
+         CHECK FIXPDSD                  MOVED DUE TO BASE REGS GP AUG05 12410042
+         L     R14,R14EXCP              RESTORE RETURN ADDRESS GP AUG05 12420042
+         BR    R14                      RETURN TO CALLER       GP AUG05 12430042
+         DROP  R2                                              GP AUG05 12440042
+         SPACE 5                                                        12450000
+DIR000   BASR  R8,0                     OUTPUT ADDITIONAL DIR DATA      12460000
+         USING *,R8                                                     12470000
+         M$ERRST MSGBLANK               OUTPUT ADDITIONAL DIR DATA      12480000
+         CLC   ##SUBCOM+#LSUB(8),$DIR   IF OR THEN FORM?                12490000
+         BNE   NEWCMD                   YES, NO ADDITIONAL OUTPUT       12500000
+         CLI   #DIRSHOR,1               SHORT FORM?                     12510000
+         BE    NEWCMD                   YES, BRANCH                     12520000
+         MVI   MTLEN,71                 LENGTH OF MSG INSERT  DRK FEB10 12530086
+         MVC   INSERT#1(100),BLANK128   CLEAR THE HEADER LINE           12540000
+         MVC   INSERT#1(40),MSG262H     HEADER INFORMATION              12550000
+         M$MSG L262$1                                                   12560000
+         MVC   INSERT#1(40),MSG262U     UNDERLINE INFORMATION           12570000
+         SPACE 2                                                        12580000
+         SR    R2,R2                    OFFSET IN THE DIRECTORY         12590000
+         LA    R3,DIRHDR                START OF HEADER NAMES           12600000
+         BAS   R4,DIRFMT10              OUTPUT FIRST MESSAGE            12610000
+         SPACE 1                                                        12620000
+         MVC   INSERT#1+13(8),DIRNAME   ADD THE MEMBER NAME             12630000
+         BAS   R4,DIRFMT                (00)                            12640000
+         LA    R2,8(,R2)                POSITION PAST MEMBER NAME       12650000
+         SPACE 1                                                        12660000
+         LA    R0,3                     3 INPUT BYTES                   12670000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  12680000
+         BAS   R4,DIRFMT                (08)                            12690000
+         LA    R2,3(,R2)                POSITION PAST TTR               12700000
+         SPACE 1                                                        12710000
+         LA    R0,1                     1 INPUT BYTE                    12720000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  12730000
+         IC    R14,DIRFLAG                                              12740000
+         SLL   R14,25                   DROP ALIAS BIT                  12750000
+         SRDL  R14,30                   SAVE HALFWORD COUNT             12760000
+         LA    R14,X'F0'(,R14)          CONVERT TO DISPLAY              12770000
+         STC   R14,INSERT#1+30          SAVE TTR COUNT IN MESSAGE       12780000
+         SPACE 1                                                        12790000
+         SRL   R15,32-5                 HALFWORD COUNT                  12800000
+         CVD   R15,DOUBLE                                               12810000
+         MVC   FULLWORD(4),DIR4020      EDIT PATTERN                    12820000
+         ED    FULLWORD(4),DOUBLE+6                                     12830000
+         MVC   INSERT#1+45(2),FULLWORD+2  ADD COUNT                     12840000
+         SPACE 1                                                        12850000
+         TM    DIRFLAG,X'80'            ALIAS?                          12860000
+         BO    DIR040                   YES, BRANCH                     12870000
+         MVC   INSERT#1+23+44(12),BLANK128                              12880000
+         MVC   INSERT#1+23(44),INSERT#1+30  DROP "ALIAS;"               12890000
+         SPACE 1                                                        12900000
+DIR040   BAS   R4,DIRFMT                (0B)                            12910000
+         LA    R2,1(,R2)                POSITION PAST INDC              12920000
+         SPACE 2                                                        12930000
+         TM    FLAGSCC,RECFMU           RECFM=U?                        12940000
+         BNO   DIR800                   YES, BRANCH                     12950000
+         LA    R0,4                     TTR +1 BYTE                     12960000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  12970000
+         MVC   INSERT#1+21(1),INSERT#1+20                               12980000
+         MVC   INSERT#1+20(1),INSERT#1+19                               12990000
+         MVI   INSERT#1+19,C','                                         13000000
+         BAS   R4,DIRFMT                (0C)                            13010000
+         LA    R2,4(,R2)                POSITION PAST TTRT              13020000
+         SPACE 1                                                        13030000
+         TM    DIRATTR,X'24'            OVERLAY OR SCATTER?             13040000
+         BZ    *+8                      NO, BRANCH                      13050000
+         BAS   R4,DIRFMT20              YES, GET NEXT DOC.              13060000
+         TM    DIRATTR,X'20'            OVERLAY?                        13070000
+         BO    DIR110                   YES, BRANCH                     13080000
+         LA    R0,4                     TTR +1 BYTE                     13090000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13100000
+         MVC   INSERT#1+21(1),INSERT#1+20                               13110000
+         MVC   INSERT#1+20(1),INSERT#1+19                               13120000
+         MVI   INSERT#1+19,C','                                         13130000
+         BAS   R4,DIRFMT                (10)                            13140000
+         LA    R2,4(,R2)                POSITION PAST TTRN              13150000
+         B     DIR120                                                   13160000
+         SPACE 1                                                        13170000
+DIR110   BAS   R4,DIRFMT20              GET NEXT DOC.                   13180000
+         LA    R0,3                     TTR                             13190000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13200000
+         BAS   R4,DIRFMT                (10)                            13210000
+         LA    R2,3(,R2)                POSITION PAST TTRN              13220000
+         SPACE 1                                                        13230000
+         SR    R0,R0                                                    13240000
+         IC    R0,DIRNOTE#              NUMBER OF NOTELIST ELEMENTS     13250000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              13260000
+         BAS   R4,DIRFMT                (13)                            13270000
+         LA    R2,1(,R2)                POSITION PAST NL                13280000
+         SPACE 1                                                        13290000
+DIR120   LA    R3,DIRHDR14              REPOSITION THE HEADER INFO.     13300000
+         BAS   R4,DIRFMT20                                              13310000
+         LA    R0,1                     1 INPUT BYTE                    13320000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13330000
+         LA    R14,X'80'*2              TEST MASK                       13340000
+         LA    R5,DIRBITP1-2            TEXT OFFSETS                    13350000
+         BAS   R4,DIRBITS                                               13360000
+         BAS   R4,DIRFMT                (14)                            13370000
+         SPACE 1                                                        13380000
+         LA    R14,X'08'*2              TEST MASK                       13390000
+         LA    R5,DIRBITP2-2            TEXT OFFSETS                    13400000
+         BAS   R4,DIRBITS                                               13410000
+         BAS   R4,DIRFMT10              (14)                            13420000
+         LA    R2,1(,R2)                SKIP ATR1                       13430000
+         SPACE 1                                                        13440000
+         LA    R0,1                     1 INPUT BYTE                    13450000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13460000
+         LA    R14,X'80'*2              TEST MASK                       13470000
+         LA    R5,DIRBITP3-2            TEXT OFFSETS                    13480000
+         BAS   R4,DIRBITS                                               13490000
+         BAS   R4,DIRFMT                (15)                            13500000
+         SPACE 1                                                        13510000
+         LA    R14,X'08'*2              TEST MASK                       13520000
+         LA    R5,DIRBITP4-2            TEXT OFFSETS                    13530000
+         BAS   R4,DIRBITS                                               13540000
+         BAS   R4,DIRFMT10              (15)                            13550000
+         LA    R2,1(,R2)                SKIP ATR2                       13560000
+         SPACE 1                                                        13570000
+         SR    R0,R0                                                    13580000
+         ICM   R0,B'0111',DIRSTORE      3 INPUT BYTES                   13590000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              13600000
+         BAS   R4,DIRFMT                (16)                            13610000
+         LA    R2,3(,R2)                SKIP STOR                       13620000
+         SPACE 1                                                        13630000
+         SR    R0,R0                                                    13640000
+         ICM   R0,B'0011',DIRTEXTL      2 INPUT BYTES                   13650000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              13660000
+         BAS   R4,DIRFMT                (19)                            13670000
+         LA    R2,2(,R2)                SKIP FTBL                       13680000
+         SPACE 1                                                        13690000
+         LA    R0,3                     3 INPUT BYTES                   13700000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13710000
+         BAS   R4,DIRFMT                (1B)                            13720000
+         LA    R2,3(,R2)                SKIP EPA                        13730000
+         SPACE 1                                                        13740000
+         TM    DIRATTR2,X'80'           VS LINKAGE EDITOR?              13750000
+         BO    DIR210                   YES, BRANCH                     13760000
+         MVC   INSERT#1+04(08),DIRHDROS NEW OPERAND NAME                13770000
+         MVC   INSERT#1+23(44),DIRHDROS+8  NEW DESCRIPTION              13780000
+         LA    R0,3                     3 INPUT BYTES                   13790000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13800000
+         BAS   R4,DIRFMT                (1E)                            13810000
+         LA    R2,3(,R2)                SKIP FTB0, FTB1, FTB2           13820000
+         B     DIR300                                                   13830000
+         SPACE 1                                                        13840000
+DIR210   LA    R0,1                     1 INPUT BYTE                    13850000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  13860000
+         BAS   R4,DIRFMT                (1E)                            13870000
+         LA    R2,1(,R2)                SKIP FTB0                       13880000
+         SPACE 1                                                        13890000
+         LA    R4,DIR220                NEXT RETURN POINT               13900000
+         TM    DIRATTR2,X'20'           PAGE ALIGNED?                   13910000
+         BO    DIRFMT10                 YES, BRANCH                     13920000
+         BAS   R4,DIRFMT20              NO, GET NEXT DOC.               13930000
+         SPACE 1                                                        13940000
+DIR220   LA    R4,DIR230                NEXT RETURN POINT               13950000
+         TM    DIRATTR2,X'10'           SSI PRESENT?                    13960000
+         BO    DIRFMT10                 YES, BRANCH                     13970000
+         BAS   R4,DIRFMT20              NO, GET NEXT DOC.               13980000
+         SPACE 1                                                        13990000
+DIR230   LA    R4,DIR230A               NEXT RETURN POINT     DRK AUG06 14000048
+         TM    DIRATTR2,X'08'           APF INFORMATION VALID?          14010000
+         BO    DIRFMT10                 YES, BRANCH                     14020000
+         BAS   R4,DIRFMT20              NO, GET NEXT DOC.               14030000
+         SPACE 1                                                        14040000
+DIR230A  LA    R4,DIR230B               NEXT RETURN POINT     DRK AUG06 14041050
+         TM    DIRATTR2,DIR2LFMT        PROGRAM OBJECT FORMAT?DRK AUG06 14042052
+         BO    DIRFMT10                 YES, BRANCH           DRK AUG06 14043049
+         BAS   R4,DIRFMT20              NO, GET NEXT DOC.     DRK AUG06 14044049
+         SPACE 1                                                        14045048
+DIR230B  LA    R4,DIR240                NEXT RETURN POINT     DRK AUG06 14046050
+         TM    DIRATTR2,DIR2BIG         16M OR MORE?          DRK AUG06 14047052
+         BO    DIRFMT10                 YES, BRANCH           DRK AUG06 14048050
+         BAS   R4,DIRFMT20              NO, GET NEXT DOC.     DRK AUG06 14049050
+         SPACE 1                                                        14049150
+DIR240   LA    R0,1                     1 INPUT BYTE                    14050000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  14060000
+         TM    DIRATTR3,DIRRMANY        RMODE=ANY?                      14070000
+         BO    *+10                     YES, BRANCH                     14080000
+         MVC   INSERT#1+29(4),DIR24     NO, RMODE 24                    14090000
+         TM    DIRATTR3,DIRRMANY+DIRRM64 RMODE=64?            DRK APR18 14091094
+         BNO   *+10                      NO, BRANCH           DRK APR18 14092094
+         MVC   INSERT#1+29(4),DIR64R     YES, RMODE 64        DRK APR18 14093095
+         SPACE 1                                                        14100000
+         TM    DIRATTR3,DIRAA31+DIRAA64 ALIAS AMODE=ANY?      DRK OCT02 14110014
+         BO    DIR250                   YES, BRANCH                     14120000
+         MVC   INSERT#1+46(4),=C'  ; '  NO, "  ; "            DRK FEB02 14130013
+         TM    DIRATTR3,DIRAA31         ALIAS AMODE=31?                 14140000
+         BNO   *+4+6+4                  NO, BRANCH            DRK FEB02 14150013
+         MVC   INSERT#1+46(2),DIR31     YES, "31"                       14160013
+         B     DIR250                                         DRK FEB02 14170013
+         TM    DIRATTR3,DIRAA64         ALIAS AMODE=64?       DRK OCT02 14180014
+         BNO   *+4+6+4                  NO, BRANCH            DRK FEB02 14190013
+         MVC   INSERT#1+46(2),DIR64     YES, "64"             DRK FEB02 14200013
+         B     DIR250                                         DRK FEB02 14210013
+         MVC   INSERT#1+46(2),DIR24     "24"                  DRK FEB02 14220013
+         SPACE 1                                                        14230000
+DIR250   TM    DIRATTR3,DIRAM31+DIRAM64 MAIN AMODE=ANY?       DRK OCT02 14240014
+         BO    DIR260                   YES, BRANCH                     14250000
+         MVC   INSERT#1+62(4),=C'    '  NO, "    "            DRK FEB02 14260013
+         TM    DIRATTR3,DIRAM31         MAIN AMODE=31?                  14270000
+         BNO   *+4+6+4                  NO, BRANCH            DRK FEB02 14280013
+         MVC   INSERT#1+62(2),DIR31     YES, "31"                       14290013
+         B     DIR260                                         DRK FEB02 14300013
+         TM    DIRATTR3,DIRAM64         MAIN AMODE=64?        DRK OCT02 14310014
+         BNO   *+4+6+4                  NO, BRANCH            DRK FEB02 14320013
+         MVC   INSERT#1+62(2),DIR64     YES, "64"             DRK FEB02 14330013
+         B     DIR260                                         DRK FEB02 14340013
+         MVC   INSERT#1+62(2),DIR24     "24"                  DRK FEB02 14350013
+         SPACE 1                                                        14360000
+DIR260   BAS   R4,DIRFMT                (1F)                            14370000
+         LA    R2,1(,R2)                SKIP FTB1                       14380000
+         SPACE 2                                                        14390000
+         LA    R0,1                     1 INPUT BYTE                    14400000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  14410000
+         BAS   R4,DIRFMT                (20)                            14420000
+         LA    R2,1(,R2)                SKIP FTB2                       14430000
+         SPACE 1                                                        14440000
+DIR300   LA    R3,DIRHDR21              REPOSITION HEADER               14450000
+         BAS   R4,DIRFMT20                                              14460000
+         TM    DIRATTR,X'04'            SCATTER LOAD?                   14470000
+         BNO   DIR400                   NO, BRANCH                      14480000
+         SR    R0,R0                                                    14490000
+         ICM   R0,B'0011',DIRSCLL       COUNT                           14500000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              14510000
+         BAS   R4,DIRFMT                (21)                            14520000
+         LA    R2,2(,R2)                SKIP SLSZ                       14530000
+         SPACE 1                                                        14540000
+         SR    R0,R0                                                    14550000
+         ICM   R0,B'0011',DIRSCTL       COUNT                           14560000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              14570000
+         BAS   R4,DIRFMT                (23)                            14580000
+         LA    R2,2(,R2)                SKIP TTSZ                       14590000
+         SPACE 1                                                        14600000
+         SR    R0,R0                                                    14610000
+         ICM   R0,B'0011',DIRSCET       COUNT                           14620000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              14630000
+         BAS   R4,DIRFMT                (25)                            14640000
+         LA    R2,2(,R2)                SKIP ESDT                       14650000
+         SPACE 1                                                        14660000
+         SR    R0,R0                                                    14670000
+         ICM   R0,B'0011',DIRSCEP       COUNT                           14680000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              14690000
+         BAS   R4,DIRFMT                (27)                            14700000
+         LA    R2,2(,R2)                SKIP ESDC                       14710000
+         SPACE 1                                                        14720000
+DIR400   LA    R3,DIRHDR29              REPOSITION HEADER               14730000
+         BAS   R4,DIRFMT20                                              14740000
+         TM    DIRFLAG,DIRALIAS         ALIAS?                          14750000
+         BNO   DIR500                   NO, BRANCH                      14760000
+         LA    R0,3                     3 HEX BYTES                     14770000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  14780000
+         BAS   R4,DIRFMT                (29)                            14790000
+         LA    R2,3(,R2)                SKIP EPM                        14800000
+         SPACE 1                                                        14810000
+         LA    R1,DIRNAME(R2)           START OF MAIN MEMBER NAME       14820000
+         MVC   INSERT#1+13(8),0(R1)     MOVE INTO MESSAGE AREA          14830000
+         BAS   R4,DIRFMT                (2C)                            14840000
+         LA    R2,8(,R2)                SKIP MNM                        14850000
+         SPACE 1                                                        14860000
+DIR500   LA    R3,DIRHDR34              REPOSITION HEADER               14870000
+         BAS   R4,DIRFMT20                                              14880000
+         TM    DIRATTR2,X'80'           VS LINKAGE EDITOR?              14890000
+         BO    DIR550                   YES, BRANCH                     14900000
+         LA    R2,1(,R2)                                                14910000
+         N     R2,=F'-2'                ROUND TO HALFWORD BOUNDARY      14920000
+         CLC   ZERO,0(R2)               ZERO?                           14930000
+         BE    DIR990                   YES, NO SSI                     14940000
+         CLC   =F'-1',0(R2)             FFFFFFFF?                       14950000
+         BE    DIR990                   YES, NO SSI                     14960000
+         LA    R0,4                     4 HEX BYTES                     14970000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  14980000
+         BAS   R4,DIRFMT                (34)                            14990000
+         LA    R2,4(,R2)                SKIP SSI                        15000000
+         B     DIR990                                                   15010000
+         SPACE 1                                                        15020000
+DIR550   TM    DIRATTR2,DIR2SSI         ANY SSI INFORMATION?            15030000
+         BNO   DIR600                   NO, BRANCH                      15040000
+         LA    R2,1(,R2)                                                15050000
+         N     R2,=F'-2'                ROUND TO HALFWORD BOUNDARY      15060000
+         LA    R0,4                     4 HEX BYTES                     15070000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  15080000
+         BAS   R4,DIRFMT                (34)                            15090000
+         LA    R2,4(,R2)                SKIP SSI                        15100000
+         SPACE 1                                                        15110000
+DIR600   LA    R3,DIRHDR38              REPOSITION HEADER               15120000
+         BAS   R4,DIRFMT20                                              15130000
+         TM    DIRATTR2,DIRAPFLG        VALID APF INFORMATION?          15140000
+         BNO   DIR650                   NO, BRANCH                      15150055
+         LA    R0,1                     1 HEX BYTE                      15160000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  15170000
+         BAS   R4,DIRFMT                (38)                            15180000
+         LA    R2,1(,R2)                SKIP APFCT                      15190000
+         SPACE 1                                                        15200052
+         LA    R0,1                     1 HEX BYTE                      15210000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  15220000
+         BAS   R4,DIRFMT                (39)                            15230000
+         LA    R2,1(,R2)                SKIP APFAC                      15240000
+         B     DIR660                                                   15241057
+         SPACE 1                                                        15241152
+DIR650   L     R3,=A(DIRHDRLP)          REPOSITION HEADER     DRK AUG06 15241256
+         BAS   R4,DIRFMT20                                    DRK AUG06 15241357
+DIR660   DS    0H                                             DRK AUG06 15241457
+         TM    DIRATTR2,DIR2BIG         LARGE PROGRAM OBJECT? DRK AUG06 15242052
+         BNO   DIR700                   NO, BRANCH            DRK AUG06 15243052
+         LA    R0,1                     1 HEX BYTE            DRK AUG06 15244052
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG06 15245052
+         BAS   R4,DIRFMT                (3A)                  DRK AUG06 15246052
+         LA    R2,1(,R2)                SKIP LPOL             DRK AUG06 15247052
+         SPACE 1                                              DRK AUG06 15248052
+         LA    R0,4                     4 HEX BYTES           DRK AUG06 15248152
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG06 15248252
+         BAS   R4,DIRFMT                (3B)                  DRK AUG06 15248352
+         LA    R2,4(,R2)                SKIP VSTR             DRK AUG06 15248452
+         SPACE 1                                              DRK AUG06 15248552
+         LA    R0,4                     4 HEX BYTES           DRK AUG06 15248652
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG06 15248752
+         BAS   R4,DIRFMT                (3F)                  DRK AUG06 15248852
+         LA    R2,4(,R2)                SKIP MEPA             DRK AUG06 15248952
+         SPACE 1                                              DRK AUG06 15249052
+         LA    R0,4                     4 HEX BYTES           DRK AUG06 15249152
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG06 15249252
+         BAS   R4,DIRFMT                (43)                  DRK AUG06 15249352
+         LA    R2,4(,R2)                SKIP AEPA             DRK AUG06 15249452
+         SPACE 2                                              ABL NOV86 15250000
+DIR700   DS    0H                                             DRK AUG06 15251052
+         L     R3,=A(DIRHDRPM)          REPOSITION HEADER     DRK AUG06 15252053
+         BAS   R4,DIRFMT20                                    DRK AUG06 15253058
+         LA    R2,1(,R2)                                      ABL NOV86 15260000
+         N     R2,=F'-2'                ROUND TO HALFWORD     ABL NOV86 15270000
+         LA    R1,DIRNAME(R2)           POINT INTO DIRECTORY  ABL NOV86 15280000
+***PDSMAN CHANGES: DIRENTER FOR LISTING PDSMAN ATTRIBUTES     ABL NOV86 15290000
+         TM    3(R1),X'0F'              PDSMAN DATE? 0CYYDDDF ABL NOV86 15300005
+         BNO   DIR990                   NO, BRANCH            ABL NOV86 15310000
+         TM    0(R1),X'FE'              PDSMAN DATE? 0CYYDDDF DRK JAN98 15320005
+         BNZ   DIR990                   NO, BRANCH            DRK JAN98 15330003
+         TM    8(R1),X'0F'              PDSMAN DATE?   YYDDDF DRK FEB98 15340008
+         BNO   DIR990                   NO, BRANCH            DRK FEB98 15350007
+         TM    21(R1),X'0F'             PDSMAN DATE?   YYDDDF DRK FEB98 15360008
+         BNO   DIR990                   NO, BRANCH            DRK FEB98 15370007
+         SPACE 1                                              ABL NOV86 15380000
+         LA    R0,4                     4 HEX DIGITS          ABL NOV86 15390000
+         BAS   R4,DIRHEX                CONVERT TO HEX        ABL NOV86 15400000
+         BAS   R4,DIRFMT                                      ABL NOV86 15410000
+         LA    R2,4(,R2)                SKIP MANMODD          ABL NOV86 15420000
+         SPACE 1                                              ABL NOV86 15430000
+         LA    R0,2                     2 HEX DIGITS          ABL NOV86 15440000
+         BAS   R4,DIRHEX                CONVERT TO HEX        ABL NOV86 15450000
+         BAS   R4,DIRFMT                                      ABL NOV86 15460000
+         LA    R2,2(,R2)                SKIP MANMODT          ABL NOV86 15470000
+         SPACE 1                                              ABL NOV86 15480000
+         LA    R0,3                     3 HEX DIGITS          ABL NOV86 15490000
+         BAS   R4,DIRHEX                CONVERT TO HEX        ABL NOV86 15500000
+         BAS   R4,DIRFMT                                      ABL NOV86 15510000
+         LA    R2,3(,R2)                SKIP MANEXPR          ABL NOV86 15520000
+         SPACE 1                                              ABL NOV86 15530000
+         SR    R0,R0                                          ABL NOV86 15540000
+         IC    R0,DIRNAME(R2)           LEVEL NUMBER          ABL NOV86 15550000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL    ABL NOV86 15560000
+         BAS   R4,DIRFMT                                      ABL NOV86 15570000
+         LA    R2,1(,R2)                SKIP MANMODN          ABL NOV86 15580000
+         SPACE 1                                              ABL NOV86 15590000
+         LA    R1,DIRNAME(R2)           POINT TO LAST USER    ABL NOV86 15600000
+         MVC   INSERT#1+13(8),0(R1)     LAST USER             ABL NOV86 15610000
+         BAS   R4,DIRFMT                                      ABL NOV86 15620000
+         LA    R2,8(,R2)                SKIP MANUSER          ABL NOV86 15630000
+         SPACE 1                                              ABL NOV86 15640000
+         LA    R0,1                     1 HEX DIGIT           ABL NOV86 15650000
+         BAS   R4,DIRHEX                CONVERT TO HEX        ABL NOV86 15660000
+         BAS   R4,DIRFMT                                      ABL NOV86 15670000
+         LA    R2,1(,R2)                SKIP MANPROD          ABL NOV86 15680000
+         SPACE 1                                              ABL NOV86 15690000
+         LA    R0,3                     3 HEX DIGITS          ABL NOV86 15700000
+         BAS   R4,DIRHEX                CONVERT TO HEX        ABL NOV86 15710000
+         BAS   R4,DIRFMT                                      ABL NOV86 15720000
+         LA    R2,3(,R2)                SKIP MANREAD          ABL NOV86 15730000
+         B     DIR990                                                   15740000
+         SPACE 3                                                        15750000
+DIR800   TM    DIRFLAG,X'0F'            SPF STATISTICS?                 15760000
+         BO    DIR900                   YES, BRANCH                     15770000
+         TM    DIRFLAG,X'17'            CA-ENDEVOR FOOTPRINT? DRK NOV10 15771089
+         BO    DIR810                   YES, IGNORE           DRK NOV10 15772090
+         TM    DIRFLAG,X'14'            SPF STATISTICS EXT?   DRK AUG09 15773089
+         BO    DIR900                   YES, BRANCH           DRK AUG09 15774089
+         TM    DIRFLAG,X'11'            STOW DATE ZAP 1980+?  DRK MAR19 15774197
+         BO    DIR900                   YES                   DRK MAR19 15774297
+DIR810   DS    0H                                             DRK NOV10 15775089
+         MVC   DOUBLE(1),DIRFLAG        COPY THE ATTRIBUTE BYTE         15780000
+         NI    DOUBLE,X'FF'-X'80'       RESET THE ALIAS FLAG            15790000
+         CLI   DOUBLE,X'02'             SSI INFORMATION?                15800000
+         BL    DIR990                   NO, BRANCH                      15810000
+         LA    R3,DIRHDR34              REPOSITION HEADER               15820000
+         BAS   R4,DIRFMT20                                              15830000
+         LA    R0,4                     4 HEX BYTES                     15840000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  15850000
+         BAS   R4,DIRFMT                (34)                            15860000
+         LA    R2,4(,R2)                SKIP SSI                        15870000
+         B     DIR990                                                   15880000
+         SPACE 1                                                        15890000
+DIR900   DS    0H                                                       15891088
+         L     R3,=A(DIRHDRSP)          REPOSITION HEADER               15900088
+         CLI   #DIRSTAT,1               ISPDSTAT HEADERS?     DRK JUN10 15900188
+         BNE   *+4+4                    NO, BRANCH            DRK JUN10 15900288
+         L     R3,=A(ISPDSTAT)          REPOSITION HEADER     DRK JUN10 15901088
+         BAS   R4,DIRFMT20                                              15910000
+         SPACE 1                                                        15920000
+         SR    R0,R0                                                    15930000
+         IC    R0,DIRNAME(R2)                                           15940000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              15950000
+         BAS   R4,DIRFMT                (SPF-0C)                        15960000
+         LA    R2,1(,R2)                SKIP SPFV                       15970000
+         SPACE 1                                                        15980000
+         SR    R0,R0                                                    15990000
+         IC    R0,DIRNAME(R2)                                           16000000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              16010000
+         BAS   R4,DIRFMT                (SPF-0D)                        16020000
+         LA    R2,1(,R2)                SKIP SPFR                       16030000
+         SPACE 1                                                        16040000
+*        LH    R0,DIRNAME(R2)                                 DRK FEB01 16050011
+*        BAS   R4,DIRDEC                CONVERT TO DECIMAL    DRK FEB01 16060011
+         LA    R0,1                     1 HEX BYTE            DRK NOV03 16070037
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK NOV03 16080037
+         BAS   R4,DIRFMT                (SPF-0E)              DRK NOV03 16090037
+         LA    R2,1(,R2)                SKIP SPFSC            DRK NOV03 16100039
+         SPACE 1                                              DRK NOV03 16110037
+         LA    R0,1                     1 HEX BYTE            DRK NOV03 16120037
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK NOV03 16130037
+         BAS   R4,DIRFMT                (SPF-0F)              DRK NOV03 16140037
+         LA    R2,1(,R2)                SKIP SPFCS            DRK NOV03 16150040
+         SPACE 1                                                        16160037
+         LA    R0,4                     4 HEX BYTES                     16170000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  16180000
+         BAS   R4,DIRFMT                (SPF-10)                        16190000
+         LA    R2,4(,R2)                SKIP SPFCR                      16200000
+         SPACE 1                                                        16210000
+         LA    R0,4                     4 HEX BYTES                     16220000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  16230000
+         BAS   R4,DIRFMT                (SPF-14)                        16240000
+         LA    R2,4(,R2)                SKIP SPFCD                      16250000
+         SPACE 1                                                        16260000
+         LA    R0,2                     2 HEX BYTES                     16270000
+         BAS   R4,DIRHEX                CONVERT TO HEX                  16280000
+         BAS   R4,DIRFMT                (SPF-18)                        16290000
+         LA    R2,2(,R2)                SKIP SPFCT                      16300000
+         SPACE 1                                                        16310000
+         SR    R0,R0                                          DRK JAN98 16320000
+         LA    R1,DIRNAME(R2)                                 DRK JAN98 16330047
+         ICM   R0,B'0011',0(R1)                               DRK JAN98 16340000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              16350000
+         BAS   R4,DIRFMT                (SPF-1A)                        16360000
+         LA    R2,2(,R2)                SKIP SPFSI                      16370000
+         SPACE 1                                                        16380000
+         SR    R0,R0                                          DRK JAN98 16390000
+         LA    R1,DIRNAME(R2)                                 DRK JAN98 16400047
+         ICM   R0,B'0011',0(R1)                               DRK JAN98 16410000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              16420000
+         BAS   R4,DIRFMT                (SPF-1C)                        16430000
+         LA    R2,2(,R2)                SKIP SPFIN                      16440000
+         SPACE 1                                                        16450000
+         SR    R0,R0                                          DRK JAN98 16460000
+         LA    R1,DIRNAME(R2)                                 DRK JAN98 16470047
+         ICM   R0,B'0011',0(R1)                               DRK JAN98 16480000
+         BAS   R4,DIRDEC                CONVERT TO DECIMAL              16490000
+         BAS   R4,DIRFMT                (SPF-1E)                        16500000
+         LA    R2,2(,R2)                SKIP SPFMD                      16510000
+         SPACE 1                                                        16520000
+         LA    R1,DIRNAME(R2)           START OF MAIN MEMBER NAME       16530000
+         MVC   INSERT#1+13(8),0(R1)     MOVE INTO MESSAGE AREA          16540000
+         BAS   R4,DIRFMT                (SPF-20)                        16550000
+         LA    R2,8(,R2)                SKIP SPFID                      16560000
+         SPACE 1                                                        16560181
+         TM    DIRSPFFL,DIRSPFXS        EXTENDED STATS?       DRK AUG09 16560283
+         BNO   DIR990                   NO                    DRK AUG09 16560383
+         LA    R0,4                     4 HEX BYTES           DRK AUG09 16560482
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG09 16560582
+         BAS   R4,DIRFMT                (SPF-28)              DRK AUG09 16560682
+         LA    R2,4(,R2)                SKIP SPFSI-X          DRK AUG09 16560782
+         SPACE 1                                                        16570000
+         LA    R0,4                     4 HEX BYTES           DRK AUG09 16571082
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG09 16572082
+         BAS   R4,DIRFMT                (SPF-2C)              DRK AUG09 16573082
+         LA    R2,4(,R2)                SKIP SPFIN-X          DRK AUG09 16574082
+         SPACE 1                                                        16575081
+         LA    R0,4                     4 HEX BYTES           DRK AUG09 16576082
+         BAS   R4,DIRHEX                CONVERT TO HEX        DRK AUG09 16577082
+         BAS   R4,DIRFMT                (SPF-30)              DRK AUG09 16578082
+         LA    R2,4(,R2)                SKIP SPFMD-X          DRK AUG09 16579082
+         SPACE 1                                                        16579181
+DIR990   M$ERRST MSGBLANK                                               16580000
+         B     NEWCMD                                                   16590000
+DIRDEC   C     R0,DIRDEC99                                              16600000
+         BH    DIRDEC10                                                 16610000
+         CVD   R0,DOUBLE                                                16620000
+         MVC   INSERT#1+100+8(8),BLANK128                               16630000
+         MVC   INSERT#1+100(8),DIR2020                                  16640000
+         ED    INSERT#1+100(7),DOUBLE+5                                 16650000
+         LA    R1,INSERT#1+100-1                                        16660000
+         LA    R1,1(,R1)                                                16670000
+         CLI   0(R1),X'40'                                              16680000
+         BE    *-8                                                      16690000
+         MVC   INSERT#1+13(8),0(R1)                                     16700000
+         BR    R4                                                       16710000
+DIRDEC10 LR    R1,R0                                                    16720000
+         LA    R1,1023(,R1)                                             16730000
+         SRL   R1,10                    THE NEXT HIGHER K VALUE         16740000
+         CVD   R1,DOUBLE                                                16750000
+         MVC   INSERT#1+100+8(8),BLANK128                               16760000
+         MVC   INSERT#1+100(7),DIR2020                                  16770000
+         MVI   INSERT#1+100+7,C'K'                                      16780000
+         ED    INSERT#1+100(7),DOUBLE+5                                 16790000
+         LA    R1,INSERT#1+100-1                                        16800000
+         LA    R1,1(,R1)                                                16810000
+         CLI   0(R1),X'40'                                              16820000
+         BE    *-8                                                      16830000
+         MVC   INSERT#1+13(8),0(R1)                                     16840000
+         BR    R4                                                       16850000
+DIRDEC99 DC    F'99999'                                                 16860000
+         SPACE 3                                                        16870000
+DIRHEX   LA    R1,DIRNAME(R2)           POINT TO DATA                   16880000
+         LA    R15,INSERT#1+13          START OF OUTPUT DATA            16890000
+         SPACE 1                                                        16900000
+DIRHEX10 UNPK  0(3,R15),0(2,R1)         UNPACK TO HEXADECIMAL           16910000
+         TR    0(2,R15),TRTABLE         CONVERT TO PRINTABLE            16920000
+         MVI   2(R15),X'40'             BLANK GARBAGE BYTE              16930000
+         LA    R15,2(,R15)              NEXT OUTPUT DIGIT               16940000
+         LA    R1,1(,R1)                NEXT INPUT DIGIT                16950000
+         BCT   R0,DIRHEX10              FORMAT ALL INPUT DIGITS         16960000
+         BR    R4                                                       16970000
+         SPACE 3                                                        16980000
+DIRFMT   STC   R2,DOUBLE                SAVE OFFSET IN STORAGE          16990000
+         UNPK  INSERT#1(3),DOUBLE(2)    UNPACK TO HEXADECIMAL           17000000
+         TR    INSERT#1(2),TRTABLE      CONVERT TO PRINTABLE OFFSET     17010000
+         MVI   INSERT#1+2,X'40'         CLEAR GARBAGE BYTE              17020000
+         SPACE 1                                                        17030000
+DIRFMT10 TR    INSERT#1(71),TRLINE      CONVERT TO PRINTABLE CHARACTERS 17040086
+         M$MSG L262$1                   OUTPUT                          17050000
+         SPACE 1                                                        17060000
+DIRFMT20 MVC   INSERT#1(100),BLANK128   BLANK THE OUTPUT AREA           17070000
+         MVC   INSERT#1+04(08),0(R3)    ADD THE PDS... NAME             17080000
+         MVC   INSERT#1+23(44),8(R3)    ADD THE DESCRIPTION             17090000
+         LR    R6,R3                    THIS TEXT                       17100000
+         LA    R3,52(,R3)               NEXT TEXT                       17110000
+         BR    R4                                                       17120000
+         SPACE 3                                                        17130000
+DIRBITS  ST    R14,DOUBLE+4             SAVE TEST MASK                  17140000
+         LA    R15,INSERT#1+23          OUTPUT START                    17150000
+         MVC   0(44,R15),BLANK128                                       17160000
+         LA    R0,4                     BITS PER LINE                   17170000
+         LR    R1,R6                    INPUT TEXT                      17180000
+         SPACE 1                                                        17190000
+DIRBIT10 LA    R5,2(,R5)                NEXT OFFSET                     17200000
+         LH    R6,0(,R5)                                                17210000
+         LPR   R6,R6                                                    17220000
+         ST    R6,FULLWORD              OFFSET OF TEXT                  17230000
+         AR    R6,R1                                                    17240000
+         ST    R6,DOUBLE                START OF TEXT                   17250000
+         LH    R6,2(,R5)                                                17260000
+         LPR   R6,R6                                                    17270000
+         S     R6,FULLWORD                                              17280000
+         ST    R6,FULLWORD              LENGTH OF TEXT                  17290000
+         L     R14,DOUBLE+4             SHIFT                           17300000
+         SRL   R14,1                         FOR NEXT                   17310000
+         ST    R14,DOUBLE+4                          BIT TEST           17320000
+         LA    R6,DIRNAME(R2)           POINT TO TARGET DATA            17330000
+         TM    0(R5),X'80'              NEGATIVE FORM?                  17340000
+         BO    DIRBIT20                 YES, BRANCH                     17350000
+         TM    0(R6),*-*                <<EXECUTED>>                    17360000
+         EX    R14,*-4                  ADD "NOT "?                     17370000
+         BO    DIRBIT40                 NO, BRANCH                      17380000
+         B     DIRBIT30                 YES, BRANCH                     17390000
+         SPACE 1                                                        17400000
+DIRBIT20 TM    0(R6),*-*                <<EXECUTED>>                    17410000
+         EX    R14,*-4                  ADD "NOT "?                     17420000
+         BNO   DIRBIT40                 NO, BRANCH                      17430000
+         SPACE 1                                                        17440000
+DIRBIT30 MVC   0(4,R15),DIRNOT          ADD "NOT "                      17450000
+         LA    R15,4(,R15)              UPDATE LENGTH                   17460000
+         SPACE 1                                                        17470000
+DIRBIT40 L     R14,FULLWORD             ACTUAL LENGTH                   17480000
+         BCTR  R14,0                    MACHINE LENGTH                  17490000
+         L     R6,DOUBLE                START OF STRING                 17500000
+         MVC   0(*-*,R15),0(R6)         <<EXECUTED>>                    17510000
+         EX    R14,*-6                  MOVE IN STRING                  17520000
+         LA    R15,1(R14,R15)           NEXT OUTPUT LOCATION            17530000
+         BCT   R0,DIRBIT10              DO ALL 4 BITS                   17540000
+         BR    R4                                                       17550000
+         SPACE 3                                                        17560000
+DIRBITP1 DC    0H'0',AL2(+08,+19,+25,+34,+38)                           17570000
+DIRBITP2 DC    0H'0',AL2(+08,+19,+28,+34,+40)                           17580000
+DIRBITP3 DC    0H'0',AL2(-08,+12,+24,-30,+38)                           17590000
+DIRBITP4 DC    0H'0',AL2(-08,+14,+20,+28,+39)                           17600000
+         SPACE 1                                                        17610000
+DIRNOT   DC    C'NOT '                                                  17620000
+DIR24    DC    C'24; '                                                  17630000
+DIR31    DC    C'31'                                                    17640000
+DIR64    DC    C'64'                                                    17650013
+DIR64R   DC    C'64; '                                        DRK APR18 17651095
+DIR2020  DC    X'4020206B2021204B'      EDIT MASK                       17660000
+DIR4020  DC    X'40202120'              EDIT MASK                       17670000
+MSG262H  DC    CL40'LOC NAME     VALUE     DESCRIPTION'                 17680000
+MSG262U  DC    CL40'--- ----     -----     -----------'                 17690000
+*IRHDR    DC CL52'1234567890123456789012345678901234567890123456789012' 17700000
+DIRHDR    DC CL52'PDS2NAMEMEMBER NAME                                 ' 17710000
+          DC CL52'PDS2TTRPTTR OF FIRST BLOCK OF DATA                  ' 17720000
+          DC CL52'PDS2INDCALIAS; N TTRS FOLLOW; NN HALFWORDS OF DATA  ' 17730000
+          DC CL52'PDS2TTRTTTR OF FIRST TEXT BLOCK                     ' 17740000
+          DC CL52'PDS2TTRN(NOT USED FOR THIS MEMBER)                  ' 17750000
+          DC CL52'PDS2TTRNTTR OF SCATTER TRANSLATION TABLE            ' 17760000
+          DC CL52'PDS2TTRNTTR OF OVERLAY NOTE LIST                    ' 17770000
+          DC CL52'PDS2NL  NUMBER OF ENTRIES IN NOTE LIST              ' 17780000
+*                           1    1    2    2    3    3    4    4        17790000
+*                           0    5    0    5    0    5    0    5        17800000
+DIRHDR14  DC CL52'PDS2ATR1REENTRANT; REUS; OVERLAY; TEST          '     17810000
+          DC CL52'        ONLY LOAD; SCATTER; EXEC; 1 TEXT            ' 17820000
+          DC CL52'PDS2ATR2DC; TEXT ORG=0; EP=0; HAS RLDS              ' 17830000
+          DC CL52'        EDIT; TEST; LKED F; REFRESHABLE             ' 17840000
+          DC CL52'PDS2STORTOTAL CONTIGUOUS MAIN STORAGE REQUIRED      ' 17850000
+          DC CL52'PDS2FTBLLENGTH OF FIRST BLOCK OF TEXT               ' 17860000
+          DC CL52'PDS2EPA ENTRY POINT ADDRESS                         ' 17870000
+          DC CL52'PDS2FTB1PROCESSED BY OS/VS LINKAGE EDITOR           ' 17880000
+          DC CL52'        PAGE ALIGNMENT REQUIRED                     ' 17890000
+          DC CL52'        SSI INFORMATION IS PRESENT                  ' 17900000
+          DC CL52'        APF INFORMATION IS VALID                    ' 17910000
+          DC CL52'        PROGRAM OBJECT FORMAT                       ' 17911048
+          DC CL52'        REQUIRES 16M OR MORE OF VIRTUAL STORAGE     ' 17912050
+          DC CL52'PDS2FTB2RMODE ANY; ALIAS AMODE ANY; MAIN AMODE ANY  ' 17920000
+          DC CL52'PDS2FTB3RLD/CONTROL RECORDS AFTER FIRST TEXT BLOCK  ' 17930000
+DIRHDROS  DC CL52'PDS2FTB0ORIGIN OF FIRST BLOCK OF TEXT (FOR O.S. USE)' 17940000
+* IN IHAPDS IT IS PDS2FTBO - WILL LEAVE AS IS                 DRK NOV12 17941091
+DIRHDR21  DC CL52'PDS2SLSZNUMBER OF BYTES IN SCATTER LIST             ' 17950000
+          DC CL52'PDS2TTSZNUMBER OF BYTES IN TRANSLATION TABLE        ' 17960000
+          DC CL52'PDS2ESDTESD CSECT IDENTIFIER OF FIRST TEXT BLOCK    ' 17970000
+          DC CL52'PDS2ESDCESD CSECT IDENTIFIER OF ENTRY POINT BLOCK   ' 17980000
+DIRHDR29  DC CL52'PDS2EPM ENTRY POINT OF MAIN MEMBER                  ' 17990000
+          DC CL52'PDS2MNM MEMBER NAME OF MAIN MEMBER                  ' 18000000
+DIRHDR34  DC CL52'PDSSSIWDSSI INFORMATION                             ' 18010000
+DIRHDR38  DC CL52'PDSAPFCTLENGTH OF PROGRAM AUTHORIZATION CODE        ' 18020000
+          DC CL52'PDSAPFACPROGRAM AUTHORIZATION CODE                  ' 18030000
+DIRHDRLP  DC CL52'PDS2LPOLLENGTH OF LARGE PROGRAM OBJECT SECTION      ' 18031055
+          DC CL52'PDS2VSTRVIRTUAL STORAGE REQUIREMENT FOR THIS MODULE ' 18032052
+          DC CL52'PDS2MEPAMAIN ENTRY POINT OFFSET                     ' 18033052
+          DC CL52'PDS2AEPAALIAS ENTRY POINT OFFSET                    ' 18034052
+DIRHDRPM  DC CL52'MANMODD DATE LAST MODIFIED   -- FORMAT: 0CYYDDDF    ' 18040052
+          DC CL52'MANMODT TIME                 -- FORMAT: HHMM        ' 18050000
+          DC CL52'MANEXPIREXPIRATION BASE DATE -- FORMAT: YYDDDF      ' 18060000
+          DC CL52'MANMODN MEMBER MODIFICATION LEVEL                   ' 18070000
+          DC CL52'MANUSER UPDATING JOBNAME OR TSO USER                ' 18080000
+          DC CL52'MANPROD PRODUCTIONS STATUS INDICATOR -- X''80''     ' 18090000
+          DC CL52'MANREAD DATE LAST READ       -- FORMAT: YYDDDF      ' 18100000
+DIRHDRSP  DC CL52'DIRSPFV MEMBER VERSION NUMBER                       ' 18110000
+          DC CL52'DIRSPFR MEMBER REVISION NUMBER                      ' 18120000
+          DC CL52'DIRSPFFLEXTENDED STATS -- X''20''  SCLM -- X''80''  ' 18130085
+          DC CL52'DIRSPFCSLAST CHANGE TIME -- FORMAT: SS              ' 18140040
+          DC CL52'DIRSPFCRCREATION DATE    -- FORMAT: 0CYYDDDF        ' 18150006
+          DC CL52'DIRSPFCDLAST CHANGE DATE -- FORMAT: 0CYYDDDF        ' 18160006
+          DC CL52'DIRSPFCTLAST CHANGE TIME -- FORMAT: HHMM            ' 18170000
+          DC CL52'DIRSPFSINUMBER OF LINES CURRENTLY                   ' 18180000
+          DC CL52'DIRSPFINNUMBER OF LINES INITIALLY                   ' 18190000
+          DC CL52'DIRSPFMDNUMBER OF MODIFIED LINES                    ' 18200000
+          DC CL52'DIRSPFIDUSERID OF LAST PERSON TO UPDATE             ' 18210000
+          DC CL52'DIRSPXSINUMBER OF LINES CURRENTLY - EXTENDED STATS  ' 18220081
+          DC CL52'DIRSPXINNUMBER OF LINES INITIALLY - EXTENDED STATS  ' 18230081
+          DC CL52'DIRSPXMDNUMBER OF MODIFIED LINES  - EXTENDED STATS  ' 18240081
+ISPDSTAT  DC CL52'ISPVERS MEMBER VERSION NUMBER                       ' 18240187
+          DC CL52'ISPMOD  MEMBER REVISION NUMBER                      ' 18240287
+          DC CL52'ISPFLAGSEXTENDED STATS -- X''20''  SCLM -- X''80''  ' 18240387
+          DC CL52'ISPMSEC LAST CHANGE TIME -- FORMAT: SS              ' 18240487
+          DC CL52'ISPCDATECREATION DATE    -- FORMAT: 0CYYDDDF        ' 18240587
+          DC CL52'ISPMDATELAST CHANGE DATE -- FORMAT: 0CYYDDDF        ' 18240687
+          DC CL52'ISPMTIMELAST CHANGE TIME -- FORMAT: HHMM            ' 18240787
+          DC CL52'ISPCLINENUMBER OF LINES CURRENTLY                   ' 18240887
+          DC CL52'ISPILINENUMBER OF LINES INITIALLY                   ' 18240987
+          DC CL52'ISPMLINENUMBER OF MODIFIED LINES                    ' 18241087
+          DC CL52'ISPUSRIDUSERID OF LAST PERSON TO UPDATE             ' 18241187
+          DC CL52'ISPECLINNUMBER OF LINES CURRENTLY - EXTENDED STATS  ' 18241287
+          DC CL52'ISPEILINNUMBER OF LINES INITIALLY - EXTENDED STATS  ' 18242087
+          DC CL52'ISPEMLINNUMBER OF MODIFIED LINES  - EXTENDED STATS  ' 18250087

@@ -1,0 +1,125 @@
+         TITLE 'TSO COMMAND TABLE FUNCTION'                    SS NOV88 00010000
+*************************************************************  SS NOV88 00020000
+*                                                              SS NOV88 00030000
+*      TCT FUNCTION                                            SS NOV88 00040000
+*                                                              SS NOV88 00050000
+*************************************************************  SS NOV88 00060000
+         SPACE 2                                               SS NOV88 00070000
+ISPTCT   DS    0H                                              SS NOV88 00080000
+         USING *,R4                                            SS NOV88 00090000
+         BAS   R2,ISPSETST              SET STATS PREV TABLE   SS NOV88 00100000
+         CLI   SPFFUNST+6,C'P'          TCT     PENDING PROC   SS NOV88 00110004
+         BNE   ISPTCT5                  NO,                    SS NOV88 00120001
+         LH    R1,SPFFUNLP+12     GET LAST PANEL               SS NOV88 00130001
+         LNR   R1,R1                    *                      SS NOV88 00140001
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS NOV88 00150001
+         LA    R15,36             GO TO PENDING ACT PROC       SS NOV88 00160001
+         BR    R3                                              SS NOV88 00170001
+ISPTCT5  DS    0H                       *                      SS NOV88 00180001
+         CLI   SPFFUNST+6,C'I'    INACTIVE                     SS NOV88 00190000
+         BE    ISPTCT20           YES   OPEN THE TABLE         SS NOV88 00200000
+         CLI   SPFTBPFI+1,6       ALREADY AT TCT               SS NOV88 00210001
+         BE    ISPTCT40           THEN DISPLAY                 SS NOV88 00220000
+ISPTCT1  DS    0H                                              SS NOV88 00230000
+         LH    R1,SPFFUNLP+12     GET LAST PANEL               SS NOV88 00240000
+         LNR   R1,R1                    *                      SS NOV88 00250000
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS NOV88 00260000
+ISPTCT40 DS    0H                       *                      SS NOV88 00270000
+         LA    R15,40             DISPLAY IF NO MORE CMDS      SS NOV88 00280000
+         BR    R3                 TO ROUTER                    SS NOV88 00290000
+ISPTCT20 DS    0H                       *                      SS NOV88 00300000
+* OPEN TB                                                      SS NOV88 00310000
+* DO VDEF FIRST                                                SS NOV88 00320000
+         LA    R1,ISPTCTAV        DEF VAR TABLE                SS NOV88 00330000
+         BAS   R2,ISPVDEFX                                     SS NOV88 00340000
+         LA    R1,23              TCT PANEL                    SS NOV88 00350001
+         LNR   R1,R1                    *                      SS NOV88 00360001
+         BAS   R2,ISPSTKI         SWAP PANEL                   SS NOV88 00370001
+         MVC   SPFTBL,SPFCSUF    GET BASE NAME                 SS NOV88 00380000
+         MVI   SPFTBL+2,C'T'     SET TO PDT                    SS NOV88 00390000
+         XC    SPFTFLG1(4),SPFTFLG1                            SS NOV88 00400000
+         XC    SPFTFF(2),SPFTFF                                SS NOV88 00410000
+         LA    R15,ISPBLK8       NO KEYS                       SS NOV88 00420000
+         LA    R0,ISPTCTVN       VER NAMES                     SS NOV88 00430000
+         BAS   R2,ISPTBOPN                                     SS NOV88 00440000
+         BAS   R2,ISPSETST         ALSO INIT STATUS FLAG       SS NOV88 00450000
+* INSERT BLANK LINES                    *                      SS NOV88 00460000
+         MVC   SPFTOPT,ISPBLK8          *                      SS NOV88 00470000
+         MVC   SPFTDATA,ISPBLK8         *                      SS NOV88 00480000
+         MVI   SPFTTYPE,C'-'            *                      SS NOV88 00490001
+         LA    R1,SPFTCMDD-SPFSEC4K     *                      SS NOV88 00500000
+         AL    R1,SPFSEC4A              *                      SS NOV88 00510000
+         MVI   0(R1),C' '               BLANK                  SS NOV88 00520000
+         MVC   1(144,R1),0(R1)           RIPPLE                SS NOV88 00530001
+         LA    R1,20                    *                      SS NOV88 00540000
+ISPTCT30 DS    0H                       *                      SS NOV88 00550000
+         STH   R1,SPFTSVH               SAVE LOOP COUNT        SS NOV88 00560000
+         BAS   R2,ISPTBADD              *                      SS NOV88 00570000
+         LH    R1,SPFTSVH               GET LOOP COUNT         SS NOV88 00580000
+         BCT   R1,ISPTCT30              *                      SS NOV88 00590000
+         B     ISPTCT40            DISPLAY TABLE               SS NOV88 00600000
+         DS    0F                       *                      SS NOV88 00610001
+ISPTCTAV DC    H'0',X'01',X'00'                                SS NOV88 00620000
+         DC    A(VSPFTOPT),AL2(SPFTOPT-SPWRKC),H'04'           SS NOV88 00630000
+         DC    A(VSPFTDAT),AL2(SPFTDATA-SPWRKC),H'08'          SS NOV88 00640000
+         DC    A(VSPFTTYP),AL2(SPFTTYPE-SPWRKC),H'01'          SS NOV88 00650000
+         DC    A(VSPFTCMD),AL2(SPFTCMDD-SPWRKC),H'245'         SS NOV88 00660000
+         DC    X'FF'                                           SS NOV88 00670001
+VSPFTOPT DC    C'PDSTOPT '                                     SS NOV88 00680000
+VSPFTDAT DC    C'PDSTDATA '                                    SS NOV88 00690000
+VSPFTTYP DC    C'PDSTTYPE '                                    SS NOV88 00700000
+VSPFTCMD DC    C'PDSTCMDD '                                    SS NOV88 00710000
+ISPTCTVN DC    C'(PDSTOPT PDSTDATA PDSTTYPE PDSTCMDD'          SS NOV88 00720001
+         DC    C')'  ABOVE TABLE LAST EDIT                     SS NOV88 00730000
+         DROP  R4                       *                      SS NOV88 00740001
+         TITLE 'TCT ADD LINES'                                 SS NOV88 00750001
+*************************************************************  SS NOV88 00760001
+*                                                              SS NOV88 00770001
+*      TCT FUNCTION                                            SS NOV88 00780001
+*                                                              SS NOV88 00790001
+*************************************************************  SS NOV88 00800001
+         SPACE 2                                               SS NOV88 00810001
+ISPTCTAD DS    0H                                              SS NOV88 00820001
+         USING *,R4                                            SS NOV88 00830001
+         BAS   R2,ISPSETST              SET STATS PREV TABLE   SS NOV88 00840001
+*        B     ISPTCTAB                 *TEST* ADD TO BOTTOM   SS NOV88 00850002
+         L     R14,SPFVTPT              RESTORE POINTER        SS NOV88 00860001
+         SR    R15,R15                  *                      SS NOV88 00870001
+         IC    R15,$TLEX(R14)           SUB FUNCTION IX        SS NOV88 00880001
+         L     R15,ISPTCTAT(R15)        SUB FUNC ADDRESS      DRK AUG06 00890003
+         BR    R15                      *                      SS NOV88 00900001
+ISPTCTAT DS    0F                       *                      SS NOV88 00910001
+         DC    A(ISPTCTAB)      0       ADD TO BOTTOM          SS NOV88 00920001
+         DC    A(ISPTCTA1)      4       INSERT                 SS NOV88 00930001
+ISPTCTA1 DS    0F                       *                      SS NOV88 00940001
+         BAS   R2,ISPQUERY              *                      SS NOV88 00950001
+         SR    R14,R14                  *                      SS NOV88 00990001
+         ST    R14,SPFFIXED        ZERO DELETE AMOUNT          SS NOV88 01000001
+         S     R15,SPFTCRP         DELTA                       SS NOV88 01010001
+         ST    R15,SPFFIXE2        SET POSITION                SS NOV88 01020001
+         BAS   R2,ISPDEL           DO IT                       SS NOV88 01030001
+         BAS   R2,ISPQUERY         RESET STATS                 SS NOV88 01040001
+         B     ISPTCTA2                 *                      SS NOV88 01050001
+ISPTCTAB DS    0F                       *                      SS NOV88 01060001
+         BAS   R2,ISPBOTM               ADD TO BOTTOM          SS NOV88 01070001
+         B     ISPTCTA2                 *                      SS NOV88 01080001
+ISPTCTA2 DS    0F                       *                      SS NOV88 01090001
+* INSERT BLANK LINES                    *                      SS NOV88 01100001
+         MVC   SPFTOPT,ISPBLK8          *                      SS NOV88 01110001
+         MVC   SPFTDATA,ISPBLK8         *                      SS NOV88 01120001
+         MVI   SPFTTYPE,C'-'            *                      SS MAR89 01130001
+         LA    R1,SPFTCMDD-SPFSEC4K     *                      SS NOV88 01140001
+         AL    R1,SPFSEC4A              *                      SS NOV88 01150001
+         MVI   0(R1),C' '               BLANK                  SS NOV88 01160001
+         MVC   1(144,R1),0(R1)           RIPPLE                SS NOV88 01170001
+         LA    R1,5                     ADD FIVE               SS NOV88 01180001
+ISPTCTA5 DS    0H                       *                      SS NOV88 01190001
+         STH   R1,SPFTSVH               SAVE LOOP COUNT        SS NOV88 01200001
+         BAS   R2,ISPTBADD              *                      SS NOV88 01210001
+         LH    R1,SPFTSVH               GET LOOP COUNT         SS NOV88 01220001
+         BCT   R1,ISPTCTA5              *                      SS NOV88 01230001
+         B     ISPTCTA4            DISPLAY TABLE               SS NOV88 01240001
+ISPTCTA4 DS    0H                       *                      SS NOV88 01250001
+         LA    R15,40             DISPLAY IF NO MORE CMDS      SS NOV88 01260001
+         BR    R3                 TO ROUTER                    SS NOV88 01270001
+         DROP  R4                       *                      SS NOV88 01280001

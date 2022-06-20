@@ -1,0 +1,61 @@
+         MACRO M$ENTER - INITIAL ENTRY FOR A CSECT                      00001000
+&NAME    M$ENTER &TYPE                                                  00003000
+         LCLC  &LABEL                                                   00004000
+         GBLC  &VERS                                                    00004109
+&LABEL   SETC  'IHB'.'&SYSNDX'                                          00005000
+         AIF   ('&TYPE' EQ 'VALCHECK').VALCK                            00006000
+         AIF   ('&TYPE' EQ 'ATTNEXIT').ATTN                             00007000
+         AIF   ('&TYPE' EQ '').MAIN                                     00008000
+         MNOTE 8,'INVALID TYPE ''&TYPE'''                               00009000
+         MEXIT                                                          00010000
+.MAIN    ANOP                                                           00020000
+&NAME    CSECT                                                          00030011
+         USING *,R15                                                    00040000
+         B     PDSSTM                                                   00050000
+         DROP  R15                                                      00060000
+         DC    AL1(PDSCEND-*-1)         LENGTH OF EYE-CATCHER           00070000
+PDSCSECT DC    CL16'&NAME'              CSECT NAME                      00080018
+PDSRELNO DC    CL16'&VERS'              RELEASE/UPDATE NUMBER           00090018
+         DC    CL10'&SYSCLOCK',CL6' '                                   00110125
+         DC    CL5'&SYSTIME',CL11' '                                    00110225
+PDSDRS   DC    CL16'DRK/GP'             THE US/AU DOCTORS               00110324
+PDSDATE  DC    CL16'&SYSDATE'           ASSEMBLY DATE                   00110422
+PDSTIME  DC    CL16'&SYSTIME'           ASSEMBLY TIME                   00110522
+PDSCEND  DS    0X                                                       00111000
+PDSSTM   STM   R14,R12,12(R13)          SAVE CALLER'S REGS              00112000
+         LCLA  &R                                                       00113000
+&R       SETA  0                                                        00114000
+.EQU     ANOP                                                           00115000
+R&R      EQU   &R                                                       00116000
+&R       SETA  &R+1                                                     00117000
+         AIF   (&R LT 16).EQU                                           00118000
+         LR    R9,R15                                                   00119000
+         USING &NAME,R9,R10,R11                                         00120000
+         LA    R11,2048                                                 00130000
+         LA    R10,2048(R9,R11)                                         00140000
+         LA    R11,2048(R10,R11)                                        00150000
+         MEXIT                                                          00160000
+.VALCK   ANOP                                                           00170000
+&NAME    CSECT                                                          00180011
+         SAVE  (14,12)                                                  00190000
+         LR    R8,R15             BASE REGISTER ADDRESS                 00200000
+         USING &NAME,R8           BASE REGISTER NOTIFICATION            00210000
+         L     R7,4(,R1)          WORK AREA ADDRESS                     00220000
+         LM    R9,R12,BASES       RESTORE BASE REGISTERS                00230000
+         L     R6,0(R1)           PDE ADDRESS                           00240000
+         LA    R15,VALSAVE                                              00250000
+         AGO   .CHAIN                                                   00260000
+.ATTN    ANOP                                                           00270000
+&NAME    CSECT                                                          00280011
+         SAVE  (14,12)                                                  00290000
+         L     R7,8(,R1)                                                00300000
+         LM    R9,R12,BASES                                             00310000
+         LA    R15,FIRST4K                                              00320000
+         LA    R15,ATTNSAVE-FIRST4K(,R15)                               00330000
+.CHAIN   ST    R13,4(,R15)                                              00340000
+         ST    R15,8(,R13)                                              00350000
+         LR    R13,R15                                                  00360000
+         L     R8,=A(&NAME)       BASE REGISTER ADDRESS                 00370000
+         USING &NAME,R8           BASE REGISTER NOTIFICATION            00380000
+         SPACE 1                                                        00390000
+         MEND                                                           00400000

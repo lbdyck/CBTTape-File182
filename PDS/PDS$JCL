@@ -1,0 +1,14 @@
+//*                                                                     00010000
+//*  THIS MEMBER FORMATS $$$PROSE FOR PRINTING                          00020000
+//*                                                                     00030000
+//A EXEC  PGM=IEBGENER                                                  00040000
+//SYSPRINT DD SYSOUT=*                                                  00050000
+//SYSUT1   DD DSN=THIS.LIB($$$PROSE),      <<=== PDS INSTLIB            00060000
+//            DISP=SHR,DCB=RECFM=FBA                                    00070000
+//SYSUT2   DD SYSOUT=A,                                                 00080000
+//        DCB=(RECFM=FBA,LRECL=90,BLKSIZE=90)                           00090000
+//SYSIN    DD *                                                         00100000
+  GENERATE MAXFLDS=9,MAXLITS=30                                         00110000
+        RECORD FIELD=(10,'          ',,1),                             X00120000
+               FIELD=(10,'          ',,81),                            X00130000
+               FIELD=(1,1,,1),FIELD=(1,2,,6),FIELD=(78,3,,9)            00140000

@@ -1,0 +1,594 @@
+         TITLE 'P D S  --  PDSLOAD INTERFACE                  5/26/09'  00003399
+*********************************************************************** 00003416
+*** SEPARATE/LOAD SUBCOMMAND  ADDED BY JOHN KALINICH -- MAY., 2009  *** 00003599
+*********************************************************************** 00004016
+*                                                                       00050000
+SEPARATE CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         SPACE 1                                                        00120000
+*  FREE SYSUT1, SYSUT2, AND SYSPRINT DATASETS                           00120199
+         LA    R1,SYSUT1A               SYSUT1 DDNAME                   00120499
+         BAS   R2,SEP8580               FREE THIS DATA SET              00120599
+         LA    R1,SYSUT2A               SYSUT2 DDNAME                   00120699
+         BAS   R2,SEP8580               FREE THIS DATA SET              00120799
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120899
+         BAS   R2,SEP8580               FREE THIS DATA SET              00120999
+*  ALLOCATE SEPARATE //SYSUT2 DATA SET  OUTPUT PDS                      00121099
+*  REMOVE QUOTES OR ADD PREFIX TO DSNAME                                00121199
+         SPACE 1                                                        00121299
+         MVC   MSGDS1(46),BLANK128               CLEAR DSNAME AREA      00121399
+         LA    R2,MSGDS1-1                                              00121499
+         LA    R1,MSGDS2                         OUTPUT PDS             00121599
+         LA    R0,46                                                    00121699
+         CLI   0(R1),C''''                       QUOTED?                00121799
+         BE    SEP0010                           YES, BRANCH            00121899
+         SR    R14,R14                           NO                     00121999
+         L     R15,ADDRUPT                       START OF THE UPT       00122099
+* 8-CHAR PREFIX                                               DRK JUL17 00122199
+         TM    FLAGSZZ,TSO#8                     8-CHAR ID/PREFIX?    " 00122299
+         BNO   SEP7PRE                           NO                   " 00122399
+SEP8PRE  DS    0H                                YES                  " 00122499
+         ICM   R14,B'0001',UPTPRF8L-UPT(R15)     PREFIX LENGTH ZERO?  " 00122599
+         BZ    SEP0010+4                         YES, BRANCH          " 00122699
+         MVC   1(8,R2),UPTPREF8-UPT(R15)         DSNAME PREFIX        " 00122799
+         B     SEPCONT                                                " 00122899
+SEP7PRE  DS    0H                                                     " 00122999
+         ICM   R14,B'0001',UPTPREFL-UPT(R15)     PREFIX LENGTH ZERO?  " 00123099
+         BZ    SEP0010+4                         YES, BRANCH          " 00123199
+         MVC   1(7,R2),UPTPREFX-UPT(R15)         DSNAME PREFIX        " 00123299
+SEPCONT  DS    0H                                             DRK JUL17 00123399
+         AR    R2,R14                            POSITION FOR PERIOD    00123499
+         SR    R0,R14                                                   00123599
+         MVI   1(R2),C'.'                                               00123699
+         BCTR  R0,0                                                     00123799
+         BCTR  R1,0                                                     00123899
+         LA    R2,1(,R2)                                                00123999
+         SPACE 1                                                        00124099
+SEP0010  LA    R1,1(,R1)                         NEXT INPUT BYTE        00124199
+         LA    R2,1(,R2)                         NEXT OUTPUT BYTE       00124299
+         CLI   0(R1),C''''                       END OF DSNAME?         00124399
+         BE    SEP0020                           YES, BRANCH            00124499
+         CLI   0(R1),X'40'                       BLANK?                 00124599
+         BE    SEP0020                           YES, BRANCH            00124699
+         MVC   0(1,R2),0(R1)                     MOVE IN ONE MORE BYTE  00124799
+         BCT   R0,SEP0010                                               00124899
+         B     SEP0020                                                  00124999
+         SPACE 1                                                        00125099
+SEP0020  DS    0H                                                       00125199
+*  LOCATE OUTPUT DSNAME                                                 00125599
+         MVC   WORKTMP(44),MSGDS1       COPY DSNAME                     00125799
+         L     R14,LOCATE4                                              00125899
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00125999
+         SR    R0,R0                    NO CVOL VALUE                   00126099
+         LA    R1,MSGTEXT1              LOCATE WORK AREA                00126199
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00126299
+         LOCATE PARMLIST                                                00126399
+         CLI   #SEPDISP,4               NEW?                            00126499
+         BNE   SEPNOTNW                 NO                              00126599
+         LTR   R15,R15                  SUCCESSFUL LOCATE?              00126699
+         BZ    SEPDSN                   YES, ERROR                      00126799
+         B     SEP2000                  NO, OK                          00126899
+SEPNOTNW DS    0H                                                       00126999
+         LTR   R15,R15                  SUCCESSFUL LOCATE?              00127099
+         BNZ   SEPNODSN                 NO, ERROR                       00127199
+         SPACE 1                                                        00127299
+*  OBTAIN DSCB                                                          00128199
+         L     R14,OBTAIN4              OBTAIN FLAGS                    00128299
+         LA    R15,WORKTMP              ACTUAL DSNAME                   00128399
+         LA    R0,MSGTEXT1+6            VOLUME SERIAL (FROM LOCATE)     00128499
+         LA    R1,MSGTEXT2              OUTPUT START ADDRESS            00128599
+         STM   R14,R1,PARMLIST          SAVE CAMLIST PARAMETERS         00128699
+         OBTAIN PARMLIST                GET THE FORMAT 1 DSCB           00128799
+         LTR   R15,R15                  SUCCESSFUL?                     00128899
+         BZ    SEPDSCB                  YES, BRANCH                     00128999
+         M$MSG L830                     NO DSCB FOUND MESSAGE           00129099
+         B     NEWCMD                                                   00129199
+SEPDSN   MVI   MTLEN,44                 LENGTH OF INSERT                00129299
+         MVC   INSERT#1(44),WORKTMP     DSNAME                          00129399
+         M$MSG L852$1                   DSNAME DOES NOT EXIST           00129499
+         MVC   PMEMCURR,=XL4'00'        CURRENT MEMBER POINTER          00129599
+         NI    FLAGSAA,FF-FMEM#MEM      TURN OFF MEMBER GROUP           00129699
+         NI    FLAGSII,FF-FDIRGRP       NORMAL INPUT NOW                00129799
+         B     NEWCMD                                                   00129899
+SEPNODSN MVI   MTLEN,44                 LENGTH OF INSERT                00129999
+         MVC   INSERT#1(44),WORKTMP     DSNAME                          00130099
+         M$MSG L844$1                                                   00130199
+         B     NEWCMD                                                   00130299
+SEPDSCB  DS    0H                                                       00130399
+         LA    R1,L521          ASSUME A NON-PARTITIONED DATA SET       00130499
+         TM    MSGTEXT2+DS1DSORG-DS1FMTID,DS1DSGPO  DSORG=PO?           00130599
+         BZ    MSGNEW                   NO, BRANCH                      00130699
+         SPACE 1                                                        00130799
+SEP2000  DS    0H                                                       00130899
+         MVC   MSGDS1(44),WORKTMP       RESTORE DSNAME                  00130999
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00131099
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00131199
+         USING S99RBP,R1                                                00131299
+         SPACE 1                                                        00131399
+         LA    R4,M99RB                                                 00131499
+         USING S99RB,R4                                                 00131599
+         ST    R4,S99RBPTR                                              00131699
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00131799
+         SPACE 1                                                        00131899
+         LA    R5,M99TUPL                                               00131999
+         USING S99TUPL,R5                                               00132099
+         MVI   S99RBLN,20               LENGTH 20                       00132199
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00132299
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00132399
+         LA    R3,WORKTBL                        START OF TEXT          00132499
+         SPACE 1                                                        00132599
+         MVC   0(L'SEPDDNU2+6,R3),SEPDDNU2       SPECIFY DDNAME TEXT    00132699
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00132799
+         LA    R3,L'SEPDDNU2+6(,R3)              START OF NEXT TEXT     00132899
+         SPACE 1                                                        00132999
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00133099
+         MVC   0(L'SEPDSNAM,R3),SEPDSNAM         SPECIFY DSNAME TEXT    00133199
+         MVC   6(44,R3),MSGDS1                   MOVE IN DSNAME TEXT    00133299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00133399
+         LA    R3,L'SEPDSNAM+44(,R3)             START OF NEXT TEXT     00133499
+         SPACE 1                                                        00133599
+* DISP                                                        DRK MAR18 00133899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00133999
+         MVC   0(L'SEPALLOC,R3),SEPALLOC         SPECIFY DISP TEXT      00134099
+         CLI   #SEPDISP,0                        ANY OLD/SHR/MOD/NEW?   00134199
+         BNE   *+8                               YES, BRANCH            00134299
+         MVI   #SEPDISP,2                        NO, USE DEFAULT        00134399
+         SPACE 1                                                        00134499
+         CLI   #SEPDISP,1                        OLD?                   00134599
+         BNE   *+8                               NO, BRANCH             00134699
+         MVI   6(R3),SEPOOLD                     SPECIFY DISPOSITION    00134799
+         SPACE 1                                                        00134899
+         CLI   #SEPDISP,2                        SHR?                   00134999
+         BNE   *+8                               NO, BRANCH             00135099
+         MVI   6(R3),SEPOSHR                     SPECIFY DISPOSITION    00135199
+         SPACE 1                                                        00135299
+         CLI   #SEPDISP,4                        NEW?                   00135399
+         BNE   *+8                               NO, BRANCH             00135499
+         MVI   6(R3),SEPONEW                     SPECIFY DISPOSITION    00135599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00135699
+         LA    R3,L'SEPALLOC(,R3)                START OF NEXT TEXT     00135799
+         SPACE 1                                                        00135899
+* DISP=NEW                                                    DRK MAR18 00135999
+         CLI   #SEPDISP,4                        NEW?                   00136099
+         BL    SEPNW30                           NO, BRANCH             00136199
+         SPACE 1                                                        00136299
+         CLI   #SEPVOL,0                         ANY VOLUME SERIAL?     00136399
+         BE    SEPNW10                           NO, BRANCH             00136499
+* VOLSER, UNIT                                                DRK MAR18 00136599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00136699
+         MVC   0(L'SEPVOLSR,R3),SEPVOLSR         SPECIFY VOLUME         00136799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00136899
+         MVC   6(6,R3),#SEPVOL                   MOVE VOLSER            00136999
+         LA    R3,L'SEPVOLSR(,R3)                START OF NEXT TEXT     00137099
+         SPACE 1                                                        00137199
+SEPNW10  DS    0H                                                       00137299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00137399
+         MVC   0(L'SEPUNITP+8,R3),SEPUNITP       SPECIFY UNIT           00137499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00137599
+         LA    R3,L'SEPUNITP+8(,R3)              START OF NEXT TEXT     00137699
+* DSORG, RECFM, LRECL, BLKSIZE                                DRK MAR18 00137799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00137899
+         MVC   0(L'SEPSDS+2,R3),SEPSDS           SPECIFY DSORG          00137999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00138099
+         LA    R3,L'SEPSDS+2(,R3)                START OF NEXT TEXT     00138199
+         SPACE 1                                                        00138299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00138399
+         MVC   0(L'SEPSRF+1,R3),SEPSRF           SPECIFY RECFM          00138499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00138599
+         LA    R3,L'SEPSRF+1(,R3)                START OF NEXT TEXT     00138699
+         SPACE 1                                                        00138799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00138899
+         MVC   0(L'SEPSLR,R3),SEPSLR             SPECIFY LRECL          00138999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00139099
+         MVC   6(2,R3),LRECL                     MOVE LRECL             00139199
+         LA    R3,L'SEPSLR+2(,R3)                START OF NEXT TEXT     00139299
+         SPACE 1                                                        00139399
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00139499
+         MVC   0(L'SEPSBL,R3),SEPSBL             SPECIFY BLKSIZE        00139599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00139699
+         MVC   6(2,R3),BLKSI                     MOVE BLKSIZE           00139799
+         LA    R3,L'SEPSBL+2(,R3)                START OF NEXT TEXT     00139899
+         SPACE 1                                                        00139999
+* TRK/CYL ALLOCATION                                          DRK MAR18 00140099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00140199
+         MVC   0(L'SEPTRK,R3),SEPTRK             SPECIFY TRACK ALLOC    00140299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00140399
+         CLI   #SEPTRCY,0                        TRK/CYL REQUESTED?     00140499
+         BH    SEPNW15                           YES, BRANCH            00140599
+         MVI   #SEPTRCY,1                        NO, DEFAULT TO TRK     00140699
+SEPNW15  CLI   #SEPTRCY,1                        TRACK?                 00140799
+         BNE   *+8                               NO, BRANCH             00140899
+         MVI   1(R3),X'07'                       YES, CONVERT TO TRK    00140999
+         CLI   #SEPTRCY,2                        CYLINDER?              00141099
+         BNE   *+8                               NO, BRANCH             00141199
+         MVI   1(R3),X'08'                       YES, CONVERT TO CYL    00141299
+         LA    R3,L'SEPTRK(,R3)                  START OF NEXT TEXT     00141399
+         SPACE 1                                                        00141499
+* SPACE (P,S)                                                 DRK MAR18 00141599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00141699
+         MVC   0(L'SEPFIRST+3,R3),SEPFIRST       SPECIFY PRIMARY        00141799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00141899
+         SR    R14,R14                                                  00141999
+         ICM   R14,B'0011',#SEPSPAC              ANY PRIMARY SPACE?     00142099
+         BNZ   SEPNW20                           YES, BRANCH            00142199
+         B     SEPNW25                           NO, USE DEFAULT        00142299
+SEPNW20  STCM  R14,B'0111',6(R3)                 UPDATE FIRST QUANTITY  00142399
+SEPNW25  DS    0H                                                       00142499
+         LA    R3,L'SEPFIRST+3(,R3)              START OF NEXT TEXT     00142599
+         SPACE 1                                                        00142699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00142799
+         MVC   0(L'SEPSECON+3,R3),SEPSECON       SPECIFY SECONDARY      00142899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00142999
+         SR    R14,R14                                                  00143099
+         ICM   R14,B'0011',#SEPSPAC+2            SECONDARY SPACE?       00143199
+         BZ    SEPNW30                           NO                     00143299
+         SPACE 1                                                        00143399
+         STCM  R14,B'0111',6(R3)                 UPDATE 2ND QUANTITY    00143499
+SEPNW30  DS    0H                                                       00143599
+         LA    R3,L'SEPSECON+3(,R3)              START OF NEXT TEXT     00143699
+         SPACE 1                                                        00143799
+* DIR (B)                                                     DRK MAR18 00143899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00143999
+         MVC   0(L'SEPDIR+3,R3),SEPDIR           SPECIFY DIRECTORY BLKS 00144099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00144199
+         ICM   R0,B'1111',#SEPDIR#               ANY DIR(NUM) SPECIFIED 00144299
+         BZ    SEPNW35                           NO, USE DEFAULT        00144399
+         STCM  R0,B'0111',6(R3)                  UPDATE DIR COUNT       00144499
+SEPNW35  DS    0H                                                       00144599
+         LA    R3,L'SEPDIR+3(,R3)                START OF NEXT TEXT     00144699
+         SPACE 1                                                        00144799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00144899
+         MVC   0(L'SEPCAT,R3),SEPCAT             DISP=(,CATLG)          00144999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00145099
+         CLI   #SEPDISP,4                        NEW?                   00145199
+         BE    *+8                               YES, BRANCH            00145299
+         MVI   6(R3),X'08'                       NO, USE DISP=(,KEEP)   00145399
+         LA    R3,L'SEPCAT(,R3)                  START OF NEXT TEXT     00145499
+         SPACE 1                                                        00145599
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00145699
+         MVC   0(L'SEPCDEL,R3),SEPCDEL           DISP=(,,DELETE)        00145799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00145899
+         CLI   #SEPDISP,4                        NEW?                   00145999
+         BE    *+8                               YES, BRANCH            00146099
+         MVI   6(R3),X'08'                       NO, USE DISP=(,,KEEP)  00146199
+         SPACE 1                                                        00146299
+SEPNW99  DS    0H                                                       00146399
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00146499
+         SPACE 1                                                        00146599
+         DYNALLOC                                                       00146699
+         DROP  R1,R4,R5                                                 00146799
+SEPDB01  DS    0H                                                       00146899
+         LTR   R15,R15                       SUCCESSFUL?                00146999
+         BNZ   SEPERROR                      NO, BRANCH                 00147099
+         CLI   #SEPDISP,4                    NEW?                       00147199
+         BNE   SEPDB02                       NO, BRANCH                 00147299
+         MVI   MTLEN,44                 LENGTH OF INSERT                00147399
+         MVC   INSERT#1(44),MSGDS1      DSNAME                          00147499
+         M$MSG L273$1                   DISPLAY OUTPUT DSN *DEBUG*      00147599
+SEPDB02  DS    0H                                                       00147699
+         SPACE 2                                                        00147899
+*  ALLOCATE SEPARATE //SYSUT1 DATA SET  INPUT PDS DSN                   00147999
+         SPACE 1                                                        00148099
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00148199
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00148299
+         USING S99RBP,R1                                                00148399
+         SPACE 1                                                        00148499
+         LA    R4,M99RB                                                 00148599
+         USING S99RB,R4                                                 00148699
+         ST    R4,S99RBPTR                                              00148799
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00148899
+         SPACE 1                                                        00148999
+         LA    R5,M99TUPL                                               00149099
+         USING S99TUPL,R5                                               00149199
+         MVI   S99RBLN,20               LENGTH 20                       00149299
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00149399
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00149499
+         LA    R3,WORKTBL                        START OF TEXT          00149599
+         SPACE 1                                                        00149699
+         MVC   0(L'SEPDDNU1+6,R3),SEPDDNU1       SPECIFY DDNAME TEXT    00149799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00149899
+         LA    R3,L'SEPDDNU1+6(,R3)              START OF NEXT TEXT     00149999
+         SPACE 1                                                        00150099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00150199
+         MVC   0(L'SEPDSNAM,R3),SEPDSNAM         SPECIFY DSNAME TEXT    00150299
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00150399
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00150499
+         LA    R3,L'SEPDSNAM+44(,R3)             START OF NEXT TEXT     00150599
+         SPACE 1                                                        00150699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00150799
+         MVC   0(L'SEPDSMBR,R3),SEPDSMBR         SPECIFY MEMBER TEXT    00150899
+         MVC   6(8,R3),MEMBER1                   MOVE IN MEMBER TEXT    00150999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00151099
+         LA    R3,L'SEPDSMBR+8(,R3)              START OF NEXT TEXT     00151199
+         SPACE 1                                                        00151299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00151399
+         MVC   0(L'SEPALLOC,R3),SEPALLOC         SPECIFY DISP TEXT      00151499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00151599
+         LA    R3,L'SEPALLOC(,R3)                START OF NEXT TEXT     00151699
+         SPACE 1                                                        00151799
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00151899
+         MVC   0(L'SEPNORM,R3),SEPNORM           SPECIFY NORMAL TEXT    00151999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00152099
+         LA    R3,L'SEPNORM(,R3)                 START OF NEXT TEXT     00152199
+         SPACE 1                                                        00152299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00152399
+         MVC   0(L'SEPANORM,R3),SEPANORM         SPECIFY ABNORMAL TEXT  00152499
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00152599
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00152699
+         SPACE 1                                                        00152799
+         DYNALLOC                                                       00152899
+         SPACE 2                                                        00152999
+         DROP  R1,R4,R5                                                 00153099
+         LTR   R15,R15                       SUCCESSFUL?                00153199
+         BNZ   SEPERROR                      NO, BRANCH                 00154099
+         SPACE 2                                                        00160099
+*  ALLOCATE SEPARATE //SYSPRINT DATA SET                                02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),SEPDDNPR      SYSPRINT DDNAME               02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),SEPSYSPR    ADD OTHER LIST ELEMENTS       02360099
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   SEPERROR                   NO, BRANCH                    02570099
+         B     SEP2100                                                  02580099
+         SPACE 2                                                        08580000
+SEPERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    SEP8550                    NO, BRANCH                    08700099
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     SEP8550                                                  08780099
+         SPACE 3                                                        08790000
+SEP2100  DS    0H                                                       08790199
+         SPACE 2                                                        10590169
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590299
+         STAX  SEPANULL,USADDR=(R7),REPLACE=NO,IBUF=0,                 X10590699
+               OBUF=(SEP484W,SEP484WL),MF=(E,STAXPARM)                  10590799
+         LA    R1,SEPPARM                 PARM='UPDTE(><)'              10830099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,SEPPGM               2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950024
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,SEP7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),SEPEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   SEPNLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+SEPNLNK  BAS   R2,ATTACH                  PDSLOAD                       11440099
+         SPACE 3                                                        11490000
+SEP7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        11820000
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE              11820199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?            11820299
+         BNE   SEP8000                    NO                            11820399
+         MVC   INSERT#1(8),SEPPGM         YES, ERROR                    11820499
+         M$MSG L859$1                     NOT FOUND MESSAGE             11820599
+         B     SEP8550                                                  11820699
+         SPACE 1                                                        11830099
+SEP8000  DS    0H                                                       12310099
+         CLI   #SEPLIST,2                   NOLIST?                     12310199
+         BE    SEP8550                      YES                         12310299
+         SPACE 1                                                        12310399
+         MVC   BAMDCB(SEPDL),SEPDCB         GET MODEL DCB               12311099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSPRINT'                 12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350099
+         BO    SEP8010                      YES, BRANCH                 12360099
+         LA    R1,SEP865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     SEP8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS SYSPRINT RECORDS                                             12400099
+SEP8010  GET   BAMDCB                     GET LIST RECORD               12420099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(120),1(R1)      ADD THE PDSLOAD MESSAGE       12570099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     SEP8010                                                  12650099
+         SPACE 3                                                        12660000
+SEP8500  DS    0H                                                       12660199
+         CLC   ##SUBCAL(8),SEPEFTSR       INVOKE IKJEFTSR?              12660299
+         BNE   SEP8540                    NO, BRANCH                    12660399
+         CLI   #SUBHOLD+28+11,1           RC:1                          12660699
+         BL    SEP8540                    YES, VALID PDSLOAD            12660899
+         MVI   MTLEN+4,11                                               12660985
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    12661099
+         SR    R15,R15                                                  12661185
+         ICM   R15,B'0001',#SUBHOLD+28+11                               12661299
+         CVD   R15,DOUBLE                                               12661485
+         MVC   INSERT#1(8),##SUBCOM                                     12661585
+         MVC   INSERT#2(4),=X'40202120'                                 12661685
+         ED    INSERT#2(4),DOUBLE+6                                     12661785
+         MVI   INSERT#2,C'='              RETURN CODE                   12661885
+         SPACE 1                                                        12661985
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12662099
+         BNE   SEP8530                    NO, SKIP MESSAGE              12662199
+         SPACE 1                                                        12662299
+         L     R0,#SUBHOLD+28+16        ABEND CODE                      12662399
+         SRDL  R0,12                    SHIFT USER ABEND TO R1          12662499
+         ST    R0,FULLWORD              SYSTEM ABEND CODE               12662599
+         MVC   INSERT#2+4(7),=C' ABEND='                                12662699
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                             12662799
+         TR    INSERT#2+11(4),TRTABLE                                   12662899
+         MVI   INSERT#2+11,C'S'         S000                            12662999
+         MVI   INSERT#2+11+4,X'40'                                      12663099
+         SPACE 1                                                        12663199
+         SRL   R1,20                    USER ABEND                      12663299
+         CVD   R1,DOUBLE                                                12663399
+         UNPK  DOUBLE(5),DOUBLE+5(3)                                    12663499
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE                  12663599
+         MVI   INSERT#2+11+5,C'U'       U0000                           12663699
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND                 12663799
+         SPACE 1                                                        12663899
+SEP8530  DS    0H                                                       12664099
+         M$MSG L171$2                                                   12670085
+SEP8540  DS    0H                                                       12830099
+         MVI   OPENLIST,X'80'                                           12840000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE       12850099
+         LA    R1,BAMDCB                                                12860000
+         FREEPOOL (1)                                                   12870000
+         SPACE 2                                                        12880000
+SEP8550  M$ERRST MSGBLANK                                               12890099
+         LA    R1,=CL8'SYSPRINT'          SYSPRINT DNAME                12900099
+         BAS   R2,SEP8580                 FREE THIS DATA SET            12910099
+         LA    R1,SYSUT1A                 SYSUT1 DDNAME                 12911099
+         BAS   R2,SEP8580                 FREE THIS DATA SET            12912099
+         LA    R1,SYSUT2A                 SYSUT2 DDNAME                 12912199
+         BAS   R2,SEP8580                 FREE THIS DATA SET            12912299
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+SEP8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),SEPFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,SEPUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+SEPANULL BR    R14                                                      13252099
+         SPACE 2                                                        13260000
+*  SEPARATE CONSTANTS                                                   13460099
+         PRINT NOGEN                                                    13470000
+SEPDCB   DCB   DSORG=PS,DDNAME=SEP,MACRF=(GL,PM),EODAD=SEP8500          13480099
+SEPDL    EQU   *-SEPDCB                                                 13490099
+         PRINT NOGEN                                                    13550138
+SEP484W  DC    C'PDS484W LOAD SHOULD NOT BE INTERRUPTED'                13550399
+SEP484WL EQU   *-SEP484W                                                13550499
+SEP865E  M$TX  'PDS865E THE LOAD OUTPUT CAN NOT BE OPENED'              13550599
+         PRINT GEN                                                      13551038
+SEPEFTSR DC    CL8'IKJEFTSR'                                            13710099
+SEPPGM   DC    CL8'PDSLOAD'                      PDSLOAD                13720099
+SEPPARM  DC    AL2(SEPPARML-2)                   PARM LENGTH            13721099
+         DC    C'UPDTE(><)'                      CBT STANDARD PARM      13721199
+SEPPARML EQU   *-SEPPARM                                                13721299
+SEPDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722199
+SEPDDNU1 DC    X'000100010006',C'SYSUT1'         SYSUT1   DDNAME        13722399
+SEPDDNU2 DC    X'000100010006',C'SYSUT2'         SYSUT2   DDNAME        13722499
+SEPDSNAM DC    X'00020001002C'                   DSNAME                 13722599
+SEPDSMBR DC    X'000300010008'                   MEMBER                 13722699
+SEPALLOC DC    X'00040001000108'                 DISP=SHR               13722799
+SEPNORM  DC    X'00050001000108'                 DISP=(,KEEP)           13722899
+SEPANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13722999
+SEPDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13723099
+SEPFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+SEPNEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+SEPDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+SEPCAT   DC    X'00050001000102'                 DISP=(,CATLG)          13791099
+SEPCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+SEPPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+SEPUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+SEPTRK   DC    X'00070000'                       SPACE=(TRK,            13820199
+SEPFIRST DC    X'000A00010003',AL3(15)           SPACE=(,15             13820299
+SEPSECON DC    X'000B00010003',AL3(15)           SPACE=(,,15            13820399
+SEPDIR   DC    X'000C00010003',AL3(150)          SPACE=(,,,150)         13820499
+SEPOOLD  EQU   X'01'                             DISP=OLD               13820599
+SEPONEW  EQU   X'04'                             DISP=NEW               13820699
+SEPOSHR  EQU   X'08'                             DISP=SHR               13820799
+SEPVOLSR DC    X'001000010006404040404040'       VOL=SER=               13820899
+SEPUNITP DC    X'001500010008',CL8'&PUNIT'       UNIT=SYSALLDA          13820999
+         SPACE 2                                                        13821099
+SEPSDS   DC    X'003C00010002',XL2'0200'         DSORG=PO               13821199
+SEPSRF   DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13821299
+SEPSLR   DC    X'004200010002',AL2(80)           DCB=LRECL=80           13821399
+SEPSBL   DC    X'003000010002',AL2(27920)        DCB=BLKSIZE=27920      13822099
+         SPACE 2                                                        13840000
+SEPPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+SEPPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860099
+SEPPRTIN DC    X'000900010003',AL3(27951)        SPACE=(27951)          13870099
+         SPACE 1                                                        13920000
+SEPPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          13930099
+SEPPRTLR DC    X'004200010002',AL2(121)          DCB=LRECL=121          13940099
+SEPPRTBL DC    X'003000010002',AL2(27951)        DCB=BLKSIZE=27951      13950099
+         SPACE 2                                                        14000000
+SEPSYSPR DC    A(SEPPRTFI,SEPPRTSE,SEPPRTIN)                            14080099
+         DC    A(SEPPRTRE,SEPPRTLR,SEPPRTBL)                            14090099
+         DC    A(SEPNEW,SEPDEL,SEPCDEL),X'80',AL3(SEPPERM)              14100099
+SYSUT1A  DC    CL8'SYSUT1'                                              14150199
+SYSUT2A  DC    CL8'SYSUT2'                                              14150299
+         SPACE 3                                                        14150799
+OBTAIN4  CAMLST SEARCH,0,0,0                                            14150899
+         ORG   OBTAIN4+4                                                14150999
+         SPACE 3                                                        14151099
+LOCATE4  CAMLST NAME,0,,0                                               14151199
+         ORG   LOCATE4+4                                                14152099
+         SPACE 3                                                        14160099

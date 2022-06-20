@@ -28,3 +28,24 @@
 *.xlsm binary
 *.obj binary
 *.bin binary
+$$PDSNEW.PPT git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+$$PDSPPT.PPT git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+$$S2214.ZIP git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+$$S2837.ZIP git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+$$ZXPO08.ZIP git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+$PTSEXP.BIN git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+COMXMIT.UTILXMIT.LOAD/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+COM2XMIT.CMDLIB/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+EDITXMIT.LOAD/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+FAMSXMIT.LINKLIB/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+LBDPSPAN.BIN git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+LBDPXMIT.LBDPSPAN/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+PGLITE.BIN git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+PGLQR.ZIP git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+SHAXMIT.CMDLIB/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+SHA1FOX.BIN git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+SMPUMOD3.BIN git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+TESTXMIT.LINKLIB/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+UTILXMIT.LOAD/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+ZTSOHELP.BIN git-encoding=BINARY zos-working-tree-encoding=BINARY binary
+Z035XMIT.FILE035.LOAD/* git-encoding=BINARY zos-working-tree-encoding=BINARY binary

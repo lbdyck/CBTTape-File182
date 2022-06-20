@@ -1,0 +1,721 @@
+*********************************************************************** 00010000
+***                                                                 *** 00020000
+***  MEMBER #PDSGENB SETS THE BASIC OPTIONS FOR A PDS GENERATION.   *** 00030000
+***  FOR MANY INSTALLATIONS, THIS MEMBER SHOULD NOT REQUIRE ANY     *** 00040000
+***  MODIFICATIONS; FOR ADDITIONAL INFORMATION, SEE MEMBER #PDSGEN. *** 00050000
+***                                                                 *** 00060000
+*********************************************************************** 00070000
+         GBLC  &MVSLEV,&CONADEF,&CONVTAM,&CONGLBL,&CONDRNG,&RETURNX     00080000
+         SPACE 1                                                        00090000
+         GBLC  &DB23051,&DB23052,&DB2314,&DB3330,&DB3340                00100000
+         GBLC  &DB3350,&DB3375,&DB33301,&DB3380,&DB3390,&DB9345         00110022
+         SPACE 1                                                        00120000
+         GBLC  &UN23051,&UN23052,&UN2314,&UN3330,&UN3340                00130000
+         GBLC  &UN3350,&UN3375,&UN33301,&UN3380,&UN3390,&UN9345         00140022
+         SPACE 1                                                        00150000
+         GBLC  &NAB1,&NAB2,&NAB3,&NXS1,&NXS2,&NXS3,&NABE                00160000
+         GBLC  &NATT,&NALI,&NBRO,&NCHA,&NCAR,&NCMX,&NCON                00170000
+         GBLC  &NCOP,&NDIS,&NDIR,&NDEL,&NDSN,&NDSP,&NEDI                00180000
+         GBLC  &NEND,&NEXE,&NFIN,&NFIX,&NFSE,&NKLE,&NHEL                00190000
+         GBLC  &NHIS,&NIFX,&NISP,&NISM,&NLIS,&NMAP,&NMEM,&NMML          00200000
+         GBLC  &NOPT,&NOUT,&NPAT,&NPDS,&NPRI,&NQUI,&NREC,&NRC2          00210000
+         GBLC  &NREN,&NREP,&NRPR,&NRES,&NREV,&NRXX,&NSPF,&NSUB          00220000
+         GBLC  &NSUL,&NSCR,&NTSO,&NTSE,&NTSL,&NUSA,&NVER,&NVPS          00230000
+         GBLC  &NUT1,&NUT2,&CUT1,&CUT2,&NVTO,&CVTO,&NDCF,&CDCF          00240000
+         GBLC  &NDSA,&NDVO,&CDSA,&CDVO,&NBL5,&NBL8,&CBL5,&CBL8          00250000
+         GBLC  &NBL9,&CBL9                                     SS SEP90 00260006
+         GBLC  &NBL4,&CBL4                                    DRK JUN06 00270072
+         SPACE 1                                                        00280000
+         GBLC  &CABE,&CXS1,&CXS2,&CXS3,&CF296                           00290000
+         GBLC  &CBRO,&CCAR,&CCMX,&CCOP,&CDSP,&CEDI,&CEXE                00300000
+         GBLC  &CFIX,&CFSE,&CHEL,&CISP,&CMEN,&CPRI                      00310000
+         GBLC  &CREV,&CRXX,&CSUB,&CTSL,&CTSO,&CTSE,&CVPS                00320000
+         GBLC  &NOR1,&NOR2,&NOR3,&NOR4,&NOR5,&NOR6,&NOR7,&NOR8,&NOR9    00330000
+         GBLC  &NLO1,&NLO2,&NLO3,&NLO4,&NLO5,&NLO6,&NLO7,&NLO8,&NLO9    00340000
+         GBLC  &NLOA,&NLOB,&NLOC                              DRK AUG08 00350088
+         GBLC  &NLOD,&NLOE                                    DRK JUN12 00360099
+         SPACE 1                                                        00370000
+         GBLC  &SPFSIZE,&SPFMAX,&SPFCKPT,&NMOD,&ISPOPT,&LKEDDAT,&ALICHK 00380000
+         GBLC  &PDSPRT,&PDSMAIN,&COPYMOD,&SPFTDEL,&COPYLST,&COPYSHR     00390000
+         GBLC  &P,&M,&COMPLST                                           00400000
+         SPACE 1                                                        00410000
+         GBLC  &ILTA,&ILTV,&IFRE,&IDCA,&ISPC,&ISTA,&IALL,&IALC SS NOV85 00420000
+         GBLC  &ILAX,&ILVX,&IFUN,&ISET,&ISRT,&IVIE,&ILKD,&ILOG SS AUG86 00430000
+         GBLC  &IALT,&IDUL,&INOR                               SS AUG86 00440000
+         GBLC  &IMLX,&ITOD,&IGRP                               SS AUG86 00450000
+         GBLC  &IXSH,&IXLO,&ISTL,&ISTM                        ABL FEB87 00460000
+         GBLC  &ISCSEL,&ILDSEL,&ILASEL,&ILVSEL                 SS JUL87 00470000
+         GBLC  &SPFTOLD,&EDUPDT,&SWAP,&TUNIT,&NISX,&NEDR       SS JUL87 00480000
+         GBLC  &IACD,&ISTC,&ISTE,&ISEL,&IKIL,&IWEK,&ISTS      ABL AUG88 00490000
+         GBLC  &IBLK,&IEQU,&IEQQ,&IZCO,&IPMT,&IEDM,&PUNIT     ABL MAY88 00500000
+         GBLC  &IAAA,&IAFF,&IAPP,&IBBB,&ICCC,&IEEE,&ILLL       SS JUL88 00510042
+         GBLC  &IMAA,&IMDD,&ILHH,&ILMM,&IMLL,&IMPP,&IMVV,&IMMM SS JUL88 00520000
+         GBLC  &ISSS,&IUUU,&IXXX,&IZZZ                         SS JUL88 00530000
+         GBLC  &ISTV                                           SS JUL88 00540000
+         GBLC  &ILCSEL,&ITTSEL,&ICXSEL,&IFLSEL,&ICSSEL         SS OCT88 00550000
+         GBLC  &ILTC,&ILTF,&ILCX,&ILFX,&ITCT,&ICAX,&IFLT,&ICSE SS OCT88 00560000
+         GBLC  &ITRP,&IEXP,&IRLS,&IRLX,&ICAN,&IINS,&IADD       SS MAR89 00570000
+         GBLC  &IEXC,&ITEE,&INEX,&ITNN,&IUPD,&ITUU,&IVCM,&ITVV SS NOV88 00580000
+         GBLC  &ISTF,&ISTT,&ILFV,&TRAP                         SS NOV88 00590000
+         GBLC  &SPFFOLD,&SPFFDEL,&SPFFAUT,&SPFFPRM             SS MAR89 00600000
+         SPACE 1                                                        00610002
+         GBLC  &WIN19XX                                       Y2K AUG97 00620003
+         GBLC  &MAXDASD                                       DRK JUN98 00630009
+         GBLC  &PNTS                                          DRK OCT98 00640011
+         GBLC  &MDRDT                                         DRK NOV98 00650014
+         GBLC  &COPYALI                                       DRK JAN99 00660018
+         GBLC  &MSSTART,&MLSTART,&LFSTART,&LVSTART            DRK NOV99 00670023
+         GBLC  &NVIE,&CVIE,&IVVV                              DRK JUL02 00680042
+         GBLC  &ISODT                                         DRK NOV01 00690038
+         GBLC  &DSLIST                                        DRK NOV02 00700052
+         GBLC  &FNDCASE                                       DRK DEC02 00710054
+         GBLC  &FINDMSG                                       DRK MAY04 00720055
+         GBLC  &LOGWIDE                                       DRK JUL04 00730057
+         GBLC  &NMXI,&CMXI                                    DRK NOV05 00740062
+         GBLC  &NSRC,&CSRC                                    DRK DEC05 00750063
+         GBLC  &SRCHOPT                                       DRK DEC05 00760064
+         GBLC  &NDSM,&CDSM                                    DRK DEC05 00770066
+         GBLC  &NDLN,&CDLN                                    DRK DEC05 00780099
+         GBLC  &STOWI                                         DRK FEB06 00790099
+         GBLC  &NLCS                                          THG MAR06 00800099
+         GBLC  &NXMI,&CXMI,&NSEA                              DRK APR06 00810099
+         GBLC  &NOFF,&COFF                                    DRK MAY06 00820099
+         GBLC  &NSMP                                          DRK JUN06 00830099
+         GBLC  &NLMA,&CLMA                                    DRK SEP06 00840099
+         GBLC  &NCPK,&CCPK                                    DRK JUL07 00850099
+         GBLC  &MIGVOL                                        DRK SEP07 00860099
+         GBLC  &MLRESET                                       DRK OCT07 00870099
+         GBLC  &NCOB,&CCOB,&NANA                              DRK NOV07 00880099
+         GBLC  &NCND                                          DRK APR08 00890099
+         GBLC  &NSEP,&CSEP                                    DRK MAY09 00900099
+         GBLC  &NAMB,&CAMB                                    DRK JUL09 00910099
+         GBLC  &NPTS,&CPTS                                    DRK SEP09 00920099
+         GBLC  &NMAT,&CMAT                                    DRK JUN10 00930099
+         GBLC  &NVPE,&CVPE                                    DRK FEB11 00940099
+         GBLC  &MAPPGM                                        DRK FEB14 00950099
+         GBLC  &ASMPGM                                        DRK JAN16 00960099
+         GBLC  &MXIPGM                                        DRK DEC16 00970099
+         SPACE 2                                                        00980094
+*********************************************************************** 00990000
+***                                                                 *** 01000000
+*** IF PDS IS TO RUN IN A XA-370 MIXED MODE AND YOU USE XA MACLIBS,     01010000
+***    UNCOMMENT THE FOLLOWING STATEMENT:                               01020000
+***                                                                     01030000
+*        SPLEVEL SET=1                                         SS NOV84 01040000
+         SPACE 2                                                        01050000
+*********************************************************************** 01060000
+***                                                                 *** 01070000
+*** SET THE TYPE OF TERMINAL ACCESS METHOD FOR THE KLEAR SUBCOMMAND:    01080000
+***                                                                     01090000
+&CONVTAM SETC  'VTAMONLY'  ***  FOR VTAM ONLY                           01100000
+*&CONVTAM SETC  'TCAMONLY' ***  FOR TCAM ONLY                           01110000
+*&CONVTAM SETC  'VTAMTCAM' ***  FOR VTAM AND TCAM                       01120000
+         SPACE 2                                                        01130000
+*********************************************************************** 01140000
+***                                                                 *** 01150000
+*** SET THE OPTION FOR A MEMBER RANGE SHORTHAND NOTATION.               01160000
+*** WITH THIS PARAMETER,  DISPLAY ABC   IS THE SAME AS  DISPLAY ABC ABC 01170000
+*** AND                   COMMAND ABC:  IS THE SAME AS  COMMAND ABC:ABC 01180000
+***                                                                     01190000
+*** RECOMMENDATION: DO NOT MODIFY THIS PARAMETER; INSTEAD, USE ABC*     01200000
+*** AS SHORTHAND FOR ABC:ABC                                            01210000
+***                                                                     01220000
+&CONDRNG SETC  'N'         ***  CONTINUE TO THE END OF THE DIRECTORY    01230000
+*&CONDRNG SETC  'Y'        ***  TREAT  DISPLAY XX  LIKE  DISPLAY XX:XX  01240000
+         SPACE 2                                                        01250000
+*********************************************************************** 01260000
+***                                                                 *** 01270000
+*** SET THE DEFAULT DISPLAY MODE FOR ENTRY TO PDS.                      01280000
+***                                                                     01290000
+***   1.  THIS PARAMETER IS ONLY EFFECTIVE FOR ISPF V2 AND              01300000
+***       ONLY WHEN PDS IS ENTERED FROM AN ISPF ENVIRONMENT.            01310000
+***   2.  ISPMODE REQUESTS AN INITIAL ISPF ENTRY MODE.                  01320000
+***   3.  XISPMODE REQUESTS AN INITIAL LINE MODE ENTRY.                 01330000
+***   4.  REGARDLESS OF THE SETTING OF ISPMODE AND THE ISPF VERSION,    01340000
+***       THE INITIAL ENTRY MODE CAN BE FORCED BY ENTERING A MODE       01350000
+***       OPERAND AFTER THE DATA SET NAME WHEN PDS IS INVOKED:          01360000
+***         A.  PDS DATA.SET ISPMODE            (ISPMODE)               01370000
+***         B.  PDS DATA.SET XISPMODE           (LINE MODE)             01380000
+***         C.  PDS DATA.SET MEMLIST PDS:PDS    (MEMBER LIST MODE)      01390000
+***                                                                     01400000
+&ISPOPT  SETC  'ISPMODE'     ***  ISPMODE IS THE DEFAULT IN PDS         01410000
+*&ISPOPT  SETC  'XISPMODE'   ***  LINE MODE IS THE DEFAULT IN PDS       01420000
+         SPACE 2                                                        01430000
+*********************************************************************** 01440000
+***                                                                 *** 01450000
+*** SET THE DEFAULT MESSAGE FOR THE DSNAME SUBCOMMAND AND               01460000
+*** FOR DATA SET ALLOCATION:                                            01470000
+***                                                                     01480000
+&CONADEF SETC  'FDSNMSG'   ***  SEE PDS200I MESSAGE EXAMPLE BELOW       01490000
+*&CONADEF SETC  'FDSNTSO'  ***  SEE PDS210I MESSAGE EXAMPLE BELOW       01500000
+*&CONADEF SETC  'FDSNJCL'  ***  SEE PDS220I MESSAGE EXAMPLE BELOW       01510000
+***                                                                     01520000
+*PDS200I DISP UNIT  REC LRECL BLKSZ  ALLOCTRK FREETRK SECONDARY FREEDIR 01530000
+*PDS200I SHR  3380  VB    255  9040  1X    15       7     0 CYL      18 01540000
+*                                                                       01550000
+*PDS210I ALLOC F(SYS00007) DA('HABL.LIB.CLIST') SHR UNIT(3380)          01560000
+*PDS210I   RECFM(V B) LRECL(255) BLKSIZE(9040) VOLUME(TSO002)           01570000
+*PDS210I   CYL SPACE(1) DIR(40)              /*FREE TRK=7,FREE DIR=18*/ 01580000
+*                                                                       01590000
+*PDS220I //SYS00007  DD  DSN=HABL.LIB.CLIST,DISP=SHR,UNIT=3380,         01600000
+*PDS220I //  DCB=(RECFM=VB,LRECL=255,BLKSIZE=9040),VOL=SER=TSO002,      01610000
+*PDS220I //  SPACE=(CYL,(1,,40))             /*FREE TRK=7,FREE DIR=18*/ 01620000
+*                                                                       01630000
+         SPACE 2                                                        01640000
+*********************************************************************** 01650000
+***                                                                 *** 01660000
+*** SET THE OPTION TO CIRCUMVENT APAR OZ80528 (PERMANENT RESTRICTION -  01670000
+*** SYMPTOM IS IGNORED EDIT OR BROWSE AFTER PF4 IN ISPF SUBCOMMAND).    01680000
+***                                                                     01690000
+*** THE CIRCUMVENTION TESTS FOR THE EXIT TYPE AND ISSUES DOUBLE EDIT    01700000
+*** OR BROWSE SUBCOMMANDS SUBSEQUENTLY IF REQUIRED.                     01710000
+***                                                                     01720000
+&RETURNX SETC  'YES'       ***  REISSUE EDIT OR BROWSE AFTER RETURN     01730000
+*&RETURNX SETC  'NO'       ***  DO NOT REISSUE SUBCOMMANDS AFTER RETURN 01740000
+         SPACE 2                                                        01750000
+*********************************************************************** 01760000
+***                                                                 *** 01770000
+*** SET THE OPTION FOR THE DEFAULT LIST KEYWORD DESIRED IN THE COMPRESS 01780000
+*** SUBCOMMAND.  AN ACTUAL KEYWORD (LIST, SUMMARY OR NOLIST) MAY BE     01790000
+*** ENTERED ON A COMPRESS SUBCOMMAND TO OVERIDE THE DEFAULT IN EFFECT.  01800000
+***                                                                     01810000
+&COMPLST SETC  '1'         ***  COMPRESS DEFAULT IS SUMMARY             01820000
+*&COMPLST SETC  '2'        ***  COMPRESS DEFAULT IS LIST                01830000
+         SPACE 2                                                        01840000
+*********************************************************************** 01850000
+***                                                                 *** 01860000
+*** SET THE OPTION FOR THE DEFAULT LIST KEYWORD DESIRED IN THE COPY     01870000
+*** SUBCOMMAND.  AN ACTUAL KEYWORD (LIST, SUMMARY OR NOLIST) MAY BE     01880000
+*** ENTERED ON A COPY SUBCOMMAND TO OVERIDE THE DEFAULT IN EFFECT.      01890000
+***                                                                     01900000
+&COPYLST SETC  '2'         ***  COPY DEFAULT IS LIST                    01910000
+*&COPYLST SETC  '1'        ***  COPY DEFAULT IS SUMMARY                 01920000
+         SPACE 2                                                        01930000
+*********************************************************************** 01940000
+***                                                                 *** 01950000
+*** SET THE OPTION FOR THE DEFAULT OLD/SHR KEYWORD FOR EACH COPY        01960000
+*** SUBCOMMAND.  AN ACTUAL KEYWORD (OLD, SHR OR NEW) MAY BE ENTERED     01970000
+*** ON A COPY SUBCOMMAND TO OVERIDE THE DEFAULT IN EFFECT.              01980000
+***                                                                     01990000
+&COPYSHR SETC  '2'         ***  COPY OLD/SHR DEFAULT IS SHR             02000000
+*&COPYSHR SETC  '1'        ***  COPY OLD/SHR DEFAULT IS OLD             02010000
+         SPACE 2                                                        02020000
+*********************************************************************** 02030000
+***                                                            SS JUL87 02040000
+*** SET THE UNIT NAME FOR //SYSUT4 DATA SET USED BY COPY       SS JUL87 02050000
+*** CAUTION: THIS UNIT NAME MUST NOT MAP TO A VIO DEVICE       SS JUL87 02060000
+***                                                                     02070000
+&TUNIT   SETC  'SYSALLDA' ***  COPY TEMPORARY //SYSUT4 UNIT   DRK MAR01 02080029
+*&TUNIT   SETC  'SYSDA'    ***  COPY TEMPORARY //SYSUT4 UNIT            02090029
+*&TUNIT   SETC  'PUBDA'    ***  COPY TEMPORARY //SYSUT4 UNIT            02100000
+*********************************************************************** 02110000
+***                                                                     02120000
+*** SET COPY UNIT NAME FOR //SYSUT1 AND //SYSUT2 PERMANENT DATA SETS.   02130000
+***   1.  THIS UNIT NAME IS USED FOR //SYSUT1 ONLY IF THE INPUT DATA    02140000
+***       SET WAS ALLOCATED BY PDS WITH A VOL(SERIAL) PARAMETER.        02150000
+***   2.  THIS UNIT NAME IS USED FOR //SYSUT2 ONLY IF THE COPY          02160000
+***       SUBCOMMAND CONTAINS A VOL(SERIAL) PARAMETER.                  02170000
+***                                                                     02180000
+*** SET THIS VARIABLE TO NULL TO USE THE DEFAULT UNIT FROM SYS1.UADS.   02190000
+***                                                                     02200000
+&PUNIT   SETC  'SYSALLDA'  ***  COPY PERMANENT UNIT NAME                02210000
+*&PUNIT   SETC  'SYSDA'    ***  COPY PERMANENT UNIT NAME                02220000
+*&PUNIT   SETC  ' '        ***  COPY PERMANENT UNIT NAME (FROM UADS)    02230000
+         SPACE 2                                                        02240000
+*********************************************************************** 02250000
+***                                                                 *** 02260000
+*** SET THE DEFAULT CONTROL SUBCOMMAND DEFAULTS AS DESIRED FROM THE     02270000
+*** FOLLOWING LIST:                                                     02280000
+***       FALINCON FOR NOALIASINFO                                      02290000
+***       FLKEDCON FOR NOLKEDDATE                                       02300000
+***       FPROMCON FOR NOPROMPT                                         02310000
+***       FRECVCON FOR NORECOVER (SET BY PDS IF EXECUTED IN BATCH)      02320000
+***       FTRANCON FOR NOTRANSLATOR                                     02330000
+***                                                                     02340000
+&CONGLBL SETC  'FTRANCON'            ***  FOR NOTRANSLATOR DEFAULT      02350000
+*&CONGLBL SETC  'FTRANCON+FPROMCON'  ***  FOR MULTIPLE OPTIONS          02360000
+*&CONGLBL SETC  '00'                 ***  TO TURN ALL OPTIONS ON        02370000
+         SPACE 2                                                        02380000
+*********************************************************************** 02390000
+***                                                                 *** 02400000
+*** SET THE UNIT NAME STRING (1 TO 8 CHARACTERS -- A GENERIC NAME       02410000
+*** MAY BE USED) ACCORDING TO TYPE OF DEVICE.  THESE NAMES WILL BE      02420000
+*** USED BY THE DSNAME SUBCOMMAND.                                      02430000
+***                                                                     02440000
+&UN23051 SETC  '2305-1  '    ***  2305-1   (DO NOT NULLIFY)             02450000
+&UN23052 SETC  '2305-2  '    ***  2305-2   (DO NOT NULLIFY)             02460000
+&UN2314  SETC  '2314    '    ***  2314     (DO NOT NULLIFY)             02470000
+&UN3330  SETC  '3330    '    ***  3330-1   (DO NOT NULLIFY)             02480000
+&UN3340  SETC  '3340    '    ***  3340     (DO NOT NULLIFY)             02490000
+&UN3350  SETC  '3350    '    ***  3350     (DO NOT NULLIFY)             02500000
+&UN3375  SETC  '3375    '    ***  3375     (DO NOT NULLIFY)             02510000
+&UN33301 SETC  '3330-1  '    ***  3330-11  (DO NOT NULLIFY)             02520000
+&UN3380  SETC  '3380    '    ***  3380     (DO NOT NULLIFY)             02530000
+&UN3390  SETC  '3390    '    ***  3390     (DO NOT NULLIFY)             02540001
+&UN9345  SETC  '9345    '    ***  9345     (DO NOT NULLIFY)             02550022
+         SPACE 2                                                        02560000
+*********************************************************************** 02570000
+***                                                                 *** 02580000
+*** SET THE INITIAL BUFFERING MODE FOR EACH DEVICE TYPE USING ONE       02590000
+*** OF THE FOLLOWING VALUES:                                            02600000
+***      SINGLE:   SINGLE BUFFERING                                     02610000
+***      DOUBLE:   DOUBLE BUFFERING                                     02620000
+***      MULTIPLE: MULTIPLE BUFFERING (READ MULTIPLE CCW)               02630000
+***                                                                     02640000
+&DB23051 SETC  'DOUBLE'      ***  2305-1   (DO NOT NULLIFY)             02650000
+&DB23052 SETC  'DOUBLE'      ***  2305-2   (DO NOT NULLIFY)             02660000
+&DB2314  SETC  'DOUBLE'      ***  2314     (DO NOT NULLIFY)             02670000
+&DB3340  SETC  'MULTIPLE'    ***  3340     (DO NOT NULLIFY)             02680000
+&DB3350  SETC  'MULTIPLE'    ***  3350     (DO NOT NULLIFY)             02690043
+&DB3375  SETC  'MULTIPLE'    ***  3375     (DO NOT NULLIFY)             02700000
+&DB3380  SETC  'MULTIPLE'    ***  3380     (DO NOT NULLIFY)             02710000
+&DB3390  SETC  'MULTIPLE'    ***  3390     (DO NOT NULLIFY)             02720000
+&DB9345  SETC  'MULTIPLE'    ***  9345     (DO NOT NULLIFY)             02730022
+&DB3330  SETC  'DOUBLE'      ***  3330-1   (DO NOT NULLIFY)             02740000
+&DB33301 SETC  'DOUBLE'      ***  3330-11  (DO NOT NULLIFY)             02750000
+*                                                                       02760000
+* NOTE: &DB3330 AND &DB33301 ARE SET TO DOUBLE SINCE READ MULTIPLE      02770000
+*       MAY NOT WORK FOR 3330-1 AND 3330-11 DISK DEVICES.               02780000
+*                                                                       02790000
+*       READ MULTIPLE WILL PROBABLY NOT WORK ON A 3830-1 STORAGE        02800000
+*       CONTROL UNIT.                                                   02810000
+*                                                                       02820000
+*       READ MULTIPLE SHOULD WORK ON A 3830-2 STORAGE CONTROL UNIT IF   02830000
+*       ITS MICROCODE SUPPORTS 3340 AND 3350 DISK DEVICES.              02840000
+*                                                                       02850000
+*       IF YOU ARE CONFIDENT THAT READ MULTIPLE WILL WORK FOR YOUR      02860000
+*       3330 DEVICES, CHANGE THE ABOVE DEFAULTS TO MULTIPLE.            02870000
+*                                                                       02880000
+*       OTHERWISE, GENERATE THE PROGRAM WITH THE DOUBLE DEFAULTS AND    02890000
+*       TEST A DATA SET USING "CONTROL TESTREAD" ON EACH COMBINATION    02900000
+*       OF DEVICE (3330-1 AND 3330-11) AND STORAGE CONTROL UNIT.  IF    02910000
+*       READ MULTIPLE IS OPERATIONAL FOR ALL OF THESE SITUATIONS, THE   02920000
+*       DEFAULTS FOR &DB3330 AND &DB33301 CAN BE SET TO 'MULTIPLE' AND  02930000
+*       THE PROGRAM CAN BE REASSEMBLED (OR THE PROGRAM MAY BE ZAPPED).  02940000
+*                                                                       02950000
+         SPACE 2                                                        02960000
+*********************************************************************** 02970000
+***                                                                 *** 02980000
+*==> &CEXE: THE EXEC COMMAND IS INVOKED FOR THE EXEC SUBCOMMAND         02990000
+***   (EXPLICIT USE) AND SUBCOMMANDS BEGINNING WITH % (IMPLICIT USE).   03000000
+&CEXE    SETC   'EXEC'                                                  03010000
+         SPACE 2                                                        03020000
+*********************************************************************** 03030000
+***                                                                 *** 03040000
+*==> &CISP: THE LEVEL OF SPF/ISPF IS SET WITH THIS VARIABLE.            03050000
+****** PDS 8.0 AND ABOVE ONLY SUPPORT ISPF VERSION 2 (OR ABOVE)         03060000
+****** FOR THE ISPMODE, EDREC, ISPXEQ AND MEMLIST SUBCOMMANDS.          03070000
+****** IF YOU USE ONLY ISPF AND ISPF/PDF VERSION 2:                     03080000
+&CISP    SETC   'ISPFV2'   *** FOR 5665-317 AND 5665-319                03090000
+***                                                                     03100000
+****** IF YOU USE ISPF AND ISPF/PDF VERSION 1 AND OPTIONALLY VERSION 2: 03110000
+*&CISP    SETC   'ISPF'    *** FOR 5665-268 AND 5668-960 OR ABOVE       03120000
+***                                                                     03130000
+****** IF YOU USE SPF AND OPTIONALLY ANY ISPF VERSION:                  03140000
+*&CISP    SETC   'SPF'     *** FOR 5668-009 OR ABOVE                    03150000
+***                                                                     03160000
+****** IF YOU WANT TO DISABLE BROWSE, EDIT, ISPF, ISPMODE, MEMLIST      03170000
+****** EDREC AND ISPXEQ:                                                03180000
+*&CISP    SETC   ''                                                     03190000
+         SPACE 2                                                        03200000
+*********************************************************************** 03210000
+***                                                                 *** 03220000
+*==> &PDSMAIN AND &PDSPRT CONTROL PDS ASSEMBLY DEFAULTS:                03230000
+&PDSMAIN  SETC   'NO'         *** DO NOT MODIFY--FOR #MDSECT EXPANSION  03240000
+&PDSPRT   SETC   'OFF'        *** DEFAULT TO NOT PRINT #MDSECT          03250000
+*&PDSPRT   SETC   'ON'        *** DEFAULT TO PRINT #MDSECT              03260000
+         SPACE 2                                                        03270000
+*********************************************************************** 03280000
+***                                                                 *** 03290000
+*** THE FOLLOWING STATEMENTS SET THE LEVEL NAMES FOR DIALOG PANELS      03300000
+*** AND DIALOG MESSAGE NAMES USED BY THE PDS PROGRAM.                   03310000
+***                                                                     03320000
+&P       SETC  'P86'       ** P86XXXX IS THE PANEL NAME FORMAT          03330000
+&M       SETC  'M86'       ** PDSM86X IS THE MESSAGE NAME FORMAT        03340000
+***                                                                     03350000
+*** NOTE: IF YOU WISH TO CHANGE &M, THE SUPPORTING PANELS MUST BE       03360000
+***       RENAMED AND CHANGED (RETAIN AS ONE ALPHABETIC CHARACTER       03370000
+***       FOLLOWED BY TWO NUMERIC CHARACTERS) USING CLIST UPDTCLST.     03380000
+***       FOR EXAMPLE: %UPDTCLST PDS.DISTLIB M(X35)                     03390000
+***                                                                     03400000
+*** NOTE: IF YOU WISH TO CHANGE &P, THE SUPPORTING PANELS MUST BE       03410000
+***       RENAMED AND CHANGED (RETAIN AS THREE CHARACTERS) USING        03420000
+***       CLIST UPDTCLST.                                               03430000
+***       FOR EXAMPLE: %UPDTCLST PDS.DISTLIB P(WYZ)                     03440000
+***                                                                     03450000
+*** NOTE: BOTH CHANGES COULD BE MADE SIMULTANEOUSLY.                    03460000
+***       FOR EXAMPLE: %UPDTCLST PDS.DISTLIB M(X35) P(WYZ)              03470000
+***                                                                     03480000
+*** NOTE: SEE CLIST UPDTCLST FOR MORE INFORMATION.                      03490000
+         SPACE 2                                                        03500000
+*********************************************************************** 03510000
+***                                                                 *** 03520000
+*==> &CUT1: THIS NAMES THE PANEL TO BE INVOKED BY THE UT1 SUBCOMMAND    03530000
+***   FOR SELECT PANEL SUPPORT:                                SS NOV84 03540000
+&CUT1    SETC   '&P.VUT1'                                     ABL JUN85 03550000
+         SPACE 2                                                        03560000
+*********************************************************************** 03570000
+***                                                                 *** 03580000
+*==> &CUT2: THIS NAMES THE PANEL TO BE INVOKED BY THE UT2 SUBCOMMAND    03590000
+***   FOR SELECT PANEL SUPPORT:                                SS NOV84 03600000
+&CUT2    SETC   '&P.VUT2'                                     ABL JUN85 03610000
+         SPACE 2                                                        03620000
+*********************************************************************** 03630000
+***                                                                 *** 03640000
+*    THE FOLLOWING VARIABLES DETERMINE ISPMODE LOG CHARACTERISTICS.     03650000
+*                                                                       03660000
+*    NOTE: EACH USER CAN OVERRIDE THESE DEFAULTS IN FUNCTION.SETLOG     03670000
+*                                                   ---------------     03680000
+*    &SPFSIZE IS THE SIZE OF THE DIALOG DISPLAY TABLE.                  03690000
+*                                                                       03700000
+*    &SPFMAX IS THE MAXIMUM NUMBER OF LINES FOR ANY ONE SUBCOMMAND.     03710000
+*    THIS PARAMETER HELPS TO AVOID OVERFLOWING THE DIALOG TABLE WITH    03720000
+*    THE OUTPUT FROM A SINGLE SUBCOMMAND.  AFTER A SUBCOMMAND IS        03730000
+*    COMPLETE, THE DIALOG TABLE SIZE IS TRIMMED TO &SPFSIZE.            03740000
+*                                                                       03750000
+*    &SPFCKPT IS THE DIALOG CHECKPOINT DEFAULT SIZE.  WHEN A            03760000
+*    SUBCOMMAND PRODUCES MORE THAN THIS NUMBER OF LINES, THE USER       03770000
+*    IS PROMPTED TO CONTINUE OR STOP THE SUBCOMMAND.                    03780000
+*                                                                       03790000
+&SPFSIZE SETC  '500000' NUMBER OF LINES IN THE TABLE                    03800099
+&SPFMAX  SETC  '50000 ' NUMBER OF LINES FOR ANY ONE SUBCOMMAND          03810099
+&SPFCKPT SETC  '5000'   NUMBER OF LINES BETWEEN CHECKPOINTS             03820099
+*                                                                       03830000
+         SPACE 2                                                        03840000
+*********************************************************************** 03850000
+***                                                                 *** 03860000
+*    THE FOLLOWING VARIABLES DETERMINE THE PDS ENVIRONMENT.             03870000
+*                                                                       03880000
+*    NOTE: EACH USER CAN OVERRIDE THESE DEFAULTS IN FUNCTION.SETENV     03890000
+*                                                   ---------------     03900000
+*    &SWAP CONTROLS THE BEHAVIOR OF THE LEFT AND RIGHT PFK.  NORMALLY,  03910000
+*    LEFT AND RIGHT JUST SWITCH BETWEEN LEFT AND RIGHT PANELS.  WITH    03920000
+*    THIS OPTION, THE LEFT AND RIGHT PFK WILL CYCLE THROUGH ALL         03930000
+*    RELATED PANELS (IE ALTERNATE AND DUAL PANELS AS AVAILABLE).        03940000
+&SWAP    SETC   'NO'   ONLY USE LEFT AND RIGHT PANELS                   03950000
+*&SWAP    SETC   'YES' CYCLE THROUGH ALL RELATED PANELS                 03960000
+*                                                                       03970000
+         SPACE 2                                                        03980000
+*********************************************************************** 03990000
+***                                                                 *** 04000000
+*    THE FOLLOWING VARIABLES DETERMINE THE BEHAVIOR OF THE              04010000
+*    VARIOUS MEMLIST FUNCTIONS.                                         04020000
+*                                                                       04030000
+*    NOTE: EACH USER CAN OVERRIDE THESE DEFAULTS IN FUNCTION.SETML      04040000
+*                                                   --------------      04050000
+*    &LKEDDAT DETERMINES IF LOAD MODULE IDR DATA WILL BE READ TO        04060000
+*    PROVIDE A LINKAGE EDIT DATE.                                       04070000
+&LKEDDAT SETC  'YES'         ***  TO PROVIDE A LINK DATE BY DEFAULT     04080000
+*&LKEDDAT SETC  'NO'         ***  TO PROVIDE NO LINK DATE BY DEFAULT    04090000
+*                                                                       04100000
+*    &ALICHK DETERMINES IF AN AUTOMATIC ALIAS CHECK (OPTION 5)          04110000
+*    IS TO BE PERFORMED AFTER A MEMLIST IS CREATED AND INITIALIZED      04120000
+&ALICHK  SETC  'NO'         ***  TO PROVIDE NO AUTOMATIC OPTION 5       04130000
+*&ALICHK  SETC  'YES'       ***  TO PROVIDE AN AUTOMATIC OPTION 5       04140000
+*                                                                       04150000
+*    &SPFTDEL DETERMINES IF MEMLIST ENTRIES ARE TO BE REMOVED FROM      04160000
+*    THE MEMLIST TABLE AFTER A DELETE COMMAND.                          04170000
+&SPFTDEL SETC  'Y'         ***  TO DROP DELETED ENTRIES                 04180000
+*&SPFTDEL SETC  'N'        ***  TO SHOW DELETED ENTRIES                 04190000
+*                                                                       04200000
+*    &SPFTOLD DETERMINES IF MEMLIST ENTRIES ARE TO BE REMOVED FROM      04210000
+*    THE MEMLIST TABLE FOR THE OLD MEMBER NAME AFTER A RENAME COMMAND.  04220000
+&SPFTOLD SETC  'Y'         ***  TO DROP OLD ENTRIES                     04230000
+*&SPFTOLD SETC  'N'        ***  TO SHOW OLD ENTRIES                     04240000
+*                                                                       04250000
+*    &EDUPDT DETERMINES IF THE EDIT LIBRARY IS TO SCANNED FOR UPDATED   04260000
+*    MEMBERS AFTER EACH EDIT COMMAND.  NOTE: NOT YET IMPLEMENTED.       04270000
+&EDUPDT  SETC   'NO'   ONLY UPDATE EDITED MEMBER STATS         SS JUL87 04280000
+*&EDUPDT  SETC   'YES' FIND ALL CHANGED OR ADDED MEMBERS       SS JUL87 04290000
+*                                                              SS JUL87 04300000
+         SPACE 2                                                        04310000
+*********************************************************************** 04320000
+***                                                                 *** 04330000
+*    THE FOLLOWING VARIABLES DETERMINE HOW AN "S" OR SELECT             04340000
+*    LINE COMMAND WILL BE INTERPRETED.                                  04350000
+*                                                                       04360000
+*    TO CHANGE ONE OF THESE VALUES REPLACE IT WITH ONE TO FOUR          04370000
+*    CHARACTERS WHICH WILL BE USED AS THE ACTUAL LINE COMMAND.          04380000
+*                                                                       04390000
+*    NOTE: EACH USER CAN OVERRIDE THESE DEFAULTS IN FUNCTION.SETSEL     04400000
+*                                                   ---------------     04410000
+&ISCSEL SETC 'E'      MEMLIST SOURCE                                    04420000
+&ILDSEL SETC 'B'      MEMLIST LOAD                                      04430000
+&ILASEL SETC 'C'      LISTA                                             04440000
+&ILVSEL SETC 'SP'     LISTV                                             04450000
+&ILCSEL SETC 'C'      LISTC                                             04460000
+&ITTSEL SETC 'E'      TCT                                               04470000
+&ICXSEL SETC 'UT'     CAX                                               04480000
+&IFLSEL SETC 'O'      FILTER                                            04490000
+&ICSSEL SETC 'O'      CSECTS                                            04500000
+*                                                                       04510000
+         SPACE 2                                                        04520000
+*********************************************************************** 04530000
+***                                                                 *** 04540000
+***                                                            SS NOV85 04550000
+* SUPPORT FOR EXTERNAL CLISTS HAS BEEN IMPROVED.  EXTERNAL     SS NOV86 04560000
+* CLISTS CAN BE SELECTED AS PRIMARY COMMANDS OR LINE COMMANDS. SS NOV86 04570000
+*                                                              SS NOV86 04580000
+* THE FOLLOWING PANEL CONTROLS ADDED PRIMARY COMMANDS:         SS NOV86 04590000
+*     P86OPUX - FOR PRIMARY VIEW/MEMLIST COMMANDS   *          SS NOV86 04600000
+*                                                   *          SS NOV86 04610000
+* THE FOLLOWING PANELS CONTROL ADDED LINE COMMANDS.            SS NOV86 04620000
+*     P86LOUX - FOR SOURCE MEMBER TABLES            *          SS NOV86 04630000
+*     P86LLUX - FOR LOADLIB MEMBER TABLES           *          SS NOV86 04640000
+*     P86LAUX - FOR ALLOCATION TABLES               *          SS NOV86 04650000
+*     P86LVUX - FOR VOLUME TABLES                   *          SS NOV86 04660000
+*                                                   *          SS NOV86 04670000
+*   1. THESE PANELS ARE ALSO A PART OF O LINE COMMAND PROMPT   SS NOV86 04680000
+*      PANEL SET (AN AUTOMATIC "UTIL" OPTION).                 SS NOV86 04690000
+*                                                              SS NOV86 04700000
+*   2. THESE PANELS CAN BE MODIFIED TO ADD NEW LINE COMMANDS   SS NOV86 04710000
+*      REPRESENTING REGULAR LINE COMMANDS WITH SPECIFIC        SS NOV86 04720000
+*      OPERANDS.                                               SS NOV86 04730000
+*                                                              SS NOV86 04740000
+*   3. NEW LINE COMMADS CAN BE DEFINED TO SELECT PROGRAMS      SS NOV86 04750000
+*      FOR TSO COMMANDS OR TSO CLISTS (REGULAR OR DIALOGS)     SS NOV86 04760000
+*                                       *                      SS NOV86 04770000
+*   4. TO SELECT PROGRAMS USE PGM USING STANDARD MENU PANEL    SS NOV86 04780000
+*      CODING.  TO SELECT TSO COMMANDS OR CLISTS USE CMD       SS NOV86 04790000
+*      AND STANDARD MENU PANEL  CODING.                        SS NOV86 04800000
+*        EXAMPLES: OPT1,'CMD(%MYCLIST)'             CLIST      SS NOV86 04810000
+*                  OPT2,'CMD(DSAT ''&PDSDSN'')'     TSO CMD    SS NOV86 04820000
+*                  OPT3,'MAP &PDSMEM JCL'           PDS SUBCMD SS NOV86 04830000
+*                  OPT4,'PGM(MYPROGM)'              PROGRAM    SS NOV86 04840000
+*                  OPT5,'PANEL(P86OPUZA)'           PANEL      SS NOV86 04850000
+*                                                              SS NOV86 04860000
+*   5. BROWSE EACH PANEL FOR EXAMPLES OF USE                   SS NOV86 04870000
+*        EXAMPLES: TRY "ZAP" AS A PRIMARY COMMAND              SS NOV86 04880000
+*                  TRY "JCL" AS A LINE COMMAND IN A LOAD LIB   SS NOV86 04890000
+*                                                              SS NOV86 04900000
+*   6. YOU MUST BUILD THE NECESSARY TSO OR DIALOG CLISTS       SS NOV85 04910000
+*      TO EXECUTE A COMPILER PROMPTER, ALLOCATE FILES AND      SS NOV85 04920000
+*      CALL A PROGRAM OR SUBMIT A BACKGROUND JOB.              SS NOV85 04930000
+*                                                              SS NOV85 04940000
+*                                                                       04950000
+         SPACE 2                                                        04960003
+*********************************************************************** 04970003
+***                                                                 *** 04980003
+*    THE FOLLOWING VARIABLE DETERMINES THE 19XX DATE WINDOW.  Y2K AUG97 04990003
+*                                                             Y2K AUG97 05000003
+*    &WIN19XX IS THE START OF THE 19XX DATE WINDOW.  ANY      Y2K AUG97 05010003
+*    YEAR LESS THAN &WIN19XX WILL BE CONSIDERED A 20XX DATE.  Y2K AUG97 05020007
+*                                                             Y2K AUG97 05030003
+&WIN19XX SETC  '66'   START OF 19XX DATE WINDOW               Y2K AUG97 05040044
+*                                                                       05050003
+         SPACE 2                                                        05060003
+*********************************************************************** 05070008
+***                                                                 *** 05080008
+*    THE FOLLOWING VARIABLE DETERMINES THE STORAGE REQUIRED   DRK JUN98 05090008
+*    FOR A DEVICE NUMBER LIST RETURNED FROM UNIT VERIFICATION DRK JUN98 05100008
+*    SERVICES.  THE FORMAT OF THIS LIST IS AN 8-BYTE HEADER   DRK JUN98 05110008
+*    FOLLOWED BY AN ARRAY OF FOUR-BYTE ENTRIES CONTAINING     DRK JUN98 05120008
+*    THE ACTUAL EBCDIC DEVICE NUMBERS.                        DRK JUN98 05130008
+*                                                             DRK JUN98 05140008
+*    &MAXDASD IS THE MAXIMUM NUMBER OF DASD IN ANY GENERIC    DRK JUN98 05150009
+*    GROUP (E.G. SYSALLDA).                           GETMAIN DRK JUN98 05160099
+*                                                         |   DRK JUN98 05170099
+*                                                         V   DRK JUN98 05180099
+&MAXDASD SETC  '4094'  MAX NUM OF DASD IN A GENERIC GROUP 16K DRK JUN99 05190099
+*&MAXDASD SETC '8190'  MAX NUM OF DASD IN A GENERIC GROUP 32K DRK DEC04 05200099
+*&MAXDASD SETC '16382' MAX NUM OF DASD IN A GENERIC GROUP 64K DRK SEP13 05210099
+*                                                                       05220008
+*********************************************************************** 05230011
+***                                                                 *** 05240011
+*   THE FOLLOWING VARIABLE DETERMINES WHETHER THE DIALOG      DRK OCT98 05250013
+*   POINT AND SHOOT PANELS WILL BE USED.  DIALOG PANEL        DRK OCT98 05260013
+*   SUFFIX VALUE.                                             DRK OCT98 05270012
+***                                                           DRK OCT98 05280011
+&PNTS    SETC  'PS'    USE DIALOG PS PANELS (ISPF 4+ ONLY)    DRK OCT98 05290013
+*&PNTS    SETC  ''     DON'T USE DIALOG PS PANELS (ISPF 1-3)  DRK OCT98 05300013
+*                                                                       05310011
+*********************************************************************** 05320014
+***                                                                 *** 05330014
+*   THE FOLLOWING VARIABLE DETERMINES WHAT STYLE OF DASD      DRK NOV98 05340016
+*   MODEL DISPLAY WILL BE USED BY LISTV.                      DRK NOV98 05350017
+***                                                           DRK NOV98 05360014
+&MDRDT   SETC  'MXI'   MXI/TASID      STYLE DISPLAY           DRK NOV98 05370016
+*&MDRDT  SETC  ''      DVOL           STYLE DISPLAY           DRK NOV98 05380099
+*                                                                       05390014
+*********************************************************************** 05400018
+***                                                                 *** 05410018
+*** SET THE OPTION FOR THE DEFAULT ALIAS/NOALIAS KEYWORD FOR EACH       05420018
+*** COPY SUBCOMMAND.  AN ACTUAL KEYWORD (ALIAS OR NOALIAS) MAY BE       05430018
+*** ENTERED ON A COPY SUBCOMMAND TO OVERIDE THE DEFAULT IN EFFECT.      05440018
+***                                                                     05450025
+&COPYALI SETC  '2'         ***  COPY DEFAULT IS NOALIAS       DRK JAN99 05460025
+*&COPYALI SETC  '1'        ***  COPY DEFAULT IS ALIAS         DRK JAN99 05470025
+*                                                                       05480025
+*********************************************************************** 05490025
+***                                                                 *** 05500025
+*** THE FOLLOWING VARIABLE DETERMINES WHICH OF THE THREE MEMLIST        05510025
+*** SOURCE PANELS IS DISPLAYED FIRST                                    05520025
+***                                                                     05530025
+*** 1 = P86PN5/PS  (SHORT DATE, ISPF STYLE)                             05540025
+*** 2 = P86PN6/PS  (TTR)                                                05550025
+*** 3 = P86PNS/PS  (LONG DATE)                                          05560025
+***                                                                     05570025
+&MSSTART SETC  '3'         ***  INITIAL MEML SOURCE PANEL     DRK JUN17 05580099
+         SPACE 2                                                        05590025
+*                                                                       05600025
+*********************************************************************** 05610025
+***                                                                 *** 05620025
+*** THE FOLLOWING VARIABLE DETERMINES WHICH OF THE THREE MEMLIST        05630025
+*** LOAD PANELS IS DISPLAYED FIRST                                      05640025
+***                                                                     05650025
+*** 1 = P86PN7/PS  (LKED DATE, ATTRIBUTES)                              05660025
+*** 2 = P86PN8/PS  (TTR, LENGTH, ENTRY, SSI)                            05670025
+*** 3 = P86PND/PS  (LKED DATE, ATTRIBUTES, TTR, LENGTH, ENTRY, SSI)     05680025
+***                                                                     05690025
+&MLSTART SETC  '1'         ***  INITIAL MEML LOAD PANEL       DRK NOV99 05700025
+*                                                                       05710025
+*********************************************************************** 05720025
+***                                                                 *** 05730025
+*** THE FOLLOWING VARIABLE DETERMINES WHICH OF THE THREE LISTF          05740025
+*** PANELS IS DISPLAYED FIRST                                           05750025
+***                                                                     05760025
+*** 1 = P86PNK/PS  (DSORG, RECFM, LRECL, BLKSIZE, SHORT DSNAME)         05770025
+*** 2 = P86PNL/PS  (DSORG, RECFM, LONG DSNAME)                          05780025
+*** 3 = P86PNM/PS  (+ DATES, SIZE, EXTENTS, UPDATE INDICATOR)           05790025
+***                                                                     05800025
+&LFSTART SETC  '1'         ***  INITIAL LISTF PANEL           DRK NOV99 05810025
+*                                                                       05820025
+*********************************************************************** 05830025
+***                                                                 *** 05840025
+*** THE FOLLOWING VARIABLE DETERMINES WHICH OF THE THREE LISTV          05850025
+*** PANELS IS DISPLAYED FIRST                                           05860025
+***                                                                     05870025
+*** 1 = P86PNH/PS  (TOTAL FREE, LARGEST EXTENT)                         05880025
+*** 2 = P86PNI/PS  (VTOC LOCATION/SIZE)                                 05890025
+*** 3 = P86PNR/PS  (SPACE USED %)                                       05900025
+***                                                                     05910025
+&LVSTART SETC  '1'         ***  INITIAL LISTV PANEL           DRK NOV99 05920025
+*                                                                       05930035
+**********************************************************************  05940035
+***                                                                 *** 05950035
+*    THE FOLLOWING VARIABLE DETERMINES WHETHER OR NOT         DRK NOV01 05960035
+*    THE ISO ALTERNATIVE DATE FORMAT IS TO BE USED IN         DRK NOV01 05970041
+*    ATTRIB/IF/MEMLIST DATE OPTIONS, AND ATTRIB/HISTORY/USAGE DRK NOV01 05980041
+*    DISPLAY OUTPUT.                                          DRK NOV01 05990041
+*                                                             DRK NOV01 06000040
+&ISODT   SETC  'NO'   MM/DD/YY USA DATE FORMAT                DRK NOV01 06010044
+*ISODT   SETC  'YES'  YY/MM/DD ISO ALTERNATIVE DATE FORMAT    DRK NOV01 06020044
+*                                                                       06030040
+**********************************************************************  06040050
+***                                                                 *** 06050050
+*    THE FOLLOWING VARIABLE DETERMINES WHETHER OR NOT         DRK NOV02 06060050
+*    THE DSLIST VOLSER (ZDLVOL) WILL BE USED TO ALLOCATE      DRK NOV02 06070050
+*    THE DATASET WHEN PDS IS INVOKED FROM ISRUDL (ISPF 3.4).  DRK NOV02 06080050
+*                                                             DRK NOV02 06090050
+*    ALLOWS PDS TO BE INVOKED ON UNCATALOGED DATASETS IN THE  DRK NOV02 06100050
+*    DSLIST.  USE EXAMPLE: OLD/NEW SYSRES VOLUMES.            DRK NOV02 06110051
+*                                                             DRK NOV02 06120050
+&DSLIST  SETC  'YES'  USE VOLSER FROM DSLIST TABLE            DRK NOV02 06130050
+*DSLIST  SETC  'NO'   USE CATALOG TO GET VOLSER               DRK NOV02 06140050
+*                                                                       06150050
+**********************************************************************  06160054
+***                                                                 *** 06170054
+*    THE FOLLOWING VARIABLE DETERMINES THE DEFAULT ACTION     DRK DEC02 06180054
+*    FOR FIND/REPLACE STRING SEARCHING.                       DRK DEC02 06190054
+*                                                             DRK DEC02 06200054
+&FNDCASE SETC  'CAPS'   DEFAULT IS CAPS                       DRK DEC02 06210054
+*FNDCASE SETC  'IGNORE' DEFAULT IS IGNORE                     DRK DEC02 06220054
+*                                                                       06230054
+**********************************************************************  06240055
+***                                                                 *** 06250055
+*    THE FOLLOWING VARIABLE DETERMINES THE MESSAGE            DRK MAY04 06260056
+*    FOR A FIND/REPLACE 'NO MATCH' CONDITION.                 DRK MAY04 06270055
+*                                                             DRK MAY04 06280055
+&FINDMSG SETC  'PDS241I' PDS241I NO MATCHING DATA WAS FOUND   DRK MAY04 06290056
+*FINDMSG SETC  'PDS240I' PDS240I 'STRING' WAS NOT FOUND       DRK MAY04 06300056
+*                                                                       06310055
+**********************************************************************  06320057
+***                                                                 *** 06330057
+*    THE FOLLOWING VARIABLE DETERMINES IF THE ISPMODE LOG     DRK JUL04 06340057
+*    PANEL 1 WILL BE THE WIDTH OF ZSCREENW.                   DRK JUL04 06350061
+*                                                             DRK JUL04 06360057
+&LOGWIDE SETC  'NO'      DUAL LINE PANEL   (WIDTH=80)         DRK JUL04 06370057
+*LOGWIDE SETC  'YES'     SINGLE LINE PANEL (WIDTH=SCREEN)     DRK JUL04 06380057
+*                                                                       06390057
+**********************************************************************  06400065
+***                                                                 *** 06410065
+*    THE FOLLOWING VARIABLE SPECIFIES THE PROCESS OPTIONS     DRK DEC05 06420065
+*    FOR IBM SUPERC SEARCH-FOR.                               DRK DEC05 06430065
+*                                                             DRK DEC05 06440065
+&SRCHOPT SETC  'ANYC'    LOWERCASE TRANSLATED TO UPPERCASE    DRK DEC05 06450065
+*                                                                       06460065
+* SEARCH-FOR PROCESS OPTIONS:                                           06470065
+*---------------------------------------------------------------------- 06480065
+* ALLMEMS  ANYC     APNDLST  CKPACKL  COBOL    DPACMT   DPBLKCL         06490065
+* DPCBCMT  DPCPCMT  DPFTCMT  DPMACMT  DPPLCMT  DPPSCMT  FINDALL  FMSTOP 06500065
+* IDPFX    LMTO     LNFMTO   LONGLN   LPSF     LTO                      06510065
+* MIXED    NOPRTCC  NOSEQ    NOSUMS   SDUPM    SEQ      XREF            06520065
+*---------------------------------------------------------------------- 06530065
+**********************************************************************  06540067
+***                                                                 *** 06550067
+*    THE FOLLOWING VARIABLE SPECIFIES IF APAR OA13224         DRK FEB06 06560067
+*    DISP=SHR FOR STOW INITIALIZE HAS BEEN APPLIED.           DRK FEB06 06570067
+*                                                             DRK FEB06 06580067
+&STOWI  SETC  'YES'      OA13224 DISP=SHR FOR STOW INITIALIZE DRK FEB06 06590087
+*                                                             DRK FEB06 06600067
+**********************************************************************  06610077
+***                                                                 *** 06620077
+*    THE FOLLOWING VARIABLE SPECIFIES THE NAME OF THE HSM     DRK SEP07 06630077
+*    MIGRATED DATASET VOLSER.                                 DRK SEP07 06640078
+*                                                             DRK SEP07 06650077
+&MIGVOL  SETC  'MIGRAT'  HSM MIGRATED DATASET VOLSER          DRK SEP07 06660078
+*                                                             DRK SEP07 06670077
+*        OTHER VALUES THANKS TO ROB SCOTT                     DRK APR09 06680091
+*                                                             DRK APR09 06690091
+*MIGVOL  SETC  'ARCIVE'  HSM MIGRATED DATASET VOLSER          DRK APR09 06700091
+*MIGVOL  SETC  'ARCHIV'  HSM MIGRATED DATASET VOLSER          DRK APR09 06710091
+**********************************************************************  06720091
+***                                                                 *** 06730091
+*    THE FOLLOWING VARIABLE SPECIFIES THE DEFAULT RESET       DRK OCT07 06740091
+*    TABLE ACTION FOR MEMLIST COMMANDS.                       DRK OCT07 06750091
+*                                                             DRK OCT07 06760091
+&MLRESET SETC  'NORESET' DO NOT CLEAR ML TABLE PRIOR TO CMD   DRK OCT07 06770091
+*MLRESET SETC  'RESET'   CLEAR ML TABLE PRIOR TO CMD          DRK OCT07 06780091
+*                                                             DRK SEP07 06790091
+**********************************************************************  06800091
+***                                                                 *** 06810099
+*    THE FOLLOWING VARIABLE SPECIFIES WHICH PROGRAM IS USED   DRK FEB14 06820099
+*    BY THE CPKMAP SUBCOMMAND TO DISPLAY A TRACK MAP OF A     DRK FEB14 06830099
+*    DISK VOLUME.                                             DRK FEB14 06840099
+*                                                                       06850099
+*    THE USE OF MAPPGM REQUIRES THAT IT BE DEFINED IN THE     DRK APR14 06860099
+*    IKJTSOXX PARMLIB MEMBER UNDER THE AUTHTSF SECTION.       DRK APR14 06870099
+*    ISSUE OPERATOR COMMAND {SET|T} IKJTSO=XX TO ACTIVATE.    DRK APR14 06880099
+*    IT MUST ALSO RESIDE IN AN AUTHORIZED LIBRARY THAT IS     DRK APR14 06890099
+*    AVAILABLE TO YOUR TSO SESSION.                           DRK APR14 06900099
+**********************************************************************  06910099
+***                                                                 *** 06920099
+&MAPPGM  SETC  'FDRCPK'     FDRCPK  (INNOVATION DP)           DRK FEB14 06930099
+*MAPPGM  SETC  'DISKMAP'    DISKMAP (CBT 792)                 DRK FEB14 06940099
+*                                                                       06950099
+**********************************************************************  06960099
+***                                                                 *** 06970099
+*    THE FOLLOWING VARIABLE SPECIFIES WHICH PROGRAM IS USED   DRK JAN16 06980099
+*    BY THE DISASM SUBCOMMAND TO DISPLAY THE DISASSEMBLY OF   DRK JAN16 06990099
+*    A LOAD MODULE CSECT.                                     DRK JAN16 07000099
+*                                                                       07010099
+***                                                                 *** 07020099
+&ASMPGM  SETC  'DISASM'     DISASM  (CBT 217)                 DRK JAN16 07030099
+*ASMPGM  SETC  'ASMDASM'    ASMDASM (IBM HLASM TOOLKIT)       DRK JAN16 07040099
+*                                                                       07050099
+**********************************************************************  07060099
+***                                                                 *** 07070099
+*    THE FOLLOWING VARIABLE SPECIFIES WHICH PROGRAM IS USED   DRK DEC16 07080099
+*    BY THE MXIBAT SUBCOMMAND TO INVOKE THE ROB SCOTT MXI     DRK DEC16 07090099
+*    PROGRAM.                                                 DRK DEC16 07100099
+*                                                                       07110099
+***                                                                 *** 07120099
+&MXIPGM  SETC  'MXI'        MXI FREEWARE                      DRK DEC16 07130099
+*MXIPGM  SETC  'MXIG2'      MXI G2 FROM ROCKET SOFTWARE       DRK DEC16 07140099
+*                                                                       07150099
+         SPACE 2                                                        07160099
+*********************************************************************** 07170099
+***                                                                 *** 07180099
+***  END OF MEMBER #PDSGENB -- RESUME LISTING OF MEMBER #PDSGEN     *** 07190000
+***                                                                 *** 07200000
+*********************************************************************** 07210000

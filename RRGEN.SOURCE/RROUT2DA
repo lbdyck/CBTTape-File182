@@ -1,0 +1,25 @@
+OUT1DA    CSECT                                                         00000010
+*  THIS IS A MOD THAT IS LOADED BY THE PROGRAM GENERATOR                00000020
+*   TO HANDLE  THE WRITES TO OUT1  REC AREA = REG 10                    00000030
+*                                                                       00000040
+         SAVE  (2,12),T,*                                               00000050
+         BALR  11,0                                                     00000060
+         USING *,11                                                     00000070
+         ST    13,SAVEAREA+4                                            00000080
+         LA    13,SAVEAREA                                              00000090
+ML01     B     ML03               SW TO BRANCH TO OPEN FIRST TIME       00000100
+ML02     WRITE DECBOUT,SF,DCBOUT,*+0,'S'                                00000110
+         CHECK DECBOUT                                                  00000120
+ML02A    L     13,SAVEAREA+4      RELOAD HIS                            00000130
+         LM    14,12,12(13)             REGS                            00000140
+         LA    15,0(0,0)          SET RETURN CODE TO 0                  00000150
+         LA    14,12(0,14)        BUMP 14 BY 12 TO RETURN TO ADD        00000160
+         BR    14                                                       00000170
+ML03     OPEN  (DCBOUT,(OUTPUT))                                        00000180
+         MVI   ML01+1,X'00'       NOP ML01                              00000190
+         MVC   ML02+16(4),0(14)  PUT AREA ARD IN WRITEH MACRO           00000200
+         B     ML02A                                                    00000210
+SAVEAREA DC    18F'0'                                                   00000220
+DCBOUT   DCB   DDNAME=OUT2,DSORG=PS,MACRF=(WL),DEVD=DA                  00000230
+         DC    CL2'  '                                                  00000240
+         END                                                            00000250

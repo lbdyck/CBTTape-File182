@@ -1,0 +1,34 @@
+RRIN1DIN  CSECT                                                         00000010
+*  THIS MODULE IS CALLED BY GEN PROGRAM                                 00000020
+*   TO READ DA DATA SETS / TYPE = DI  (DATA AND KEY)                    00000030
+         SAVE  (2,12),T,*                                               00000040
+         BALR  11,0                                                     00000050
+         USING *,11                                                     00000060
+         ST    13,SAVEAREA+4                                            00000070
+         LR    4,13                                                     00000080
+         LA    13,SAVEAREA                                              00000090
+         ST         13,8(4)                                             00000100
+ML01     B     ML03         1ST TIME SWITCH                             00000110
+         MVC   DECBIN+29(1),4(14)   PUT APPRO REG FOR BLK ADR           00000120
+ML02     READ  DECBIN,DI,DCBIN,*+12,'S','S',(7)                         00000130
+         WAIT  ECB=DECBIN                                               00000140
+         TM    DECBIN+1,X'04'    Q. EOD                                 00000150
+         BNZ   ML05                  YES                                00000160
+         CHECK DECBIN                NO                                 00000170
+ML02A    L     13,SAVEAREA+4   *RESTORE                                 00000180
+         LM    14,12,12(13)    * HIS REGISTERS                          00000190
+         LA    14,12(0,14)     * BUMP 14 TO BYPASS PARMS                00000200
+         BR    14             *       USER                              00000210
+ML03     MVC   DECBIN+12,0(14)     MOVE IN AREA ADR                     00000220
+         OPEN  (DCBIN)                                                  00000230
+         MVI   ML01+1,X'00'      NOP  1ST TIME SWITCH                   00000240
+         B     ML02A                                                    00000250
+* EOF EXIT                                                              00000260
+ML05     L     13,SAVEAREA+4                                            00000270
+         LM    14,12,12(13)                                             00000280
+         LA    15,0(0,0)                                                00000290
+         BR    14                                                       00000300
+SAVEAREA DC    18F'0'                                                   00000310
+RECAREA  DS    CL900                                                    00000320
+DCBIN    DCB   DDNAME=INP2,DSORG=DA,MACRF=RCI,RECFM=F                   00000330
+         END                                                            00000340

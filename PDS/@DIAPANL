@@ -1,0 +1,726 @@
+         TITLE 'ISPF - O AND T SUBCOMMANDS      '              SS NOV85 00010000
+         SPACE 2                                                        00020000
+ISPSETP  DS    0H          ****   O AND T SUBCOMMANDS ****     SS NOV84 00030000
+         USING ISPSETP,R4                                      SS NOV85 00040000
+         NI    SPFLAG4,255-SPFMCMD  RESET FLAG                 SS NOV84 00050000
+         MVI   SPFVZCMD,C' '                                   SS NOV84 00060000
+         MVC   SPFVZCMD+1(249),SPFVZCMD                        SS NOV84 00070000
+         MVC   MEMLNMSV,ISPBLK8                                SS NOV84 00080000
+         MVC   SPFSAVM2,ISPBLK8                                SS AUG85 00090000
+         MVC   SPFMEMB,ISPBLK8                                 SS NOV84 00100000
+         L     R14,SPFVTPT                                     SS NOV85 00110000
+         TM    $TLF1(R14),#E       IS THIS FOR CMD SEARCH      SS AUG86 00120000
+         BZ    ISPSETP1            NO, CONTINUE                SS AUG86 00130000
+         LH    R15,PUTGETBF       GET LENG                     SS NOV84 00140000
+         SH    R15,ISPH5          LESS 5 MVC                   SS NOV84 00150000
+ISPSETP9 MVC   SPFVZCMD(0),SPFINPUT                            SS NOV84 00160000
+         EX    R15,ISPSETP9       COPY TO CMD FROM INPUT       SS NOV84 00170000
+         OI    SPFLAG4,SPFNOIV     DO NOT DISPLAY INVALID      SS AUG86 00180000
+         B     ISPSETP2            FORCE NONDISPL              SS AUG86 00190000
+ISPSETP1 DS    0H                       *                      SS NOV86 00200000
+         TM    $TLF2(R14),#Z                                   SS NOV84 00210000
+         BO    ISPSETP2                                        SS NOV84 00220000
+         LH    R15,PUTGETBF       GET LENG                     SS NOV84 00230000
+         SH    R15,ISPH5          LESS 5 MVC                   SS NOV84 00240000
+ISPSETP4 MVC   SPFVZCMD(0),SPFINPUT                            SS NOV84 00250000
+         EX    R15,ISPSETP4       COPY TO CMD FROM INPUT       SS NOV84 00260000
+         BAS   R2,ISPSHCMD                                     SS NOV84 00270000
+         CLI   SPFVZCMD,C' '                                   SS NOV84 00280000
+         BE    ISPSETP3                                        SS NOV84 00290000
+ISPSETP2 DS    0H                                              SS NOV84 00300000
+         OI    SPFLAG4,SPFNOND      INVOKE PANEL NON-DISPLAY   SS NOV84 00310000
+ISPSETP3 DS    0H                                              SS NOV84 00320000
+         BAS   R2,ISPSETVI                                     SS NOV85 00330000
+         L     R1,SPFPANT                                      SS NOV84 00340000
+         ST    R1,SPFPANC                                      SS NOV84 00350000
+         L     R14,SPFVTPT                                     SS NOV85 00360000
+         SR    R15,R15                                         SS NOV84 00370000
+         IC    R15,$TLEX(R14)                                  SS NOV84 00380000
+         SLL   R15,3                 TIME 8 : INDEX TO OFFSET  SS OCT88 00390000
+         AL    R15,ISP$PNA                                     SS MAR85 00400000
+         MVC   SPFPSTK(8),0(R15)                               SS NOV84 00410000
+         TM    DSORG,DS1DSGPO        IS IT PO                 ABL OCT85 00420000
+         BO    ISPSETPP              YES, CONTINUE            ABL OCT85 00430000
+         CLI   SPFPSTK+4,C'P'        NO, IS IT P..0P?         ABL OCT85 00440000
+         BNE   ISPSETPP              NO, CONTINUE             ABL OCT85 00450000
+         CLI   SPFPSTK+5,C'@'        YES, IS IT P..0P@?       ABL FEB87 00460000
+         BNE   ISPSETPP              NO, CONTINUE             ABL FEB87 00470000
+         MVI   SPFPSTK+4,C'S'        YES, USE P..OS@P         ABL OCT85 00480000
+ISPSETPP DS    0H                                              SS NOV84 00490000
+         BAS   R2,ISPPANDI                                     SS NOV85 00500000
+         NI    SPFLAG4,255-SPFNOIV RESET, IF USED              SS NOV86 00510000
+         CLC   SPFZSEL(4),ISPCEND                              SS NOV84 00520000
+         BE    ISPSETPC               CONTINUE                 SS NOV86 00530000
+         CLI   SPFZSEL,C'?'           INVALID                  SS NOV86 00540000
+         BE    ISPSETPI               YES                      SS NOV86 00550000
+         CLC   SPFZSEL(3),ISPPGM      SELECT PGM               SS NOV86 00560000
+         BE    ISPSETPS               PGM  SELECT SUPPORT      SS NOV86 00570000
+         CLC   SPFZSEL(3),ISPCCMD     SELECT CMD               SS NOV86 00580000
+         BE    ISPSETPS               CMD  SELECT SUPPORT      SS NOV86 00590000
+         CLC   SPFZSEL(3),ISPTRAP     TRAP   CMD               SS NOV88 00600000
+         BE    ISPSETT                TRAP SUPPORT             SS NOV88 00610000
+         MVC   SPFINPUT(250),SPFZSEL                           SS NOV84 00620000
+         MVC   PUTGETBF(4),ISPLEN2                             SS NOV84 00630000
+         L     R14,SPFVTPT                                     SS NOV85 00640000
+ISPSETP5 DS    0H                                              SS NOV84 00650000
+         TM    $TLF2(R14),#A        ACTIVATE RESCAN?           SS NOV84 00660000
+         BZ    ISPSETP6             NO, CHECK COMMAND          SS NOV84 00670000
+         LA    R15,104              TO ISPOPTT                 SS NOV85 00680000
+         BR    R3                   RETURN TO ROUTER           SS NOV85 00690000
+ISPSETP6 DS    0H                                              SS NOV85 00700000
+         LA    R15,24               TO CMDCK                   SS NOV85 00710000
+         BR    R3                   RETURN TO ROUTER           SS NOV85 00720000
+ISPSETPS DS    0H                       *                      SS NOV86 00730000
+         BAS   R2,ISPSLCTI              SELECT PROCESSOR       SS NOV86 00740000
+         B     ISPSETPC                 *                      SS NOV86 00750000
+*                                       *                      SS NOV88 00760000
+*  SYSOUT TRAP CMD                      *                      SS NOV88 00770000
+*                                       *                      SS NOV88 00780000
+ISPSETT  DS    0H                       *                      SS NOV88 00790000
+         CLC   SPFZENVI(8),ISPSETTV  CHECK FOR 2.3             SS NOV88 00800000
+         BL    ISPSETTE                 NO ENV                 SS NOV88 00810000
+         CLI   SPFTPSET,C'Y'            IS TRAP SET            SS NOV88 00820000
+         BNE   ISPSETTE                 NO, NO                 SS NOV88 00830000
+         BAS   R2,ISPTRAPI              CALL TRAP PROCESSOR    SS NOV88 00840000
+         CLI   SPFTCNT,C'0'             ANY OUTPUT             SS NOV88 00850000
+         BE    ISPSETPC                 NO, JUST RETURN        SS NOV88 00860000
+         BAS   R2,ISPSETST         SET AND RETREIVE STATUS     SS NOV88 00870000
+         LH    R1,SPFFUNLP+0       GET LOG LAST PANEL          SS NOV88 00880000
+         LNR   R1,R1               SET FOR SWAP                SS NOV88 00890000
+         BAS   R2,ISPSTKI          SWAP TO LOG PANEL           SS NOV88 00900000
+         LA    R15,100             CODE.. PROCESS COMMAND      SS NOV88 00910000
+         BR    R3                  RETURN TO ROUTER            SS NOV88 00920000
+ISPSETTE DS    0H                       *                      SS NOV88 00930004
+         MVC   SPFZSEL(3),ISPCCMD    CHANGE TO A COMMAND       SS NOV88 00940000
+         B     ISPSETPS                 *                      SS NOV88 00950000
+ISPSETTV DC    C'ISPF 2.3'           VERSION REQUIRES TSO/E    SS NOV88 00960000
+         SPACE 2                        *                      SS AUG86 00970000
+ISPSETPC DS    0H                       *                      SS NOV86 00980000
+         LA    R15,40                   ISPDISP6               SS NOV86 00990000
+         BR    R3                       RETURN TO ROUTER       SS NOV86 01000000
+ISPSETPI DS    0H                       *                      SS NOV86 01010000
+         LA    R15,28                   INVALID FUNCTION       SS NOV86 01020000
+         BR    R3                       RETURN TO ROUTER       SS NOV86 01030000
+         DROP  R4                                              SS NOV85 01040000
+         SPACE 3                                               SS NOV84 01050000
+         TITLE  'ISPF - DISPLAY PANEL ROUTINE '                SS AUG86 01060000
+*                                                              SS NOV84 01070000
+*   SELECT PANEL DISPLAY ROUTINE    RETURN = R3                SS NOV84 01080000
+*                                                              SS NOV84 01090000
+ISPPAND  DS    0H                                              SS NOV84 01100000
+         USING *,R4                                            SS MAR85 01110000
+         TM    SPFLAG4,SPFNOND    INVOKE PANEL NON-DISPLAY     SS NOV84 01120000
+         BZ    ISPPAND2                                        SS NOV84 01130000
+         BAS   R2,ISPCTLND              *                      SS JUL87 01140000
+         NI    SPFLAG4,255-SPFNOND                             SS NOV84 01150000
+         L     R1,SPFPANC                                     ABL FEB87 01160000
+*        CLC   0(8,R1),ISP$OPUX   P80OPUX OPTION PANEL?       ABL FEB87 01170000
+*        BNE   ISPPAND3           NO, BRANCH                  ABL FEB87 01180000
+*        BAS   R2,ISPDSPSV        YES, CONTROL DISPLAY SAVE   ABL FEB87 01190000
+*        OI    SPFLAG4,SPFNOND    SET A FLAG FOR LATER        ABL FEB87 01200000
+         B     ISPPAND3                                        SS NOV84 01210000
+ISPPAND2 DS    0H                                              SS NOV84 01220000
+         OI    SPFLAG3,SPFREFR        MAKE SURE OF REFRESH     SS AUG86 01230000
+ISPPAND3 DS    0H                                              SS NOV84 01240000
+         OI    ##ADRPA#,$A+$D           IGNORE ATTENTION NOW            01250000
+         BAS   R2,REFCHECK              CONDITIONAL REFRESH   ABL JAN87 01260000
+         LA    R14,ISPDISP        DISPLAY TABLE                SS NOV84 01270000
+         L     R15,SPFPANC        PANEL NAME                   SS NOV84 01280000
+         LA    R0,ISPBLK8         NO MSG                       SS NOV86 01290000
+         CLC   SPFMSGID(4),ISPPDSM ANY MSG                     SS NOV84 01300000
+         BNE   ISPPAND4                                        SS NOV84 01310000
+         LA    R0,SPFMSGID                                     SS NOV84 01320000
+*    ALWAY SPECIFY PANEL ID             *                      SS DEC87 01330000
+ISPPAND4 DS    0H                                              SS NOV84 01340000
+         NI    SPFLAG2,255-SPFNPOS   RESET FREEZE/POSITION    ABL APR86 01350000
+         LA    R1,VZCMD           CURSOR AT CMD LINE           SS NOV84 01360000
+         STM   R14,R1,PARMLIST                                 SS NOV84 01370000
+         LA    R1,SPFCURSO           CURSOR OFFSET            ABL JUN85 01380000
+         ST    R1,PARMLIST+16                                 ABL JUN85 01390000
+         OI    PARMLIST+16,X'80'                              ABL JUN85 01400000
+         TM    SPFLAG4,SPFNOND       NON-DISPLAY AND P..OPUX? ABL FEB87 01410000
+         BO    ISPPAND5              YES, BRANCH              ABL FEB87 01420000
+         L     R1,SPFPANC            PANEL NAME               ABL FEB87 01430000
+         MVC   SPFPANPR(8),0(R1)     SAVE LAST PANEL NAME     ABL FEB87 01440000
+         SPACE 1                                               SS NOV84 01450000
+ISPPAND5 DS    0H                                              SS NOV84 01460000
+         LA    R1,PARMLIST                                     SS JUL84 01470000
+         L     R15,ISPLINK                                     SS JUL84 01480000
+         BASR  R14,R15                                         SS JUL84 01490000
+         CLI   FLAGSSS,0          RETURN KEY ACTIVE?           SS NOV84 01500000
+         MVI   FLAGSSS,0                                       SS NOV84 01510000
+         BNE   ISPPAND5           YES, REPEAT THE DISPLAY      SS NOV84 01520000
+         MVI   SPFMSGID,C' '      TURN OFF MSG                 SS NOV84 01530000
+         MVI   SPFCURSO+3,0       RESET THE CURSOR OFFSET     ABL JUN85 01540000
+         ST    R15,SPFFIXED       SAVE RC                      SS JUL84 01550000
+         BAS   R2,REFSAVE         SAVE THE TPIN, TPOUT COUNTS ABL JAN87 01560000
+*        TM    SPFLAG4,SPFNOND    NON-DISPLAY AND P..OPUX?    ABL FEB87 01570000
+*        BNO   ISPPAND6           NO, BRANCH                  ABL FEB87 01580000
+*        BAS   R2,ISPDSPRS        YES, CONTROL DISPLAY RESTOREABL FEB87 01590000
+*        NI    SPFLAG4,255-SPFNOND  CLEAR THE FLAG            ABL FEB87 01600000
+ISPPAND6 DS    0H                                             ABL FEB87 01610000
+         AIF ('&RETURNX' EQ 'NO').RETURN4                      SS NOV84 01620000
+         CLI   SPFFIXED+3,8           RETURN CODE=8?          ABL OCT84 01630000
+         BNE   ISPPAND8               NO, BRANCH              ABL OCT84 01640000
+         BAS   R2,ISPDVGET                                     SS NOV84 01650000
+         SPACE 1                                              ABL OCT84 01660000
+         CLI   SPFRETRN,C'R'         "RETURN"                 ABL OCT84 01670000
+         BNE   ISPPAND8              YES, BRANCH               SS NOV84 01680000
+         CLC   SPFPANT,SPFPANC       TOP  PANEL                SS NOV84 01690000
+         BNE   ISPPAND8              NO,  NO PROBLEM           SS NOV84 01700000
+         MVI   FLAGSSS,C'2'          REINVOKE ALL LATER       ABL OCT84 01710000
+ISPPAND8 DS    0H                                             ABL OCT84 01720000
+.RETURN4 ANOP                                                 ABL OCT84 01730000
+         SPACE 1                                              ABL OCT84 01740000
+         CLI   SPFFIXED+3,8           RETURN?                 ABL OCT84 01750000
+         BNE   ISPPAND9               YES, BRANCH              SS NOV84 01760000
+         MVI   SPFFIXED+3,0          RESET RETURN CODE         SS NOV84 01770000
+         MVC   SPFZSEL(4),ISPCEND    SET TO END CODE           SS NOV84 01780000
+         B     ISPPANDC                                        SS NOV84 01790000
+ISPPAND9 DS    0H                                              SS NOV84 01800000
+         CLI   SPFFIXED+3,12          NO PANEL                 SS NOV84 01810000
+         BE    ISPPANDE               YES, BRANCH              SS NOV84 01820000
+         CLI   SPFFIXED+3,0                                    SS NOV84 01830000
+         BNE   ISPERR                                          SS NOV84 01840000
+         CLC   SPFZSEL(6),ISPCPAN    NEXT PANEL                SS NOV84 01850000
+         BNE   ISPPANDC              NO                        SS NOV84 01860000
+         L     R15,SPFPANC           CURRENT PANEL             SS NOV84 01870000
+         C     R15,SPFPANB           IS IT LAST                SS NOV84 01880000
+         BE    ISPPANDD              YES, LEAVE AS LAST        SS NOV84 01890000
+         LA    R15,8(R15)            NEXT                      SS NOV84 01900000
+         ST    R15,SPFPANC           UPDATE DATA               SS NOV84 01910000
+ISPPANDD MVC   0(8,R15),SPFZSEL+6    MOVE PANEL NAME           SS NOV84 01920000
+         CLI   0(R15),C'A'           GOOD ENTRY                SS NOV84 01930000
+         BL    ISPPANDE              BAD ENTRY                 SS NOV84 01940000
+         LA    R1,9                  SCAN FOR 8                SS NOV84 01950000
+         LA    R14,SPFZSEL+6                                  ABL FEB87 01960000
+ISPPANDF CLI   0(R14),C'#'           NATIONAL?                ABL FEB87 01970000
+         BE    ISPPAND#                                       ABL JAN87 01980000
+         CLI   0(R14),C'$'           NATIONAL?                ABL FEB87 01990000
+         BE    ISPPAND#                                       ABL JAN87 02000000
+         CLI   0(R14),C'@'           NATIONAL?                ABL FEB87 02010000
+         BE    ISPPAND#                                       ABL JAN87 02020000
+         CLI   0(R14),C'A'           FIND END OF NAME         ABL FEB87 02030000
+         BL    ISPPANDG                                        SS NOV84 02040000
+ISPPAND# DS    0H                                             ABL JAN87 02050000
+         LA    R14,1(,R14)           NEXT SPFZSEL CHARACTER   ABL FEB87 02060000
+         LA    R15,1(,R15)           NEXT                      SS NOV84 02070000
+         BCT   R1,ISPPANDF                                     SS NOV84 02080000
+         B     ISPPANDK                                        SS NOV84 02090000
+ISPPANDG MVI   0(R15),C' '           BLANK OUT REST            SS NOV84 02100000
+         LA    R15,1(,R15)           NEXT                      SS NOV84 02110000
+         BCT   R1,ISPPANDG                                     SS NOV84 02120000
+ISPPANDH BAS   R2,ISPSHCMD           SHIFT ZCMD TO NEXT '.'    SS NOV84 02130000
+         CLI   SPFVZCMD,C' '         IS IT BLANK               SS NOV84 02140000
+         BE    ISPPAND               YES DISPLAY PANEL         SS NOV84 02150000
+         OI    SPFLAG4,SPFNOND       NO, INVOKE PANEL NONDISPL SS NOV84 02160000
+         B     ISPPAND                                         SS NOV84 02170000
+ISPPANDC DS    0H                                              SS NOV84 02180000
+         CLI   SPFZSEL,C' '          NULL                      SS NOV84 02190000
+         BNH   ISPPANDN              YES                       SS NOV84 02200000
+         CLI   SPFZSEL,C'?'          INVALID                   SS NOV84 02210000
+         BE    ISPPANDK                                        SS NOV84 02220000
+         B     ISPPANDJ              CONTINUE CHECKS           SS NOV84 02230000
+ISPPANDK DS    0H                                              SS NOV84 02240000
+         TM    SPFLAG4,SPFNOIV          NO INVALID MESSAGE     SS AUG86 02250000
+         BO    ISPPANDX                 YES, CLEANUP AND RTN   SS AUG86 02260000
+         MVC   SPFMSGID,ISPPDSM      SET BASE MSG              SS NOV84 02270000
+         MVI   SPFMSGID+6,C'9'       COMMON MSG                SS NOV84 02280000
+         MVI   SPFMSGID+7,C'A'       COMMON MSG                SS NOV84 02290000
+         B     ISPPAND               TRY AGAIN                 SS NOV84 02300000
+ISPPANDN DS    0H                                              SS NOV84 02310000
+         MVC   SPFMSGID,ISPPDSM      SET BASE MSG              SS NOV84 02320000
+         MVI   SPFMSGID+6,C'9'       COMMON MSG                SS NOV84 02330000
+         MVI   SPFMSGID+7,C'E'       COMMON MSG                SS NOV84 02340000
+         B     ISPPAND               TRY AGAIN                 SS NOV84 02350000
+ISPPANDE DS    0H                                              SS NOV84 02360000
+         MVC   SPFMSGID,ISPPDSM      SET BASE MSG              SS NOV84 02370000
+         MVI   SPFMSGID+6,C'9'       COMMON MSG                SS NOV84 02380000
+         MVI   SPFMSGID+7,C'P'       BAD PANEL                 SS NOV84 02390000
+         MVC   SPFZSEL(4),ISPCEND    END CODE                  SS NOV84 02400000
+ISPPANDJ DS    0H                                              SS NOV84 02410000
+         CLC   SPFZSEL(4),ISPCEND    END CODE                  SS NOV84 02420000
+         BNE   ISPPANDX              NO, GOT COMMAND           SS NOV84 02430000
+         CLC   SPFPANC,SPFPANT       LAST PANEL                SS NOV84 02440000
+         BER   R3                    RETURN END                SS NOV84 02450000
+         L     R14,SPFPANC           GET ADDR                  SS NOV84 02460000
+         S     R14,ISPL8             BACK UP 8                 SS NOV84 02470000
+         ST    R14,SPFPANC                                     SS NOV84 02480000
+         B     ISPPAND                                         SS NOV84 02490000
+ISPPANDX DS    0H                                              SS NOV84 02500000
+         NI    SPFLAG4,255-SPFNOIV      RESET IF USED          SS AUG86 02510000
+         SPACE 2                                               SS NOV84 02520000
+         NI    ##ADRPA#,FF-$A-$D        DO NOT IGNORE ATTENTION NOW     02530000
+         SPACE 1                                                        02540000
+         ESTAE 0                        CANCEL THE ESTAE ADDRESS        02550000
+ESTAE7   DS    0H                       Z/XDC PROBE           DRK DEC08 02551006
+         MVC   STAEPARM(4),STAELIST     RESET THE ESTAE ADDRESS         02560000
+         L     R2,ISPESTAE              ESTAE EXIT ADDRESS    ABL JUN85 02570000
+         ESTAE (R2),CT,PARAM=(R7),MF=(E,STAEPARM)             ABL JUN85 02580000
+ESTAE8   DS    0H                       Z/XDC PROBE           DRK DEC08 02581006
+         BR    R3                                              SS NOV84 02590000
+         SPACE 2                                               SS SEP84 02600000
+         DROP  R4                                              SS MAR85 02610000
+         TITLE  'ISPF - DISPLAY SINGLE PANEL  '                SS AUG86 02620000
+*                                       *                      SS AUG86 02630000
+*    DISPLAY A SINGLE PANEL             *                      SS AUG86 02640000
+*    R15=ADDRESS OF PANEL NAME          *                      SS AUG86 02650000
+*    R1 =MSG ID ADDRESS                 *                      SS AUG86 02660000
+*    R15 RETURNS DISPLAY RC             *                      SS AUG86 02670000
+*    SPFCURSO CAN BE SET FOR CURSOR OFFSET                     SS APR89 02680001
+*    SPFCURNM CAN BE SET FOR CURSOR FIELD NAME                 SS APR89 02690001
+*                                       *                      SS AUG86 02700001
+ISPSINGL DS    0H                                              SS AUG86 02710000
+         USING *,R4                                                     02720000
+         NI    HFLAGSDD,FF-X'02'     NO OPEN YET                        02730000
+ISPS020  OI    ##ADRPA#,$A+$D        IGNORE ATTENTION NOW               02740000
+         ST    R1,SPFTEMPD           SAVE MSGID               ABL JAN87 02750000
+         ST    R15,SPFTEMPD+4        SAVE PANEL ADDRESS       ABL JAN87 02760000
+         BAS   R2,REFCHECK           CONDITIONAL REFRESH      ABL JAN87 02770000
+         L     R1,SPFTEMPD           RESET MSGID              ABL JAN87 02780000
+         L     R15,SPFTEMPD+4        RESET PANEL ADDRESS      ABL JAN87 02790000
+         NI    HFLAGSDD,FF-X'01'     NO ATTRIBUTES                      02800000
+         LA    R14,ISPDISP           DISPLAY TABLE                      02810000
+ISPS030  MVC   SPFPANPR(8),0(R15)    SAVE LAST PANEL NAME               02820000
+         LR    R0,R1                 SET MSG ID                SS AUG86 02830000
+         LA    R1,VZCMD              SET TO CURSOR TO ZCMD     SS AUG86 02840000
+         CLC   SPFCURNM,ISPBLK8      ANY FIELD NAME            SS APR89 02850001
+         BNH   *+8                   NO, CONTINUE              SS APR89 02860001
+         LA    R1,SPFCURNM           YES, POINT TO NAME        SS APR89 02870001
+         STM   R14,R1,PARMLIST                                          02880000
+         LA    R1,SPFCURSO           CURSOR OFFSET             SS JUL88 02890000
+         ST    R1,PARMLIST+16                                  SS JUL88 02900000
+         OI    PARMLIST+16,X'80'                               SS JUL88 02910000
+         BAS   R14,ISPSXEQ           CALL ISPEXEC              SS JUL88 02920000
+         NI    ##ADRPA#,FF-$Q-$A-$D         RESET QUIET MODE/ATTN       02930000
+         MVC   SPFMSGID,ISPBLK8             CLEAR MSGID       ABL JAN87 02940000
+         ST    R15,SPFFIXED          SAVE RC                  ABL JAN87 02950000
+         C     R15,ISPL8                                       SS AUG86 02960000
+         BH    ISPERR                                          SS AUG86 02970000
+         BAS   R2,REFSAVE            SAVE  TPIN, TPOUT COUNTS ABL JAN87 02980000
+         L     R15,SPFFIXED       RESET RC                    ABL JAN87 02990000
+         MVI   SPFCURSO+3,0       RESET POSITION               SS JUL88 03000000
+         MVC   SPFCURNM,ISPBLK8   RESET FIELD NAME             SS APR89 03010001
+         BR    R3                                              SS AUG86 03020000
+         DROP  R4                                             ABL APR86 03030000
+*    CHECK OTHER PROCESSING BEFORE DISPLAY                     SS MAY88 03040000
+ISPDISP6 DS    0H                                             ABL OCT84 03050000
+         USING ISPDISP6,R4              *                      SS MAY88 03060000
+         TM    SPFLAG5,SPFICMD    ISPF CMD NEED REQUESTED      SS JUL87 03070000
+         BO    ISPICMDX           YES, EXECUTE  IT             SS JUL87 03080000
+         TM    SPFLAG4,SPFCPOST   COMMAND POST PROCESSING      SS NOV84 03090000
+         BO    ISPCPOST           YES                          SS NOV84 03100000
+         TM    SPFLAG4,SPFMCMD    MULTY CMD                    SS NOV84 03110000
+         BO    ISPMCMD            YES                          SS NOV84 03120000
+         LA    R15,100            ROUTE TO PANEL DISPLAY       SS NOV85 03130000
+         B     ISPROUT            ROUTE SUPPORT                SS NOV85 03140000
+         SPACE 2                                               SS NOV84 03150000
+ISPCPOST DS    0H                                              SS MAY88 03160000
+         NI    SPFLAG4,255-SPFCPOST                            SS NOV84 03170000
+         L     R14,SPFVTPT         GET MY TABLE ENTRY          SS NOV85 03180000
+         SR    R15,R15                                         SS NOV84 03190000
+         IC    R15,SPFPOST1         GET POST PROCESSOR INDEX   SS NOV85 03200000
+         B     ISPROUT              INDEX TO PROCESSOR         SS NOV85 03210000
+         SPACE 2                                               SS NOV84 03220000
+ISPMCMD  DS    0H                                              SS NOV84 03230000
+         NI    SPFLAG4,255-SPFMCMD  RESET FLAG                 SS NOV84 03240000
+         MVI   SPFVZCMD,C' '                                   SS NOV84 03250000
+         MVC   SPFVZCMD+1(249),SPFVZCMD                        SS NOV84 03260000
+         L     R1,SPFSEC4A        BASE                         SS OCT88 03270000
+         MVC   SPFVZCMD(250),SPFLSAVZ-SPFSEC4K(R1) OLD         SS OCT88 03280000
+         BAS   R2,ISPSHCMD        EXTRACT NEXT COMMAND         SS NOV84 03290000
+         MVC   SPFINPUT(250),SPFVZCMD                          SS OCT88 03300000
+*        B     ISPOPTT                                         SS MAY88 03310000
+         LA    R15,104            ROUTE TO ISPOPTT             SS MAY88 03320000
+         B     ISPROUT            ROUTE SUPPORT                SS MAY88 03330000
+         SPACE 2                                               SS NOV84 03340000
+ISPICMDX DS    0H                                              SS JUL87 03350000
+         MVC   PUTGETBF(4),ISPLEN2  SET MAX LENGTH             SS FEB88 03360000
+         NI    SPFLAG5,255-SPFICMD  RESET FLAG                 SS JUL87 03370000
+         L     R1,SPFSEC4A         GET  BASE                   SS MAY88 03380000
+         LA    R1,SPFICMDS-SPFSEC4K(,R1)  POINT TO SPFICMDS    SS MAY88 03390000
+         MVC   SPFVZCMD(254),0(R1)           GET THE CMD       SS JUL87 03400000
+         MVC   SPFINPUT(252),SPFVZCMD                          SS JUL87 03410000
+*        B     ISPOPTT                                         SS MAY88 03420000
+         LA    R15,104            ROUTE TO ISPOPTT             SS MAY88 03430000
+         BR    R3                 ROUTE SUPPORT                SS MAY88 03440000
+         DROP  R4                                              SS JUL87 03450000
+         TITLE  'ISPF - TABLE DISPLAY FUNCTION'                SS NOV85 03460000
+*                                                              SS MAR85 03470000
+*  TABLE DISPLAY FUNCTION                                      SS MAR85 03480000
+*                                                              SS MAR85 03490000
+ISPTBDSP DS    0H                                              SS SEP84 03500000
+         USING *,R4                                            SS MAR85 03510000
+         NI    SPFLAG4,255-SPFFFUN      CLEAR FROM FLAG        SS AUG86 03520000
+         TM    SPFTBPF1,SPFTLIN   ACTIVE MEMLIST               SS NOV85 03530000
+         BO    ISPMMLDS           YES, DISPLAY IT              SS SEP84 03540000
+         TM    SPFTBPF2,SPFTFUNC  FUNCTION DISPLAY             SS OCT88 03550000
+         BO    ISPTBDF0           YES                          SS OCT88 03560000
+         BAS   R2,ISPQUERY                                     SS JUL87 03570000
+         L     R15,SPFSTART       REPOSITION TO HERE           SS MAY85 03580000
+         S     R15,SPFCRP         CALCULATE RELATIVE POSITION  SS NOV85 03590000
+         BAS   R2,ISPSKIP                                      SS MAY85 03600000
+         MVI   SPFLAG1,0          RESET ACTION FLAG           ABL OCT84 03610000
+         B     ISPTBDP2                                        SS NOV85 03620000
+*                                       *                      SS OCT88 03630000
+*  PROCESS FUNCTION STATUS DISPLAY      *                      SS OCT88 03640000
+*                                       *                      SS OCT88 03650000
+ISPTBDF0 DS    0H                       *                      SS OCT88 03660000
+         MVI   FLAGSSS,0          YES, CLEAR IT NOW            SS OCT88 03670000
+*        MVC   SPFUSRXX,ISPPASST  SET PASSTHRU FOR RFIND ETC   SS OCT88 03680000
+         CLI   SPFMSGID,C' '            ANY MESSAGE            SS OCT88 03690000
+         BNH   ISPTBDF1                 NO                     SS OCT88 03700000
+         LA    R1,SPFMSGID              SET MESSAGE PT         SS OCT88 03710000
+         B     ISPTBDF2                 LEAVE ZCMD             SS OCT88 03720000
+ISPTBDF1 DS    0H                       *                      SS OCT88 03730000
+         MVI   SPFVZCMD,C' '            BLANK                  SS OCT88 03740000
+         MVC   SPFVZCMD+1(249),SPFVZCMD      RIPPLE            SS OCT88 03750000
+         LA    R1,ISPBLK8         NO MESSAGE                   SS OCT88 03760000
+ISPTBDF2 DS    0H                       *                      SS OCT88 03770000
+         LA    R15,SPFTBPNM             PANEL NAME             SS OCT88 03780000
+         BAS   R2,ISPSINGI              DISPLAY THIS PANEL     SS OCT88 03790000
+         ST    R15,SPFFIXED             SAVE RETURN CODE       SS OCT88 03800000
+         CLI   FLAGSSS,0          RETURN KEY ACTIVE?           SS OCT88 03810000
+         MVI   FLAGSSS,0                                       SS OCT88 03820000
+         BNE   ISPTBDF0           YES, REPEAT THE DISPLAY      SS OCT88 03830000
+         B     ISPTBDF5                 PROCESS REQUEST        SS OCT88 03840000
+         SPACE 3                                               SS NOV84 03850000
+ISPMMLDS DS    0H                                              SS SEP84 03860000
+         TM    SPFTFLG1,SPFTLCD     LINE COMMAND ACTIVE        SS NOV85 03870000
+         BO    ISPMMLLR           RETURN FROM LINE CMD         SS NOV85 03880000
+         BAS   R2,ISPQUERY                                     SS JUL87 03890000
+         BAS   R2,ISPOSTN                                      SS SEP84 03900000
+ISPTBDP2 DS    0H                                              SS NOV85 03910000
+         OI    SPFLAG3,SPFREFR        MAKE SURE OF REFRESH     SS AUG86 03920000
+*  DISPLAY PROCESSING WAS REDESIGNED    *                      SS JUL87 03930000
+*  ALL LINE COMMANDS ARE PREPROCESSED, SEE BELOW               SS JUL87 03940000
+*  SCROLLING IS ALSO PREPROCESSED SO POSITIONING FLAGS NOT USEDSS JUL87 03950003
+*  WILL NOW USE PANEL NAME ON ALL TABLE DISPLAYS               SS JUL87 03960000
+ISPTBDNR DS    0H                                              SS NOV84 03970000
+         OI    ##ADRPA#,$A+$D           IGNORE ATTENTION NOW            03980000
+         BAS   R2,REFCHECK              CONDITIONAL REFRESH   ABL JAN87 03990000
+         LA    R14,TBDISPL        DISPLAY TABLE                SS JUL84 04000000
+         ST    R14,PARMLIST                                    SS JUL84 04010000
+         LA    R14,SPFTBL         TABLE NAME                   SS JUL84 04020000
+         LA    R15,SPFPANEL       PANEL NAME                   SS JUL84 04030000
+         MVC   SPFPANPR(8),SPFPANEL  SAVE LAST PANEL NAME      SS JUL87 04040000
+         LA    R0,ISPBLK8         NO MESSAGE                   SS NOV86 04050000
+         CLC   SPFMSGID(4),ISPPDSM ANY MSG                     SS NOV84 04060000
+         BNE   ISPTBDNM                                        SS NOV84 04070000
+         LA    R0,SPFMSGID                                     SS NOV84 04080000
+ISPTBDNM DS    0H                                              SS NOV84 04090000
+         TM    SPFTFLG1,SPFTYOFF  OFFSET PROCESSING FOR FIND   SS OCT88 04100000
+         BO    ISPTBDOF                 *                      SS OCT88 04110000
+         TM    SPFTBPF1,SPFTLIN   MEMLIST TABLE?               SS NOV85 04120000
+         BZ    ISPTBDNC           NO, NO CURSOR CRP            SS NOV85 04130000
+         L     R1,SPFTCCRP        CURSOR AT A LINE             SS MAR85 04140000
+         LTR   R1,R1                                           SS MAR85 04150000
+         BZ    ISPTBDNC                                        SS MAR85 04160000
+         L     R1,SPFTBPOA        SET CURSOR AT OPT FIELD      SS NOV85 04170000
+         STM   R14,R1,PARMLIST+4                               SS MAR85 04180000
+         LA    R14,SPFTCCRP       CRP                          SS NOV85 04190000
+         ST    R14,PARMLIST+20                                 SS MAR85 04200000
+         LA    R0,ISPL1           POSITION ONE                 SS NOV86 04210000
+         ST    R0,PARMLIST+24     SET POSITION                 SS NOV86 04220000
+         LA    R14,ISPNO          NO AUTOSEL                   SS MAR85 04230008
+         ST    R14,PARMLIST+28                                 SS MAR85 04240000
+         OI    PARMLIST+28,X'80'                               SS JUL84 04250000
+         CLC   SPFMSGID(4),ISPPDSM  ERROR MESSAGE?            ABL JUN85 04260000
+         BNE   ISPTBDNF             NO, BRANCH                ABL JUN85 04270000
+         OI    PARMLIST+20,X'80'    YES, LET AUTOSEL DEFAULT  ABL JUN85 04280000
+         B     ISPTBDNF                                        SS MAR85 04290000
+ISPTBDOF DS    0H                                              SS OCT88 04300000
+         NI    SPFTFLG1,255-SPFTYOFF  RESET FLAG               SS OCT88 04310000
+         LA    R1,SPFCURSR        SET CURSOR AT GIVEN FIELD    SS OCT88 04320000
+         STM   R14,R1,PARMLIST+4                               SS OCT88 04330000
+         LA    R14,SPFTCCRP       CRP                          SS NOV88 04340000
+         ST    R14,PARMLIST+20                                 SS OCT88 04350000
+         LA    R0,SPFCUOFF        POSITION AT GIVEN OFFSET     SS OCT88 04360000
+         ST    R0,PARMLIST+24     SET POSITION                 SS OCT88 04370000
+         LA    R14,ISPNO          NO AUTOSEL                   SS OCT88 04380008
+         ST    R14,PARMLIST+28                                 SS OCT88 04390000
+         OI    PARMLIST+28,X'80'                               SS OCT88 04400000
+         B     ISPTBDNF                                        SS OCT88 04410000
+ISPTBDNC DS    0H                                              SS MAR85 04420000
+         LA    R1,VZCMD           CURSOR AT CMD LINE           SS JUL84 04430000
+         STM   R14,R1,PARMLIST+4                               SS JUL84 04440000
+         OI    PARMLIST+16,X'80'                               SS MAR85 04450000
+ISPTBDNF DS    0H                                              SS MAR85 04460000
+         CLI   FLAGSSS,C'4'       RETURN FROM MEMLIST?        ABL OCT84 04470000
+         BL    ISPREAP2           NO, BRANCH                  ABL OCT84 04480000
+         TM    SPFTBPF1,SPFTLIN   MEMLIST                      SS NOV85 04490000
+         BZ    ISPREAP2           NO, BRANCH                   SS NOV85 04500000
+         MVI   FLAGSSS,0          YES, CLEAR IT NOW           ABL OCT84 04510000
+         SPACE 1                                              ABL SEP84 04520000
+ISPREAP2 DS    0H                                             ABL SEP84 04530000
+         MVC   SPFUSRXX,ISPPASST  SET PASSTHRU FOR RFIND ETC   SS AUG86 04540000
+         LA    R1,PARMLIST                                     SS JUL84 04550000
+         L     R15,ISPLINK                                     SS JUL84 04560000
+         BASR  R14,R15                                         SS JUL84 04570000
+         SPACE 3                                                        04580000
+***                                                                     04590000
+***                                                                     04600000
+***  TBDISPL ARGUMENT LIST:                                             04610000
+***                                                                     04620000
+***    1.  NO LINE COMMANDS:                                            04630000
+***        CALL ISPLINK('TBDISPL',SPFTBL,SPFPANEL,MSGID,'ZCMD')         04640000
+***                                                                     04650000
+***                                                                     04660000
+***    2.  LINE COMMANDS WITH ISPFV1 (OR ISPFV2 AND AN ERROR MESSAGE):  04670000
+***        CALL ISPLINK('TBDISPL',SPFTBL,SPFPANEL,MSGID,'ISPOPT',LINE)  04680000
+***                                                                     04690000
+***                                                                     04700000
+***    3.  LINE COMMANDS WITH ISPFV2 AND NO ERROR MESSAGE:              04710000
+***        CALL ISPLINK('TBDISPL',SPFTBL,SPFPANEL,MSGID,'ISPOPT',LINE,  04720000
+***                     0,'NO ')   -- AUTOSELECT=NO                     04730000
+***                                                                     04740000
+         SPACE 3                                                        04750000
+         CLI   FLAGSSS,0          RETURN KEY ACTIVE?          ABL SEP84 04760000
+         MVI   FLAGSSS,0                                      ABL SEP84 04770000
+         BNE   ISPREAP2           YES, REPEAT THE TBDISPL     ABL SEP84 04780000
+ISPTBDF5 DS    0H                       *                      SS OCT88 04790000
+         MVC   SPFUSRXX,ISPBLK8   SET OFF PASSTHRU             SS AUG86 04800000
+         MVI   SPFMSGID,C' '      TURN OFF MSG                 SS NOV84 04810000
+         ST    R15,SPFFIXED       SAVE RC                      SS JUL84 04820000
+         BAS   R2,REFSAVE             SAVE TPIN, TPOUT COUNTS ABL JAN87 04830000
+         BAS   R2,ISPDVGET            ALWAYS GET ZVERB         SS OCT88 04840000
+         CLI   SPFFIXED+3,8           RETURN CODE=8?          ABL OCT84 04850000
+         BNE   ISPSET8                NO, BRANCH              ABL OCT84 04860000
+         SPACE 1                                              ABL OCT84 04870000
+         CLI   SPFRETRN,C'R'         "RETURN"                 ABL OCT84 04880000
+         BE    ISPSET4               YES, BRANCH              ABL DEC84 04890000
+*        CLI   SPFRETRN,C'E'         "END"?                   ABL MAR86 04900000
+*        BE    ISPSET0               YES, BRANCH              ABL MAR86 04910000
+*** UNKNOWN SPF KEYWORD, IGNORE                               ABL MAR86 04920000
+*        MVI   SPFFIXED+3,0          RESET RETURN CODE        ABL MAR86 04930000
+*        B     ISPSET8               IGNORE                   ABL MAR86 04940000
+*SPSET0  DS    0H                                             ABL MAR86 04950000
+         MVC   SPFVZCMD(2),ISP8      SET TO 'END' CODE        ABL DEC84 04960000
+         MVI   SPFFIXED+3,0          RESET RETURN CODE        ABL DEC84 04970000
+         TM    SPFTBPF1,SPFTPRI      PANEL 1 (PRIMARY)?       ABL DEC84 04980000
+         BZ    ISPSET8               NO, BRANCH               ABL DEC84 04990000
+         CLI   PDSENTRY+1,0          ENTERED AS A DIALOG?     ABL DEC84 05000000
+         BE    ISPSET8               YES, BRANCH              ABL DEC84 05010000
+         MVC   SPFVZCMD(2),ISP1      END ON PANEL 1           ABL DEC84 05020000
+         B     ISPSET8                                        ABL DEC84 05030000
+ISPSET4  DS    0H                                             ABL DEC84 05040000
+         MVC   SPFVZCMD(2),ISPR      SET TO 'RETURN' CODE     ABL DEC84 05050000
+         TM    SPFTBPF1,SPFTPRI      PANEL 1 (PRIMARY)?       ABL DEC84 05060000
+         BO    ISPSET8               YES, NO PROBLEM          ABL DEC84 05070000
+         CLI   PDSENTRY+1,0          ENTRY FROM SPF PANEL?    ABL DEC84 05080000
+         BE    ISPSET8               YES, NO PROBLEM          ABL DEC84 05090000
+         MVI   SPFFIXED+3,0          RESET RETURN CODE        ABL DEC84 05100000
+         AIF ('&RETURNX' EQ 'NO').RETURN3                     ABL DEC84 05110000
+         MVI   FLAGSSS,C'2'          REINVOKE ALL LATER       ABL OCT84 05120000
+         TM    SPFTBPF1,SPFTLIN   MEMLIST                      SS NOV85 05130000
+         BZ    ISPSET8            NO, BRANCH                   SS NOV85 05140000
+         MVI   FLAGSSS,C'4'          REINVOKE EXCEPT MEMLIST  ABL OCT84 05150000
+.RETURN3 ANOP                                                 ABL DEC84 05160000
+ISPSET8  DS    0H                                             ABL OCT84 05170000
+         NI    SPFLAG3,FF-SPFLOGM     ASSUME NO LOGGING        SS NOV84 05180000
+         CLI   SPFFIXED+3,8           VALID RETURN CODE?      ABL DEC84 05190000
+         BH    ISPERR                 NO, ERROR               ABL DEC84 05200000
+* ALL VALIDATION DONE BY TABLES AT ISPOPTT                     SS NOV84 05210000
+         SPACE 2                                               SS NOV84 05220000
+         NI    ##ADRPA#,FF-$A-$D        DO NOT IGNORE ATTENTION NOW     05230000
+         SPACE 1                                                        05240000
+         ESTAE 0                        CANCEL THE ESTAE ADDRESS        05250000
+ESTAE9   DS    0H                       Z/XDC PROBE           DRK DEC08 05251006
+         MVC   STAEPARM(4),STAELIST     RESET THE ESTAE ADDRESS         05260000
+         L     R2,ISPESTAE              ESTAE EXIT ADDRESS    ABL JUN85 05270000
+         ESTAE (R2),CT,PARAM=(R7),MF=(E,STAEPARM)             ABL JUN85 05280000
+ESTAE10  DS    0H                       Z/XDC PROBE           DRK DEC08 05281006
+         TM    SPFTBPF1,SPFTLIN       MEMLIST                  SS SEP89 05290003
+         BZ    ISPTBLG3                                        SS SEP89 05300003
+         L     R15,SPFTDTOP           GET TOP OF SCREEN        SS SEP89 05310003
+         ST    R15,SPFTTOP            NEXT DISPLAY SAME PLACE  SS SEP89 05320003
+         ST    R15,SPFTTOP2           NEXT DISPLAY SAME PLACE  SS SEP89 05330003
+         B     ISPTBLG5                                        SS SEP89 05340003
+ISPTBLG3 DS    0H                                              SS SEP89 05350003
+         MVC   SPFSTART,SPFTDTOP  SAVE INFO                    SS SEP89 05360003
+ISPTBLG5 DS    0H                                              SS SEP89 05370003
+         CLC   SPFVZCMD(2),ISP1       END AT PANEL 1?          SS SEP89 05380003
+         BE    ISPTBLGD               YES, PROCESS             SS SEP89 05390003
+         CLC   SPFVZCMD(2),ISP8       END SUBCOMMAND?          SS SEP89 05400003
+         BE    ISPTBLGD               YES, PROCESS             SS SEP89 05410003
+         CLC   SPFVZCMD(2),ISPR       RETURN COMMAND?          SS SEP89 05420003
+         BE    ISPTBLGD               YES, PROCESS             SS SEP89 05430003
+         TM    SPFTBPF1,SPFTLIN       MEMLIST                  SS SEP89 05440003
+         BZ    ISPTBLNF                                        SS SEP89 05450003
+         CLI   SPFFIXED+3,4           MORE THAN ONE LINE CMD?  SS SEP89 05460003
+         BNE   ISPTBLB2                                        SS SEP89 05470003
+         OI    SPFTFLG1,SPFTMUT       YES, SET BIT             SS SEP89 05480003
+ISPTBLB2 DS    0H                                              SS SEP89 05490003
+         BAS   R2,ISPQUERY                                     SS SEP89 05500003
+         L     R15,SPFTCRP                                     SS SEP89 05510003
+         LTR   R15,R15                ANY LINE COMMANDS?       SS SEP89 05520003
+         BNZ   ISPLNCMD                                        SS SEP89 05530003
+         ST    R15,SPFTCCRP           SET ZERO CURSOR          SS SEP89 05540003
+ISPTBLNF DS    0H                                              SS AUG89 05550003
+         LA    R0,80              CHARACTERS TO SCAN          ABL JUN85 05560000
+         LA    R1,SPFVZCMD+79     WHERE TO START SCAN          SS FEB88 05570000
+ISPTBLB  CLI   0(R1),X'40'        BLANK?                      ABL JUN85 05580000
+         BNE   ISPTBLNB           NO, BRANCH                  ABL JUN85 05590000
+         BCTR  R1,0               ONE LESS CHARACTER          ABL JUN85 05600000
+         BCT   R0,ISPTBLB         CHECK ALL CHARACTERS?       ABL JUN85 05610000
+         MVC   SPFVZCMD(2),ISPN   NULL COMMAND                 SS FEB88 05620000
+         B     ISPTBLGD           YES, ALL BLANK               SS NOV85 05630000
+ISPTBLNB CLI   0(R1),C'+'         CONTINUATION DESIRED?       ABL FEB87 05640000
+         BE    ISPTBLNC           YES, BRANCH                 ABL FEB87 05650000
+         CLI   0(R1),C'-'         CONTINUATION DESIRED?       ABL FEB87 05660000
+         BNE   ISPTBLGD           NO, PROCESS AS IS           ABL FEB87 05670000
+ISPTBLNC DS    0H                                             ABL FEB87 05680000
+         LA    R0,SPFVZCMD-1      OFFSET BY -1                ABL JUN85 05690000
+         SR    R1,R0                                          ABL JUN85 05700000
+         ST    R1,SPFCURSO        SAVE THE CURSOR POSITION    ABL JUN85 05710000
+         LA    R15,ISP$PANC         CONTINUED PANEL            SS JUL88 05720000
+         LA    R1,ISPBLK8           NO MESSAGE                 SS JUL88 05730000
+         BAS   R2,ISPSINGI          DISPLAY PANEL              SS JUL88 05740000
+         C     R15,ISPL8            END KEY                    SS JUL88 05750000
+         BNE   ISPTBLGD                                        SS NOV85 05760000
+         MVI   SPFVZCMD,X'40'                                 ABL JUN85 05770000
+         MVC   SPFVZCMD+1(249),SPFVZCMD  RIPPLE               ABL JUN85 05780000
+         MVC   SPFVZCMD(2),ISPN   NULL COMMAND                 SS JUL88 05790000
+         BAS   R2,ISPDVGET        MAY BE A RETURN              SS JUL88 05800000
+         CLI   SPFRETRN,C'R'      IS IT                        SS JUL88 05810000
+         BNE   ISPTBLGD           NO    *                      SS JUL88 05820000
+         MVC   SPFVZCMD(2),ISPR   SET FOR RETURN               SS JUL88 05830000
+         B     ISPTBLGD           PROCESS IT                   SS JUL88 05840000
+ISPTBLND DS    0H                       *                      SS JUL88 05850000
+         CLC   SPFVZCMD(8),ISPBLK8    USER RETURN BLANKS       SS JUL88 05860000
+         BNE   ISPTBLGD               NO                       SS JUL88 05870000
+         MVC   SPFVZCMD(2),ISPN   NULL COMMAND                 SS JUL88 05880000
+ISPTBLGD DS    0H                                              SS SEP89 05890003
+ISPMMLD8 DS    0H                                              SS SEP89 05900003
+         CLC   SPFVZCMD(2),ISPN   NULL COMMAND                 SS FEB88 05910000
+         BE    ISPTBDSP           IGNORE AND START OVER        SS FEB88 05920000
+         LA    R1,PUTGETBF                                    ABL OCT84 05930000
+         ST    R1,SPFSAV1                                     ABL OCT84 05940000
+         BAS   R2,ISPQUERY                                     SS JUL84 05950000
+         MVC   PUTGETBF(4),ISPLEN     AL2(52,0)               ABL OCT84 05960000
+         MVC   SPFINPUT(48),SPFVZCMD                           SS NOV84 05970000
+         MVI   SPFINPUT+48,C' '        BLANK REST              SS AUG89 05980003
+         MVC   SPFINPUT+49(201),SPFINPUT+48                    SS AUG89 05990003
+         CLC   SPFVZCMD+48(8),ISPBLK8  ANY ADDITIONAL OPERS?  ABL JUN85 06000000
+         BE    ISPTBLG2                NO, BRANCH             ABL JUN85 06010000
+         MVC   PUTGETBF(4),ISPLEN2     AL2(254,0)             ABL JUN85 06020000
+         MVC   SPFINPUT(250),SPFVZCMD  CURRENT SUBCOMMAND     ABL JUN85 06030000
+ISPTBLG2 LA    R15,104                 PROCESS OPTION NEXT     SS NOV85 06040000
+         BR    R3                      RETURN TO ROUTER       ABL JUN85 06050000
+         SPACE 2                                              ABL JUN85 06060000
+ISPLNCMD DS    0H                                              SS SEP84 06070000
+         CLC   SPFVZCMD(8),ISPBLK8 NULL COMMAND                SS AUG89 06080003
+         BNE   ISPLNCM0             NOT NULL                   SS AUG89 06090003
+         MVC   SPFVZCMD(2),ISPN     SET TO NULL                SS AUG89 06100003
+         B     ISPLNCM2             NO, SKIP SAVE              SS AUG89 06110003
+ISPLNCM0 DS    0H                                              SS AUG89 06120003
+         LH    R15,SPFTBPZC         WHERE TO SAVE ZCMD         SS NOV85 06130000
+         LA    R15,SPWRKC(R15)      CALC ADDR                  SS NOV85 06140000
+         MVC   0(48,R15),SPFVZCMD   SAVE ZCMD                  SS NOV85 06150000
+         OI    SPFTFLG1,SPFTZSV     INDICATE HAVE ZCMD         SS SEP84 06160000
+ISPLNCM2 DS    0H                                              SS NOV85 06170000
+         SR    R15,R15              ZERO VALUE                 SS MAR85 06180000
+         ST    R15,SPFTCCRP         INIT TO ZERO               SS MAR85 06190000
+         NI    SPFTFLG1,255-SPFTLPOS RESET FLAG                SS NOV85 06200000
+*  LINE COMMAND PROCESSING REDESIGN                            SS JUL87 06210000
+*  ALL LINE COMMANDS ARE PREPROCESSED AND STORED IN TABLE      SS JUL87 06220000
+*  LEVEL 2 SUB ISPNXLN IS USED TO GET NEXT LINE COMMAND        SS JUL87 06230000
+*    TO PROCESS, BLANK LINE COMMANDS ARE STORED AS HEX 60      SS JUL87 06240000
+*  SAVE AND RESTORE ARE NOT USED        *                      SS JUL87 06250000
+*  AFTER ALL LINES COMMANDS ARE PREPROCESSED ONE MORE          SS JUL87 06260000
+*     DISPLAY WITH CNTL NONDISP IS USED TO GET SCROLL REQUESTS SS JUL87 06270000
+*  A KILL REQUEST WILL LEAVE UNPROCESSED COMMANDS IN THE       SS JUL87 06280000
+*    TABLE AND WILL BE REPROCESSED IF NOT REMOVED BY USER      SS JUL87 06290000
+*    INDIVIDUALLY OR USING NEW LINE COMMAND .. KILL ..         SS JUL87 06300000
+*                                       *                      SS JUL87 06310000
+ISPLNCM3 DS    0H                       *                      SS JUL87 06320000
+         LH    R1,SPFTBPOT          COMMAND OFFSET             SS JUL87 06330000
+         LA    R1,SPWRKC(R1)                ADDRESS            SS JUL87 06340000
+         CLC   0(4,R1),ISPBLK8      BLANK                      SS JUL87 06350000
+         BH    *+8                      *                      SS JUL87 06360000
+         MVI   0(R1),ISPBLKC        BLANK OUT LINE COMMAND     SS JUL87 06370000
+         TM    SPFTBPF2,SPFTTCT     TCT LINE                   SS NOV88 06380000
+         BZ    ISPLNCM7                 *                      SS NOV88 06390000
+         L     R1,SPFSEC4A          GET SECOND BASE            SS NOV88 06400000
+         L     R2,SPFTTSIZ          GET SIZE                   SS NOV88 06410000
+         BCTR  R2,0                 ONE LESS FOR MVC           SS NOV88 06420000
+         MVC   SPFZSEL(4),SPFTOPT   SAVE OPT                   SS NOV88 06430000
+         MVC   SPFZSEL+4(1),SPFTTYPE     AND TYPE              SS NOV88 06440000
+         MVC   SPFZSEL+5(0),SPFTCMDD-SPFSEC4K(R1)              SS NOV88 06450000
+         EX    R2,*-6               SAVE ENTERED DATA          SS NOV88 06460000
+         BAS   R2,ISPGET            GET ORIGINAL DATA          SS NOV88 06470000
+         L     R1,SPFSEC4A          GET SECOND BASE            SS NOV88 06480000
+         L     R2,SPFTTSIZ          GET SIZE                   SS NOV88 06490000
+         BCTR  R2,0                 ONE LESS FOR MVC           SS NOV88 06500000
+         MVC   SPFTOPT,SPFZSEL      RESTORE OPT                SS NOV88 06510000
+         MVC   SPFTTYPE,SPFZSEL+4     AND TYPE                 SS NOV88 06520000
+         MVC   SPFTCMDD-SPFSEC4K(0,R1),SPFZSEL+5               SS NOV88 06530000
+         EX    R2,*-6               SAVE ENTERED DATA          SS NOV88 06540000
+ISPLNCM7 DS    0H                       *                      SS NOV88 06550000
+         BAS   R2,ISPTBPUT              *                      SS JUL87 06560000
+         TM    SPFTFLG1,SPFTMUT MORE LINES TO PROCESS          SS JUL87 06570000
+         BNO   ISPLNCM4         DONE WITH PREPROCESS           SS JUL87 06580000
+         LA    R14,TBDISPL      DISPLAY TABLE                  SS JUL87 06590000
+         LA    R15,SPFTBL                                      SS JUL87 06600000
+         STM   R14,R15,PARMLIST  WITH NO                       SS JUL87 06610000
+         OI    PARMLIST+4,X'80'         TABLE NAME OR MSG      SS JUL87 06620000
+         BAS   R14,ISPSXEQ                                     SS JUL87 06630000
+         C     R15,ISPL8        FORCED END                     SS SEP84 06640000
+         BE    ISPMML8          YES                            SS SEP84 06650000
+         BH    ISPERR                                          SS SEP84 06660000
+         C     R15,ISPL4           STILL MORE LINES AFTER THIS SS SEP84 06670000
+         BE    ISPLNCM3            CONTINUE                    SS SEP84 06680000
+         NI    SPFTFLG1,255-SPFTMUT NO MORE AFTER THIS         SS NOV85 06690000
+         B     ISPLNCM3            CONTINUE                    SS SEP84 06700000
+ISPLNCM4 DS    0H                       *                      SS JUL87 06710000
+         MVC   SPFTTOP2,SPFTTOP     SAVE TOP BEFORE SCROLLING  SS JUL87 06720000
+         BAS   R2,ISPCTNDE              *                      SS JUL87 06730000
+         LA    R14,TBDISPL      DISPLAY TABLE                  SS JUL87 06740000
+         LA    R15,SPFTBL                                      SS JUL87 06750000
+         STM   R14,R15,PARMLIST  WITH NO                       SS JUL87 06760000
+         OI    PARMLIST+4,X'80'         TABLE NAME OR MSG      SS JUL87 06770000
+         BAS   R14,ISPSXEQ                                     SS JUL87 06780000
+         L     R15,SPFTDTOP             *                      SS JUL87 06790000
+         ST    R15,SPFTTOP              SAVE SCROLL POSITION   SS JUL87 06800000
+         BAS   R2,ISPTOP                *                      SS JUL87 06810000
+         BAS   R2,ISPNXLN               *                      SS JUL87 06820000
+         LTR   R15,R15                  *                      SS JUL87 06830000
+         BNZ   ISPLNCKY                 *                      SS JUL87 06840000
+ISPLNCM5 DS    0H                       *                      SS JUL87 06850000
+         OI    SPFTFLG1,SPFTLCD                                SS JUL87 06860000
+         LH    R15,SPFTBPLF         PROCESS LINE CMD           SS NOV85 06870000
+         BR    R3                                              SS NOV85 06880000
+* PROCESS RETURN FROM LINE COMMAND                             SS NOV85 06890000
+ISPMMLLR DS    0H                                              SS NOV85 06900000
+         NI    SPFTFLG1,255-SPFTLCD  RESET                     SS AUG85 06910000
+         TM    SPFTFLG2,SPFLKILL TERMINATE ANY PROCESSING      SS AUG86 06920000
+         BO    ISPLNCKY                 *                      SS AUG86 06930000
+         BAS   R2,ISPNXLN               *                      SS JUL87 06940000
+         LTR   R15,R15          FOUND NEXT LINE                SS JUL87 06950000
+         BNZ   ISPLNCKZ         NO, CHECK FOR ZCMD             SS JUL87 06960000
+         B     ISPLNCM5            PROCESS THE LAST            SS JUL87 06970000
+         SPACE 2                                                        06980000
+ISPMML8  DS    0H                                              SS NOV85 06990000
+         MVC   SPFVZCMD(2),ISP8                                SS NOV85 07000000
+         B     ISPTBLGD                                        SS NOV85 07010000
+         SPACE 2                                                        07020000
+ISPLNCKY DS    0H                                              SS AUG86 07030000
+         NI    SPFTFLG2,255-SPFLKILL    RESET FLAG             SS AUG86 07040000
+* TERMINATE LINE COMMANDS AND ZCMD IF ANY                      SS AUG86 07050000
+         NI    SPFTFLG1,255-SPFTZSV-SPFTMUT                    SS AUG86 07060000
+         L     R15,SPFTTOP2         GET NON SCROLL POSITION    SS JUL87 07070000
+         ST    R15,SPFTTOP          RESET                      SS JUL87 07080000
+         B     ISPMMLDS             DISPLAY TABLE              SS AUG86 07090000
+         SPACE 2                                               SS AUG86 07100000
+ISPLNCKZ DS    0H                                              SS JUL87 07110000
+         BAS   R2,ISPSETST          SET AND RETRIEVE STATUS    SS MAR87 07120000
+         TM    SPFTFLG1,SPFTZSV     ZCMD TO PROCESS?           SS NOV85 07130000
+         BNO   ISPMMLDS             NO, BRANCH                ABL JUN85 07140000
+         LH    R15,SPFTBPZC         WHERE IS SAVED ZCMD        SS NOV85 07150000
+         LA    R15,SPWRKC(R15)      CALC ADDR                  SS NOV85 07160000
+         MVC   SPFVZCMD(48),0(R15)  RESTORE ZCMD               SS NOV85 07170000
+         MVI   SPFVZCMD+48,C' '     BLANK REST                 SS AUG89 07180003
+         MVC   SPFVZCMD+49(201),SPFVZCMD+48                    SS AUG89 07190003
+         NI    SPFTFLG1,255-SPFTZSV RESET FLAG                 SS NOV85 07200000
+         B     ISPTBLNF             PROCESS GOOD CMD           SS AUG89 07210003
+         DROP  R4                                              SS MAR85 07220000

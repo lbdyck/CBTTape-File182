@@ -1,0 +1,189 @@
+//ASM      EXEC  PGM=ASMA90,REGION=32M,                                 00000100
+//             PARM=(NORLD,RENT,TERM,OBJ,                               00000200
+//             'XREF(SHORT),SIZE(MAX,ABOVE)')                           00000302
+//SYSLIB   DD  DSN=SYS1.MODGEN,DISP=SHARE                               00000500
+//         DD  DSN=SYS1.MACLIB,DISP=SHARE                               00000600
+//SYSUT1   DD  UNIT=VIO,SPACE=(4096,(120,120),,,ROUND),DCB=BUFNO=1      00000700
+//SYSLIN   DD  UNIT=VIO,SPACE=(TRK,(5,5)),DISP=(MOD,PASS),DSN=&&X,      00000800
+//             DCB=BLKSIZE=3120                                         00000900
+//SYSPRINT DD  SYSOUT=*                                                 00001000
+//SYSTERM  DD  SYSOUT=*                                                 00001100
+//SYSIN    DD  *                                                        00120000
+VTSOCMD  TITLE 'PDS TSO COMMAND VERIFICATION -- SAMPLE EXIT'            00130000
+VTSOCMD  CSECT                                                          00140000
+         SAVE  (14,12),,*                                               00150000
+         LR    R6,R1                                                    00160000
+         LR    R12,R15                                                  00170000
+         USING VTSOCMD,R12                                              00180000
+         LA    R0,VTSOCMDL                  LENGTH OF SAVE AREA         00190000
+         GETMAIN RU,LV=(0),SP=0                                         00200000
+         ST    R1,8(,R13)                                               00210000
+         ST    R13,4(,R1)                                               00220000
+         LR    R13,R1                                                   00230000
+         USING VTSOCMDD,R13                                             00240000
+         SPACE 1                                                        00250000
+         LA    R14,REGEND                     START OF AREA TO CLEAR    00260000
+         LA    R15,VTSOCMDL-(REGEND-VTSOCMDD) LENGTH OF AREA TO CLEAR   00270000
+         SR    R4,R4                          SOURCE ADDRESS            00280000
+         SR    R5,R5                          PAD, LENGTH OF SOURCE     00290000
+         MVCL  R14,R4                         CLEAR THE DYNAMIC AREA    00300000
+         SPACE 3                                                        00310000
+***                                                                     00320000
+***  THE ARGUMENT LIST FOR VTSOCMD HAS THE FOLLOWING ENTRIES:           00330000
+***                                                                     00340000
+***                                                                     00350000
+***  DISPLACEMENT    NAME         DESCRIPTION                           00360000
+***  ------------    ----         -----------                           00370000
+***             0    FULLTEXT     POINTS TO AL2(LENGTH),AL2(OFFSET),    00380000
+***                                         C'ORIGINAL SUBCOMMAND'      00390000
+***             4    UPT          UPT DSECT                             00400000
+***             8    PSCB         PSCB DSECT                            00410000
+***            12    ECT          ECT DSECT                             00420000
+***            16    COMMAND      THE 8 CHARACTER COMMAND NAME          00430000
+***                                                                     00440000
+***                                                                     00450000
+***                                                                     00460000
+***   NOTE: CONTROL WILL BE RECEIVED IN THIS EXIT BEFORE EACH TSO       00470000
+***         COMMAND IS ATTACHED BY THE TSO SUBCOMMAND.                  00480000
+***                                                                     00490000
+         EJECT                                                          00500000
+***                                                                     00510000
+***  ANY USER WITH ACCOUNT AUTHORITY IS AUTHORIZED.                     00520000
+***                                                                     00530000
+         SR    R15,R15                     ASSUME USER IS AUTHORIZED    00540000
+         L     R1,8(,R6)                   ADDRESS OF THE PSCB          00550000
+         TM    PSCBATR1-PSCB(R1),PSCBACCT  ACCOUNT AUTHORITY?           00560000
+         BO    DONE                        YES, AUTHORIZED              00570000
+         SPACE 3                                                        00580000
+***                                                                     00590000
+***  A USER WHOSE JOBNAME OR USERID MATCHES ANY NAME IN THE AUTHUSR     00600000
+***  TABLE FOR THE NUMBER OF CHARACTERS IN THE TABLE IS AUTHORIZED.     00610000
+***                                                                     00620000
+         SR    R15,R15               ASSUME USER IS AUTHORIZED          00630000
+         L     R1,X'21C'             CURRENT TCB                        00640000
+         L     R1,X'00C'(,R1)        USERID OR JOBNAME                  00650000
+         LA    R2,AUTHUSR-AUTHUSRL   INITIALIZE FOR USER SEARCH         00660000
+         SR    R14,R14                                                  00670000
+         SPACE 1                                                        00680000
+CHKUSER  LA    R2,AUTHUSRL(,R2)      NEXT USER IN TABLE                 00690000
+         IC    R14,0(,R2)            LENGTH TO COMPARE                  00700000
+         BCTR  R14,0                 MACHINE LENGTH TO COMPARE          00710000
+         CLI   0(R2),0               END OF AUTHORIZED USERS?           00720000
+         BE    CONTCHK               YES, BRANCH                        00730000
+         CLC   1(*-*,R2),0(R1)       <<EXECUTED>>                       00740000
+         EX    R14,*-6               SPECIAL USER?                      00750000
+         BNE   CHKUSER               NO, CONTINUE CHECKING              00760000
+         B     DONE                  YES, BRANCH                        00770000
+         SPACE 3                                                        00780000
+***                                                                     00790000
+***  A USER IS NOT AUTHORIZED IF THE TSO COMMAND NAME MATCHES THE       00800000
+***  NAME OF A TSO COMMAND IN THE AUTHTSO TABLE                         00810000
+***                                                                     00820000
+CONTCHK  SR    R15,R15               ASSUME USER IS AUTHORIZED          00830000
+         L     R1,16(,R6)            TSO COMMAND PARAMETER              00840000
+         LA    R2,AUTHTSO-AUTHTSOL   INITIALIZE FOR TSO COMMAND SEARCH  00850000
+         SR    R14,R14                                                  00860000
+         SPACE 1                                                        00870000
+CHKTSO   LA    R2,AUTHTSOL(,R2)      NEXT TSO COMMAND IN THE TABLE      00880000
+         CLI   0(R2),X'40'           END OF TSO COMMANDS?               00890000
+         BE    DONE                  YES, BRANCH                        00900000
+         CLC   0(8,R2),0(R1)         SPECIAL TSO COMMAND?               00910000
+         BNE   CHKTSO                NO, CONTINUE CHECKING              00920000
+         SPACE 3                                                        00930000
+NOTAUTH  LA    R15,4                 USER IS NOT AUTHORIZED             00940000
+         SPACE 1                                                        00950000
+DONE     LR    R2,R13                SAVE AREA                          00960000
+         L     R13,4(R13)            PREVIOUS SAVE AREA                 00970000
+         STM   R15,R1,16(R13)        RESET REGISTERS R15, R0, R1        00980000
+         LA    R0,VTSOCMDL           LENGTH OF AREA                     00990000
+         FREEMAIN R,LV=(0),A=(2)     FREE THIS AREA                     01000000
+         LM    R14,R12,12(R13)                                          01010000
+         BR    R14                                                      01020000
+         EJECT                                                          01030000
+*********************************************************************** 01040000
+*                                                                     * 01050000
+*   TABLE OF SPECIAL USERS  (ONE BYTE COMPARE LENGTH, USERID)         * 01060000
+*                                                                     * 01070000
+*********************************************************************** 01080000
+AUTHUSR  DC    AL1(4),CL8'HABL    '                                     01090000
+AUTHUSRL EQU   *-AUTHUSR                                                01100000
+         DC    AL1(4),CL8'HRJM    '                                     01110000
+         DC    AL1(4),CL8'HRIS    '                                     01120000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01130000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01140000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01150000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01160000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01170000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01180000
+         DC    AL1(0),CL8'        '   ZAP ENTRY                         01190000
+         DC    AL1(0)                 TABLE TERMINATOR                  01200000
+         SPACE 2                                                        01210000
+*********************************************************************** 01220000
+*                                                                     * 01230000
+*   TABLE OF TSO COMMANDS WHICH REQUIRE AUTHORIZATION TO USE          * 01240000
+*                                                                     * 01250000
+*********************************************************************** 01260000
+AUTHTSO  DC    CL8'CDSCB   '                                            01270000
+AUTHTSOL EQU   *-AUTHTSO                                                01280000
+         DC    CL8'ZAP     '                                            01290000
+         DC    CL8'        '          ZAP ENTRY                         01300000
+         DC    CL8'        '          ZAP ENTRY                         01310000
+         DC    CL8'        '          ZAP ENTRY                         01320000
+         DC    CL8'        '          ZAP ENTRY                         01330000
+         DC    CL8'        '          ZAP ENTRY                         01340000
+         DC    CL8'        '          ZAP ENTRY                         01350000
+         DC    CL8'        '          ZAP ENTRY                         01360000
+         DC    CL8'        '          ZAP ENTRY                         01370000
+         DC    CL8'        '          ZAP ENTRY                         01380000
+         DC    CL8'        '          ZAP ENTRY                         01390000
+         DC    CL8'        '          ZAP ENTRY                         01400000
+         DC    CL8'        '          ZAP ENTRY                         01410000
+         DC    X'40'                  TERMINATOR                        01420000
+         EJECT                                                          01430000
+*********************************************************************** 01440000
+*                                                                     * 01450000
+*   DSECTS AND EQUATES                                                * 01460000
+*                                                                     * 01470000
+*********************************************************************** 01480000
+VTSOCMDD DSECT                                                          01490000
+         DS    18F       SAVE OF SAVE AREA                              01500000
+         SPACE 1                                                        01510000
+REGEND   DS    0F        END OF REGISTER SAVE AREA -- DO NOT MOVE       01520000
+         SPACE 3                                                        01530000
+PGMSTOR  DS    F                                                        01540000
+* ADD ANY STORAGE DEFINITIONS HERE -- KEEP THIS EXIT REENTRANT          01550000
+VTSOCMDL EQU   *-VTSOCMDD                                               01560000
+         EJECT                                                          01570000
+R0       EQU   0                                                        01580000
+R1       EQU   1                                                        01590000
+R2       EQU   2                                                        01600000
+R3       EQU   3                                                        01610000
+R4       EQU   4                                                        01620000
+R5       EQU   5                                                        01630000
+R6       EQU   6                                                        01640000
+R7       EQU   7                                                        01650000
+R8       EQU   8                                                        01660000
+R9       EQU   9                                                        01670000
+R10      EQU   10                                                       01680000
+R11      EQU   11                                                       01690000
+R12      EQU   12                                                       01700000
+R13      EQU   13                                                       01710000
+R14      EQU   14                                                       01720000
+R15      EQU   15                                                       01730000
+         EJECT                                                          01740000
+         IKJUPT                                                         01750000
+         EJECT                                                          01760000
+         IKJPSCB                                                        01770000
+         EJECT                                                          01780000
+         IKJECT                                                         01790000
+         END   VTSOCMD                                                  01800000
+//LK1    EXEC  PGM=IEWL,PARM='MAP,RENT,REUS,REFR,LET,NCAL',COND=(5,LT)  01810000
+//SYSPRINT DD  SYSOUT=*                                                 01820000
+//SYSLMOD  DD  DISP=SHR,DSN=LINK.LIBRARY    <=== MODIFY                 01830000
+//IN       DD  DSN=&&X,DISP=(OLD,DELETE)                                01840000
+//SYSUT1   DD  UNIT=SYSDA,SPACE=(TRK,(5,5))                             01850000
+//SYSLIN   DD  *                                                        01860000
+  INCLUDE  IN                                                           01870000
+  ENTRY    PDSMAIN                                                      01880001
+  INCLUDE  SYSLMOD(PDS45678)                <=== MODIFY                 01890000
+  NAME     PDS45678(R)                      <=== MODIFY                 01900000

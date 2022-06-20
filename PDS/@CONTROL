@@ -1,0 +1,1335 @@
+         TITLE 'P D S  --  PDS CONTROL                       09/28/88'  00010000
+*********************************************************************** 00020000
+***      CONTROL SUBCOMMAND    ADDED BY BRUCE LELAND -- OCT., 1983  *** 00030000
+*********************************************************************** 00040000
+*                                                                       00050099
+         SPACE 1                                                        00060000
+CONTROL  CSECT                                                          00070096
+         USING *,R8                                                     00080000
+         AIF ('&CISP' EQ 'NO SPF').NSPF200                              00090000
+         TM    FLAGSEE,FBKGRND               BACKGROUND MODE?           00100000
+         BO    CONT004                       YES, BRANCH                00110000
+         TM    FLAGSFF,FSPFOPT6+FSPFERR+FSPFCALL+FSPFDIAL  CHANGE SPF?  00120000
+         BNZ   CONT004                                     NO, BRANCH   00130000
+         TM    #OUT+10,X'01'                 SYSOUT/DSNAME?             00140000
+         BNO   CONT004                       NO, BRANCH                 00150000
+         TM    FLAGSEE,FNOTTERM              FROM A CLIST SOURCE?       00160000
+         BO    CONT004                       YES, BRANCH                00170000
+         TM    FLAGSBB,FONESHOT              ON INITIAL LINE?           00180000
+         BO    CONT004                       YES, BRANCH                00190000
+         BAS   R2,SPFRECUR                   INVOKE PDS AS A DIALOG     00200000
+         SPACE 1                                                        00210000
+.NSPF200 ANOP                                                           00220000
+         SPACE 2                                                        00230000
+CONT004  DS    0H                                                       00240000
+         AIF   ('&MVSLEV' LT 'MVS6XX').MVSOLD1                DRK MAR05 00250000
+         CLC   ##SUBCOM(8),=CL8'CPU'      CPU SUBCOMMAND?     DRK JUN06 00260000
+         BE    CONTCPU                    YES, ALLOW IT       DRK JUN06 00270000
+.MVSOLD1 ANOP                                                 DRK MAR05 00280000
+         CLC   ##SUBCOM(8),=CL8'MODS'     MODS SUBCOMMAND?    DRK JUN06 00290000
+         BE    CONT831                    YES, ALLOW IT       DRK JUN06 00300000
+         CLI   #OUT+10,0                     SYSOUT/NOSYSOUT/DSN/NODSN? 00310000
+         BE    CONT010                       NO, BRANCH                 00320000
+         TM    DCBOFLGS-IHADCB+LOGDCB,X'10'  OPEN?                      00330000
+         BZ    CONT010                       NO, BRANCH                 00340000
+*** CLOSE THE SYSOUT/DSNAME DATA SET                                    00350000
+         NI    FLAGSFF,FF-FLOGWRT         TURN OFF RECORD FLAG          00360000
+         MVI   OPENLIST,X'80'                                           00370000
+         CLOSE (LOGDCB),MF=(E,OPENLIST)                                 00380000
+         OI    CONTOPTN,X'80'             RESET OPEN DSNAME FLAG        00390000
+         M$MSG L081                                                     00400000
+         SPACE 2                                                        00410000
+         CLI   CONTOPTN,X'83'             DISK LOG OPEN?                00420000
+         BNE   CONT010                    NO, BRANCH                    00430000
+         LH    R1,DSNLEN                  DSNAME LENGTH                 00440000
+         BCTR  R1,0                       MACHINE LENGTH                00450000
+         LA    R15,FIRST4K                                              00460000
+         CLC   DSNAME(*-*),CONTDSN-FIRST4K(R15)                         00470000
+         EX    R1,*-6                     THIS DATA SET?                00480000
+         BNE   CONT010                    NO, BRANCH                    00490000
+         SPACE 1                                                        00500000
+         MVI   ##ADRCM#,CONTINUE          FLAG TO CONTINUE              00510000
+         MVI   VOLALLOC,X'40'             READ THE DSCB AGAIN           00520000
+         BAS   R2,CLOSEIT                 CLOSE THE DCB                 00530000
+         B     RESTART2                   OPEN THE DATA SET AGAIN       00540000
+         SPACE 2                                                        00550000
+CONT010  CLI   #OUT+10,03          ANY DSNAME RECORDING?                00560000
+         BNE   CONT011             NO, BRANCH                           00570000
+         TM    FLAGSBB,FONESHOT    SUBCOMMAND ON INITIAL LINE?          00580000
+         BNO   CONT011             NO, BRANCH                           00590000
+         MVI   CONTOPTN,03         YES, SET INITIAL OPTION              00600000
+         B     CONT116                                                  00610000
+**                                                                      00620000
+CONT011  M$ERRST MSGBLANK          ONE BLANK LINE                       00630000
+         MVC   INSERT#1(8),PDSNAME                                      00640000
+         M$MSG L100$1              YYYY/MM/DD ADDED HERE      DRK SEP05 00650000
+*        M$MSG L105                LAST UPDATED: YYYY/MM/DD   DRK SEP05 00660000
+         M$MSG L106                DATE FORMAT: USA OR ISO    DRK NOV01 00670000
+         L     R2,=V(PDSMAIN)      DATE/TIME STAMP            DRK AUG17 00680099
+         MVI   MTLEN,64            LENGTH OF INSERT           DRK AUG17 00690099
+         MVC   INSERT#1(64),5(R2)  NAME/VERS/DATE/TIME        DRK AUG17 00700099
+         M$MSG L107$1                                         DRK AUG17 00710099
+         M$ERRST MSGBLANK          ONE BLANK LINE                       00720099
+         SPACE 1                                                        00730099
+         CLI   #OUT+0,1            ANY CONTROL OPERAND?                 00740099
+         BL    CONT020             NO, BRANCH                           00750000
+         BH    CONT012             YES, THE NO FORM                     00760000
+         NI    FLAGSGG,FF-FALINCON YES FORM                             00770000
+         B     CONT020                                                  00780000
+CONT012  OI    FLAGSGG,FALINCON    NO FORM                              00790000
+         SPACE 1                                                        00800000
+CONT020  CLI   #OUT+1,1            ANY CONTROL OPERAND?                 00810000
+         BL    CONT030             NO, BRANCH                           00820000
+         BH    CONT022             YES, THE NO FORM                     00830000
+         NI    FLAGSGG,FF-FTRANCON YES FORM                             00840000
+         B     CONT030                                                  00850000
+CONT022  OI    FLAGSGG,FTRANCON    NO FORM                              00860000
+         SPACE 1                                                        00870000
+CONT030  CLI   #OUT+2,1            ANY CONTROL OPERAND?                 00880000
+         BL    CONT040             NO, BRANCH                           00890000
+         BH    CONT032             YES, THE NO FORM                     00900000
+         NI    FLAGSGG,FF-FLKEDCON YES FORM                             00910000
+         B     CONT040                                                  00920000
+CONT032  OI    FLAGSGG,FLKEDCON    NO FORM                              00930000
+         SPACE 1                                                        00940000
+CONT040  CLI   #OUT+3,1            ANY CONTROL OPERAND?                 00950000
+         BL    CONT050             NO, BRANCH                           00960000
+         BH    CONT042             YES, THE NO FORM                     00970000
+         NI    FLAGSGG,FF-FPROMCON YES FORM                             00980000
+         B     CONT050                                                  00990000
+CONT042  OI    FLAGSGG,FPROMCON    NO FORM                              01000000
+         SPACE 1                                                        01010000
+CONT050  CLI   #OUT+4,1            ANY CONTROL OPERAND?                 01020000
+         BL    CONT060             NO, BRANCH                           01030000
+         BH    CONT052             YES, THE NO FORM                     01040000
+         NI    FLAGSGG,FF-FRECVCON YES FORM                             01050000
+         B     CONT060                                                  01060000
+CONT052  OI    FLAGSGG,FRECVCON    NO FORM                              01070000
+         SPACE 1                                                        01080000
+CONT060  CLI   #OUT+5,1            ANY CONTROL OPERAND?                 01090000
+         BL    CONT100             NO, BRANCH                           01100000
+         MVI   DEVRPS,X'04'        ASSUME NO RETAIN EXCP                01110000
+         CLI   #OUT+5,2            CONTROL SINGLE?                      01120000
+         BE    CONT062             YES, BRANCH                          01130000
+         NI    FLAGSEE,FF-FDOUBCON-FFULLTRK  CONTROL DOUBLE             01140000
+         XI    FLAGSEE,FDOUBCON    DOUBLE BUFFER FORM                   01150000
+         CLI   #OUT+5,1            CONTROL DOUBLE?                      01160000
+         BE    CONT100             YES, BRANCH                          01170000
+         XI    FLAGSEE,FDOUBCON    NO, FULLTRACK REQUEST                01180000
+         CLI   #OUT+5,3            READ MULTIPLE?                       01190000
+         BE    CONT100             YES, BRANCH                          01200000
+         MVI   DEVRPS,X'05'        USE RETAIN EXCP METHOD               01210000
+         B     CONT100                                                  01220000
+CONT062  OI    FLAGSEE,FDOUBCON+FFULLTRK     CONTROL "SINGLE":          01230000
+         SPACE 2                                                        01240000
+CONT100  MVI   MTLEN,100                                                01250000
+         MVC   INSERT#1(128),BLANK128                                   01260000
+         LA    R1,INSERT#1-2       START OF GLOBAL TEXT                 01270000
+         SPACE 1                                                        01280000
+         TM    FLAGSGG,FALINCON    CONTROL NO FORM?                     01290000
+         BNO   *+14                NO, BRANCH                           01300000
+         MVC   2(L'CALINCON,R1),CALINCON                                01310000
+         LA    R1,L'CALINCON(R1)                                        01320000
+         SPACE 1                                                        01330000
+         TM    FLAGSGG,FLKEDCON    CONTROL NO FORM?                     01340000
+         BNO   *+14                NO, BRANCH                           01350000
+         MVC   2(L'CLKEDCON,R1),CLKEDCON                                01360000
+         LA    R1,L'CLKEDCON(R1)                                        01370000
+         SPACE 1                                                        01380000
+         TM    FLAGSGG,FPROMCON    CONTROL NO FORM?                     01390000
+         BNO   *+14                NO, BRANCH                           01400000
+         MVC   2(L'CPROMCON,R1),CPROMCON                                01410000
+         LA    R1,L'CPROMCON(R1)                                        01420000
+         SPACE 1                                                        01430000
+         TM    FLAGSGG,FRECVCON    CONTROL NO FORM?                     01440000
+         BNO   *+14                NO, BRANCH                           01450000
+         MVC   2(L'CRECVCON,R1),CRECVCON                                01460000
+         LA    R1,L'CRECVCON(R1)                                        01470000
+         SPACE 1                                                        01480000
+         TM    FLAGSGG,FTRANCON    CONTROL NO FORM?                     01490000
+         BNO   *+14                NO, BRANCH                           01500000
+         MVC   2(L'CTRANCON,R1),CTRANCON                                01510000
+         LA    R1,L'CTRANCON(R1)                                        01520000
+         SPACE 2                                                        01530000
+         TM    FLAGSGG,FALINCON    CONTROL YES FORM?                    01540000
+         BNZ   *+14                NO, BRANCH                           01550000
+         MVC   2(L'CALINCON-2,R1),CALINCON+2                            01560000
+         LA    R1,L'CALINCON-2(R1)                                      01570000
+         SPACE 1                                                        01580000
+         TM    FLAGSGG,FLKEDCON    CONTROL YES FORM?                    01590000
+         BNZ   *+14                NO, BRANCH                           01600000
+         MVC   2(L'CLKEDCON-2,R1),CLKEDCON+2                            01610000
+         LA    R1,L'CLKEDCON-2(R1)                                      01620000
+         SPACE 1                                                        01630000
+         TM    FLAGSGG,FPROMCON    CONTROL YES FORM?                    01640000
+         BNZ   *+14                NO, BRANCH                           01650000
+         MVC   2(L'CPROMCON-2,R1),CPROMCON+2                            01660000
+         LA    R1,L'CPROMCON-2(R1)                                      01670000
+         SPACE 1                                                        01680000
+         TM    FLAGSGG,FRECVCON    CONTROL YES FORM?                    01690000
+         BNZ   *+14                NO, BRANCH                           01700000
+         MVC   2(L'CRECVCON-2,R1),CRECVCON+2                            01710000
+         LA    R1,L'CRECVCON-2(R1)                                      01720000
+         SPACE 1                                                        01730000
+         TM    FLAGSGG,FTRANCON    CONTROL YES FORM?                    01740000
+         BNZ   *+14                NO, BRANCH                           01750000
+         MVC   2(L'CTRANCON-2,R1),CTRANCON+2                            01760000
+         LA    R1,L'CTRANCON-2(R1)                                      01770000
+         SPACE 1                                                        01780000
+         MVC   0(8,R1),BLANKS      DELETE THE LAST COMMA                01790000
+         M$MSG L030$1                                                   01800000
+         SPACE 2                                                        01810000
+         MVC   INSERT#1(120),BLANK128                                   01820000
+         CLI   #OUT+13,X'02'              NODEST?                       01830000
+         BE    *+12                       YES, BRANCH                   01840000
+         CLI   #OUT+15,0                  ANY DEST?                     01850000
+         BE    CONT112                    NO, BRANCH                    01860000
+         MVC   CONTDEST(2),#OUT+14        DEST LENGTH                   01870000
+         MVC   CONTDEST+2(8),#OUT+30      DEST                          01880000
+         SPACE 1                                                        01890000
+CONT112  CLI   #OUT+12,X'02'              NOFORM?                       01900000
+         BE    *+12                       YES, BRANCH                   01910000
+         CLI   #OUT+17,0                  ANY FORM?                     01920000
+         BE    CONT114                    NO, BRANCH                    01930000
+         MVC   CONTFORM(2),#OUT+16        DEST LENGTH                   01940000
+         MVC   CONTFORM+2(4),#OUT+38      DEST                          01950000
+         SPACE 1                                                        01960000
+CONT114  CLI   #OUT+10,0                  ANY SWITCHED LOG?             01970000
+         BE    CONT116                    NO, BRANCH                    01980000
+         MVC   CONTOPTN(1),#OUT+10        CURRENT OPTION                01990000
+         CLI   CONTOPTN,X'02'             NOSYSOUT?                     02000000
+         BNE   *+8                        NO, BRANCH                    02010000
+         MVI   CONTOPTN,0                 YES, CONVERT TO NULL          02020000
+         CLI   CONTOPTN,X'04'             NODSNAME?                     02030000
+         BNE   *+8                        NO, BRANCH                    02040000
+         MVI   CONTOPTN,0                 YES, CONVERT TO NULL          02050000
+         SPACE 2                                                        02060000
+CONT116  CLI   CONTOPTN,X'03'             DSNAME?                       02070000
+         BNE   CONT124                    NO, BRANCH                    02080000
+         LA    R14,FIRST4K                BASE REGISTER                 02090000
+         LA    R14,CONTDSN-FIRST4K(,R14)  POINT TO THE CONTDSN          02100000
+         CLI   #OUT+19,0                  ANY DSNAME?                   02110000
+         BE    CONT120                    NO, USE PREVIOUS              02120000
+         MVC   0(60,R14),BLANK128         BLANK CONTDSN                 02130000
+         MVC   0(44,R14),#OUT+44          DSNAME                        02140000
+         LH    R1,#OUT+18                 DSNAME LENGTH                 02150000
+         LA    R15,0(R1,R14)              POINT TO START OF MEMBER      02160000
+         CLI   #OUT+21,0                  ANY MEMBER?                   02170000
+         BE    CONT118                    NO, BRANCH                    02180000
+         MVI   0(R15),C'('                BEGINNING (                   02190000
+         MVC   1(8,R15),#OUT+88           MEMBER NAME                   02200000
+         AH    R15,#OUT+20                MEMBER LENGTH                 02210000
+         MVI   1(R15),C')'                ENDING )                      02220000
+         LA    R15,2(,R15)                CURRENT LENGTH OF NAME        02230000
+         SPACE 1                                                        02240000
+CONT118  MVI   0(R15),C')'                TO MATCH DSN( ...             02250000
+         MVC   2(3,R15),CLOGSHR           SHR                           02260000
+         CLI   #OUT+11,X'02'              CORRECT?                      02270000
+         BE    CONT120                    YES, BRANCH                   02280000
+         MVC   2(3,R15),CLOGMOD           MOD                           02290000
+         CLI   #OUT+11,X'03'              CORRECT?                      02300000
+         BE    CONT120                    YES, BRANCH                   02310000
+         MVC   2(3,R15),CLOGNEW           NEW                           02320000
+         CLI   #OUT+11,X'04'              CORRECT?                      02330000
+         BE    CONT120                    YES, BRANCH                   02340000
+         MVC   2(3,R15),CLOGOLD           OLD                           02350000
+         SPACE 1                                                        02360000
+CONT120  MVC   INSERT#1(7),CLOGDSN        DSNAME KEYWORD                02370000
+         MVC   INSERT#1+7(60),0(R14)                                    02380000
+         TM    FLAGSBB,FONESHOT           SUBCOMMAND ON INITIAL LINE?   02390000
+         BO    CONT134                    YES, BRANCH                   02400000
+         B     CONT129                                                  02410000
+         SPACE 2                                                        02420000
+CONT124  LA    R15,INSERT#1                                             02430000
+         CLI   CONTOPTN,0                 ANY CURRENT OPTIONS?          02440000
+         BH    CONT126                    YES, BRANCH                   02450000
+         MVC   0(9,R15),CLOGNDSN          ADD NODSNAME,                 02460000
+         LA    R15,10(,R15)                                             02470000
+         MVC   0(9,R15),CLOGNSYS          ADD NOSYSOUT,                 02480000
+         LA    R15,10(,R15)                                             02490000
+         B     CONT127                                                  02500000
+         SPACE 1                                                        02510000
+CONT126  MVC   0(7,R15),CLOGSYS           ADD SYSOUT(                   02520000
+         MVC   7(1,R15),CONTSYS           ADD SYSOUT CLASS              02530000
+         MVC   8(2,R15),CLOGCOMM          ADD ),                        02540000
+         LA    R15,11(,R15)                                             02550000
+         SPACE 1                                                        02560000
+CONT127  MVC   0(7,R15),CLOGNFOR          ADD NOFORM,                   02570000
+         CLI   CONTFORM+1,0               ANY FORM?                     02580000
+         BNE   *+12                       YES, BRANCH                   02590000
+         LA    R15,8(,R15)                                              02600000
+         B     CONT128                                                  02610000
+         MVC   0(5,R15),CLOGFOR           ADD FORM(                     02620000
+         MVC   5(4,R15),CONTFORM+2        ADD FORM NAME                 02630000
+         LH    R1,CONTFORM                LENGTH                        02640000
+         LA    R15,5(R1,R15)                                            02650000
+         MVC   0(2,R15),CLOGCOMM          ADD ),                        02660000
+         LA    R15,3(R15)                                               02670000
+         SPACE 1                                                        02680000
+CONT128  MVC   0(6,R15),CLOGNDES          ADD NODEST,                   02690000
+         CLI   CONTDEST+1,0               ANY DEST?                     02700000
+         BE    CONT129                    NO, BRANCH                    02710000
+         MVC   0(5,R15),CLOGDES           ADD DEST(                     02720000
+         MVC   5(8,R15),CONTDEST+2        ADD DEST NAME                 02730000
+         LH    R1,CONTDEST                LENGTH                        02740000
+         LA    R15,5(R1,R15)                                            02750000
+         MVI   0(R15),C')'                ADD )                         02760000
+         SPACE 2                                                        02770000
+CONT129  DS    0H                                                       02780000
+         M$MSG L030$1                                                   02790000
+         MVC   INSERT#1(120),BLANK128                                   02800000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK AUG05 02810000
+         BNO   CONT129C                 NO, CONTINUE          DRK AUG05 02820000
+         MVC   INSERT#1(8),CBPAMCON     YES, MARK AS BPAM     DRK AUG05 02830000
+         B     CONT130                                        DRK AUG05 02840000
+CONT129C DS    0H                                             DRK AUG05 02850000
+         MVC   INSERT#1(8),CSINGCON       ASSUME SINGLE BUFFERING       02860000
+         TM    FLAGSEE,FDOUBCON+FFULLTRK  CONTROL SINGLE?               02870000
+         BO    CONT130                    YES, BRANCH                   02880000
+         MVC   INSERT#1(8),CDOUBCON       ASSUME DOUBLE BUFFERING       02890000
+         TM    FLAGSEE,FDOUBCON+FFULLTRK  CONTROL DOUBLE?               02900000
+         BM    CONT130                    YES, BRANCH                   02910000
+         MVC   INSERT#1(8),CMULTCON       READ MULTIPLE                 02920000
+         CLI   DEVRPS,X'05'               SAVE EXCPS?                   02930000
+         BNE   CONT130                    NO, BRANCH                    02940000
+         MVC   INSERT#1(8),CMULTSAV       RETAIN EXCP DATA              02950000
+         CLI   INUMSAV+1,2                ONE BUFFER?                   02960000
+         BL    CONT130                    YES, BRANCH                   02970000
+         LH    R15,INUMSAV                NUMBER OF BUFFERS             02980000
+         CVD   R15,DOUBLE                 CONVERT TO DECIMAL            02990000
+         MVC   INSERT#1+4(8),BLANKS                                     03000000
+         MVC   INSERT#2(6),=X'402021205D40'                             03010000
+         ED    INSERT#2(4),DOUBLE+6                                     03020000
+         LA    R1,INSERT#2+2              FIRST DIGIT OF TWO            03030000
+         CLI   0(R1),C' '                 BLANK?                        03040000
+         BNE   *+8                        NO, BRANCH                    03050000
+         LA    R1,INSERT#2+3              YES, SECOND DIGIT OF TWO      03060000
+         MVI   INSERT#1+3,C'('                                          03070000
+         MVC   INSERT#1+4(3),0(R1)                                      03080000
+         SPACE 2                                                        03090000
+CONT130  MVI   MTLEN,8                                                  03100000
+         M$MSG L031$1                                                   03110000
+         SPACE 1                                                        03120000
+         XC    DOUBLE,DOUBLE              ZERO  MINIMUM                 03130000
+         MVC   DOUBLE+4(4),=X'00FFFFFF'   STORE MAXIMUM                 03140000
+         LA    R2,DOUBLE                  REQUESTED LENGTHS             03150000
+         LA    R3,PARMLIST+16             ACTUAL ADDRESS & LENGTH       03160000
+         MVC   PARMLIST(GETLISTL),GETLIST                               03170000
+         GETMAIN VU,LA=(R2),A=(R3),MF=(E,PARMLIST)                      03180000
+         SPACE 1                                                        03190000
+         MVC   PARMLIST(FRELISTL),FRELIST                               03200000
+         FREEMAIN VU,A=(R3),MF=(E,PARMLIST)                             03210000
+         SPACE 1                                                        03220000
+         L     R15,PARMLIST+16+4          LOAD LENGTH                   03230000
+         SRL   R15,10                     DIVIDE BY 1024                03240000
+         CVD   R15,DOUBLE                 CONVERT TO DECIMAL            03250000
+         MVC   INSERT#2+8(8),BLANKS                                     03260000
+         MVC   INSERT#2(8),=X'4020202020202120'                         03270000
+         ED    INSERT#2(8),DOUBLE+4                                     03280000
+         LA    R1,INSERT#2                                              03290000
+         LA    R1,1(,R1)                  FIND                          03300000
+         CLI   0(R1),X'40'                    FIRST                     03310000
+         BE    *-8                                 NON-BLANK            03320000
+         MVC   INSERT#1(8),0(R1)                                        03330000
+         M$MSG L036$1                                                   03340000
+         SPACE 1                                              DRK NOV06 03350099
+         AIF   ('&MVSLEV' LT 'MVS220').MVS22K                 DRK NOV06 03360099
+         GETMAIN VRU,LV=(X'7FFFFFFF',0),LOC=31                DRK NOV06 03370099
+         SPACE 1                                              DRK NOV06 03380099
+         LR    R2,R0                      LENGTH              DRK NOV06 03390099
+         LR    R3,R1                      ADDRESS             DRK NOV06 03400099
+         FREEMAIN RU,LV=(R2),A=(R3)                           DRK NOV06 03410099
+         SPACE 1                                              DRK NOV06 03420099
+         LR    R15,R2                     LENGTH              DRK NOV06 03430099
+         SRL   R15,20                     DIVIDE BY 1024*1024 DRK NOV06 03440099
+         CVD   R15,DOUBLE                 CONVERT TO DECIMAL  DRK NOV06 03450099
+         MVC   INSERT#2+8(8),BLANKS                           DRK NOV06 03460099
+         MVC   INSERT#2(8),=X'4020202020202120'               DRK NOV06 03470099
+         ED    INSERT#2(8),DOUBLE+4                           DRK NOV06 03480099
+         LA    R1,INSERT#2                                    DRK NOV06 03490099
+         LA    R1,1(,R1)                  FIND                DRK NOV06 03500099
+         CLI   0(R1),X'40'                    FIRST           DRK NOV06 03510099
+         BE    *-8                                 NON-BLANK  DRK NOV06 03520099
+         MVC   INSERT#1(8),0(R1)                              DRK NOV06 03530099
+         M$MSG L046$1                                         DRK NOV06 03540099
+.MVS22K  ANOP                                                 DRK NOV06 03550099
+         M$ERRST MSGBLANK                 ONE BLANK LINE                03560000
+         SPACE 2                                                        03570000
+CONT134  TM    CONTOPTN,1                    ANY LOG RECORDING?         03580000
+         BNO   CONT200                       NO, BRANCH                 03590000
+         TM    DCBOFLGS-IHADCB+LOGDCB,X'10'  OPEN ALREADY               03600000
+         BO    CONT200                       YES, BRANCH                03610000
+         NI    FLAGSBB,FF-FONESHOT           ALLOW OTHER SUBCOMMANDS    03620000
+*** ALLOCATE THE SYSOUT/DATA SET                                        03630000
+         NI    FLAGSFF,FF-FLOGWRT            TURN OFF RECORD FLAG       03640000
+         SPACE 1                                                        03650000
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             03660000
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              03670000
+         USING S99RBP,R1                                                03680000
+         SPACE 1                                                        03690000
+         LA    R4,M99RB                                                 03700000
+         USING S99RB,R4                                                 03710000
+         ST    R4,S99RBPTR                                              03720000
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                03730000
+         SPACE 1                                                        03740000
+         LA    R5,M99TUPL                                               03750000
+         USING S99TUPL,R5                                               03760000
+         MVI   S99RBLN,20               LENGTH 20                       03770000
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        03780000
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          03790000
+         LA    R3,WORKTBL                        START OF TEXT          03800000
+         SPACE 1                                                        03810000
+         MVC   0(L'CONDDNAM,R3),CONDDNAM         SPECIFY DDNAME TEXT    03820000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     03830000
+         LA    R3,L'CONDDNAM(,R3)                START OF NEXT TEXT     03840000
+         SPACE 1                                                        03850000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   03860000
+         MVC   0(L'CONDSORG,R3),CONDSORG         SPECIFY DSORG TEXT     03870000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     03880000
+         LA    R3,L'CONDSORG(,R3)                START OF NEXT TEXT     03890000
+         SPACE 1                                                        03900000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   03910000
+         MVC   0(L'CONFREE,R3),CONFREE           SPECIFY FREE TEXT      03920000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     03930000
+         LA    R3,L'CONFREE(,R3)                 START OF NEXT TEXT     03940000
+         SPACE 1                                                        03950000
+CONT140  CLI   CONTOPTN,X'03'                    DSNAME ALLOCATION?     03960000
+         BNE   CONT150                           NO, BRANCH             03970000
+         OI    S99FLG11,S99NOCNV                 DO NOT CONVERT ALLOC   03980000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   03990000
+         MVC   0(L'CONDSNAM,R3),CONDSNAM         SPECIFY DSNAME TEXT    04000000
+         MVC   6(44,R3),#OUT+44                  SPECIFY DSNAME         04010000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04020000
+         LA    R3,L'CONDSNAM+44(,R3)             START OF NEXT TEXT     04030000
+         SPACE 1                                                        04040000
+         CLI   #OUT+88,X'41'                     ANY MEMBER?            04050000
+         BL    CONT141                           NO, BRANCH             04060000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04070000
+         MVC   0(L'CONMEMBR,R3),CONMEMBR         SPECIFY MEMBER TEXT    04080000
+         MVC   6(8,R3),#OUT+88                   SPECIFY MEMBER         04090000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04100000
+         LA    R3,L'CONMEMBR(,R3)                START OF NEXT TEXT     04110000
+         SPACE 1                                                        04120000
+CONT141  CLI   #OUT+96,X'41'                     ANY PASSWORD?          04130000
+         BL    CONT142                           NO, BRANCH             04140000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04150000
+         MVC   0(L'CONPASSW,R3),CONPASSW         SPECIFY PASSWORD TEXT  04160000
+         MVC   6(8,R3),#OUT+96                   SPECIFY PASSWORD       04170000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04180000
+         LA    R3,L'CONPASSW(,R3)                START OF NEXT TEXT     04190000
+         SPACE 1                                                        04200000
+CONT142  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04210000
+         MVC   0(L'CONALLOC,R3),CONALLOC         SPECIFY DISP TEXT      04220000
+         CLI   #OUT+11,2                         SHR?                   04230000
+         BNE   *+8                               NO, BRANCH             04240000
+         MVI   6(R3),CONOSHR                     SPECIFY DISPOSITION    04250000
+         CLI   #OUT+11,3                         MOD?                   04260000
+         BNE   *+8                               NO, BRANCH             04270000
+         MVI   6(R3),CONOMOD                     SPECIFY DISPOSITION    04280000
+         CLI   #OUT+11,4                         NEW?                   04290000
+         BNE   *+8                               NO, BRANCH             04300000
+         MVI   6(R3),CONONEW                     SPECIFY DISPOSITION    04310000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04320000
+         LA    R3,L'CONALLOC(,R3)                START OF NEXT TEXT     04330000
+         SPACE 1                                                        04340000
+         CLI   #OUT+11,3                         MOD OR NEW?            04350000
+         BL    CONT149                           NO, BRANCH             04360000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04370000
+         MVC   0(L'CONFIRST,R3),CONFIRST         SPECIFY PRIMARY        04380000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04390000
+         LA    R3,L'CONFIRST(,R3)                START OF NEXT TEXT     04400000
+         SPACE 1                                                        04410000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04420000
+         MVC   0(L'CONSECON,R3),CONSECON         SPECIFY SECONDARY      04430000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04440000
+         LA    R3,L'CONSECON(,R3)                START OF NEXT TEXT     04450000
+         SPACE 1                                                        04460000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04470000
+         MVC   0(L'CONTRK,R3),CONTRK             SPECIFY TRACK ALLOC    04480000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04490000
+         LA    R3,L'CONTRK(,R3)                  START OF NEXT TEXT     04500000
+         SPACE 1                                                        04510000
+         CLI   #OUT+88,X'41'                     ANY MEMBER NAME?       04520000
+         BL    CONT149                           NO, BRANCH             04530000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04540000
+         MVC   0(L'CONDIR,R3),CONDIR             SPECIFY DIRECTORY BLKS 04550000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04560000
+         LA    R3,L'CONDIR(,R3)                  START OF NEXT TEXT     04570000
+         SPACE 1                                                        04580000
+CONT149  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04590000
+         MVC   0(L'CONNORM,R3),CONNORM           SPECIFY DISP=(,CATLG)  04600000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04610000
+         LA    R3,L'CONNORM(,R3)                 START OF NEXT TEXT     04620000
+         SPACE 1                                                        04630000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04640000
+         MVC   0(L'CONANORM,R3),CONANORM         SPECIFY DISP=(,,KEEP)  04650000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04660000
+         B     CONT159                                                  04670000
+         SPACE 1                                                        04680000
+CONT150  CLI   CONTFORM+1,0                      ANY FORM?              04690000
+         BZ    CONT152                           NO, BRANCH             04700000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04710000
+         MVC   0(L'CONFORMS,R3),CONFORMS         SPECIFY FORMS TEXT     04720000
+         MVC   6(4,R3),CONTFORM+2                SPECIFY FORM NAME      04730000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04740000
+         LA    R3,L'CONFORMS(,R3)                START OF NEXT TEXT     04750000
+         SPACE 1                                                        04760000
+CONT152  CLI   CONTDEST+1,0                      ANY DEST?              04770000
+         BZ    CONT154                           NO, BRANCH             04780000
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04790000
+         MVC   0(L'CONDESTS,R3),CONDESTS         SPECIFY DEST TEXT      04800000
+         MVC   6(8,R3),CONTDEST+2                SPECIFY DESTINATION    04810000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04820000
+         LA    R3,L'CONDESTS(,R3)                START OF NEXT TEXT     04830000
+         SPACE 1                                                        04840000
+CONT154  LA    R5,4(,R5)                         NEXT POINTER ELEMENT   04850000
+         MVC   0(L'CONSYSOU,R3),CONSYSOU         SPECIFY SYSOUT TEXT    04860000
+         MVC   6(1,R3),CONTSYS                   SPECIFY SYSOUT CLASS   04870000
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     04880000
+         SPACE 1                                                        04890000
+CONT159  OI    S99TUPTR,X'80'                    MARK END OF LIST       04900000
+         DYNALLOC                                                       04910000
+         SPACE 2                                                        04920000
+         DROP  R1,R4,R5                                                 04930000
+         MVC   DDNAMEH,WORKTBL+6        SAVE DDNAME                     04940000
+         LTR   R15,R15                  SUCCESSFUL?                     04950000
+         BZ    CONT164                  YES, BRANCH                     04960000
+         SPACE 2                                                        04970000
+         LA    R14,M99RB                POINTER TO SVC 99 BLOCK         04980000
+         ST    R15,DAIRRC               RETURN CODE                     04990000
+         LA    R15,DAIRRC               POINTER TO RETURN CODE          05000000
+         LA    R0,ADDRFF02              POINTER TO A(IKJEFF02)          05010000
+         LA    R1,=AL2(DFSVC99)         POINTER TO INVOCATION TYPE      05020000
+         L     R2,ADDRCPPL              POINTER TO THE CPPL             05030000
+         STM   R14,R2,DFDAPLP           INITIALIZE DFDAPLP, DFDRCP,     05040000
+*                                         DFJEFF02, DFIDP AND DFCPPLP   05050000
+         SPACE 1                                                        05060000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               05070000
+         LTR   R15,R15                  PROBLEM WITH IKJEFF18?          05080000
+         BZ    CONT162                  NO, BRANCH                      05090000
+         SPACE 2                                                        05100000
+         CVD   R15,DOUBLE                                               05110000
+         MVI   MTLEN,4                                                  05120000
+         MVC   INSERT#1(4),=X'40202120'                                 05130000
+         ED    INSERT#1(4),DOUBLE+6                                     05140000
+         MVI   INSERT#1,C'='                                            05150000
+         M$MSG L835$1                                                   05160000
+         SPACE 1                                                        05170000
+CONT162  MVI   CONTOPTN,0               TURN OFF LOGGING                05180000
+         NI    FLAGSFF,FF-FLOGWRT       TURN OFF LOGGING                05190000
+         B     CONT200                                                  05200000
+         SPACE 2                                                        05210000
+CONT164  CLI   CONTOPTN,X'03'           DSNAME ALLOCATION?              05220000
+         BNE   CONT180                  NO, BRANCH                      05230000
+         LA    R1,L781$1                ASSUME A LOGICAL ERROR          05240000
+         CLI   WORKTBL+14+6,DS1DSGPO    PARTITIONED?                    05250000
+         BNE   CONT166                  NO, BRANCH                      05260000
+         CLI   #OUT+88,X'41'            ANY MEMBER NAME?                05270000
+         BL    CONT190                  NO, ERROR                       05280000
+         B     CONT180                                                  05290000
+         SPACE 1                                                        05300000
+CONT166  CLI   WORKTBL+14+6,DS1DSGPS    SEQUENTIAL?                     05310000
+         BNE   CONT190                  NO, ERROR                       05320000
+         CLI   #OUT+88,X'40'            ANY MEMBER NAME?                05330000
+         BH    CONT190                  YES, ERROR                      05340000
+         SPACE 2                                                        05350000
+*** OPEN THE SYSOUT/DATA SET                                            05360000
+CONT180  MVC   LOGDCB(LLOGDCB),LOGSDCB       CONSTRUCT A DCB            05370000
+         MVC   DCBDDNAM-IHADCB+LOGDCB(8),DDNAMEH                        05380000
+         MVI   OPENLIST,X'80'                                           05390000
+         OPEN  (LOGDCB,(OUTPUT)),MF=(E,OPENLIST)                        05400000
+         LA    R1,L780$1                                                05410000
+         TM    DCBOFLGS-IHADCB+LOGDCB,X'10'  OPEN ALREADY               05420000
+         BNO   CONT190                       NO, ERROR                  05430000
+         TM    FLAGSFF,FLOGWRT               OPEN WITH GOOD VALUES?     05440000
+         BO    CONT200                       YES, BRANCH                05450000
+         MVI   OPENLIST,X'80'                                           05460000
+         CLOSE (LOGDCB),MF=(E,OPENLIST)                                 05470000
+         LA    R1,L781$1                     ERROR MESSAGE              05480000
+CONT190  MVI   CONTOPTN,0                    TURN OFF ANY LOGGING       05490000
+         MVC   INSERT#1(8),CTEXTLOG          LOGCOPY                    05500000
+         B     MSGNEW                                                   05510000
+         SPACE 2                                                        05520000
+CONT200  CLI   #OUT+7,1            CPULOOP?                             05530000
+         BNE   CONT300             NO, BRANCH                           05540000
+         M$MSG L032                YES, LOOP MESSAGE                    05550000
+         B     *                   LOOP                                 05560000
+         SPACE 1                                                        05570000
+CONT300  CLI   #OUT+7,2            ABEND?                               05580000
+         BNE   CONT400             NO, BRANCH                           05590000
+         SR    R1,R1                                                    05600000
+         IC    R1,TESTABEC         ABEND CODE                           05610000
+         LA    R1,1(,R1)                                                05620000
+         STC   R1,TESTABEC         ABEND CODE                           05630000
+         CLI   TESTABEC,8                                               05640000
+         BNH   *+8                                                      05650000
+         MVI   TESTABEC,1                                               05660000
+         SPACE 1                                                        05670000
+CONT310  CLI   TESTABEC,1          FIRST ABEND CONDITION?               05680000
+         BNE   CONT320             NO, BRANCH                           05690000
+         M$MSG L033                YES, ABEND MESSAGE                   05700000
+         B     ABEND0C1            ABEND 0C1 AT +4C IN PDSMAIN          05710000
+         SPACE 1                                                        05720000
+CONT320  CLI   TESTABEC,2          SECOND ABEND CONDITION?              05730000
+         BNE   CONT330             NO, BRANCH                           05740000
+         EX    R0,*                S0C3 HERE                            05750000
+         SPACE 1                                                        05760000
+CONT330  CLI   TESTABEC,3          THIRD ABEND CONDITION?               05770000
+         BNE   CONT340             NO, BRANCH                           05780000
+         L     R15,CONT$TBL        START OF $TBL                        05790000
+         BASR  R14,R15             INVALID -- IN PARSE                  05800000
+CONT$TBL DC    V($TBL)             START OF $TBL                        05810000
+         SPACE 1                                                        05820000
+CONT340  CLI   TESTABEC,4          FOURTH ABEND CONDITION?              05830000
+         BNE   CONT350             NO, BRANCH                           05840000
+         L     R15,CONTDSPY        START OF $TBL                        05850000
+         LA    R15,31(,R15)        ODD ADDRESS                          05860000
+         BASR  R14,R15             INVALID -- IN ISPDSPY                05870000
+CONTDSPY DC    V(ISPDSPY)          START OF ISPDSPY                     05880000
+         SPACE 1                                                        05890000
+CONT350  CLI   TESTABEC,5          FIFTH ABEND CONDITION?               05900000
+         BNE   CONT360             NO, BRANCH                           05910000
+         LINK  EP=IEFABEND         EXTERNAL ABEND                       05920000
+         SPACE 1                                                        05930000
+CONT360  CLI   TESTABEC,6          SIXTH ABEND CONDITION?               05940000
+         BNE   CONT370             NO, BRANCH                           05950000
+         L     R15,=XL4'FF000BAD'                                       05960000
+         BASR  R14,R15             INVALID ADDRESS                      05970000
+         SPACE 1                                                        05980000
+CONT370  CLI   TESTABEC,7          SEVENTH ABEND CONDITION?             05990000
+         BNE   CONT380             NO, BRANCH                           06000000
+         LOAD  EP=IEBGENER                                              06010000
+         LR    R13,R0              SET SAVE AREA TO ENTRY POINT         06020000
+         LINK  EP=IEBGENER         EXTERNAL ABEND                       06030000
+         SPACE 1                                                        06040000
+CONT380  CLI   TESTABEC,8          EIGHTH ABEND CONDITION?              06050000
+         BNE   CONT399             NO, BRANCH                           06060000
+         ABEND 4095                U4095 ABEND                          06070000
+         SPACE 1                                                        06080000
+CONT399  DS    0H                                                       06090000
+         SPACE 1                                                        06100000
+CONT400  CLI   #OUT+7,3            OUTLOOP?                             06110000
+         BNE   CONT500             NO, BRANCH                           06120000
+         M$MSG L034                YES, LOOP MESSAGE                    06130000
+         B     CONT400             LOOP                                 06140000
+         SPACE 1                                                        06150000
+CONT500  CLI   #OUT+7,4            MESSAGES?                            06160000
+         BNE   CONT600             NO, BRANCH                           06170000
+         SPACE 1                                                        06180099
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK APR08 06190099
+         MVI   MTLEN+4,8           LENGTH OF INSERT           DRK APR08 06200099
+         MVC   INSERT#1(8),CTEXTP1                            DRK APR08 06210099
+         MVC   INSERT#2(8),CTEXTP2                            DRK APR08 06220099
+         L     R4,=V(MSGCSECT)     FIRST INFORMATIONAL MESSAGEDRK APR08 06230099
+CONT510  LR    R1,R4               POINT TO IT                DRK APR08 06240099
+         LA    R1,1(,R1)           MESSAGE NUMBER NNN         DRK APR08 06250099
+         M$MSG (R1)                OUTPUT IT                  DRK APR08 06260099
+         SR    R0,R0               CLEAR R0                   DRK APR08 06270099
+         ICM   R0,B'0011',8(R4)    TOTAL LENGTH OF MESSAGE    DRK APR08 06280099
+         AR    R4,R0               NEXT MESSAGE               DRK APR08 06290099
+         CLI   1(R4),C'3'          DONE?                      DRK APR08 06300099
+         BNH   CONT510             NO, BRANCH                 DRK APR08 06310099
+         LA    R5,CONLIST          FIRST ACTION MESSAGE       DRK APR08 06320099
+CONT520  L     R1,0(,R5)           POINT TO IT                DRK APR08 06330099
+         M$ERRST (R1)              OUTPUT IT                  DRK APR08 06340099
+         LA    R5,4(,R5)           NEXT MESSAGE               DRK APR08 06350099
+         CLI   0(R5),X'FF'         DONE?                      DRK APR08 06360099
+         BNE   CONT520             NO, BRANCH                 DRK APR08 06370099
+CONT530  LR    R1,R4               NEXT WARNING/ERROR MESSAGE DRK APR08 06380099
+         LA    R1,1(,R1)           MESSAGE NUMBER NNN         DRK APR08 06390099
+         M$MSG (R1)                OUTPUT IT                  DRK APR08 06400099
+         SR    R0,R0               CLEAR R0                   DRK APR08 06410099
+         ICM   R0,B'0011',8(R4)    TOTAL LENGTH OF MESSAGE    DRK APR08 06420099
+         AR    R4,R0               NEXT MESSAGE               DRK APR08 06430099
+         CLC   0(4,R4),=CL4' '     DONE?                      DRK APR08 06440099
+         BE    CONT540             YES                        DRK APR08 06450099
+         CLI   1(R4),C'9'          DONE?                      DRK APR08 06460099
+         BNH   CONT530             NO, BRANCH                 DRK APR08 06470099
+CONT540  DS    0H                                             DRK APR08 06480099
+         AGO   .XTESTM             SKIP OLD TESTMSG CODE                06490099
+         MVC   INSERT#1(8),CTEXTP1                                      06500000
+         MVC   INSERT#2(8),CTEXTP2                                      06510000
+         LA    R4,L000             FIRST INFORMATIONAL MESSAGE          06520000
+CONT510  LR    R1,R4               POINT TO IT                          06530000
+         M$MSG (R1)                OUTPUT IT                            06540000
+         LA    R4,3(,R4)           NEXT MESSAGE                         06550000
+         CLI   0(R4),C'3'          DONE?                                06560000
+         BNH   CONT510             NO, BRANCH                           06570000
+         LA    R5,CONLIST          FIRST ACTION MESSAGE                 06580000
+CONT520  L     R1,0(,R5)           POINT TO IT                          06590000
+         M$ERRST (R1)              OUTPUT IT                            06600000
+         LA    R5,4(,R5)           NEXT MESSAGE                         06610000
+         CLI   0(R5),X'FF'         DONE?                                06620000
+         BNE   CONT520             NO, BRANCH                           06630000
+CONT530  LR    R1,R4               NEXT WARNING/ERROR MESSAGE           06640000
+         M$MSG (R1)                OUTPUT IT                            06650000
+         LA    R4,3(,R4)           NEXT MESSAGE                         06660000
+         CLI   0(R4),C'9'          DONE?                                06670000
+         BNH   CONT530             NO, BRANCH                           06680000
+.XTESTM  ANOP                                                           06690099
+         SPACE 1                                                        06700099
+CONT600  CLI   #OUT+7,5            IOSTATS DESIRED?                     06710000
+         BNE   CONT700             NO, BRANCH                           06720000
+         LH    R1,IODONE           ** INPUT ROUTINE ENTRIES             06730000
+         LA    R14,MSGCOA1                                              06740000
+         BAS   R2,CONT900                                               06750000
+         LH    R1,IODONEW          ** NUMBER OF TTR CHANGES             06760000
+         LA    R14,MSGCOA2                                              06770000
+         BAS   R2,CONT900                                               06780000
+         LH    R1,IOLOGUSE         ** LOGICAL INPUTS PERFORMED          06790000
+         LA    R14,MSGCOA3                                              06800000
+         BAS   R2,CONT900                                               06810000
+         LH    R1,IOPHYTRK         ** PHYSICAL TRACKS READ              06820000
+         LA    R14,MSGCOA4                                              06830000
+         BAS   R2,CONT900                                               06840000
+         LH    R1,IOEDIR           ** PDSE DIRECTORY BLKS READDRK SEP05 06850000
+         LA    R14,MSGCOA5                                    DRK SEP05 06860000
+         BAS   R2,CONT900                                     DRK SEP05 06870000
+         XC    IODONE(10),IODONE                              DRK SEP05 06880000
+         SPACE 1                                                        06890000
+CONT700  CLI   #OUT+7,6            TESTREAD?                            06900000
+         BNE   CONT800             NO, BRANCH                           06910000
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK AUG05 06920000
+         BO    CONT800                  YES, NO TESTREAD      DRK AUG05 06930000
+         MVC   #OUT+20(1),FLAGSEE         SAVE THE INPUT FLAGS          06940000
+         M$ERRST MSGBLANK                 ONE BLANK LINE                06950000
+         MVC   INSERT#1(8),CSINGCON       SINGLE BUFFERING              06960000
+         M$MSG L031$1                                                   06970000
+         OI    FLAGSEE,FDOUBCON+FFULLTRK  CONTROL SINGLE                06980000
+         BAS   R2,CONT710                 READ THE FIRST RECORD         06990000
+         SPACE 1                                                        07000000
+         MVC   INSERT#1(8),CDOUBCON       DOUBLE BUFFERING              07010000
+         M$MSG L031$1                                                   07020000
+         XI    FLAGSEE,FDOUBCON           CONTROL DOUBLE                07030000
+         BAS   R2,CONT710                 READ THE FIRST RECORD         07040000
+         SPACE 1                                                        07050000
+         MVC   INSERT#1(8),CMULTCON       DOUBLE BUFFERING              07060000
+         M$MSG L031$1                                                   07070000
+         NI    FLAGSEE,FF-FFULLTRK-FDOUBCON                             07080000
+         BAS   R2,CONT710                 READ THE FIRST RECORD         07090000
+         MVC   FLAGSEE(1),#OUT+20         RESET THE INPUT FLAGS         07100000
+         B     NEWCMD                                                   07110000
+         SPACE 2                                                        07120000
+CONT710  MVI   STARTTR+2,1                SET TTR TO 1                  07130000
+         L     R15,=V(EXCP)               INPUT IT                      07140000
+         BASR  R14,R15                                                  07150000
+         CVD   R15,DOUBLE                 CONVERT RETURN CODE           07160000
+         MVC   INSERT#1(8),BLANKS                                       07170000
+         MVC   INSERT#1-2(4),=X'40212020' EDIT CHARACTERS               07180000
+         ED    INSERT#1-2(4),DOUBLE+6     CONVERT TO DISPLAY            07190000
+         STM   R2,R12,28(R13)             CONVERT CCHHR TO TTR          07200000
+         LA    R2,IOBSEEK                 NEXT MBBCCHHR                 07210000
+         L     R1,INDCB+(DCBDEBAD-IHADCB)                               07220000
+         L     R15,ADDRRLTV                                             07230000
+         LR    R3,R13                                                   07240000
+         BASR  R14,R15                                                  07250000
+         LR    R13,R3                                                   07260000
+         LM    R2,R12,28(R13)                                           07270000
+         ST    R0,FULLWORD                TTR OF CURRENT DIRECTORY EOF  07280000
+         UNPK  INSERT#2(7),FULLWORD(4)                                  07290000
+         TR    INSERT#2(6),TRTABLE                                      07300000
+         MVC   INSERT#2+6(2),BLANKS                                     07310000
+         M$MSG L035$2                                                   07320000
+         M$ERRST MSGBLANK                 ONE BLANK LINE                07330000
+         BR    R2                                                       07340000
+***                                                                     07350000
+CONT800  CLI   #OUT+7,7            ALLGLOBALS?                          07360000
+         BNE   CONT810             NO, BRANCH                           07370000
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK MAR11 07380099
+         MVC   INSERT#1(8),BLANKS                             DRK MAR11 07390099
+         M$MSG L069$1              HEADER MESSAGE             DRK NOV03 07400099
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE STATUS MESSAGE         07410000
+         L     R2,=V(GLOBAL)       GLOBAL VARIABLES           DRK DEC02 07420000
+CONT802  MVC   MSGTEXT1+04(08),00(R2)  VARIABLE                         07430000
+         MVC   MSGTEXT1+14(08),56(R2)  SETTING                          07440000
+         MVC   MSGTEXT1+24(08),08(R2)  SETTING                          07450000
+         MVC   MSGTEXT1+34(40),16(R2)  DESCRIPTION                      07460000
+         LA    R2,64(,R2)           NEXT ENTRY                          07470000
+         M$ERRST MSGTEXT1           OUTPUT THIS STATUS                  07480000
+         CLI   0(R2),X'FF'          END OF TABLE?                       07490000
+         BNE   CONT802              NO, BRANCH                          07500000
+         B     NEWCMD               ALL DONE                            07510000
+***                                                                     07520000
+CONT810  CLI   #OUT+7,8            GLOBALMODS?                          07530000
+         BNE   CONT820             NO, BRANCH                 DRK SEP02 07540000
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK MAR11 07550099
+         MVC   INSERT#1(8),=CL8'MODIFIED'                     DRK MAR11 07560099
+         M$MSG L069$1              HEADER MESSAGE             DRK NOV03 07570099
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE STATUS MESSAGE         07580000
+         L     R2,=V(GLOBAL)       GLOBAL VARIABLES           DRK DEC02 07590000
+CONT812  MVC   MSGTEXT1+04(08),00(R2)  VARIABLE                         07600000
+         MVC   MSGTEXT1+14(08),56(R2)  SETTING                          07610000
+         MVC   MSGTEXT1+24(08),08(R2)  DEFAULT                          07620000
+         MVC   MSGTEXT1+34(40),16(R2)  DESCRIPTION                      07630000
+         CLC   8(8,R2),56(R2)          DEFAULT AND SETTING THE SAME?    07640000
+         BE    CONT814                 YES, BRANCH                      07650000
+         M$ERRST MSGTEXT1           OUTPUT THIS STATUS                  07660000
+CONT814  LA    R2,64(,R2)           NEXT ENTRY                          07670000
+         CLI   0(R2),X'FF'          END OF TABLE?                       07680000
+         BNE   CONT812              NO, BRANCH                          07690000
+         B     NEWCMD               ALL DONE                            07700000
+CONT820  CLI   #OUT+7,9            PDSMAIN?                   DRK SEP02 07710000
+         B     CONT830             NO, BRANCH                 DRK AUG17 07720099
+         L     R2,=V(PDSMAIN)      DATE/TIME STAMP            DRK SEP02 07730000
+         MVI   MTLEN,64            LENGTH OF INSERT           DRK SEP02 07740099
+         MVC   INSERT#1(64),5(R2)  NAME/VERS/DATE/TIME        DRK FEB11 07750099
+         M$MSG L107$1                                         DRK SEP02 07760099
+         M$ERRST MSGBLANK          ONE BLANK LINE             DRK JUN05 07770099
+         B     NEWCMD              ALL DONE                   DRK SEP02 07780099
+CONT830  CLI   #OUT+7,10           MODS?                      DRK DEC02 07790099
+         BNE   CONT834             NO, BRANCH                 DRK DEC02 07800099
+CONT831  DS    0H                  MODS ENTRY POINT           DRK JUN06 07810099
+         M$MSG L070                HEADER MESSAGE             DRK NOV03 07820099
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE STATUS MSG   DRK DEC02 07830099
+         L     R2,=V(PDSMODS)      PDS MODS CSECT             DRK DEC02 07840099
+CONT832  MVC   MSGTEXT1+04(64),00(R2)  DESCRIPTION            DRK DEC02 07850099
+         LA    R2,64(,R2)          NEXT ENTRY                 DRK DEC02 07860099
+         M$ERRST MSGTEXT1          OUTPUT THIS STATUS         DRK DEC02 07870099
+         CLI   0(R2),X'FF'         END OF TABLE?              DRK DEC02 07880099
+         BNE   CONT832             NO, BRANCH                 DRK DEC02 07890099
+         M$ERRST MSGBLANK          ONE BLANK LINE             DRK JUN05 07900099
+         B     NEWCMD              ALL DONE                   DRK DEC02 07910099
+CONT834  CLI   #OUT+7,11           DASD?                      DRK DEC04 07920099
+         BNE   CONT838             NO, BRANCH                 DRK MAR05 07930099
+         M$MSG L096                HEADER MESSAGE             DRK DEC04 07940099
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE STATUS MSG   DRK DEC04 07950099
+         L     R2,=V(GEO)          DASD GEO CSECT             DRK DEC04 07960099
+CONT836  MVC   MSGTEXT1+04(64),00(R2)  DESCRIPTION            DRK DEC04 07970099
+         LA    R2,64(,R2)          NEXT ENTRY                 DRK DEC04 07980099
+         M$ERRST MSGTEXT1          OUTPUT THIS STATUS         DRK DEC04 07990099
+         CLI   0(R2),X'FF'         END OF TABLE?              DRK DEC04 08000099
+         BNE   CONT836             NO, BRANCH                 DRK DEC04 08010099
+         M$ERRST MSGBLANK          ONE BLANK LINE             DRK JUN05 08020099
+         B     NEWCMD              ALL DONE                   DRK DEC04 08030099
+CONT838  DS    0H                                             DRK APR09 08040099
+         CLI   #OUT+7,13           COMPILERS?                 DRK APR09 08050099
+         BNE   CONT840             NO, BRANCH                 DRK APR09 08060099
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE STATUS MSG   DRK APR09 08070099
+         L     R2,=V(TRANS)        COMPILER TRANSLATOR CSECT  DRK APR09 08080099
+CONT838T MVC   MSGTEXT1+04(64),00(R2)  DESCRIPTION            DRK APR09 08090099
+         LA    R2,64(,R2)          NEXT ENTRY                 DRK APR09 08100099
+         M$ERRST MSGTEXT1          OUTPUT THIS STATUS         DRK APR09 08110099
+         CLI   0(R2),X'FF'         END OF TABLE?              DRK APR09 08120099
+         BNE   CONT838T            NO, BRANCH                 DRK APR09 08130099
+         M$ERRST MSGBLANK          ONE BLANK LINE             DRK APR09 08140099
+         B     NEWCMD              ALL DONE                   DRK APR09 08150099
+CONT840  DS    0H                                             DRK APR09 08160099
+         AIF   ('&MVSLEV' LT 'MVS6XX').MVSOLD2                DRK MAR05 08170099
+         CLI   #OUT+7,12           LISTENV?                   DRK MAR05 08180099
+         BNE   CONT850             NO, BRANCH                 DRK MAR05 08190099
+CONTCPU  DS    0H                                             DRK MAR05 08200000
+         L     R4,=A(LISTENV)                                 DRK MAY05 08210000
+         BASR  R3,R4                                          DRK MAY05 08220000
+         B     NEWCMD              ALL DONE                   DRK FEB10 08230099
+CONT850  DS    0H                                             DRK FEB10 08240099
+         CLI   #OUT+7,14           TSU?                       DRK FEB10 08250099
+         BNE   NEWCMD              NO, BRANCH                 DRK FEB10 08260099
+         L     R4,=A(TSUSERS)                                 DRK FEB10 08270099
+         BASR  R3,R4                                          DRK FEB10 08280099
+.MVSOLD2 ANOP                                                 DRK MAR05 08290099
+         B     NEWCMD              ALL DONE                   DRK MAR05 08300099
+***                                                                     08310099
+CONT900  MVC   MSGTEXT1,0(R14)                                          08320099
+         MVC   MSGTEXT1+4(7),MSGCOAM                                    08330099
+         LTR   R1,R1                                                    08340099
+         BZR   R2                                                       08350099
+         CVD   R1,DOUBLE                                                08360099
+         ED    MSGTEXT1+4(7),DOUBLE+5                                   08370099
+         M$ERRST MSGTEXT1                                               08380099
+         BR    R2                                                       08390099
+         SPACE 4                                                        08400099
+         USING IHADCB,R1                                                08410099
+*** DCB OPEN EXIT                                                       08420099
+CONT980  CLC   DCBDSORG(2),ZERO              ANY DSORG?                 08430099
+         BNE   *+8                           YES, BRANCH                08440099
+         OI    DCBDSORG,DS1DSGPS             NO, USE DSORG=PS           08450099
+         TM    DCBDSORG,DS1DSGPS             DSORG=PS?                  08460099
+         BNOR  R14                           NO, ERROR                  08470099
+         CLI   DCBRECFM,0                    ANY RECFM?                 08480099
+         BNE   *+8                           YES, BRANCH                08490099
+         MVI   DCBRECFM,DCBRECF+DCBRECBR     NO, USE RECFM=FB           08500099
+         SPACE 1                                                        08510099
+* AVOID S013-34 ABENDS WHEN ALLOCATING NEW USERID.LOAD- FILES IN TSO    08520099
+         TM    DCBRECFM,DCBRECU              RECFM=U?         DRK MAY11 08530099
+         BNO   CONT982                       NO               DRK MAY11 08540099
+         CLC   DCBBLKSI,=H'0'                ANY BLKSIZE?     DRK MAY11 08550099
+         BNE   *+8                           YES, BRANCH      DRK MAY11 08560099
+         MVC   DCBBLKSI,=H'32760'            NO, AVOID S013-34        " 08570099
+CONT982  DS    0H                                             DRK MAY11 08580099
+         SPACE 1                                                        08590099
+         TM    DCBRECFM,DCBRECF+DCBRECV      RECFM=F. OR RECFM=V.?      08600099
+         BNMR  R14                           NO, ERROR                  08610099
+         LA    R0,80                         DEFAULT LRECL              08620099
+         TM    DCBRECFM,DCBRECV              RECFM=V.?                  08630099
+         BNO   *+8                           NO, BRANCH                 08640099
+         LA    R0,255                        DEFAULT LRECL FOR VARIABLE 08650000
+         CLC   DCBLRECL(2),ZERO              ANY LRECL?                 08660000
+         BNE   *+8                           YES, BRANCH                08670000
+         STH   R0,DCBLRECL                   NO, USE LRECL=80 | 255     08680099
+         TM    DCBRECFM,DCBRECV              RECFM=V.?                  08690000
+         BO    CONT988                       YES, BRANCH                08700000
+         CH    R0,DCBLRECL                   LRECL=80?                  08710000
+         BNER  R14                           NO, ERROR                  08720000
+CONT988  LA    R0,3120                       DEFAULT BLKSIZE            08730000
+         CLC   DCBBLKSI(2),ZERO              ANY BLKSIZE?               08740000
+         BNE   *+8                           YES, BRANCH                08750000
+         STH   R0,DCBBLKSI                   NO, USE BLKSIZE=3120       08760000
+         OI    FLAGSFF,FLOGWRT               ALL ATTRIBUTES ARE CORRECT 08770000
+         BR    R14                                                      08780000
+         DROP  R1                                                       08790000
+         SPACE 2                                                        08800000
+         PRINT NOGEN                                                    08810000
+LOGSDCB  DCB   DSORG=PS,DDNAME=PDSLOG,MACRF=(PM),EXLST=CONT990          08820000
+LLOGDCB  EQU   *-LOGSDCB                                                08830000
+         PRINT GEN                                                      08840000
+         SPACE 2                                                        08850000
+CONT990  DC    0F'0',X'85',AL3(CONT980)      OPEN EXIT ONLY             08860000
+         PRINT NOGEN                                                    08870000
+MSGCOA1  M$TX  ' 12,345 INPUT ROUTINE ENTRIES'                          08880000
+         ORG   MSGCOA1+4                                                08890000
+MSGCOAM  DC    X'4020206B202120'                                        08900000
+         ORG   ,                                                        08910000
+MSGCOA2  M$TX  ' 12,345 TTR CHANGES'                                    08920000
+MSGCOA3  M$TX  ' 12,345 LOGICAL INPUTS PERFORMED'                       08930000
+MSGCOA4  M$TX  ' 12,345 PHYSICAL TRACKS READ'                           08940000
+MSGCOA5  M$TX  ' 12,345 PDSE DIRECTORY BLOCKS READ'           DRK SEP05 08950000
+         PRINT GEN                                                      08960000
+CCPC     DC    C'      .   .   .  .            '                        08970000
+CALINCON DC    C'NOALIASINFO, '                                         08980000
+CLKEDCON DC    C'NOLKEDDATE, '                                          08990000
+CPROMCON DC    C'NOPROMPT, '                                            09000000
+CRECVCON DC    C'NORECOVER, '                                           09010000
+CTRANCON DC    C'NOTRANSLATOR, '                                        09020000
+CBPAMCON DC    CL8'BPAM'                                                09030000
+CSINGCON DC    CL8'SINGLE'                                              09040000
+CDOUBCON DC    CL8'DOUBLE'                                              09050000
+CMULTCON DC    CL8'MULTIPLE'                                            09060000
+CMULTSAV DC    CL8'RETAIN'                                              09070000
+CTEXTP1  DC    CL8'<PARM#1>'                                            09080000
+CTEXTP2  DC    CL8'<PARM#2>'                                            09090000
+CTEXTLOG DC    CL8'LOGCOPY'                                             09100000
+CLOGOLD  DC    CL3'OLD'                                                 09110000
+CLOGMOD  DC    CL3'MOD'                                                 09120000
+CLOGSHR  DC    CL3'SHR'                                                 09130000
+CLOGNEW  DC    CL3'NEW'                                                 09140000
+CLOGDSN  DC    CL7'DSNAME('                                             09150000
+CLOGNDSN DC    CL9'NODSNAME,'                                           09160000
+CLOGSYS  DC    CL7'SYSOUT('                                             09170000
+CLOGNSYS DC    CL9'NOSYSOUT,'                                           09180000
+CLOGFOR  DC    CL5'FORM('                                               09190000
+CLOGNFOR DC    CL7'NOFORM,'                                             09200000
+CLOGDES  DC    CL5'DEST('                                               09210000
+CLOGNDES DC    CL6'NODEST'                                              09220000
+CLOGCOMM DC    CL2'),'                                                  09230000
+         SPACE 2                                                        09240099
+CONDDNAM DC    X'0055000100084040404040404040'     RETURN DDNAME        09250000
+CONDSORG DC    X'0057000100024040'                 RETURN DSORG         09260000
+CONFREE  DC    X'001C0000'                         FREE=CLOSE           09270000
+CONMEMBR DC    X'0003000100084040404040404040'     MEMBER NAME          09280000
+CONPASSW DC    X'0050000100084040404040404040'     PASSWORD             09290000
+CONDSNAM DC    X'00020001002C'                     DSNAME               09300000
+CONALLOC DC    X'00040001000101'                   DISP=(_)             09310000
+CONNORM  DC    X'00050001000102'                   DISP=(,CATLG)        09320000
+CONANORM DC    X'00060001000108'                   DISP=(,,KEEP)        09330000
+CONTRK   DC    X'00070000'                         SPACE=(TRK,          09340000
+CONFIRST DC    X'000A00010003000001'               SPACE=(,1            09350000
+CONSECON DC    X'000B00010003000004'               SPACE=(,,4           09360000
+CONDIR   DC    X'000C00010003000005'               SPACE=(,,,5)         09370000
+CONOOLD  EQU   X'01'                                                    09380000
+CONOMOD  EQU   X'02'                                                    09390000
+CONONEW  EQU   X'04'                                                    09400000
+CONOSHR  EQU   X'08'                                                    09410000
+CONSYSOU DC    X'001800010001C1'                   SYSOUT=A             09420000
+CONFORMS DC    X'001A00010004C4F1F0F1'             SYSOUT=(,,D101)      09430000
+CONDESTS DC    X'005800010008D5F1F3F040404040'     DEST=R130            09440000
+*                                                                       09450000
+GETLIST  GETMAIN VU,LA=0,A=0,MF=L                                       09460000
+GETLISTL EQU     *-GETLIST                                              09470000
+*                                                                       09480000
+FRELIST  FREEMAIN VU,A=0,MF=L                                           09490000
+FRELISTL EQU     *-FRELIST                                              09500000
+         SPACE 1                                                        09510099
+*** ACTION MESSAGES NOT IN MSGCSECT                                     09520099
+CONLIST  DC    A(PDS300A)                                               09530099
+         DC    A(PDS380A,PDS381A,PDS382A,PDS383A,PDS384A,PDS385A)       09540099
+         DC    A(PDS386A,PDS390A,PDS391A,PDS392A,PDS393A,PDS394A)       09550099
+         DC    A(PDS395A,PDS396A,PDS397A),X'FF'               DRK AUG16 09560099
+         SPACE 1                                                        09570000
+         AIF   ('&MVSLEV' LT 'MVS6XX').MVSOLD3                DRK MAY05 09580000
+*** DISPLAY SOFTWARE AND HARDWARE ENVIRONMENT INFO            DRK MAY05 09590000
+LISTENV  DS    0H                                             DRK MAY05 09600000
+         USING *,R4                                           DRK MAY05 09610000
+         LA    R14,CONTA31A                                   DRK APR05 09620000
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK APR05 09630000
+         BSM   0,R14               31-BIT MODE                DRK APR05 09640000
+CONTA31A DS    0H                                             DRK APR05 09650000
+         MVI   MTLEN,15            LENGTH OF INSERT           DRK APR05 09660000
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK APR05 09670000
+         L     R15,CVTECVT-CVTMAP(,R14)  ECVT                 DRK NOV09 09680099
+         MVC   INSERT#1(7),ECVTPNAM-ECVT(R15)    OS NAME      DRK NOV09 09690099
+         MVC   INSERT#1+7(2),ECVTPVER-ECVT(R15)  OS VERSION   DRK NOV09 09700099
+         MVI   INSERT#1+09,C'.'       .                       DRK APR05 09710000
+         MVC   INSERT#1+10(2),ECVTPREL-ECVT(R15) OS RELEASE   DRK NOV09 09720099
+         MVI   INSERT#1+12,C'.'       .                       DRK APR05 09730000
+         MVC   INSERT#1+13(2),ECVTPMOD-ECVT(R15) OS MOD LEVEL DRK NOV09 09740099
+         MVI   MTLEN+4,4           LENGTH OF INSERT           DRK APR05 09750000
+         L     R15,CVTSMCA-CVTMAP(,R14)  SMCA                 DRK NOV09 09760099
+         MVC   INSERT#2(4),SMCASID-SMCABASE(R15)  SMF ID      DRK NOV09 09770099
+         LA    R14,CONTA24A                                   DRK APR05 09780000
+         BSM   0,R14               24-BIT MODE                DRK APR05 09790000
+CONTA24A DS    0H                                             DRK APR05 09800000
+         M$MSG L280$2                                         DRK APR05 09810000
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK MAR05 09820000
+         S     R14,=F'40'          CVTPROD                    DRK MAR05 09830000
+         MVI   MTLEN,32            LENGTH OF INSERT           DRK MAR05 09840000
+         MVC   INSERT#1(32),0(R14)                            DRK MAR05 09850000
+         M$MSG L281$1                                         DRK MAR05 09860000
+         SPACE 1                                              DRK MAR05 09870000
+         LA    R14,CONTA31B                                   DRK MAR05 09880000
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK MAR05 09890000
+         BSM   0,R14               31-BIT MODE                DRK MAR05 09900000
+CONTA31B DS    0H                                             DRK MAR05 09910000
+         MVI   MTLEN,30            LENGTH OF INSERT           DRK MAR05 09920000
+         MVC   INSERT#1(30),CCPC   CPC OVERLAY                DRK MAR05 09930000
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK MAR05 09940000
+         L     R15,CVTHID-CVTMAP(,R14)  CPC ADDRESS           DRK NOV09 09950099
+         CLI   CPCND_FLAGS-SHID(R15),X'40'  INVALID FLAG?     DRK NOV09 09960099
+         BE    CONT838X            YES, DONE                  DRK MAR05 09970000
+         MVC   INSERT#1(6),CPCND_TYPE-SHID(R15)      TYPE     DRK NOV09 09980099
+         MVC   INSERT#1+7(3),CPCND_MODEL-SHID(R15)   MODEL    DRK NOV09 09990099
+         MVC   INSERT#1+11(3),CPCND_MAN-SHID(R15)    MANUFAC  DRK NOV09 10000099
+         MVC   INSERT#1+15(2),CPCND_PLANT-SHID(R15)  PLANT    DRK NOV09 10010099
+         MVC   INSERT#1+18(12),CPCND_SEQNO-SHID(R15) SEQ NO   DRK NOV09 10020099
+CONT838X DS    0H                                             DRK MAR05 10030000
+         LA    R14,CONTA24B                                   DRK MAR05 10040000
+         BSM   0,R14               24-BIT MODE                DRK MAR05 10050000
+CONTA24B DS    0H                                             DRK MAR05 10060000
+         M$MSG L282$1                                         DRK MAR05 10070000
+         LA    R14,CONTA31C                                   DRK APR05 10080000
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK APR05 10090000
+         BSM   0,R14               31-BIT MODE                DRK APR05 10100000
+CONTA31C DS    0H                                             DRK APR05 10110000
+         L     R14,CVTPTR(,R0)        CVT                     DRK APR05 10120099
+         L     R15,CVTOPCTP-CVTMAP(,R14)  RMCT                DRK NOV09 10130099
+         L     R15,RMCTADJC-RMCT(,R15)  CPU RATE ADJUSTMENT   DRK NOV09 10140099
+         LTR   R15,R15                ZERO?                   DRK APR05 10150000
+         BNZ   *+4+4                  NO                      DRK APR05 10160000
+         LA    R15,1(R15)             YES, AVOID S0C9         DRK APR05 10170000
+         CVD   R15,GENERIC                                    DRK APR05 10180000
+         ZAP   DOUBLE(8),=PL8'1600000000'                     DRK APR05 10190000
+         DP    DOUBLE(8),GENERIC+5(3) 16000000/SU             DRK APR05 10200099
+         MVI   MTLEN,11               LENGTH OF INSERT        DRK APR05 10210099
+         MVC   INSERT#1(11),SUMASK                            DRK APR05 10220099
+         ED    INSERT#1(11),DOUBLE    SU'S/SEC                DRK APR05 10230099
+         ZAP   DOUBLE(8),DOUBLE(5)                            DRK APR05 10240099
+         MP    DOUBLE(8),=PL2'100'    2 DECIMAL PLACES        DRK APR05 10250099
+         DP    DOUBLE(8),=PL3'48.50'  THIERRY FALISSARD COEFF DRK APR05 10260099
+         L     R15,CVTCSD-CVTMAP(,R14)  CSD                   DRK NOV09 10270099
+         S     R14,=F'40'             CVTPROD                 DRK JUN05 10280099
+         CLC   11(4,R14),=C'7708'     Z/OS 1.6 AND ABOVE?     DRK JUN05 10290099
+         BNH   NUMCPUH                NO                      DRK JUN05 10300099
+* ALIVE CPUS. CPS, ZCBP/ZAAP AND ZIIPS.                       DRK NOV09 10310099
+         L     R15,CSD_NUMBER_ONLINE_CPUS-CSD(,R15)  #CPU'S ALIVE     " 10320099
+* STANDARD CPS.                                               DRK OCT21 10330099
+*        L     R15,CSD_NUMBER_ONLINE_STANDARD_CPS(,R15)       DRK OCT21 10340099
+         B     *+4+4                                          DRK JUN05 10350099
+NUMCPUH  DS    0H                                             DRK JUN05 10360099
+         LH    R15,CSDCPUOL-CSD(,R15)  #CPU'S ALIVE           DRK NOV09 10370099
+         CVD   R15,GENERIC                                    DRK APR05 10380099
+         ZAP   DOUBLE(8),DOUBLE(5)    NEED ZEROS FOR BIG IRON DRK DEC10 10390099
+         MP    DOUBLE(8),GENERIC+6(2) UNI-MIPS * CPU'S        DRK APR05 10400099
+*        LA    R1,997         USER 997                        ... DEC10 10410099
+*        SVC   13             ** DEBUG **                     ... DEC10 10420099
+         MVI   MTLEN+4,11             LENGTH OF INSERT        DRK APR05 10430099
+         MVC   INSERT#2(11),SUMASK                            DRK APR05 10440099
+         ED    INSERT#2(11),DOUBLE+3  TOTAL MIPS              DRK APR05 10450099
+         LA    R14,CONTA24C                                   DRK APR05 10460099
+         BSM   0,R14               24-BIT MODE                DRK APR05 10470099
+CONTA24C DS    0H                                             DRK APR05 10480099
+         M$MSG L283$2                                         DRK APR05 10490099
+         L     R14,CVTPTR(,R0)        CVT                     DRK APR05 10500099
+         S     R14,=F'6'              CVT - 6                 DRK APR05 10510099
+         XC    DOUBLE(8),DOUBLE                               DRK APR05 10520099
+         MVC   DOUBLE+1(2),0(R14)     CVTMDL                  DRK APR05 10530099
+         MVO   DOUBLE(3),DOUBLE(3)                            DRK APR05 10540099
+         OI    DOUBLE+2,X'0C'         SIGN                    DRK APR05 10550099
+         MVI   MTLEN,6                LENGTH OF INSERT        DRK APR05 10560099
+         MVC   INSERT#1(6),SUMASK                             DRK APR05 10570099
+         ED    INSERT#1(6),DOUBLE     CPU MODEL               DRK APR05 10580099
+         MVI   MTLEN+4,4              LENGTH OF INSERT        DRK APR05 10590099
+         MVC   INSERT#2(4),SUMASK                             DRK APR05 10600099
+         ED    INSERT#2(4),GENERIC+6  ONLINE CPU'S            DRK APR05 10610099
+         M$MSG L284$2                                         DRK APR05 10620099
+         LA    R14,CONTA31D                                   DRK MAY05 10630099
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK MAY05 10640099
+         BSM   0,R14               31-BIT MODE                DRK MAY05 10650099
+CONTA31D DS    0H                                             DRK MAY05 10660099
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK MAY05 10670099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK MAY05 10680099
+         L     R15,CVTRLSTG-CVTMAP(,R14)  CVTRLSTG            DRK NOV09 10690099
+         CVD   R15,DOUBLE                                     DRK MAY05 10700099
+         DP    DOUBLE(8),=PL3'1024'   MB                      DRK MAY05 10710099
+         MVC   INSERT#1(8),SUMASK                             DRK MAY05 10720099
+         ED    INSERT#1(8),DOUBLE+1   REAL STORAGE            DRK MAY05 10730099
+         MVI   MTLEN+4,6           LENGTH OF INSERT           DRK MAY05 10740099
+         L     R15,CVTRCEP-CVTMAP(,R14)  RCE                  DRK NOV09 10750099
+         L     R15,RCEESPL-RCE(,R15)  RCEESPL                 DRK NOV09 10760099
+         CVD   R15,DOUBLE                                     DRK MAY05 10770099
+         MP    DOUBLE(8),=PL1'4'      * 4                     DRK MAY05 10780099
+         DP    DOUBLE(8),=PL3'1024'   MB                      DRK MAY05 10790099
+         MVC   INSERT#2(6),SUMASK                             DRK MAY05 10800099
+         MVI   INSERT#2+4,X'21'       IF ZERO                 DRK MAY05 10810099
+         ED    INSERT#2(6),DOUBLE+2   EXPANDED STORAGE        DRK MAY05 10820099
+         LA    R14,CONTA24D                                   DRK MAY05 10830099
+         BSM   0,R14               24-BIT MODE                DRK MAY05 10840099
+CONTA24D DS    0H                                             DRK MAY05 10850099
+         M$MSG L285$2                                         DRK MAY05 10860099
+         SPACE 1                                              DRK MAY05 10870099
+         LA    R14,CONTA31E                                   DRK MAY05 10880099
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK MAY05 10890099
+         BSM   0,R14               31-BIT MODE                DRK MAY05 10900099
+CONTA31E DS    0H                                             DRK MAY05 10910099
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK MAY05 10920099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK MAY05 10930099
+         L     R15,CVTECVT-CVTMAP(,R14)  ECVT                 DRK NOV09 10940099
+         MVC   INSERT#1(8),ECVTHDNM-ECVT(R15)  HARDWARE NAME  DRK NOV09 10950099
+         MVI   MTLEN+4,8           LENGTH OF INSERT           DRK MAY05 10960099
+         MVC   INSERT#2(8),ECVTLPNM-ECVT(R15)  LPAR NAME      DRK NOV09 10970099
+         LA    R14,CONTA24E                                   DRK MAY05 10980099
+         BSM   0,R14               24-BIT MODE                DRK MAY05 10990099
+CONTA24E DS    0H                                             DRK MAY05 11000099
+*        ST    R4,FULLWORD                                              11010099
+         M$MSG L286$2                                         DRK MAY05 11020099
+         LA    R14,CONTA31F                                   DRK MAY05 11030099
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK MAY05 11040099
+         BSM   0,R14               31-BIT MODE                DRK MAY05 11050099
+CONTA31F DS    0H                                             DRK MAY05 11060099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK MAY05 11070099
+         L     R15,CVTECVT-CVTMAP(,R14)  ECVT                 DRK NOV09 11080099
+         L     R15,ECVTIPA-ECVT(,R15)  IPA                    DRK NOV09 11090099
+         MVC   DOUBLE(1),IPAARCHL-IPA(R15)  ARCHLVL           DRK NOV09 11100099
+         S     R14,=F'40'          CVTPROD                    DRK MAY05 11110099
+         CLC   11(4,R14),=C'6609'  OS/390 2.10 AND ABOVE?     DRK MAY05 11120099
+         BNH   EXIT28X             NO                         DRK MAY05 11130099
+         MVI   MTLEN,1             LENGTH OF INSERT           DRK MAY05 11140099
+         MVC   INSERT#1(1),DOUBLE  ARCHLVL                    DRK MAY05 11150099
+         MVI   MTLEN+4,7           LENGTH OF INSERT           DRK MAY05 11160099
+         CLI   DOUBLE,C'2'         Z/ARCH?                    DRK MAY05 11170099
+         BL    *+4+6+4             NO                         DRK MAY10 11180099
+         MVC   INSERT#2(7),=CL7'Z/ARCH'                       DRK MAY05 11190099
+         B     *+4+6                                          DRK MAY05 11200099
+         MVC   INSERT#2(7),=CL7'ESA/390'                      DRK MAY05 11210099
+EXIT28X  DS    0H                                             DRK MAY05 11220099
+         LA    R14,CONTA24F                                   DRK MAY05 11230099
+         BSM   0,R14               24-BIT MODE                DRK MAY05 11240099
+CONTA24F DS    0H                                             DRK MAY05 11250099
+         M$MSG L287$2                                         DRK MAY05 11260099
+         LA    R14,CONTA31G                                   DRK MAY05 11270099
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK MAY05 11280099
+         BSM   0,R14               31-BIT MODE                DRK MAY05 11290099
+CONTA31G DS    0H                                             DRK MAY05 11300099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK MAY05 11310099
+         L     R14,CVTPCCAT-CVTMAP(,R14)  CVTPCCAT            DRK NOV09 11320099
+*        LA    R1,32               MAX LOOP (Z/OS R6)         DRK MAR06 11330099
+*        LA    R1,64               MAX LOOP (Z/OS R9)         DRK JUL08 11340099
+* FROM SHOWZOS                                                DRK OCT21 11350099
+         LH    R1,CVTMAXMP-CVTMAP(,R14) MAX NUMBER OF CPU'S-1 "  RS0709 11360099
+         AHI   R1,1                     +1                    "  RS0709 11370099
+PCCA     DS    0H                                             DRK AUG05 11380099
+         L     R15,0(,R14)         PCCA                       DRK AUG05 11390099
+         CLC   0(4,R15),=C'PCCA'   EYECATCHER?                DRK AUG05 11400099
+         BE    PCCAX               YES, DONE                  DRK AUG05 11410099
+         LA    R14,4(R14)          NEXT IN VECTOR TABLE       DRK AUG05 11420099
+         BCT   R1,PCCA             LOOP                       DRK AUG05 11430099
+PCCAX    DS    0H                                             DRK AUG05 11440099
+         MVI   MTLEN,6             LENGTH OF INSERT           DRK MAY05 11450099
+         MVC   INSERT#1(6),6(R15)  CPU SERIAL                 DRK MAY05 11460099
+         MVI   MTLEN+4,2           LENGTH OF INSERT           DRK MAY05 11470099
+         MVC   INSERT#2(2),4(R15)  CPU TYPE                   DRK MAY05 11480099
+         LA    R14,CONTA24G                                   DRK MAY05 11490099
+         BSM   0,R14               24-BIT MODE                DRK MAY05 11500099
+CONTA24G DS    0H                                             DRK MAY05 11510099
+         M$MSG L288$2                                         DRK MAY05 11520099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK JUL06 11530099
+         ICM   R14,B'1111',CVTRAC-CVTMAP(R14) RAC             DRK JUL06 11540099
+         BZ    RACNONE             NO SECURITY IF ZERO        DRK JUL06 11550099
+         MVI   MTLEN,4             LENGTH OF INSERT           DRK JUL06 11560099
+         MVC   INSERT#1(4),RCVTID-RCVT(R14)  SECURITY SERVER  DRK NOV09 11570099
+         CLC   RCVTID-RCVT(4,R14),=C'RCVT'   RACF?            DRK NOV09 11580099
+         BE    RACF                YES                        DRK JUL06 11590099
+         CLC   RCVTID-RCVT(4,R14),=C'RTSS'   TOP-SECRET?      DRK NOV09 11600099
+         BE    TSS                 YES                        DRK JUL06 11610099
+         CLC   RCVTID-RCVT(4,R14),=C'DBLT'   DEADBOLT?        DRK NOV09 11620099
+         BE    DBLT                YES                        DRK AUG06 11630099
+         CLC   RCVTID-RCVT(4,R14),=C'PIES'   PIES?            DRK JAN10 11640099
+         BE    PIES                YES                        DRK JAN10 11650099
+         B     RACMSG              NO, THEN ACF2              DRK JUL06 11660099
+RACNONE  DS    0H                                             DRK JUL06 11670099
+         MVC   INSERT#1(4),=C'NONE'                           DRK JUL06 11680099
+         B     RACMSG                                         DRK JUL06 11690099
+RACF     DS    0H                                             DRK JUL06 11700099
+         MVC   INSERT#1(4),=C'RACF'                           DRK JUL06 11710099
+         B     RACMSG                                         DRK JUL06 11720099
+TSS      DS    0H                                             DRK JUL06 11730099
+         MVC   INSERT#1(4),=C'TSS '                           DRK JUL06 11740099
+         B     RACMSG                                         DRK JUL06 11750099
+DBLT     DS    0H                                             DRK AUG06 11760099
+         MVC   INSERT#1(4),=C'DBLT'                           DRK AUG06 11770099
+         B     RACMSG                                         DRK AUG06 11780099
+PIES     DS    0H                                             DRK JAN10 11790099
+         MVC   INSERT#1(4),=C'PIES'                           DRK JAN10 11800099
+         B     RACMSG                                         DRK JAN10 11810099
+RACMSG   DS    0H                                             DRK JUL06 11820099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK OCT06 11830099
+         L     R14,CVTJESCT-CVTMAP(,R14)  CVTJESCT            DRK NOV09 11840099
+         MVI   MTLEN+4,4           LENGTH OF INSERT           DRK OCT06 11850099
+         MVC   INSERT#2(4),28(R14) JES TYPE                   DRK OCT06 11860099
+         M$MSG L289$2                                         DRK MAY05 11870099
+         L     R14,CVTPTR(,R0)         POINT TO THE CVT       DRK NOV06 11880099
+         USING CVT,R14                                        DRK NOV06 11890099
+         L     R15,CVTSMCA             SMF SMCA               DRK NOV06 11900099
+         USING SMCABASE,R15                                   DRK NOV06 11910099
+         L     R1,SMCAITME             IPL TIME (BINARY)      DRK NOV06 11920099
+         XC    HHMMSS(4),HHMMSS        CLEAR TIME FULLWORD    DRK NOV06 11930099
+         SLR   R0,R0                   FROM SHOWZOS ------.   DRK NOV06 11940099
+         D     R0,=F'360000'           GET HOURS IN R1    "   DRK NOV06 11950099
+         CVD   R1,DOUBLE                                      DRK NOV06 11960099
+         MVO   DOUBLE+6(2),DOUBLE+6(2)                        DRK NOV06 11970099
+         MVC   HHMMSS(1),DOUBLE+6                             DRK NOV06 11980099
+         LR    R1,R0                   REMAINDER          "   DRK NOV06 11990099
+         SLR   R0,R0                                      "   DRK NOV06 12000099
+         D     R0,=F'6000'             GET MINUTES IN R1  "   DRK NOV06 12010099
+         CVD   R1,DOUBLE                                      DRK NOV06 12020099
+         MVO   DOUBLE+6(2),DOUBLE+6(2)                        DRK NOV06 12030099
+         MVC   HHMMSS+1(1),DOUBLE+6                           DRK NOV06 12040099
+         LR    R1,R0                   REMAINDER          "   DRK NOV06 12050099
+         SLR   R0,R0                                      "   DRK NOV06 12060099
+         D     R0,=F'100'              GET SECONDS IN R1  "   DRK NOV06 12070099
+         CVD   R1,DOUBLE                                      DRK NOV06 12080099
+         MVO   DOUBLE+6(2),DOUBLE+6(2)                        DRK NOV06 12090099
+         MVC   HHMMSS+2(1),DOUBLE+6                           DRK NOV06 12100099
+         SPACE 1                                              DRK NOV06 12110099
+         STM   R14,R8,MSGTEXT1         SAVE ENTRY REGS        DRK NOV06 12120099
+         L     R8,=V(TIME)             TIME ROUTINE           DRK NOV06 12130099
+         L     R0,HHMMSS               IPL TIME               DRK NOV06 12140099
+         L     R1,SMCAIDTE             IPL DATE               DRK NOV06 12150099
+         MVC   ##SUBCOM(3),=CL3'IPL'   IPL TIME CONVERSION    DRK NOV06 12160099
+         BASR  R2,R8                   CALL TIME ROUTINE      DRK NOV06 12170099
+         LM    R14,R8,MSGTEXT1         RESET ENTRY REGS       DRK NOV06 12180099
+         MVI   MTLEN,42                LENGTH OF INSERT       DRK NOV06 12190099
+         MVC   INSERT#1(42),MSGTEXT2+4 MOVE IN TIME/DATE      DRK NOV06 12200099
+         M$MSG L290$1                                         DRK NOV06 12210099
+         LA    R14,CONTA31H                                   DRK JAN09 12220099
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK JAN09 12230099
+         BSM   0,R14               31-BIT MODE                DRK JAN09 12240099
+CONTA31H DS    0H                                             DRK JAN09 12250099
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK JAN09 12260099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK JAN09 12270099
+         L     R15,CVTECVT-CVTMAP(,R14)  ECVT                 DRK NOV09 12280099
+         MVC   INSERT#1(8),ECVTSPLX-ECVT(R15)  SYSPLEX NAME   DRK NOV09 12290099
+         MVI   MTLEN+4,2           LENGTH OF INSERT           DRK JAN09 12300099
+         MVC   INSERT#2(2),ECVTCLON-ECVT(R15)  SYSPLEX ID     DRK NOV09 12310099
+         LA    R14,CONTA24H                                   DRK JAN09 12320099
+         BSM   0,R14               24-BIT MODE                DRK JAN09 12330099
+CONTA24H DS    0H                                             DRK JAN09 12340099
+         M$MSG L291$2                                         DRK JAN09 12350099
+         MVI   MTLEN,8             LENGTH OF INSERT           DRK APR10 12360099
+         L     R14,CVTPTR(,R0)     CVT ADDRESS                DRK APR10 12370099
+         MVC   INSERT#1(8),CVTSNAME-CVTMAP(R14)  SYSTEM NAME  DRK SEP10 12380099
+         M$MSG L292$1                                         DRK APR10 12390099
+         M$ERRST MSGBLANK          ONE BLANK LINE             DRK APR10 12400099
+         SPACE 1                                                        12410099
+         BR    R3                  RETURN                     DRK MAY05 12420099
+TSUSERS  DS    0H                                             DRK FEB10 12430099
+         USING *,R4                                           DRK FEB10 12440099
+         L     R0,=A(NUMTSU*8)      LENGTH OF WORK AREA       DRK FEB10 12450099
+         ICM   R0,B'1000',=AL1(27)  SUBPOOL 27                DRK FEB10 12460099
+         GETMAIN R,LV=(0)           GETMAIN TSU WORK AREA     DRK FEB10 12470099
+         ST    R1,TSUADDR           TSU WORK AREA             DRK FEB10 12480099
+         LR    R2,R1                PT @ USERID TABLE         DRK FEB10 12490099
+         MVC   TSUWIDTH(4),=F'8'    TABLE WIDTH               DRK FEB10 12500099
+         LA    R14,CONTA31I                                   DRK FEB10 12510099
+         O     R14,=X'80000000'    HIGH-ORDER X'80'           DRK FEB10 12520099
+         BSM   0,R14               31-BIT MODE                DRK FEB10 12530099
+CONTA31I DS    0H                                             DRK FEB10 12540099
+         L     R14,CVTPTR(,R0)      CVT ADDR                  DRK FEB10 12550099
+         L     R14,CVTASVT-CVTMAP(R14) ASVT PREFIX ADDR       DRK FEB10 12560099
+         L     R5,ASVTMAXU-ASVT(R14) SET MAX ADDRESS SPACES   DRK FEB10 12570099
+         LA    R14,ASVTFRST-ASVT(R14) ASVT START              DRK FEB10 12580099
+TSULOOP  LA    R14,4(R14)           FIRST ASSIGNED ENTRY      DRK FEB10 12590099
+         TM    0(R14),X'80'         IS THIS ASCB AVAILABLE?   DRK FEB10 12600099
+         BO    TSUNEXT              YES, CHECK NEXT ENTRY     DRK FEB10 12610099
+         L     R15,0(R14,0)         THIS ASCB IS ASSIGNED.    DRK FEB10 12620099
+         CLC   ASCBJBNS-ASCB(4,R15),=XL4'0' JOBNAME PTR ZERO? DRK FEB10 12630099
+         BE    TSUNEXT              YES, SKIP                 DRK FEB10 12640099
+         L     R1,ASCBOUCB-ASCB(R15) OUCB ADDRESS             DRK FEB10 12650099
+         TM    OUCBYFL-OUCB(R1),OUCBLOG  TSO USER LOGGED ON?  DRK FEB10 12660099
+         BO    TSUMOVE              YES                       DRK FEB10 12670099
+TSUNEXT  BCT   R5,TSULOOP           NO                        DRK FEB10 12680099
+         B     TSUDONE                                        DRK FEB10 12690099
+         SPACE 1                                              DRK FEB10 12700099
+TSUMOVE  DS    0H                                             DRK FEB10 12710099
+         CLI   OUCBUSRD-OUCB(R1),X'40'  USERID IN OUCB?       DRK FEB10 12720099
+         BE    TSUNEXT              NO, SKIP STARTING ADDR SP DRK FEB10 12730099
+         MVC   0(8,R2),OUCBUSRD-OUCB(R1) YES, MOVE IN TABLE   DRK FEB10 12740099
+         LA    R2,8(R2)             STEP TO NEXT TABLE ENTRY  DRK FEB10 12750099
+         B     TSUNEXT                                        DRK FEB10 12760099
+         SPACE 1                                              DRK FEB10 12770099
+TSUDONE  DS    0H                                             DRK FEB10 12780099
+         LA    R14,CONTA24I                                   DRK FEB10 12790099
+         BSM   0,R14               24-BIT MODE                DRK FEB10 12800099
+CONTA24I DS    0H                                             DRK FEB10 12810099
+         MVC   0(8,R2),=CL8'9999..' LAST ENTRY                DRK FEB10 12820099
+         ST    R2,TSUEND            SAVE END OF TABLE ADDRESS DRK FEB10 12830099
+         SPACE 1                                              DRK FEB10 12840099
+* SORT MACRO FROM PETER HAVERCAN (VTOCLIST)                   DRK FEB10 12850099
+         M$SORT FIELDS=(1,8,CH,A),A=TSUADDR,LENGTH=8          DRK FEB10 12860099
+         SPACE 1                                              DRK FEB10 12870099
+         L     R1,TSUADDR           PT @ START OF TABLE       DRK JUN10 12880099
+         L     R2,TSUEND            PT @ END OF TABLE         DRK JUN10 12890099
+         SR    R2,R1                TABLE LENGTH              DRK JUN10 12900099
+         CVD   R2,DOUBLE            PACKED                    DRK JUN10 12910099
+         DP    DOUBLE(8),=PL3'8'    NUMBER OF USERIDS         DRK JUN10 12920099
+         MVI   MTLEN,6              LENGTH OF INSERT          DRK JUN10 12930099
+         MVC   INSERT#1(6),TSUMASK  EDIT MASK                 DRK JUN10 12940099
+         ED    INSERT#1(6),DOUBLE+2 ZONED                     DRK JUN10 12950099
+         M$MSG L097$1               HEADER MESSAGE            DRK JUN10 12960099
+         SPACE 1                                              DRK JUN10 12970099
+         L     R2,TSUADDR           PT @ USERID TABLE         DRK FEB10 12980099
+TSULINE  DS    0H                                             DRK FEB10 12990099
+         LA    R14,8                8 USERIDS PER LINE        DRK FEB10 13000099
+         MVC   MSGTEXT1(136),MSGBL132  CLEAR THE STATUS MSG   DRK FEB10 13010099
+         LA    R15,MSGTEXT1+4       OUTPUT LINE (8-WIDE)      DRK FEB10 13020099
+TSURUN   DS    0H                                             DRK FEB10 13030099
+         CLC   0(8,R2),=CL8'9999..' END OF USERIDS?           DRK FEB10 13040099
+         BE    TSUEOT               YES                       DRK FEB10 13050099
+         MVC   0(8,R15),0(R2)       MOVE USERID TO OUTPUT LINEDRK FEB10 13060099
+         LA    R15,9(R15)           NEXT OUTPUT SLOT          DRK FEB10 13070099
+         LA    R2,8(R2)             NEXT USERID               DRK FEB10 13080099
+         BCT   R14,TSURUN                                     DRK FEB10 13090099
+         M$ERRST MSGTEXT1           OUTPUT THIS STATUS        DRK FEB10 13100099
+         B     TSULINE              NEW LINE                  DRK FEB10 13110099
+TSUEOT   DS    0H                                             DRK FEB10 13120099
+         CLC   MSGTEXT1+4(8),=CL8' ' DONE                     DRK FEB10 13130099
+         BE    TSURET               YES                       DRK FEB10 13140099
+         M$ERRST MSGTEXT1           NO, PUT LAST LINE         DRK FEB10 13150099
+TSURET   DS    0H                                             DRK FEB10 13160099
+         M$ERRST MSGBLANK           ONE BLANK LINE            DRK JUL10 13170099
+         L     R1,TSUADDR           TSU WORK AREA             DRK FEB10 13180099
+         L     R0,=A(NUMTSU*8)      LENGTH OF WORK AREA       DRK FEB10 13190099
+         ICM   R0,B'1000',=AL1(27)  SUBPOOL 27                DRK FEB10 13200099
+         FREEMAIN R,LV=(0),A=(1)    FREEMAIN TSU WORK AREA    DRK FEB10 13210099
+         BR    R3                   RETURN                    DRK FEB10 13220099
+*                     1 2 3 4 5 6 7 . 8 9                     DRK APR05 13230099
+SUMASK   DC    XL11'40202020202021204B2020'                   DRK APR05 13240099
+TSUMASK  DC    XL6'402020202120'                              DRK JUN10 13250099
+         DROP  R4,R14,R15                                     DRK MAR07 13260099
+.MVSOLD3 ANOP                                                 DRK MAY05 13270099
+         PRINT NOGEN                                                    13280099
+PDS380A  M$TX  'PDS380A REENTER THE SEARCH STRING WITH DELIMITERS:'     13290099
+PDS382A  M$TX  'PDS382A REENTER THE FIRST TTR:'                         13300099
+PDS383A  M$TX  'PDS383A REENTER THE SECOND TTR:'                        13310099
+PDS384A  M$TX  'PDS384A REENTER THE HEX OFFSET:'                        13320099
+PDS385A  M$TX  'PDS385A REENTER THE SSI DATA:'                          13330099
+PDS386A  M$TX 'PDS386A REENTER THE REPLACEMENT STRING WITH DELIMITERS:' 13340099
+         PRINT GEN                                                      13350000

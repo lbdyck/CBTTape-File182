@@ -1,0 +1,425 @@
+         TITLE 'P D S  --  COMPAKTOR/DISKMAP INTERFACE       07/18/07'  00000299
+*********************************************************************** 00000316
+***      CPKMAP  SUBCOMMAND   ADDED BY JOHN KALINICH -- JUL., 2007  *** 00000484
+*********************************************************************** 00000516
+*                                                                       00050000
+CPKMAP   CSECT                                                          00070084
+         USING *,R8                                                     00080020
+         SPACE 1                                                        00120000
+*  FREE VOLUME01, SYSIN, SYSPRINT, AND SYSMAP DATASETS                  00120199
+         LA    R1,=CL8'VOLUME01'        VOLUME01 DDNAME                 00120299
+         BAS   R2,CPK8580               FREE THIS DATA SET              00120384
+         LA    R1,=CL8'SYSIN'           SYSIN DDNAME                    00120499
+         BAS   R2,CPK8580               FREE THIS DATA SET              00120599
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120699
+         BAS   R2,CPK8580               FREE THIS DATA SET              00120799
+         LA    R1,=CL8'SYSMAP'          SYSMAP DDNAME                   00120899
+         BAS   R2,CPK8580               FREE THIS DATA SET              00120999
+*  ALLOCATE //VOLUME01 FILE                                   DRK FEB14 00121099
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00121199
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00121299
+         USING S99RBP,R1                                                00121399
+         SPACE 1                                                        00121499
+         LA    R4,M99RB                                                 00121599
+         USING S99RB,R4                                                 00121699
+         ST    R4,S99RBPTR                                              00121799
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00121899
+         SPACE 1                                                        00121999
+         LA    R5,M99TUPL                                               00122099
+         USING S99TUPL,R5                                               00122199
+         MVI   S99RBLN,20               LENGTH 20                       00122299
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00122399
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00122499
+         LA    R3,WORKTBL                        START OF TEXT          00122599
+         SPACE 1                                                        00122699
+         MVC   0(L'CPKDDNDI+8,R3),CPKDDNDI       SPECIFY DDNAME TEXT    00122799
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00122899
+         LA    R3,L'CPKDDNDI+8(,R3)              START OF NEXT TEXT     00122999
+         SPACE 1                                                        00123099
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123199
+         MVC   0(L'CPKSHR,R3),CPKSHR             SPECIFY DISP TEXT      00123299
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123499
+         LA    R3,L'CPKSHR(,R3)                  START OF NEXT TEXT     00123599
+         SPACE 1                                                        00123699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123799
+         MVC   0(L'CPKNORM,R3),CPKNORM           SPECIFY NORMAL TEXT    00123899
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123999
+         LA    R3,L'CPKNORM(,R3)                 START OF NEXT TEXT     00124099
+         SPACE 1                                                        00124199
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124299
+         MVC   0(L'CPKANORM,R3),CPKANORM         SPECIFY ABNORMAL TEXT  00124399
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124499
+         LA    R3,L'CPKANORM(,R3)                START OF NEXT TEXT     00124599
+         SPACE 1                                                        00124699
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124899
+         MVC   0(L'CPKUNIT+8,R3),CPKUNIT         SPECIFY UNIT TEXT      00124999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00125099
+         LA    R3,L'CPKUNIT+8(,R3)               START OF NEXT TEXT     00125199
+         SPACE 1                                                        00125299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00125399
+         MVC   0(L'CPKVOLSR,R3),CPKVOLSR         SPECIFY VOLSER TEXT    00125499
+         MVC   6(6,R3),#CPKVOL                   VOLUME SERIAL          00125599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00125699
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00125799
+         SPACE 1                                                        00125899
+         DYNALLOC                                                       00125999
+         SPACE 2                                                        00126099
+         DROP  R1,R4,R5                                                 00126199
+         LTR   R15,R15                       SUCCESSFUL?                00126299
+         BNZ   CPKERROR                      NO, BRANCH                 00126399
+         SPACE 2                                                        00127099
+*  ALLOCATE //SYSIN FILE                                                00420099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00430099
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00440099
+         USING S99RBP,R1                                                00450099
+         SPACE 1                                                        00460099
+         LA    R4,M99RB                                                 00470099
+         USING S99RB,R4                                                 00480099
+         ST    R4,S99RBPTR                                              00490099
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00500099
+         SPACE 1                                                        00510099
+         LA    R5,M99TUPL                                               00520099
+         USING S99TUPL,R5                                               00530099
+         MVI   S99RBLN,20                 LENGTH 20                     00540099
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00550099
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00560099
+         SPACE 1                                                        00570099
+         MVC   #CMXSYS3(11),CPKDDNIN       SYSIN DDNAME                 00580099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00590099
+         USING S99TUNIT,R3                                              00600099
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00610099
+         MVC   S99TUPTR+4(40),CPKSYSIN    ADD OTHER LIST ELEMENTS       00620099
+         SPACE 1                                                        00630099
+         DYNALLOC                                                       00640099
+         SPACE 2                                                        00650099
+         DROP  R1,R3,R4,R5                                              00660099
+         LTR   R15,R15                    SUCCESSFUL?                   00670099
+         BNZ   CPKERROR                   NO, BRANCH                    00680099
+         SPACE 3                                                        00690099
+*  ALLOCATE //SYSPRINT DATA SET                                         02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),CPKDDNPR      SYSPRINT DDNAME               02280084
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),CPKSYSPR    ADD OTHER LIST ELEMENTS       02360084
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   CPKERROR                   NO, BRANCH                    02570084
+         SPACE 3                                                        02570184
+*  ALLOCATE //SYSMAP DATA SET                                           02571099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02572084
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02573084
+         USING S99RBP,R1                                                02574084
+         SPACE 1                                                        02575084
+         LA    R4,M99RB                                                 02576084
+         USING S99RB,R4                                                 02577084
+         ST    R4,S99RBPTR                                              02578084
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02579084
+         SPACE 1                                                        02579184
+         LA    R5,M99TUPL                                               02579284
+         USING S99TUPL,R5                                               02579384
+         MVI   S99RBLN,20                 LENGTH 20                     02579484
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02579584
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02579684
+         SPACE 1                                                        02579784
+         MVC   #CMXSYS3(12),CPKDDNMP      SYSMAP DDNAME                 02579884
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02579984
+         USING S99TUNIT,R3                                              02580084
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02581084
+         MVC   S99TUPTR+4(40),CPKSYSPR    ADD OTHER LIST ELEMENTS       02582084
+         SPACE 1                                                        02583084
+         DYNALLOC                                                       02584084
+         SPACE 2                                                        02585084
+         DROP  R1,R3,R4,R5                                              02587084
+         LTR   R15,R15                    SUCCESSFUL?                   02588084
+         BNZ   CPKERROR                   NO, BRANCH                    02589084
+         B     CPK6000                                                  02590084
+         SPACE 2                                                        08580000
+CPKERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590084
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    CPK8550                    NO, BRANCH                    08700084
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     CPK8550                                                  08780084
+         SPACE 3                                                        08790000
+CPK6000  DS    0H                                                       08800084
+* OPEN SYSIN DATA SET                                                   08810000
+         MVC   BAMDCB(CPKDL),CPKDCB           GET MODEL DCB             08820084
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSIN'                    08830086
+         MVI   OPENLIST,X'80'                                           08840000
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               08850000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08860000
+         BO    CPK6010                         YES, BRANCH              08870084
+         LA    R1,CPK865E                      NO STATUS AVAILABLE      08880284
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08881039
+         B     CPK8550                         EXIT                     08890084
+         SPACE 3                                                        08900000
+*  OUTPUT SYSIN RECORDS                                                 08910000
+CPK6010  DS    0H                                                       08930084
+         MVC   MSGTEXT1(136),MSGBL132      CLEAR THE MESSAGE AREA       09240049
+         MVC   MSGTEXT1+4(L'CPKCARD),CPKCARD  CPK STATEMENT             09241099
+         PUT   BAMDCB,MSGTEXT1+4           OUTPUT CPK STATEMENT         09750084
+         MVI   OPENLIST,X'80'                                           10560018
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   10570000
+         LA    R1,BAMDCB                                                10580000
+         FREEPOOL (1)                                                   10590000
+         SPACE 2                                                        10590156
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590273
+         STAX  CPKNULL,USADDR=(R7),REPLACE=NO,IBUF=0,                  X10590684
+               OBUF=(CPK484W,CPK484WL),MF=(E,STAXPARM)                  10590784
+         LA    R1,CPKPARM                 PARM=BATCH                    10830084
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,CPKPGM               2 POINT TO CALLED PROGRAM       10920084
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950024
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,CPK7080                 RECOVERY ADDRESS              11040084
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),CPKEFTSR       INVOKE IKJEFTSR?              11400084
+         BNE   CPKNLNK                    NO, BRANCH                    11410084
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+CPKNLNK  BAS   R2,ATTACH                  FDRCPK/DISKMAP                11440099
+         SPACE 3                                                        11490000
+CPK7080  LM    R2,R8,#SUBHOLD+88                                        11500084
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520073
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530073
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540073
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11540195
+         SPACE 1                                                        11540278
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 11540378
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 11540479
+         BNE   CPK8000                    NO                  DRK JAN07 11540584
+         MVC   INSERT#1(8),CPKPGM         YES, ERROR          DRK JAN07 11540684
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 11541078
+         B     CPK8550                                        DRK JAN07 11550084
+         SPACE 1                                                        11820000
+CPK8000  MVC   BAMDCB(CPKDL),CPKDCB         GET MODEL DCB               12310084
+         AIF   ('&MAPPGM' EQ 'DISKMAP').DSKMAP1               DRK FEB14 12311099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSMAP'   CPK             12311199
+         AGO   .SKIPDM1                                       DRK FEB14 12312099
+.DSKMAP1 ANOP                                                           12313099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),=CL8'SYSPRINT' DISKMAP         12313199
+.SKIPDM1 ANOP                                                           12314099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSMAP/SYSPRINT        12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    CPK8010                      YES, BRANCH                 12360084
+         LA    R1,CPK865E                   NO STATUS AVAILABLE         12370184
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     CPK8550                      EXIT                        12380084
+         SPACE 3                                                        12390000
+*  PROCESS SYSMAP/SYSPRINT RECORDS                                      12400099
+CPK8010  GET   BAMDCB                     GET LIST RECORD               12420084
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         AIF   ('&MAPPGM' EQ 'DISKMAP').DSKMAP2               DRK FEB14 12570099
+         MVC   MSGTEXT1+4(120),1(R1)      ADD THE CPK MESSAGE           12571099
+         AGO   .SKIPDM2                                       DRK FEB14 12580099
+.DSKMAP2 ANOP                                                           12590099
+         CLI   1(R1),X'19'                CC CHAR IN COL 2?   DRK MAR14 12590199
+         BE    *+4+6                      YES, SKIP RECORD    DRK MAR14 12590299
+         MVC   MSGTEXT1+4(132),1(R1)      ADD THE DISKMAP MESSAGE       12590399
+.SKIPDM2 ANOP                                                           12591099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     CPK8010                                                  12650084
+         SPACE 3                                                        12660000
+CPK8500  DS    0H                                                       12881084
+         CLC   ##SUBCAL(8),CPKEFTSR       INVOKE IKJEFTSR?              12882084
+         BNE   CPK8540                    NO, BRANCH                    12883084
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JUL11 12885394
+         BL    CPK8540                    YES, VALID CPK                12886084
+         MVI   MTLEN+4,11                                               12887062
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA          DRK JAN06 12887167
+         SR    R15,R15                                                  12888062
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 12888182
+         CVD   R15,DOUBLE                                               12889162
+         MVC   INSERT#1(8),##SUBCOM                                     12889262
+         MVC   INSERT#2(4),=X'40202120'                                 12889362
+         ED    INSERT#2(4),DOUBLE+6                                     12889462
+         MVI   INSERT#2,C'='              RETURN CODE                   12889562
+         SPACE 1                                                        12889662
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12889796
+         BNE   CPK8530                    NO, SKIP MESSAGE              12889884
+         SPACE 1                                                        12889992
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 12890092
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 12890192
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 12890292
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 12890392
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 12890492
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 12890592
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 12890692
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 12890792
+         SPACE 1                                              DRK NOV07 12890892
+         SRL   R1,20                    USER ABEND            DRK NOV07 12890992
+         CVD   R1,DOUBLE                                      DRK NOV07 12891092
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 12891192
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 12891292
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 12891392
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 12891492
+         SPACE 1                                                        12891592
+CPK8530  DS    0H                                                       12891684
+         M$MSG L171$2                                                   12891762
+CPK8540  DS    0H                                                       12891884
+         MVI   OPENLIST,X'80'                                           12891962
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE.      12892062
+         LA    R1,BAMDCB                                                12892162
+         FREEPOOL (1)                                                   12892262
+         SPACE 2                                                        12892362
+CPK8550  M$ERRST MSGBLANK                                               12893084
+         LA    R1,=CL8'SYSPRINT'          SYSPRINT DDNAME               12900085
+         BAS   R2,CPK8580                 FREE THIS DATA SET            12910084
+         LA    R1,=CL8'SYSIN'             SYSIN DDNAME                  12911085
+         BAS   R2,CPK8580                 FREE THIS DATA SET            12912084
+         LA    R1,=CL8'SYSMAP'            SYSMAP DDNAME                 12913085
+         BAS   R2,CPK8580                 FREE THIS DATA SET            12914085
+         LA    R1,=CL8'VOLUME01'          VOLUME01 DDNAME               12915099
+         BAS   R2,CPK8580                 FREE THIS DATA SET            12916099
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+CPK8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940084
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),CPKFDDNA       ADD TEXT KEYS                 13140084
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,CPKUNALC                UNALLOC EVEN IF "PERM"        13160084
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13260000
+CPKNULL  BR    R14                                                      13270084
+         SPACE 2                                                        13280056
+*  CPK CONSTANTS                                                        13460084
+         PRINT NOGEN                                                    13470000
+CPKDCB   DCB   DSORG=PS,DDNAME=CPK,MACRF=(GL,PM),EODAD=CPK8500          13480084
+CPKDL    EQU   *-CPKDCB                                                 13490084
+         PRINT NOGEN                                                    13550138
+CPK484W  DC    C'PDS484W DISKMAP SHOULD NOT BE INTERRUPTED'             13550399
+CPK484WL EQU   *-CPK484W                                                13550484
+CPK865E  M$TX  'PDS865E THE DISKMAP OUTPUT CAN NOT BE OPENED'           13550699
+         PRINT GEN                                                      13551038
+CPKEFTSR DC    CL8'IKJEFTSR'                                            13710084
+         AIF   ('&MAPPGM' EQ 'DISKMAP').DSKMAP3               DRK FEB14 13720099
+CPKPGM   DC    CL8'FDRCPK'                       PGM=FDRCPK             13720284
+CPKPARM  DC    H'00',CL100' '                    PARM=                  13720399
+         AGO   .SKIPDM3                                       DRK FEB14 13720599
+.DSKMAP3 ANOP                                                           13720699
+CPKPGM   DC    CL8'DISKMAP'                      PGM=DISKMAP  CBT 792   13720799
+CPKPARM  DC    AL2(CPKPARML-2)                   PARM LENGTH            13720999
+         DC    C'MAPONLY,VOLS=1'                 PARM VALUE             13721099
+CPKPARML EQU   *-CPKPARM                                                13721199
+.SKIPDM3 ANOP                                                           13721299
+         SPACE 1                                                        13721399
+CPKCARD  DC    C'MAP HILIGHT=NO,FROMDD=VOLUME01' FDRCPK INPUT           13721499
+CPKDDNDI DC    X'000100010008',C'VOLUME01'       VOLUME01 DDNAME        13722099
+CPKDDNIN DC    X'000100010005',C'SYSIN'          SYSIN    DDNAME        13722198
+CPKDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722298
+CPKDDNMP DC    X'000100010006',C'SYSMAP'         SYSMAP   DDNAME        13722398
+CPKFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730084
+CPKSHR   DC    X'00040001000108'                 DISP=(SHR)             13780098
+CPKNEW   DC    X'00040001000104'                 DISP=(NEW)             13781098
+CPKDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790084
+CPKCDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800084
+CPKNORM  DC    X'00050001000108'                 DISP=(,KEEP)           13800199
+CPKANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13800299
+         SPACE 1                                                        13800399
+CPKUNIT  DC    X'001500010008',CL8'&PUNIT'       UNIT=SYSALLDA          13800499
+CPKVOLSR DC    X'001000010006404040404040'       VOL=SER=               13801099
+         SPACE 1                                                        13802099
+CPKPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810084
+CPKUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820084
+         SPACE 2                                                        13840000
+CPKPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850084
+CPKPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860084
+CPKPRTIN DC    X'000900010003',AL3(13300)        SPACE=(13300)          13870084
+CPKSINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           13880084
+         SPACE 1                                                        13920000
+CPKPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          13930099
+CPKPRTLR DC    X'004200010002',AL2(133)          DCB=LRECL=133          13940084
+CPKPRTBL DC    X'003000010002',AL2(13300)        DCB=BLKSIZE=13300      13950084
+         SPACE 2                                                        13960000
+CPKPRTR2 DC    X'004900010001',XL1'92'           DCB=RECFM=FBM          13961099
+CPKPRTL2 DC    X'004200010002',AL2(133)          DCB=LRECL=133          13962099
+CPKPRTB2 DC    X'003000010002',AL2(133)          DCB=BLKSIZE=133        13963099
+         SPACE 2                                                        13964099
+CPKSINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13970084
+CPKSINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980084
+CPKSINBL DC    X'003000010002',AL2(3120)         DCB=BLKSIZE=3120       13990084
+         SPACE 2                                                        14000000
+CPKSYSIN DC    A(CPKPRTFI,CPKPRTSE,CPKSINSP)                            14050098
+         DC    A(CPKSINRE,CPKSINLR,CPKSINBL)                            14060098
+         DC    A(CPKNEW,CPKDEL,CPKCDEL),X'80',AL3(CPKPERM)              14070098
+CPKSYSPR DC    A(CPKPRTFI,CPKPRTSE,CPKPRTIN)                            14080084
+         DC    A(CPKPRTR2,CPKPRTL2,CPKPRTB2)                            14090099
+         DC    A(CPKNEW,CPKDEL,CPKCDEL),X'80',AL3(CPKPERM)              14100084
+         SPACE 2                                                        14370000

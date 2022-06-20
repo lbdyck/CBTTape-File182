@@ -1,0 +1,1078 @@
+         TITLE 'P D S  --  PDS FIXPDS                        09/28/88'  06140000
+*********************************************************************** 06141000
+***      FIXPDS SUBCOMMAND     ADDED BY BRUCE LELAND -- NOV., 1982  *** 06142000
+*********************************************************************** 06143000
+*                                                                       06144000
+         SPACE 1                                                        06145000
+FIXPDS   CSECT                                                          06146037
+         USING *,R8                                                     06147000
+         CLI   #FIXOPT,6                STOWINIT?             DRK JUN08 06147156
+         BE    FIXPDSI2                 YES, OK               DRK JUN08 06147256
+         TM    DS1SMSFG,DS1PDSE         PDSE DATASET?         DRK SEP05 06147309
+         BNO   FIXPDSA                  NO, CONTINUE          DRK SEP05 06147409
+         CLI   #FIXOPT,2                RESET?                DRK JAN06 06147528
+         BE    FIXPDSI                  YES, OK               DRK JAN06 06147629
+         CLI   #RTYPE,0                 GENERAL DATA TYPE?    DRK JAN06 06147731
+         BH    FIXPDSX                  YES, EXIT             DRK JAN06 06147831
+         CLC   #BLKSI(4),=F'0'          BLKSIZE?              DRK JAN06 06147929
+         BH    FIXPDSI                  YES, OK               DRK JAN06 06148030
+         CLI   #OPTCD,0                 OPTCODE?              DRK JAN06 06148129
+         BH    FIXPDSI                  YES, OK               DRK JAN06 06148230
+FIXPDSX  DS    0H                                             DRK JAN06 06148331
+         MVI   MTLEN,25                 NO, INSERT LENGTH     DRK JAN06 06148429
+         MVC   INSERT#1(25),FIXPDSE     SOME FUNCTIONS LIMITED        " 06148529
+         M$MSG L531$1                   DATA SET IS A PDSE    DRK JAN06 06148629
+         M$ERRST MSGBLANK               ONE BLANK LINE        DRK SEP05 06148709
+         B     NEWCMD                   NOBBLED               DRK SEP05 06148809
+FIXPDSI  DS    0H                                             DRK SEP05 06148911
+         CLI   #FIXOPT,2               RESET?                 DRK SEP05 06149017
+         BNE   FIXPDSA                 NO                     DRK SEP05 06149117
+*                                      YES                    DRK SEP05 06149317
+*        STOW INITIALIZE FOR PDSE                             DRK SEP05 06149417
+*        PDSE MUST BE ALLOCATED DISP=OLD VIA CHANGE COMMAND   DRK SEP05 06149517
+*        OR BY PDS COMMAND INVOCATION WITH THE "OLD" OPERAND  DRK SEP05 06149618
+*                                                             DRK FEB06 06149732
+*        APAR OA13224 SUPPORTS DISP=SHR FOR STOW INITIALIZE   DRK FEB06 06149833
+*                                                             DRK FEB06 06149932
+         SPACE 1                                              DRK SEP05 06150132
+         AIF ('&STOWI' EQ 'YES').STOWY APAR OA13224 APPLIED?  DRK FEB06 06150234
+         LA    R1,L932                 ASSUME DISP=SHR        DRK SEP05 06150732
+         CLI   DSPALLOC,ALLOOLD        DISP=OLD               DRK SEP05 06150832
+         BNE   MSGNEW                  NO, ERROR MESSAGE      DRK SEP05 06150932
+.STOWY   ANOP                                                 DRK FEB06 06151034
+FIXPDSI2 DS    0H                                             DRK JUN08 06151156
+         M$ERRST MSGBLANK              ONE SPACING LINE       DRK SEP05 06151232
+         L     R15,=A(DSNAMES)                                DRK SEP05 06151332
+         BASR  R2,R15                  DISPLAY ALLOCATION STATUS      " 06151432
+         LA    R1,PDS392A              CORRECT DATA SET               " 06151532
+         BAS   R2,YESNO                RESPONSE "YES" OR "NO"?        " 06151632
+         B     NEWCMD                  "NO", QUIT                     " 06151732
+         BAS   R2,OPENSTOW             OPEN STOW DCB; ENQUEUES        " 06151857
+         B     NEWCMD                  COULD NOT OPEN -- ERROR        " 06151957
+         STOW  STOWDCB,,I              INITIALIZE FUNCTION    DRK SEP05 06152032
+         CH    R15,=H'12'              RC > 12                DRK SEP05 06152132
+         BH    IOERROR                 YES, ERROR CONDITION   DRK SEP05 06152232
+         B     NEWCMD                                         DRK SEP05 06152332
+FIXPDSA  DS    0H                                             DRK SEP05 06152432
+         SPACE 1                                                        06152532
+         ICM   R1,B'1111',#RECFM       NEW DCB=RECFM SPECIFIED?         06152632
+         BP    *+10                    YES, BRANCH                      06152732
+         MVC   #RECFM+3(1),RECFM       NO, USE PREVIOUS RECFM           06152832
+         ICM   R2,B'1111',#LRECL       NEW DCB=LRECL SPECIFIED?         06152932
+         BP    *+10                    YES, BRANCH                      06153000
+         MVC   #LRECL+2(2),LABLRECL    NO, USE THE LRECL FROM THE DCB   06154000
+         TM    #RECFM+3,X'C0'          RECFM=U..?                       06155000
+         BNO   *+10                    NO, BRANCH                       06156000
+         XC    #LRECL,#LRECL           YES, USE LRECL=0                 06157000
+         ICM   R3,B'1111',#BLKSI       NEW DCB=BLKSIZE SPECIFIED?       06158000
+         BP    *+10                    YES, BRANCH                      06159000
+         MVC   #BLKSI+2(2),BLKSI       NO, USE PREVIOUS BLOCKSIZE       06160000
+         C     R3,=F'88888'            BLKSIZE=88888?   SDB   DRK JUN03 06160106
+         BNE   *+4+6                   NO                     DRK JUN03 06160206
+         XC    #BLKSI(4),#BLKSI        YES, MAKE IT ZERO      DRK JUN03 06160306
+FIXPDSB  DS    0H                                             DRK JUN03 06160403
+         C     R3,=F'99999'            BLKSIZE=99999?   PDB   DRK JUN03 06160506
+         BNE   FIXPDSBX                NO                     DRK JUN03 06160603
+         TM    #RECFM+3,DCBRECBR       BLOCKED RECORDS?       DRK JUN03 06160703
+         BO    *+4+6+4                 YES                    DRK JUN03 06160803
+         MVC   #BLKSI+2(2),BLKSI       NO, USE PREVIOUS BLKSI DRK JUN03 06160905
+         B     FIXPDSBX                                       DRK JUN03 06161003
+         SPACE 1                                                        06161103
+         LH    R15,BYTEUCB             UCBBYTE                DRK JUN03 06161203
+         MH    R15,=H'9'               INDEX INTO UNIT TABLE  DRK JUN03 06161303
+         LA    R15,UNITTBL(R15)        DEVICE UNIT TYPE       DRK JUN03 06161436
+         MVC   #BLKSI(4),=F'27998'     DEFAULT BLKSIZE        DRK JUN03 06161503
+         CLC   1(4,R15),=C'3390'       3390?                  DRK JUN03 06161603
+         BNE   *+4+4                   NO                     DRK JUN03 06161703
+         B     FIXPDSB2                                       DRK JUN03 06161803
+         CLC   1(4,R15),=C'3380'       3380?                  DRK JUN03 06161903
+         BNE   *+4+6+4                 NO                     DRK JUN03 06162003
+         MVC   #BLKSI(4),=F'23476'     1/2 TRACK              DRK JUN03 06162103
+         B     FIXPDSB2                                       DRK JUN03 06162203
+         CLC   1(4,R15),=C'9345'       9345?                  DRK JUN03 06162303
+         BNE   *+4+6+4                 NO                     DRK JUN03 06162403
+         MVC   #BLKSI(4),=F'22928'     1/2 TRACK              DRK JUN03 06162503
+         B     FIXPDSB2                                       DRK JUN03 06162603
+         CLC   1(4,R15),=C'3350'       3350?                  DRK JUN03 06162703
+         BNE   *+4+6+4                 NO                     DRK JUN03 06162807
+         MVC   #BLKSI(4),=F'9442'      1/2 TRACK              DRK JUN03 06162903
+         B     FIXPDSB2                                       DRK OCT03 06163007
+         CLC   1(4,R15),=C'3330'       3330?                  DRK OCT03 06163107
+         BNE   *+4+6                   NO                     DRK OCT03 06163207
+         MVC   #BLKSI(4),=F'6447'      1/2 TRACK              DRK OCT03 06163307
+FIXPDSB2 DS    0H                                             DRK JUN03 06163403
+         TM    #RECFM+3,DCBRECV+DCBRECBR  RECFM=VB?           DRK JUN03 06163503
+         BNO   *+4+4                   NO, BRANCH             DRK JUN03 06163603
+         B     FIXPDSBX                                       DRK JUN03 06163703
+         TM    #RECFM+3,DCBRECF+DCBRECBR  RECFM=FB?           DRK JUN03 06163803
+         BNO   FIXPDSBX                NO, BRANCH             DRK JUN03 06163903
+         SPACE 1                                              DRK JUN03 06164003
+         L     R15,#BLKSI              REQUESTED BLOCKSIZE    DRK JUN03 06164103
+         SR    R14,R14                                        DRK JUN03 06164203
+         ICM   R4,B'1111',#LRECL       ANY LRECL?             DRK JUN03 06164303
+         BZ    FIXPDSBX                NO, AVOID DIVIDE ERROR DRK JUN03 06164403
+         DR    R14,R4                  LRECL'S PER BLOCK      DRK JUN03 06164503
+         M     R14,#LRECL              PDS DETERMINED BLKSIZE DRK JUN03 06164604
+         ST    R15,#BLKSI              STORE PDB              DRK JUN03 06164703
+         M$MSG L247                    PDB INFO MESSAGE       DRK FEB17 06164864
+FIXPDSBX DS    0H                                             DRK JUN03 06164903
+         SPACE 1                                                        06165003
+         TM    #RECFM+3,DCBRECF        RECFM=F OR RECFM=U?              06165100
+         BNO   FIXPDS10                NO, BRANCH                       06165200
+         TM    #RECFM+3,DCBRECV        RECFM=U?                         06165300
+         BO    FIXPDS10                YES, BRANCH                      06165400
+         SPACE 1                                                        06166000
+         L     R15,#BLKSI              REQUESTED BLOCKSIZE              06167000
+         SR    R14,R14                                                  06168000
+         ICM   R4,B'1111',#LRECL       ANY LRECL?                       06169000
+         BZ    FIXPDS10                NO, AVOID DIVIDE ERROR           06170000
+         DR    R14,R4                  CHECK LRECL'S PER BLOCK          06171000
+         LTR   R14,R14                 INTEGRAL NUMBER?                 06172000
+         BZ    FIXPDS10                YES, BRANCH                      06173000
+         M$MSG L482                    NO, DIVIDE ERROR MESSAGE         06174000
+         SPACE 2                                                        06175000
+FIXPDS10 TM    DSORG,DS1DSGPO          PARTITIONED?                     06176000
+         BNO   FIXPDS50                NO, BRANCH                       06177000
+         CLI   #FIXOPT,2               DCB?                             06178000
+         BL    FIXPDS50                YES, BRANCH                      06179000
+         SPACE 1                                                        06180000
+         L     R14,=X'01080100'        R=1, K=08, DD=256 BYTES          06181000
+         PUSH  ACONTROL                                       DRK MAY08 06181155
+         ACONTROL FLAG(NOPAGE0)                               DRK MAY08 06181254
+         TRKCALC FUNCTN=TRKCAP,TYPE=BYTEUCB+1,RKDD=(14),              XX06182000
+               REGSAVE=YES,MF=(E,PARMLIST)                              06183000
+         POP   ACONTROL                                       DRK MAY08 06183154
+         ST    R0,#DIRBTRK             SAVE DIRECTORY BLOCKS PER TRACK  06184000
+         SPACE 1                                                        06185000
+         MVC   ##SUBCOM(8),$USA        TEMPORARY SUBCOMMAND IDENTIFIER  06186000
+         MVI   STARTTR+2,X'01'         START OF DIRECTORY               06187000
+         BAS   R14,READDIR             NUMBER OF DIRECTORY BLOCKS       06188000
+         MVC   ##SUBCOM(8),$FIX        RESET THE SUBCOMMAND NAME        06189000
+         SPACE 1                                                        06190000
+         ICM   R3,B'1111',TOTMEMR      REAL (2 BYTES) AND ALIASES (2)   06191000
+         ICM   R6,B'1111',TOTBLOCK     ANY DIRECTORY BLOCKS?            06192000
+         BNZ   FIXPDS20                YES, BRANCH                      06193000
+         LA    R1,L752                 ASSUME RESET OR EXPAND & NOCOUNT 06194000
+         CLC   #NEWDIR,ZERO            CORRECT?                         06195000
+         BE    MSGNEW                  YES, ERROR EXIT                  06196000
+         SPACE 1                                                        06197000
+FIXPDS20 STM   R2,R12,28(R13)          CONVERT CCHHR TO TTR             06198000
+         LA    R2,CURMBB                                                06199000
+         L     R1,INDCB+(DCBDEBAD-IHADCB)                               06200000
+         L     R15,ADDRRLTV                                             06201000
+         LR    R3,R13                                                   06202000
+         BASR  R14,R15                                                  06203000
+         LR    R13,R3                                                   06204000
+         LM    R2,R12,28(R13)                                           06205000
+         ST    R0,#EOF1TTR             TTR OF CURRENT DIRECTORY EOF     06206000
+         SPACE 1                                                        06207000
+         CLI   #FIXOPT,3               EXPANDDIR OR FREEDIR?            06208000
+         BH    FIXPDS22                NO, BRANCH                       06209000
+         ICM   R1,B'1111',#NEWDIR      ANY DIRECTORY BLOCKS SPECIFIED?  06210000
+         BP    *+8                     YES, BRANCH                      06211000
+         ST    R6,#NEWDIR              NO, USE CURRENT NUMBER           06212000
+         SR    R6,R6                   CLEAR CURRENT DIRECTORY NUMBER   06213000
+         LTR   R3,R3                   ANY MAIN OR ALIAS MEMBERS?       06214000
+         BZ    FIXPDS22                NO, A WARNING IS NOT NEEDED      06215000
+         M$MSG L451                    YES, ALL MEMBERS WILL BE LOST    06216000
+         SPACE 1                                                        06217000
+FIXPDS22 CLI   #FIXOPT,5               FREEDIR?                         06218000
+         BNE   FIXPDS28                NO, BRANCH                       06219000
+         L     R4,#NEWDIR              NUMBER TO ADD                    06220000
+         A     R4,TOTUSED              ADD TO CURRENT USED              06221000
+         C     R4,TOTBLOCK             WITHIN THE CURRENT DIRECTORY?    06222000
+         BH    FIXPDS26                NO, CONVERT TO EXPANDDIR         06223000
+         L     R6,TOTUSED              NUMBER OF DIRECTORY BLOCKS USED  06224000
+         L     R0,#DIRBTRK             BLOCKS PER TRACK                 06225000
+         L     R4,TOTUSED              CURRENT USED BLOCKS              06226000
+         SRDA  R4,32                   TOTAL BLOCKS                     06227000
+         DR    R4,R0                   TOTAL / ENTRIES PER TRACK        06228000
+         LH    R0,#EOF1TTR             PREVIOUS DIRECTORY EOF           06229000
+         N     R0,=XL4'0000FFFF'       MASK OFF SIGN BITS               06229100
+         STH   R5,#EOF1TTR             POTENTIAL NEW DIRECTORY EOF      06230000
+         AH    R4,=H'1'                R OF TTR                         06231000
+         STC   R4,#EOF1TTR+2           R OF TTR FOR NEW DIRECTORY EOF   06232000
+         CLM   R0,3,#EOF1TTR           ACTUAL TT OF EOF ABOVE NEW?      06233000
+         BH    FIXPDS28                YES, NO MOVE PROBLEM             06234000
+         MVI   #FIXOPT,4               CONVERT TO EXPANDIR              06235000
+         B     FIXPDS28                                                 06236000
+         SPACE 1                                                        06237000
+FIXPDS26 MVI   #FIXOPT,4               CONVERT TO EXPANDIR              06238000
+         S     R4,TOTBLOCK             NUMBER OF BLOCKS TO EXPAND       06239000
+         ST    R4,#NEWDIR              UPDATE BLOCKS TO EXPAND          06240000
+         SPACE 1                                                        06241000
+FIXPDS28 L     R4,#NEWDIR              DIRECTORY BLOCKS TO ADD          06242000
+         AR    R4,R6                   DESIRED + CURRENT DIR. BLOCKS    06243000
+         ST    R4,#NEWDIR              UPDATE (NOW TOTAL # OF BLOCKS)   06244000
+         LTR   R3,R3                   ANY MAIN OR ALIAS MEMBERS?       06245000
+         BNZ   *+6                     YES, BRANCH                      06246000
+         SR    R6,R6                   NO, CLEAR DIRECTORY COUNT        06247000
+         SPACE 1                                                        06248000
+         LR    R1,R4                                                    06249000
+         SR    R1,R6                   NUMBER OF BLOCKS TO ADD          06250000
+         ST    R1,#NEWDIR              UPDATE (NOW NUMBER TO ADD)       06251000
+         SPACE 1                                                        06252000
+         L     R0,#DIRBTRK             BLOCKS PER TRACK                 06253000
+         SRDA  R4,32                   TOTAL BLOCKS                     06254000
+         DR    R4,R0                   TOTAL / ENTRIES PER TRACK        06255000
+         STH   R5,#EOF2TT              TRACK OF NEW DIRECTORY EOF       06256000
+         L     R2,DCBDEBAD-IHADCB+INDCB  DEB ADDRESS                    06257000
+         LA    R1,L870                 ASSUME MULTI-EXTENT DIRECTORY    06258000
+         CLC   32+14(2,R2),ZERO        NULL DATA SET?                   06259000
+         BE    FIXPDS31                YES, ALLOW THE ALLOCATION        06260000
+         CLC   #EOF2TT(2),32+14(R2)    CORRECT?                         06261000
+         BNL   MSGNEW                  YES, ERROR                       06262000
+         SPACE 1                                                        06263000
+FIXPDS31 LTR   R4,R4                   PARTIAL TRACK USED?              06264000
+         BP    FIXPDS32                YES, BRANCH                      06265000
+         OI    #NEWDIR,X'80'           MARK SPECIAL HANDLING            06266000
+         SPACE 2                                                        06267000
+FIXPDS32 CLI   #FIXOPT,5               FREEDIR MODE?                    06268000
+         BE    FIXPDS50                YES, NO DIRECTORY READ           06269000
+         LA    R3,#MEMPTR              BASE FOR THE MEMBER LIST         06270000
+         USING DIRLINK,R3              NO, BRANCH                       06271000
+         MVI   STARTTR+2,X'01'         TTR=000001 (START OF DIRECTORY)  06272000
+FIXPDS40 BAS   R14,READDIR             GET THE NEXT MEMBER              06273000
+         B     FIXPDS50                LAST MEMBER, BRANCH              06274000
+         SPACE 1                                                        06275000
+         CLI   #FIXOPT,4               RESET OR INITDIR?                06276000
+         BL    FIXPDS42                YES, BRANCH                      06277000
+         CLC   #EOF2TT(2),MEMTTR       IN THE NEW DIRECTORY AREA?       06278000
+         BL    FIXPDS40                NO, BRANCH                       06279000
+         MVI   SUBPOOLT,21             MARK TEMPORARY SUBPOOL IN USE    06280000
+         LA    R0,DIREND-DIRLINK       GET ANOTHER DIRECTORY ENTRY      06281000
+         ICM   R0,B'1000',SUBPOOLT                                      06282000
+         GETMAIN R,LV=(0)                                               06283000
+         XC    0(DIREND-DIRLINK,R1),0(R1)                               06284000
+         ST    R1,DIRLINK              CHAIN TO THE                     06285000
+         LR    R3,R1                               NEXT ENTRY           06286000
+         L     R14,DIRPTRS             ACTUAL DIRECTORY ENTRY           06287000
+         MVC   DIRNAME(74),0(R14)      ADD THE DIRECTORY INFORMATION    06288000
+         MVC   INSERT#1(8),DIRNAME                                      06289000
+         MVC   INSERT#2(8),=CL8'MOVED'                                  06290000
+         M$MSG L050$2                                                   06291000
+         DROP  R3                                                       06292000
+         SPACE 2                                                        06293000
+FIXPDS42 CLI   #FIXCHK,2               NO MEMBER CHECK?                 06294000
+         BE    FIXPDS40                YES, NO MEMBER CHECK             06295000
+         TM    FLAGSCC,RECFMU          RECFM=U?                         06296000
+         BO    FIXPDS40                YES, NO MEMBER CHECK             06297000
+         MVC   DSNMEMQ(8),MEMNAME      MEMBER NAME TO CHECK             06298000
+         BAS   R2,ENQMTEST             MEMBER IN USE?                   06299000
+         B     FIXPDS40                YES, OUTPUT WARNING MESSAGE ONLY 06300000
+         B     FIXPDS40                REPEAT FOR ALL MEMBERS           06301000
+         SPACE 2                                                        06302000
+FIXPDS50 DS    0H                                                       06303080
+         CLI   #FIXOPT3,0              ANY ADDTRK OPTION?     DRK NOV18 06305176
+         BE    FIXPDS52                NO, BRANCH                     " 06305276
+         ST    R6,R6SAVE                                              " 06305379
+         L     R6,=A(LSPACEX)          LSPACE                         " 06305478
+         BASR  R2,R6                   LARGEST FREE AREA ON VOLUME    " 06305578
+         L     R6,R6SAVE                                              " 06305678
+         SPACE 1                                                      " 06305778
+FIXPDS52 DS    0H                                                     " 06305878
+         M$ERRST MSGBLANK              ONE SPACING LINE                 06305980
+         L     R15,=A(DSNAMES)                                          06306079
+         BASR  R2,R15                  DISPLAY ALLOCATION STATUS        06306179
+         LA    R1,PDS392A              CORRECT DATA SET                 06306200
+         BAS   R2,YESNO                RESPONSE "YES" OR "NO"?          06307000
+         B     NEWCMD                  "NO", QUIT                       06308000
+         SPACE 1                                                        06309000
+         TM    DSORG,DS1DSGPO          PARTITIONED?                     06310000
+         BNO   FIXDCB                  NO, BRANCH                       06311000
+*** REOPEN THE DATA SET TO ENSURE DS1LSTAR IS CORRECT                   06312000
+         OI    FLAGSJJ,FNOREAD         CALL EXCP FOR OPEN ONLY          06313000
+         MVC   STARTTR(3),DS1LSTAR     SET BEYOND END OF DATA SET       06314000
+         L     R15,=V(EXCP)                                             06315000
+         BASR  R14,R15                                                  06316000
+         NI    FLAGSJJ,FF-FNOREAD      CALL IS COMPLETED                06317000
+         SPACE 2                                                        06318000
+         MVI   #DIRFIX,X'F9'           HIGH IN COLLATING SEQUENCE       06319143
+         MVC   #DIRFIX+1(7),=C'FIXPDS ' TEMPORARY STOW AND DELETE NAME  06320000
+         BAS   R6,RESERVE              RESERVE/ENQUEUE AS REQUIRED      06321060
+         L     R4,#NEWDIR              DIRECTORY BLOCKS DESIRED         06322000
+         N     R4,=X'7FFFFFFF'         CLEAR THE TOP BIT                06323000
+         CLI   #FIXOPT,2               WHICH PROCESSING MODE?           06324000
+         BL    FIXDCB                    DCB       -- CHANGE DCB ONLY   06325000
+         BE    FIXRES                    RESETDIR  -- REWRITE DIRECTORY 06326000
+         CLI   #FIXOPT,3                                                06327000
+         BE    FIXINIT                   INITDIR   -- REWRITE DIRECTORY 06328000
+***      BH    EXPAND                    EXPANDDIR -- ADD TO DIRECTORY  06329000
+         SPACE 3                                                        06330000
+EXPAND   ICM   R1,B'1111',TOTMEMR      ANY MAIN                         06331000
+         A     R1,TOTMEMA                      OR ALIAS MEMBERS?        06332000
+         BZ    FIXRES                  NO, USE RESETDIR INSTEAD         06333000
+         SPACE 1                                                        06334000
+         MVI   SUBPOOLT,21             MARK TEMPORARY STORAGE OBTAINED  06335000
+         LA    R0,1024*3               STORAGE FOR THREE NOTELISTS      06336000
+         ICM   R0,B'1000',SUBPOOLT     SUBPOOL                          06337000
+         GETMAIN R,LV=(0)                                               06338000
+         ST    R1,#NOTEPTR             POINTER TO NOTELIST WORK AREA    06339000
+         BAS   R2,SHUTSTW2             CLOSE AND FREE THE STOW DCB      06340000
+         SPACE 1                                                        06341000
+         MVI   OPENLIST,X'80'                                           06342000
+         OPEN  (STOWDCB,OUTPUT),MF=(E,OPENLIST)  OPEN IT FOR OUTPUT     06343000
+         SPACE 1                                                        06344000
+         TM    DCBOFLGS-IHADCB+STOWDCB,DCBOFOPN  STOW DCB OPEN?         06345000
+         LA    R1,L831                           NO OPEN ERROR MSG      06346000
+         BNO   MSGNEW                            NO, QUIT               06347000
+         CLC   #MEMPTR(4),ZERO         ANY MEMBERS TO MOVE?             06348000
+         BE    EXPAND80                NO, BRANCH                       06349000
+         LA    R0,80                   FIRST RECORD IS 80 BYTES LONG    06350000
+         SPACE 2                                                        06351000
+*  ONE OR MORE MEMBERS MUST BE MOVED                                    06352000
+*    WRITE GARBAGE RECORDS TO OCCUPY SPACE UP TO THE NEW DIRECTORY EOF  06353000
+EXPAND02 STH   R0,STOWDCB+DCBBLKSI-IHADCB  UPDATE IN THE DCB            06354000
+         L     R2,IOBUFF1              START OF DATA                    06355000
+         WRITE FIXPDSD,SF,STOWDCB,(2),'S',MF=E                          06356000
+         CHECK FIXPDSD                                                  06357000
+         NOTE  STOWDCB                 OUTPUT TTR                       06358000
+         LH    R0,BLKSI                MAXIMUM OUTPUT RECORD LENGTH     06359000
+         CLM   R1,B'1100',#EOF2TT      PAST THE NEW DIRECTORY EOF?      06360000
+         BNH   EXPAND02                NO, BRANCH                       06361000
+         ST    R1,#FIXTTRO             HIGHEST OUTPUT TTR               06362000
+         LA    R3,#MEMPTR                                               06363000
+         USING DIRLINK,R3              NO, BRANCH                       06364000
+         SPACE 1                                                        06365000
+EXPAND12 ICM   R3,B'0111',DIRLINK+1    NEXT MEMBER ENTRY                06366000
+         BZ    EXPAND20                END OF LIST, BRANCH              06367000
+         MVI   DIRLINK,X'80'           ASSUME THE MEMBER IS TO BE MOVED 06368000
+         TM    DIRFLAG,DIRALIAS        ALIAS ENTRY?                     06369000
+         BNO   EXPAND18                NO, BRANCH                       06370000
+         LA    R2,#MEMPTR                                               06371000
+         SPACE 1                                                        06372000
+EXPAND14 ICM   R2,B'0111',1(R2)              MORE IN THE LIST?          06373000
+         BZ    EXPAND18                      NO, THIS ITEM WILL MOVE    06374000
+         CR    R2,R3                         SAME ITEM?                 06375000
+         BE    EXPAND14                      YES, TRY AGAIN             06376000
+         CLC   DIRTTR(3),DIRTTR-DIRLINK(R2)  SAME TTR?                  06377000
+         BNE   EXPAND14                      NO, BRANCH                 06378000
+         TM    DIRLINK-DIRLINK(R2),X'80'     OTHER ITEM TO BE MOVED?    06379000
+         BO    EXPAND16                      YES, TRUE ALIAS            06380000
+         TM    DIRFLAG-DIRLINK(R2),DIRALIAS  OTHER ITEM AN ALIAS?       06381000
+         BO    EXPAND14                      YES, BRANCH                06382000
+         SPACE 1                                                        06383000
+EXPAND16 MVI   DIRLINK,0                     DO NOT MOVE THIS ENTRY     06384000
+EXPAND18 TM    DIRFLAG,DIR1TTR+DIR2TTR       ANY USER TTR'S?            06385000
+         BZ    EXPAND12                      NO, BRANCH                 06386000
+         SPACE 1                                                        06387000
+         OI    DIRLINK,X'01'                 AT LEAST ONE TTR           06388000
+         TM    DIRFLAG,DIR2TTR               TWO OR MORE TTR'S?         06389000
+         BNO   *+8                           NO, BRANCH                 06390000
+         OI    DIRLINK,X'02'                 AT LEAST TWO TTR'S         06391000
+         TM    DIRFLAG,DIR1TTR+DIR2TTR       THREE TTR'S?               06392000
+         BNO   *+8                           NO, BRANCH                 06393000
+         OI    DIRLINK,X'04'                 THREE TTR'S                06394000
+         B     EXPAND12                                                 06395000
+         SPACE 3                                                        06396000
+EXPAND20 LA    R3,#MEMPTR                                               06397000
+EXPAND22 ICM   R3,B'0111',DIRLINK+1    ANY MORE MEMBERS IN THE LIST?    06398000
+         BZ    EXPAND80                NO, BRANCH                       06399000
+         MVC   INSERT#1(8),DIRNAME     MEMBER NAME                      06400000
+         MVC   INSERT#2(8),=CL8'MOVED'                                  06401000
+         M$MSG L051$2                                                   06402000
+         TM    DIRLINK,X'80'           MEMBER TO BE MOVED?              06403000
+         BNO   EXPAND22                NO, BRANCH                       06404000
+         LA    R2,DIRSTART             FIRST USER TTR                   06405000
+         L     R4,#NOTEPTR             START OF NOTELIST STORAGE        06406000
+         LA    R5,X'10'+X'01'          MASK BITS FOR TESTING            06407000
+         LA    R6,3                    LOOP CONTROL                     06408000
+         SPACE 1                                                        06409000
+*  INPUT THE OVERLAY NOTELIST TABLE                                     06410000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     06411000
+EXPAND24 EX    R5,*-4                  ANOTHER TTR?                     06412000
+         BZ    EXPAND30                NO, BRANCH                       06413000
+         CLI   3(R2),0                 NOTELIST COUNT?                  06414000
+         BZ    EXPAND26                NO, BRANCH                       06415000
+         OI    DIRLINK,*-*             <<EXECUTED>>                     06416000
+         EX    R5,*-4                  MARK FOR NOTELIST PROCESSING     06417000
+         MVC   STARTTR(3),0(R2)        NOTELIST TTR ADDRESS             06418000
+         L     R15,=V(EXCP)            INPUT IT                         06419000
+         BASR  R14,R15                                                  06420000
+         LA    R1,L751                 ASSUME AN INPUT PROBLEM          06421000
+         LTR   R15,R15                 CORRECT?                         06422000
+         BP    MSGNEW                  YES, BRANCH                      06423000
+         LR    R14,R0                  INPUT ADDRESS                    06424000
+         SR    R15,R15                                                  06425000
+         IC    R15,3(,R2)              NUMBER OF NOTELIST ENTRIES       06426000
+         SLL   R15,2                   SIZE OF NOTELIST AREA            06427000
+         LR    R0,R4                   START OF THIS NOTELIST AREA      06428000
+         LR    R1,R15                  SAVE AREA MOVE LENGTH            06429000
+         MVCL  R0,R14                  SAVE THE NOTELIST DATA           06430000
+         SPACE 1                                                        06431000
+EXPAND26 LA    R2,4(,R2)               NEXT POTENTIAL USER TTR          06432000
+         LA    R4,1024(,R4)            NEXT POTENTIAL NOTELIST AREA     06433000
+         SLL   R5,1                    NEXT MASK BITS                   06434000
+         BCT   R6,EXPAND24                                              06435000
+         SPACE 3                                                        06436000
+*  READ EACH RECORD OF THE MEMBER                                       06437000
+EXPAND30 MVC   STARTTR(3),DIRTTR       FIRST TTR OF THE MEMBER          06438000
+         MVC   #FINDTTR(3),DIRTTR      SAVE THE FIRST TTR FOR LATER     06439000
+         SPACE 2                                                        06440000
+EXPAND32 L     R15,=V(EXCP)                                             06441000
+         BASR  R14,R15                                                  06442000
+         B     *+4(R15)                PROCESS RETURN CODE              06443000
+         B     EXPAND34                  00 - GOOD READ                 06444000
+         B     EXPAND60                  04 - END OF MEMBER             06445000
+         B     EXPAND60                  08 - END OF DATA SET           06446000
+         B     NEWCMD                    12 - I/O ERROR                 06447000
+         SPACE 1                                                        06448000
+EXPAND34 STM   R2,R12,28(R13)          CONVERT CCHHR TO TTR             06449000
+         LA    R2,CURMBB                                                06450000
+         L     R1,INDCB+(DCBDEBAD-IHADCB)                               06451000
+         L     R15,ADDRRLTV                                             06452000
+         LR    R3,R13                                                   06453000
+         BASR  R14,R15                                                  06454000
+         LR    R13,R3                                                   06455000
+         LM    R2,R12,28(R13)                                           06456000
+         ST    R0,#FIXTTRI             SAVE CURRENT INPUT TTR           06457000
+         TM    DIRLINK,X'77'           ANY PENDING TTR UPDATES?         06458000
+         BZ    EXPAND50                NO, BRANCH                       06459000
+         LA    R2,DIRSTART             FIRST USER TTR                   06460000
+         L     R4,#NOTEPTR             START OF NOTELIST STORAGE        06461000
+         LA    R5,X'10'                MASK                             06462000
+         LA    R6,3                    LOOP CONTROL                     06463000
+         SPACE 1                                                        06464000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     06465000
+EXPAND36 EX    R5,*-4                  ANY NOTELIST FOR THIS ENTRY?     06466000
+         BZ    EXPAND38                NO, BRANCH                       06467000
+         CLM   R0,B'1110',0(R2)        IS THIS THE NOTELIST ENTRY?      06468000
+         BE    EXPAND40                YES, BRANCH                      06469000
+EXPAND38 LA    R2,4(,R2)               NEXT USER TTR                    06470000
+         LA    R4,1024(,R4)            NEXT NOTELIST ENTRY              06471000
+         SLL   R5,1                    NEXT MASK                        06472000
+         BCT   R6,EXPAND36                                              06473000
+         B     EXPAND50                NOT THIS RECORD, BRANCH          06474000
+         SPACE 2                                                        06475000
+EXPAND40 SR    R0,R0                                                    06476000
+         IC    R0,3(R2)                NUMBER OF NOTELIST ENTRIES       06477000
+         LA    R1,L750                 ERROR MESSAGE FOR A PROBLEM      06478000
+         XI    DIRLINK,*-*             <<EXECUTED>>                     06479000
+         EX    R5,*-4                  TURN OFF THIS NOTELIST ENTRY     06480000
+         L     R5,EXCPBUFF             OUTPUT START ADDRESS             06481000
+EXPAND42 TM    3(R4),X'80'             NOTELIST TTR PREVIOUSLY UPDATED? 06482000
+         BNO   MSGNEW                  NO, ERROR                        06483000
+         MVC   0(3,R5),0(R4)           REPLACE THE BUFFER TTR           06484000
+         LA    R4,4(,R4)               NEXT STORAGE ADDRESS             06485000
+         LA    R5,4(,R5)               NEXT BUFFER ADDRESS              06486000
+         BCT   R0,EXPAND42             MOVE AND CHECK ALL ENTRIES       06487000
+         SPACE 3                                                        06488000
+*  OUTPUT EACH RECORD AND CHANGE TTR POINTERS AS NECESSARY              06489000
+EXPAND50 L     R0,LS                   RECORD LENGTH                    06490000
+         STH   R0,STOWDCB+DCBBLKSI-IHADCB  UPDATE IN THE DCB            06491000
+         L     R2,EXCPBUFF             START OF DATA                    06492000
+         WRITE FIXPDSD,SF,STOWDCB,(2),'S',MF=E                          06493000
+         CHECK FIXPDSD                                                  06494000
+         NOTE  STOWDCB                 OUTPUT TTR                       06495000
+         ST    R1,#FIXTTRO                                              06496000
+         SPACE 1                                                        06497000
+         CLC   DIRTTR(3),#FINDTTR      FIRST MEMBER RECORD?             06498000
+         BNE   *+10                    NO, BRANCH                       06499000
+         MVC   DIRTTR(3),#FIXTTRO      YES, UPDATE THE TTR              06500000
+         SPACE 1                                                        06501000
+         TM    DIRLINK,X'77'           ANY PENDING TTR UPDATES?         06502000
+         BZ    EXPAND32                NO, BRANCH                       06503000
+         LA    R2,DIRSTART             FIRST USER TTR                   06504000
+         L     R4,#NOTEPTR             START OF NOTELIST                06505000
+         LA    R5,X'10'                NOTELIST MASK                    06506000
+         LA    R6,3                    LOOP CONTROL                     06507000
+         LA    R14,X'01'               TTR MASK                         06508000
+         SPACE 1                                                        06509000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     06510000
+EXPAND52 EX    R14,*-4                 TTR IN THIS POSITION?            06511000
+         BNO   EXPAND54                NO, BRANCH                       06512000
+         CLC   #FIXTTRI(3),0(R2)       THIS INPUT TTR?                  06513000
+         BNE   EXPAND54                NO, BRANCH                       06514000
+         STCM  R1,B'1110',0(R2)        YES, UPDATE THE TTR              06515000
+         XI    DIRLINK,*-*             <<EXECUTED>>                     06516000
+         EX    R14,*-4                 TURN OFF THE TTR INDICATOR       06517000
+         SPACE 1                                                        06518000
+         TM    DIRLINK,*-*             <<EXECUTED>>                     06519000
+EXPAND54 EX    R5,*-4                  NOTELIST FOR THIS ENTRY?         06520000
+         BNO   EXPAND58                NO, BRANCH                       06521000
+         LR    R15,R4                  START OF NOTELIST                06522000
+         SR    R0,R0                                                    06523000
+         IC    R0,3(R2)                NUMBER OF NOTELIST ENTRIES       06524000
+EXPAND56 CLC   0(3,R15),#FIXTTRI       THIS TTR?                        06525000
+         BNE   *+12                    NO, BRANCH                       06526000
+         STCM  R1,B'1110',0(R15)       YES, UPDATE THE TTR              06527000
+         OI    3(R15),X'80'                 AND MARK AS UPDATED         06528000
+         LA    R15,4(,R15)             NEXT NOTELIST ENTRY              06529000
+         BCT   R0,EXPAND56                                              06530000
+EXPAND58 LA    R2,4(,R2)               NEXT USER TTR                    06531000
+         LA    R4,1024(,R4)            NEXT NOTELIST STORAGE            06532000
+         SLL   R5,1                    NEXT NOTELIST BIT MASK           06533000
+         SLL   R14,1                   NEXT TTR BIT MASK                06534000
+         BCT   R6,EXPAND52                                              06535000
+         B     EXPAND32               MOVE ALL MEMBERS                  06536000
+         SPACE 3                                                        06537000
+*  VERIFY THAT THE MEMBER WAS CORRECTLY PROCESSED                       06538000
+EXPAND60 LA    R1,L871                 ASSUME A TTR WAS NOT UPDATED     06539000
+         TM    DIRLINK,X'77'           CORRECT?                         06540000
+         BNZ   MSGNEW                  YES, BRANCH                      06541000
+         SPACE 1                                                        06542000
+         CLC   DIRTTR(3),#FINDTTR      A NULL MEMBER?                   06543000
+         BNE   EXPAND62                NO, BRANCH                       06544000
+         SPACE 1                                                        06545000
+* UPDATE TTR BY TWO AND STOW AGAIN FOR NULL MEMBERS                     06546000
+         STOW  STOWDCB,DIRNAME,D                                        06547000
+         LA    R1,L833                                                  06548000
+         LTR   R15,R15                                                  06549000
+         BP    EXIT8M                                                   06550000
+         SPACE 1                                                        06551000
+         ICM   R1,B'0111',#FIXTTRO                 HIGHEST OUTPUT TTR   06552000
+         LA    R1,2(,R1)                                                06553000
+         STCM  R1,B'0111',DCBRELAD-IHADCB+STOWDCB  HIGHEST OUTPUT TTR+2 06554000
+         STOW  STOWDCB,DIRNAME,A                                        06555000
+         LA    R1,L832                                                  06556000
+         LTR   R15,R15                                                  06557000
+         BP    EXIT8M                                                   06558000
+         SPACE 1                                                        06559000
+         SR    R1,R1                               YES, CHANGE THE TTR  06560000
+         ICM   R1,B'0111',DCBRELAD-IHADCB+STOWDCB  TTR OF LAST EOF      06561000
+         S     R1,=F'1'                            TTR OF NULL DATA     06562000
+         STCM  R1,B'0111',DIRTTR                   TTR OF NULL DATA     06563000
+         STCM  R1,B'0111',#FIXTTRO                 HIGHEST OUTPUT TTR   06564000
+         SPACE 2                                                        06565000
+EXPAND62 TM    DIRFLAG,DIRALIAS        ALIAS (WITH NO MAIN)?            06566000
+         BNO   EXPAND70                NO, BRANCH                       06567000
+         MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR  TTR                   06568000
+         XI    DIRFLAG,DIRALIAS        TEMPORARILY TURN OFF ALIAS BIT   06569000
+         STOW  STOWDCB,DIRNAME,R       REPLACE THIS MEMBER ENTRY        06570000
+         OI    DIRFLAG,DIRALIAS        RESET THE ALIAS BIT              06571000
+         SPACE 1                                                        06572000
+         B     *+4(R15)                PROCESS RETURN CODE              06573000
+         B     EXPAND70                  00 - REPLACED                  06574000
+         EX    0,*                       04 - SHOULD NOT OCCUR          06575000
+         EX    0,*                       08 - SHOULD NOT OCCUR          06576000
+         B     FULLDIR                   12 - DIRECTORY FULL            06577000
+         B     IOERROR                   16 - I/O ERROR                 06578000
+         SPACE 3                                                        06579000
+*  UPDATE THIS MEMBER AND ALL OF ITS ALIASES                            06580000
+EXPAND70 LA    R2,#MEMPTR                                               06581000
+         LR    R4,R3                                                    06582000
+         SPACE 1                                                        06583000
+EXPAND72 MVC   DCBRELAD-IHADCB+STOWDCB(3),DIRTTR-DIRLINK(R4)  TTR       06584000
+         STOW  STOWDCB,4(R4),R         REPLACE THIS MEMBER ENTRY        06585000
+         SPACE 1                                                        06586000
+         B     *+4(R15)                PROCESS RETURN CODE              06587000
+         B     EXPAND74                  00 - REPLACED                  06588000
+         EX    0,*                       04 - SHOULD NOT OCCUR          06589000
+         EX    0,*                       08 - SHOULD NOT OCCUR          06590000
+         B     FULLDIR                   12 - DIRECTORY FULL            06591000
+         B     IOERROR                   16 - I/O ERROR                 06592000
+         SPACE 1                                                        06593000
+EXPAND74 ICM   R2,B'0111',1(R2)               NEXT MEMBER ENTRY         06594000
+         BZ    EXPAND22                       END OF LIST, BRANCH       06595000
+         CLC   #FINDTTR(3),DIRTTR-DIRLINK(R2) THIS TTR TOO?             06596000
+         BNE   EXPAND74                       NO, BRANCH                06597000
+         CR    R2,R3                          SAME ENTRY?               06598000
+         BE    EXPAND74                       YES, BRANCH               06599000
+         LR    R4,R2                                                    06600000
+         NI    DIRLINK-DIRLINK(R2),FF-X'80'   DO NOT MOVE THIS MEMBER   06601000
+         MVC   DIRTTR-DIRLINK(3,R2),DIRTTR    NEW PRIMARY TTR           06602000
+         LA    R14,DIRSTART-DIRLINK(,R2)      FIRST ALIAS USER TTR      06603000
+         LA    R15,DIRSTART                   FIRST MOVED USER TTR      06604000
+         LA    R5,X'01'                       MASK BIT                  06605000
+         LA    R6,3                           LOOP CONTROL              06606000
+         SPACE 1                                                        06607000
+         TM    DIRLINK-DIRLINK(R2),*-*        <<EXECUTED>>              06608000
+EXPAND76 EX    R5,*-4                         A TTR AT THIS ENTRY?      06609000
+         BNO   EXPAND72                       NO, BRANCH                06610000
+         MVC   0(3,R14),0(R15)                YES, UPDATE THE TTR ENTRY 06611000
+         LA    R14,4(,R14)                    NEXT ALIAS TTR            06612000
+         LA    R15,4(,R15)                    NEXT MOVED TTR            06613000
+         SLL   R5,1                           NEXT MASK BIT             06614000
+         BCT   R6,EXPAND76                                              06615000
+         B     EXPAND72                                                 06616000
+         DROP  R3                                                       06617000
+         SPACE 3                                                        06618000
+*  WRITE THE ADDED DIRECTORY RECORDS                                    06619000
+EXPAND80 DS    0H                                              SS MAY90 06620000
+         MVC   STARTTR,DS1LSTAR               FORCE REOPEN     SS MAY90 06620400
+         L     R15,=V(EXCP)                   EXCP ROUTINE     SS MAY90 06620500
+         BASR  R14,R15                        EXCP ROUTINE     SS MAY90 06620600
+         L     R6,#NEWDIR                     DIRECTORY BLOCKS TO ADD   06620700
+         N     R6,=X'7FFFFFFF'                CLEAR THE TOP BIT         06621000
+         LA    R0,CCW1                        FIRST CCW                 06622000
+         ST    R0,IOBCCW                               TO USE           06623000
+         MVI   CCW3,X'1D'                     COMMAND FOR WRITE C,K,D   06624000
+         LA    R0,MSGTEXT1+3                  STORAGE FOR               06625000
+         STCM  R0,B'0111',CCW3+1                         WRITE ADDRESS  06626000
+         NI    CCW3+4,FF-X'40'                LAST CCW IN CHAIN         06627000
+         MVC   CCW3+6(2),=H'8'                DATA LENGTH IS EIGHT      06628000
+         XC    MSGTEXT1(20),MSGTEXT1          CLEAR THE WRITE ADDRESS   06629000
+         MVI   MSGTEXT1+8,8                   KEY IS EIGHT BYTES        06630000
+         MVI   MSGTEXT1+9,1                   DATA IS 1*256 BYTES       06631000
+         MVI   OPENLIST,X'80'                                           06632000
+         CLOSE (INDCB),MF=(E,OPENLIST)                                  06633000
+         OPEN  (INDCB,UPDAT),MF=(E,OPENLIST)                            06634000
+         SPACE 2                                                        06635000
+EXPAND82 L     R0,#EOF1TTR                    POINT TO LAST RECORD      06636000
+         STM   R15,R12,12+4(R13)              CONVERT TTR TO MBBCCHHR   06637000
+         L     R1,INDCB+(DCBDEBAD-IHADCB)     DEB ADDRESS               06638000
+         LA    R2,MSGTEXT1                    RETURN CCHHR              06639000
+         L     R15,ADDRCNVT                   TTR TO MBBCCHHR CONVERT   06640000
+         LR    R3,R13                         SAVE AREA ADDRESS         06641000
+         BASR  R14,R15                                                  06642000
+         LR    R13,R3                         SAVE AREA ADDRESS         06643000
+         LM    R15,R12,12+4(R13)              RESTORE REGISTERS         06644000
+         MVC   IOBSEEK(8),MSGTEXT1                                      06645000
+         LTR   R6,R6                          ANY RECORD TO WRITE?      06646000
+         BZ    EXPAND84                       NO, BRANCH                06647000
+         SR    R1,R1                                                    06648000
+         IC    R1,IOBSEEK+7                                             06649000
+         S     R1,=F'1'                       REDUCE INITIAL TTR        06650000
+         STC   R1,IOBSEEK+7                                             06651000
+         MVI   IOECB,0                                                  06652000
+         EXCP  IOB                            WRITE THIS RECORD         06653000
+         WAIT  ECB=IOECB                      WAIT FOR I/O COMPLETION   06654000
+         LA    R1,L836                        I/O ERROR IN DIRECTORY    06655000
+         CLI   IOECB,X'7F'                    SUCCESSFUL WRITE?         06656000
+         BNE   EXIT8M                         NO, ERROR                 06657000
+         SR    R1,R1                                                    06658000
+         IC    R1,#EOF1TTR+2                  INCREMENT                 06659000
+         A     R1,=F'1'                                R OF             06660000
+         STC   R1,#EOF1TTR+2                               TTR          06661000
+         C     R1,#DIRBTRK                    FIT ON THIS TRACK?        06662000
+         BNH   EXPAND84                       YES, BRANCH               06663000
+         LH    R1,#EOF1TTR                    INCREMENT                 06664000
+         N     R1,=XL4'0000FFFF'                                        06664100
+         A     R1,=F'1'                                TT OF            06665000
+         STH   R1,#EOF1TTR                                  TTR         06666000
+         MVI   #EOF1TTR+2,1                   RESET R OF TTR            06667000
+         SPACE 1                                                        06668000
+EXPAND84 S     R6,=F'1'                       MORE BLOCKS?              06669000
+         BP    EXPAND82                       YES, BRANCH               06670000
+         S     R6,=F'1'                       ENSURE R6 IS NEGATIVE     06671000
+         SPACE 2                                                        06672000
+*  WRITE THE DATA SET END-OF-FILE MARKER                                06673000
+         OC    MSGTEXT1+8(3),MSGTEXT1+8          END-OF-FILE WRITTEN?   06674000
+         BZ    FIXDCB                            YES, BRANCH            06675000
+         XC    MSGTEXT1+8(3),MSGTEXT1+8          SET KEY, DL=0          06676000
+         TM    #NEWDIR,X'80'                     END OF TRACK?          06677000
+         BNO   *+10                              NO, BRANCH             06678000
+         MVC   INDCB+DCBTRBAL-IHADCB(2),ZERO     FORCE TO NEXT TRACK    06679000
+         B     EXPAND82                                                 06680000
+         SPACE 3                                                        06681000
+         AGO   .TESTNON                                                 06682000
+***TEST  FOR NO DIRECTORY NUMBER CHANGE                                 06683000
+FIXRES   BAS   R2,CLOSEIT                        CLOSE INPUT DATA SET   06684000
+         L     R0,=A(CHANGE2)                    ABEND RECOVERY ADDRESS 06685000
+         ST    R0,RECOVER                                               06686000
+         MVC   BAMDCB(LDIRDCB),DIRDCB            COPY PROTOTYPE DCB     06687008
+         MVC   DCBDDNAM-IHADCB+BAMDCB,DDNAME     CURRENT DDNAME         06688000
+         MVI   OPENLIST,X'80'                    END OF LIST MARKER     06689000
+         OPEN  (BAMDCB,(UPDAT)),MF=(E,OPENLIST)                         06690000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'  DIRECTORY OPEN?            06691000
+         BNO   EXIT12O                       NO, QUIT                   06692000
+         SPACE 1                                                        06693000
+         LA    R2,WORKTBL              START OF BUFFER                  06694000
+         READ  FIXPDSD,SF,BAMDCB,(2),'S',MF=E                           06695000
+         CHECK FIXPDSD                                                  06696000
+         SPACE 1                                                        06697000
+         LA    R2,WORKTBL              START OF BUFFER                  06698000
+         MVC   0(18,R2),KEYDATA        MOVE IN THE KEY AND DATA         06699000
+         XC    18(256,R2),18(R2)       FOLLOWED BY ZEROES               06700000
+         WRITE FIXPDSD,SF,BAMDCB,(2),'S',MF=E                           06701000
+         CHECK FIXPDSD                                                  06702000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 06703000
+         B     FIXDCB                                                   06704000
+.TESTNON ANOP                                                           06705000
+         SPACE 1                                                        06706000
+FIXRES   BAS   R2,CLOSEIT                        CLOSE INPUT DATA SET   06707000
+         L     R0,=A(CHANGE2)                    ABEND RECOVERY ADDRESS 06708000
+         ST    R0,RECOVER                                               06709000
+         OI    SPFLAG3,SPFCHN                    TELL ISPMODE           06710000
+         MVC   BAMDCB(LDIRDCB),DIRDCB            COPY PROTOTYPE DCB     06711008
+         MVC   DCBDDNAM-IHADCB+BAMDCB,DDNAME     CURRENT DDNAME         06712000
+         MVI   OPENLIST,X'80'                    END OF LIST MARKER     06713000
+         OPEN  (BAMDCB,(OUTPUT)),MF=(E,OPENLIST)                        06714000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'  DIRECTORY OPEN?            06715000
+         BNO   EXIT12O                       NO, QUIT                   06716000
+         SPACE 1                                                        06717000
+         AGO   .TESTTRK                                                 06717152
+***TEST FOR 1 TRK EXTENT AND LESS THAN 3 DIRECTORY BLOCKS               06717250
+         L     R1,DCBDEBAD-IHADCB+BAMDCB     GET DEB ADDRESS            06717350
+         SR    R15,R15                                                  06717450
+         ICM   R15,3,32+14(R1)               NUMBER OF TRACKS IN EXTENT 06717550
+         C     R15,=F'2'                     1 TRACK EXTENT?            06717650
+         BNL   FIXRES05                      NO                         06717750
+         C     R4,=F'3'                      YES, DIRBLKS < 3?          06717850
+         BNL   FIXRES05                           NO                    06717950
+         LA    R4,3                               YES, INCREASE TO 3    06718050
+FIXRES05 DS    0H                                                       06718150
+.TESTTRK ANOP                                                           06718250
+         SPACE 1                                                        06718350
+         MVI   SUBPOOLT,21                   TEMPORARY STORAGE IN USE   06718500
+         LA    R0,50*20                      50 I/O CONCURRENTLY        06719000
+         SPACE 1                                                        06720000
+         ICM   R0,B'1000',SUBPOOLT                                      06721000
+         GETMAIN R,LV=(0)                                               06722000
+         LR    R3,R1                         START OF DECB LIST         06723000
+         LA    R15,50*20                     LENGTH TO CLEAR            06724000
+         LR    R14,R3                        START OF AREA              06725000
+         SR    R1,R1                         NULL SOURCE                06726000
+         MVCL  R14,R0                        PAD 0 FROM R1(0:7)         06727000
+         SPACE 1                                                        06728000
+         MVC   MSGTEXT1(18),KEYDATA          MOVE IN THE KEY AND DATA   06729000
+         XC    MSGTEXT1+18(256),MSGTEXT1+18  FOLLOWED BY ZEROES         06730000
+         LA    R2,WORKTBL                    START OF BUFFER            06731000
+         XC    0(18,R2),0(R2)                ZERO KEY                   06732000
+         XC    18(256,R2),18(R2)             AND MORE ZEROS             06733000
+FIXRES10 LR    R5,R4                         NUMBER OF BLOCKS           06734000
+         C     R5,=F'50'                     VALID COUNT?               06735000
+         BL    *+8                           YES, BRANCH                06736000
+         L     R5,=F'50'                     NO, USE 50                 06737000
+         LR    R6,R3                         START OF DECB'S            06738000
+         LA    R2,MSGTEXT1                   FIRST BLOCK TO WRITE       06739000
+         SPACE 2                                                        06740000
+FIXRES30 WRITE (R6),SF,BAMDCB,(R2),'S',MF=E                             06741000
+         LA    R2,WORKTBL              START OF BUFFER                  06742000
+         LA    R6,20(,R6)              NEXT DECB                        06743000
+         S     R5,=F'1'                SUFFICIENT BLOCKS WRITTEN?       06744000
+         BP    FIXRES30                NO, BRANCH                       06745000
+         SPACE 2                                                        06746000
+         LR    R5,R4                   NUMBER OF BLOCKS                 06747000
+         C     R5,=F'50'               VALID COUNT?                     06748000
+         BL    *+8                     YES, BRANCH                      06749000
+         L     R5,=F'50'               NO, USE 50                       06750000
+         SR    R4,R5                   UPDATE TOTAL REMAINING           06751000
+         LR    R6,R3                   START OF DECB'S                  06752000
+FIXRES50 CHECK (R6)                    CHECK THIS OUTPUT OPERATION      06753000
+         LA    R6,20(,R6)              NEXT DECB                        06754000
+         S     R5,=F'1'                SUFFICIENT BLOCKS WRITTEN?       06755000
+         BP    FIXRES50                NO, BRANCH                       06756000
+         XC    MSGTEXT1(18),MSGTEXT1   CLEAR THE OUTPUT BLOCK           06757000
+         LTR   R5,R4                   ANY BLOCKS?                      06758000
+         BP    FIXRES10                YES, LOOP                        06759000
+         SPACE 2                                                        06760000
+FIXRES60 TM    #NEWDIR,X'80'                     END OF TRACK?          06761000
+         BNO   *+10                              NO, BRANCH             06762000
+         MVC   BAMDCB+DCBTRBAL-IHADCB(2),ZERO    FORCE TO NEXT TRACK    06763000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)                                 06764147
+         SPACE 3                                                        06765000
+         MVI   OPENLIST,X'80'          END OF LIST MARKER               06766000
+         MVC   STOWDCB(LSAMDCB),SAMDCB                                  06767000
+         MVC   DCBDDNAM-IHADCB+STOWDCB,DDNAME                           06768000
+         MVI   ##ADRCM#,FIXOPEN        MARK FOR DCB OPEN EXIT USE       06769000
+         SPACE 2                                                        06770000
+         OPEN  (STOWDCB,(OUTPUT)),MF=(E,OPENLIST)                       06771000
+         TM    DCBOFLGS-IHADCB+STOWDCB,X'10'  OUT OPEN?                 06772000
+         BNO   EXIT12O                        NO, QUIT                  06773000
+         SPACE 1                                                        06774000
+         STOW  STOWDCB,#DIRFIX,A       ADD A NULL MEMBER                06775145
+         LA    R1,L832                 NOT ADDED MESSAGE                06776000
+         LTR   R15,R15                 ADDED?                           06777000
+         BP    IOERRORE                NO, QUIT WITH MESSAGE            06778043
+*        BP    EXIT8M                  NO, QUIT                         06778139
+         STOW  STOWDCB,#DIRFIX,D       DELETE THE DUMMY MEMBER          06779000
+         LA    R1,L833                 NOT DELETED MESSAGE              06780000
+         LTR   R15,R15                 DELETED?                         06781000
+         BP    IOERRORE                NO, QUIT WITH MESSAGE            06781143
+*        BP    EXIT8M                  NO, QUIT                         06782039
+         B     FIXDCB                                                   06783000
+         SPACE 1                                                        06784000
+*  REWRITE THE DIRECTORY WITHOUT CHANGING DS1LSTAR                      06785000
+FIXINIT  BAS   R2,CLOSEIT                     CLOSE INPUT DATA SET      06786000
+         L     R0,=A(CHANGE2)                 ABEND RECOVERY ADDRESS    06787000
+         ST    R0,RECOVER                                               06788000
+         OI    SPFLAG3,SPFCHN                 TELL ISPMODE              06789000
+         L     R6,#NEWDIR                     DIRECTORY BLOCKS TO ADD   06790000
+         N     R6,=X'7FFFFFFF'                CLEAR THE TOP BIT         06791000
+         LA    R0,CCW1                        FIRST CCW                 06792000
+         ST    R0,IOBCCW                               TO USE           06793000
+         MVI   CCW3,X'1D'                     COMMAND FOR WRITE C,K,D   06794000
+         LA    R0,MSGTEXT1+3                  STORAGE FOR               06795000
+         STCM  R0,B'0111',CCW3+1                         WRITE ADDRESS  06796000
+         NI    CCW3+4,FF-X'40'                LAST CCW IN CHAIN         06797000
+         MVC   CCW3+6(2),=H'264'              DATA LENGTH IS 264        06798000
+         XC    MSGTEXT1(11),MSGTEXT1          CLEAR THE WRITE ADDRESS   06799000
+         MVI   MSGTEXT1+8,8                   KEY IS EIGHT BYTES        06800000
+         MVI   MSGTEXT1+9,1                   DATA IS 1*256 BYTES       06801000
+         MVC   MSGTEXT1+11(18),KEYDATA        MOVE IN THE KEY AND DATA  06802000
+         XC    MSGTEXT1+29(256),MSGTEXT1+29   FOLLOWED BY ZEROES        06803000
+         MVI   OPENLIST,X'80'                                           06804000
+         CLOSE (INDCB),MF=(E,OPENLIST)                                  06805000
+         OPEN  (INDCB,UPDAT),MF=(E,OPENLIST)                            06806000
+         XC    #EOF1TTR,#EOF1TTR              RESET THE STARTING TTR    06807000
+         MVI   #EOF1TTR+2,1                   TTR=1                     06808000
+         SPACE 2                                                        06809000
+FIXINIT2 L     R0,#EOF1TTR                    POINT TO LAST RECORD      06810000
+         STM   R15,R12,12+4(R13)              CONVERT TTR TO MBBCCHHR   06811000
+         L     R1,INDCB+(DCBDEBAD-IHADCB)     DEB ADDRESS               06812000
+         LA    R2,MSGTEXT1                    RETURN CCHHR              06813000
+         L     R15,ADDRCNVT                   TTR TO MBBCCHHR CONVERT   06814000
+         LR    R3,R13                         SAVE AREA ADDRESS         06815000
+         BASR  R14,R15                                                  06816000
+         LR    R13,R3                         SAVE AREA ADDRESS         06817000
+         LM    R15,R12,12+4(R13)              RESTORE REGISTERS         06818000
+         MVC   IOBSEEK(8),MSGTEXT1                                      06819000
+         LTR   R6,R6                          ANY RECORD TO WRITE?      06820000
+         BZ    FIXINIT4                       NO, BRANCH                06821000
+         SR    R1,R1                                                    06822000
+         IC    R1,IOBSEEK+7                                             06823000
+         S     R1,=F'1'                       REDUCE INITIAL TTR        06824000
+         STC   R1,IOBSEEK+7                                             06825000
+         MVI   IOECB,0                                                  06826000
+         EXCP  IOB                            WRITE THIS RECORD         06827000
+         WAIT  ECB=IOECB                      WAIT FOR I/O COMPLETION   06828000
+         XC    MSGTEXT1+11(18),MSGTEXT1+11    RESET THE KEY AND DATA    06829000
+         LA    R1,L836                        I/O ERROR IN DIRECTORY    06830000
+         CLI   IOECB,X'7F'                    SUCCESSFUL WRITE?         06831000
+         BNE   EXIT8M                         NO, ERROR                 06832000
+         SR    R1,R1                                                    06833000
+         IC    R1,#EOF1TTR+2                  INCREMENT                 06834000
+         A     R1,=F'1'                                R OF             06835000
+         STC   R1,#EOF1TTR+2                               TTR          06836000
+         C     R1,#DIRBTRK                    FIT ON THIS TRACK?        06837000
+         BNH   FIXINIT4                       YES, BRANCH               06838000
+         LH    R1,#EOF1TTR                    INCREMENT                 06839000
+         N     R1,=XL4'0000FFFF'                                        06839100
+         A     R1,=F'1'                                TT OF            06840000
+         STH   R1,#EOF1TTR                                  TTR         06841000
+         MVI   #EOF1TTR+2,1                   RESET R OF TTR            06842000
+         SPACE 1                                                        06843000
+FIXINIT4 S     R6,=F'1'                       MORE BLOCKS?              06844000
+         BP    FIXINIT2                       YES, BRANCH               06845000
+         S     R6,=F'1'                       ENSURE R6 IS NEGATIVE     06846000
+         SPACE 2                                                        06847000
+*  WRITE THE DATA SET END-OF-FILE MARKER                                06848000
+         OC    MSGTEXT1+8(3),MSGTEXT1+8          END-OF-FILE WRITTEN?   06849000
+         BZ    FIXDCB                            YES, BRANCH            06850000
+         XC    MSGTEXT1+8(3),MSGTEXT1+8          SET KEY, DL=0          06851000
+         TM    #NEWDIR,X'80'                     END OF TRACK?          06852000
+         BNO   *+10                              NO, BRANCH             06853000
+         MVC   INDCB+DCBTRBAL-IHADCB(2),ZERO     FORCE TO NEXT TRACK    06854000
+         B     FIXINIT2                                                 06855000
+         SPACE 3                                                        06856000
+FIXDCB   MVC   WORKTBL+4(3),DS1LSTAR   LAST USED TTR ADDRESS            06857000
+         MVC   WORKTBL+8(2),DS1TRBAL   BYTES LEFT ON THIS TRACK         06858000
+         BAS   R2,CLOSEIT              CLOSE THE INPUT DCB              06859000
+         SPACE 1                                                        06860000
+         CLI   #FIXOPT3,0              ANY ADDTRK OPTION?               06861000
+         BE    FIXDCB8                 NO, BRANCH                       06862000
+         SPACE 2                                                        06863000
+         L     R0,=A(CHANGE2)                  ABEND RECOVERY ADDRESS   06864000
+         ST    R0,RECOVER                                               06865000
+         MVC   INDCB(LEXCPDCB),EXCPDCB         MOVE PATTERN DCB         06866000
+         CLC   =C'8',DS1FMTID                  FORMAT 8 DSCB? DRK OCT18 06866369
+         BNE   FIXNOEAV                        NO                     " 06866469
+         AIF   ('&MVSLEV' LT 'MVS710').NOEAV1                 DRK JAN13 06866571
+         MVC   INDCB(LEXCPDCE),EXCPDCBE        YES, MOVE PATTERN DCB  " 06866669
+         LA    R14,FIRST4K         BASE FOR INDCBE             JH DEC12 06866761
+         MVC   INDCBE-FIRST4K(C_DCBEL,R14),C_DCBE              JH DEC12 06866861
+         LA    R1,INDCBE-FIRST4K(,R14)                         JH DEC12 06866961
+         ST    R1,DCBDCBE-IHADCB+INDCB                         JH DEC12 06867061
+.NOEAV1  ANOP                                                 DRK JAN13 06867171
+FIXNOEAV DS    0H                                             DRK OCT18 06867269
+         LA    R1,WORKTBL+16                                            06867300
+         ST    R1,WORKTBL                                               06868000
+         OI    WORKTBL,X'87'                   MARK JFCB EXIT ONLY      06869000
+         LA    R1,WORKTBL                                               06870000
+         STCM  R1,B'0111',DCBEXLSA-IHADCB+INDCB  UPDATE EXIT LIST       06871000
+         MVC   DCBDDNAM-IHADCB+INDCB(8),DDNAME                          06872000
+         MVI   OPENLIST,X'80'                  MARK END OF LIST         06873000
+         BAS   R6,RESERVE                      RESERVE THE FILE         06874000
+         SPACE 2                                                        06875000
+         RDJFCB (INDCB,(OUTPUT)),MF=(E,OPENLIST)                        06876000
+         NI    WORKTBL+16+JFCBCTRI-INFMJFCB,FF-JFCBSPAC                 06877000
+         OI    WORKTBL+16+JFCBCTRI-INFMJFCB,JFCBTRK  ASSUME TRK         06878000
+         CLI   #FIXOPT3,1                            CORRECT?           06879000
+         BE    *+8                                   YES, BRANCH        06880000
+         OI    WORKTBL+16+JFCBCTRI-INFMJFCB,JFCBCYL  NO, USE CYL        06881000
+         MVC   WORKTBL+16+JFCBSQTY-INFMJFCB(3),#FIXOPT3+1  SIZE         06882000
+         OI    WORKTBL+16+JFCBMASK-INFMJFCB+4,X'80'  REWRITE THE JFCB   06883000
+         SPACE 2                                                        06884000
+         OPEN  (INDCB,(OUTPUT)),TYPE=J,MF=(E,OPENLIST)                  06885000
+         TM    DCBOFLGS-IHADCB+INDCB,X'10'     OUT OPEN?                06886000
+         BNO   EXIT12O                         NO, QUIT                 06887000
+         EOV   INDCB                           ADD AN EXTENT            06888000
+         SPACE 2                                                        06889000
+         ICM   R0,B'0111',WORKTBL+4            PREVIOUS DS1LSTAR        06890000
+         SLL   R0,8                            TTR0 -- NEW DS1LSTAR     06891000
+         STM   R14,R12,12(R13)                 SAVE REGISTERS           06892000
+         L     R1,DCBDEBAD-IHADCB+INDCB        DEB ADDRESS              06893000
+         LA    R2,DCBFDAD-IHADCB+INDCB         RETURN ADDRESS           06894000
+         L     R15,ADDRCNVT                    CONVERSION ROUTINE       06895000
+         LR    R3,R13                          SAVE R13                 06896000
+         BASR  R14,R15                                                  06897000
+         LR    R13,R3                          RESTORE R13              06898000
+         LM    R14,R12,12(R13)                 RESTORE REGISTERS        06899000
+         MVC   DCBTRBAL-IHADCB+INDCB(2),WORKTBL+8  PREVIOUS TRBAL       06900000
+         CLOSE (INDCB),MF=(E,OPENLIST)                                  06901000
+         SPACE 2                                                        06902000
+FIXDCB8  TM    DSORG,DS1DSGPO          PARTITIONED DATA SET?            06903000
+         BO    FIXDCB10                YES, BRANCH                      06904000
+         LA    R0,RESTART0             ABEND RECOVERY ADDRESS           06905000
+         ST    R0,RECOVER                                               06906000
+         BAS   R2,DEALLDCB             FREE THE DATA SET                06907000
+         MVI   DSPALLOC,CONOMOD        ASSUME MOD -- NO CHANGE          06908000
+         CLI   #FIXOPT,2               RESET PROCESSING?                06909000
+         BNE   *+8                     NO, BRANCH                       06910000
+         MVI   DSPALLOC,CONOOLD        YES, OPEN FOR RESET PROCESSING   06911000
+         MVI   ##ADRCM#,EDITOR         NO REPEATED WARNING MESSAGE      06912000
+         L     R15,=V(ALLOCATE)        ALLOCATION ROUTINE               06913000
+         BASR  R14,R15                 GOOD ALLOCATION?                 06914000
+         B     RESTART0                NO, ERROR                        06915000
+         SPACE 1                                                        06916000
+         L     R8,##ADRCMD             REESTABLISH THE BASE REGISTER    06917000
+         CLI   DSPALLOC,CONOSHR        REQUESTED ALLOCATION?            06918000
+         BE    RESTART2                NO, OLD ALLOCATION FAILED        06919000
+         SPACE 1                                                        06920000
+         L     R0,=A(CHANGE2)          ABEND RECOVERY ADDRESS           06921000
+         ST    R0,RECOVER                                               06922000
+         MVI   OPENLIST,X'80'          END OF LIST MARKER               06923000
+         MVC   STOWDCB(LSAMDCB),SAMDCB                                  06924000
+         MVI   DCBDSORG-IHADCB+STOWDCB,DS1DSGPS  SET FOR SEQUENTIAL     06925000
+         MVC   DCBDDNAM-IHADCB+STOWDCB,DDNAME                           06926000
+         MVI   ##ADRCM#,FIXOPEN                  MARK FOR DCB OPEN EXIT 06927000
+         SPACE 1                                                        06928000
+         OPEN  (STOWDCB,(OUTPUT)),MF=(E,OPENLIST)                       06929000
+         TM    DCBOFLGS-IHADCB+STOWDCB,X'10'  OUT OPEN?                 06930000
+         BNO   EXIT12O                        NO, QUIT                  06931000
+         B     FIXDCB20                                                 06932000
+         SPACE 1                                                        06933000
+FIXDCB10 L     R0,=A(CHANGE2)          ABEND RECOVERY ADDRESS           06934000
+         ST    R0,RECOVER                                               06935000
+         MVI   OPENLIST,X'80'          END OF LIST MARKER               06936000
+         MVC   STOWDCB(LSAMDCB),SAMDCB                                  06937000
+         MVC   DCBDDNAM-IHADCB+STOWDCB,DDNAME                           06938000
+         MVI   ##ADRCM#,FIXOPEN                  MARK FOR DCB OPEN EXIT 06939000
+         SPACE 1                                                        06940000
+         OPEN  (STOWDCB,(OUTPUT)),MF=(E,OPENLIST)                       06941000
+         BAS   R6,RESERVE                                               06942000
+         TM    DCBOFLGS-IHADCB+STOWDCB,X'10'  OUT OPEN?                 06943000
+         BNO   EXIT12O                        NO, QUIT                  06944000
+         SPACE 2                                                        06945000
+FIXDCB20 CLI   #FIXOPT2,4                      MAXSPACE?                06946000
+         BNE   FIXDCB30                        NO, BRANCH               06947000
+         L     R1,DCBDEBAD-IHADCB+STOWDCB      GET DEB ADDRESS          06948000
+         LH    R14,NUMEXT                      NUMBER OF EXTENTS        06949000
+         SR    R0,R0                                                    06949100
+         SR    R15,R15                                                  06949200
+*                                                                       06949300
+         ICM   R15,3,32+14(R1) <----+   NUMBER OF TRACKS IN EXTENT      06949400
+         AR    R0,R15               |   ADD NUMBER OF TRACKS            06949500
+         LA    R1,16(,R1)           |   NEXT EXTENT                     06949600
+         BCT   R14,*-4-2-4  --------+   BRANCH FOR ALL EXTENTS          06949700
+*                                                                       06949800
+         S     R0,=F'1'                        MAX 00TT OF TTR VALID?   06954000
+         BM    FIXDCB30                        NO, BRANCH               06955000
+         SLL   R0,8                            0TTX                     06956000
+         A     R0,=F'1'                        0TT1 (R OF TTR IS 1)     06957000
+         SLL   R0,8                            TT10 -- NEW DS1LSTAR     06958000
+         STM   R14,R12,12(R13)                 SAVE REGISTERS           06959000
+         L     R1,DCBDEBAD-IHADCB+STOWDCB      DEB ADDRESS              06960000
+         LA    R2,DCBFDAD-IHADCB+STOWDCB       RETURN ADDRESS           06961000
+         L     R15,ADDRCNVT                    CONVERSION ROUTINE       06962000
+         LR    R3,R13                          SAVE R13                 06963000
+         BASR  R14,R15                                                  06964000
+         LR    R13,R3                          RESTORE R13              06965000
+         LM    R14,R12,12(R13)                 RESTORE REGISTERS        06966000
+         XC    DCBTRBAL-IHADCB+STOWDCB(2),DCBTRBAL-IHADCB+STOWDCB       06967000
+         SPACE 2                                                        06968000
+FIXDCB30 CLOSE (STOWDCB),MF=(E,OPENLIST)                                06969000
+         M$ERRST MSGBLANK              ONE SPACING LINE                 06970000
+         L     R1,=A(DSNAMES)          ALLOCATION STATUS ROUTINE        06971000
+         ST    R1,##ADRCMD             EXECUTED AFTER OPEN OF DATA SET  06972000
+         MVI   ##ADRCM#,CONTINUE+EDITOR  CONTINUE AND NO WARNING        06973000
+         CLI   #FIXOPT2,0              RELEASE/RELSAVE/RELEXT/MAXSPACE? 06974000
+         BE    FIXDCB90                NO, BRANCH                       06975000
+         CLI   #FIXOPT2,4              MAXSPACE?                        06976000
+         BE    FIXDCB90                YES, BRANCH                      06977000
+         MVC   MSGTEXT1+4(8),##SUBCAL  RELEASE COMMAND NAME             06978000
+         MVI   MSGTEXT1+12,X'40'       ADD A BLANK                      06979000
+         MVI   MSGTEXT1+13,C''''       ADD A QUOTE                      06980000
+         MVC   MSGTEXT1+14(44),DSNAME  ADD THE DSNAME                   06981000
+         LH    R15,DSNLEN              LENGTH OF DSNAME                 06982000
+         LA    R3,MSGTEXT1+14(R15)     WHERE ADDITIONAL TEXT STARTS     06983000
+         MVC   0(22,R3),BLANK128       BLANK IT FIRST                   06984000
+         MVI   0(R3),C''''             ADD A FINAL QUOTE                06985000
+         LA    R4,14+22(,R15)          LENGTH OF COMMAND BUFFER         06986000
+         SLL   R4,16                                                    06987000
+         ST    R4,MSGTEXT1             UPDATE LENGTH FIELD              06988000
+         SPACE 1                                                        06989000
+         CLI   #FIXOPT2,1              RELEASE ALL?                     06990000
+         BE    FIXDCB70                YES, BRANCH                      06991000
+         MVC   2(3,R3),FIXLEXT         ADD EXT FOR EXTENTS              06992000
+         CLI   #FIXOPT2,3              RELEASE EXTENTS ONLY?            06993000
+         BE    FIXDCB70                YES, BRANCH                      06994000
+         MVC   2(4,R3),FIXLSPA         ADD SPA( FOR SPACE(              06995000
+         L     R1,#FIXRES              TRACKS TO RESERVE                06996000
+         CVD   R1,DOUBLE                                                06997000
+         OI    DOUBLE+7,X'0F'          CONVERT SIGN                     06998000
+         UNPK  2+4(5,R3),DOUBLE+5(3)   CONVERT TO PRINTABLE             06999000
+         MVI   2+4+5(R3),C')'          ENDING )                         07000000
+         SPACE 1                                                        07001000
+         AIF ('&CF296' EQ 'YES').YESF296                                07002000
+FIXDCB70 B     FIXDCB80                ***ZAP (NOP ) TO ADD V(SERIAL)   07003000
+         AGO   .NOTF296                                                 07004000
+.YESF296 ANOP                                                           07005000
+FIXDCB70 NOP   FIXDCB80                ***ZAP (B ) TO BYPASS V(SERIAL)  07006000
+.NOTF296 ANOP                                                           07007000
+         MVI   2+4+7(R3),C'V'          V OF VOLUME                      07008000
+         MVI   2+4+8(R3),C'('          BEGINNING (                      07009000
+         MVC   2+4+8+1(6,R3),VOLALLOC  VOLUME ALLOCATED                 07010000
+         MVI   2+4+8+1+6(R3),C')'      ENDING )                         07011000
+         SPACE 1                                                        07012000
+FIXDCB80 LA    R1,MSGTEXT1             START OF COMMAND BUFFER          07013000
+         ST    R1,ADDRTEXT             COMMAND ADDRESS                  07014000
+         MVI   3(R1),9                 OFFSET TO OPERANDS               07015000
+         L     R1,ADDRTEXT             COMMAND ADDRESS                  07016000
+         ST    R1,ADDRCBUF             COMMAND ADDRESS                  07017000
+         NOP   FIXDCB89                *** CHANGE TO BRANCH TO ATTACH   07018000
+         L     R15,=A(RX)              EXTERNAL INTERFACE START         07019000
+         BASR  R2,R15                  EXTERNAL LINK TO RELEASE         07020000
+         BAS   R2,DEALLDCB             FREE THE DATA SET                07021000
+         M$ERRST MSGBLANK              ONE SPACING LINE                 07022000
+         B     RESTART0                REALLOCATE AND START OVER        07023000
+         SPACE 2                                                        07024000
+FIXDCB89 DS    0H                      *** ALTERNATE ATTACH METHOD      07025000
+         LA    R3,##SUBCAL             RELEASE COMMAND PROCESSOR        07026000
+         BAS   R2,ATTACH               CALL THE COMMAND                 07027000
+FIXDCB90 BAS   R2,DEALLDCB             FREE THE DATA SET                07028000
+         M$ERRST MSGBLANK              ONE SPACING LINE                 07029000
+         B     RESTART0                REALLOCATE AND START OVER        07030000
+FIXPDSE  DC    C' - SOME FUNCTIONS LIMITED'                             07032826
+FIXLEXT  DC    C'EXT'                                                   07032900
+FIXLSPA  DC    C'SPA('                                                  07033000
+                                                                        07033163
+         AIF   ('&MVSLEV' LT 'MVS710').NOEAV2                 DRK JAN13 07033271
+EXCPDCBE DCB   DDNAME=X,MACRF=E,DEVD=DA,DCBE=*-*               JH DEC12 07033369
+LEXCPDCE EQU   *-EXCPDCBE                                               07033469
+C_DCBE   DCBE  EADSCB=OK                                       JH DEC12 07033563
+C_DCBEL  EQU   *-C_DCBE                                        JH DEC12 07033663
+.NOEAV2  ANOP                                                 DRK JAN13 07033771
+*        AIF   ('&MVSLEV' GE 'MVS710').EAV1                   DRK OCT18 07033872
+EXCPDCB  DCB   DDNAME=X,MACRF=E,DEVD=DA                                 07033900
+LEXCPDCB EQU   *-EXCPDCB                                                07034000
+*.EAV1    ANOP                                                DRK OCT18 07035072
+         SPACE 1                                                        07035177
+* PDS199I LARGEST FREE AREA ON VOLUME MVSRES IS 1234567 CYLINDERS       07036077
+LSPACEX  DS    0H                                             DRK NOV18 07037077
+         USING *,R6                                                   " 07038077
+         L     R1,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS               " 07039081
+         L     R0,32(,R1)               UCB ADDRESS                   " 07040077
+         MVC   PARMLIST(LSPACEL),LSPACEM                              " 07050077
+         LSPACE UCB=(R0),EXPDATA=WORKTBL,                              X07060077
+               MF=(E,PARMLIST)                                          07070077
+         LTR   R15,R15                                                " 07080077
+         BNZR  R2                                                     " 07090077
+         SPACE 1                                                      " 07100077
+         MVI   MTLEN,6                   INSERT LENGTH 1              " 07110077
+         MVI   MTLEN+4,8                 INSERT LENGTH 2              " 07120077
+         MVC   INSERT#1(6),VOLALLOC      VOLSER                       " 07130077
+         L     R1,WORKTBL+LSPDLCYL       CYLS IN LARGEST FREE         " 07140077
+         CVD   R1,DOUBLE                 PACKED                       " 07150077
+         MVC   INSERT#2(8),LCYLMASK                                   " 07160077
+         ED    INSERT#2(8),DOUBLE+4      DISPLAY                      " 07170077
+         M$MSG L199$2                                                 " 07180077
+         BR    R2                                                     " 07190077
+         SPACE 1                                                      " 07200077
+LSPDLCYL EQU   16                                                     " 07210077
+LCYLMASK DC    XL8'4020202020202120'                                  " 07220077
+L199$2   DC    C'199'                                                 " 07230077
+LSPACEM  LSPACE EXPDATA=0,MF=L,PLISTVER=MAX                           " 07240077
+LSPACEL  EQU   *-LSPACEM                                              " 07250077
+         DROP  R6                                                     " 07260077

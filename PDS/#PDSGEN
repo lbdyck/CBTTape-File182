@@ -1,0 +1,757 @@
+         TITLE 'P D S  --  PDS PROGRAM GENERATION OPTIONS             ' 00010001
+*********************************************************************** 00020001
+***                                                                 *** 00030001
+***  THIS MEMBER SHOULD BE MODIFIED TO SET GENERATION OPTIONS       *** 00040001
+***  BEFORE ASSEMBLING PDS.                                         *** 00050001
+***                                                                 *** 00060001
+***  NOTES:                                                         *** 00070001
+***    1.  INSTRUCTIONS ARE PRECEEDED BY THREE OR MORE ASTERISKS.   *** 00080001
+***                                                                 *** 00090001
+***    2.  THE INSTRUCTIONS ARE FOLLOWED BY A SET STATEMENT WHICH   *** 00100001
+***        SPECIFIES THE DEFAULT VALUE FOR THE PARAMETER.           *** 00110001
+***                                                                 *** 00120001
+***    3.  ANY ALTERNATE ACCEPTABLE VALUES ARE CODED AS COMMENT     *** 00130001
+***        SET STATEMENTS FOLLOWING THE DEFAULT VALUE.              *** 00140001
+***                                                                 *** 00150001
+***    4.  IF YOU WISH TO USE ONE OF THESE ALTERNATIVES, YOU NEED   *** 00160001
+***        ONLY CONVERT THE COMMENT LINE TO A VALID SETC VALUE;     *** 00170001
+***        YOU DO NOT NEED TO MODIFY THE EARLIER DEFAULT LINE.      *** 00180001
+***                                                                 *** 00190001
+***    5.  IT IS RECOMMENDED THAT YOU DO NOT MODIFY THE DEFAULT     *** 00200001
+***        LINE; THEN, IF YOU NEED TO REGENERATE PDS LATER, THE     *** 00210001
+***        LIST OF POSSIBLE CHOICES WILL STILL BE AVAILABLE.        *** 00220001
+***                                                                 *** 00230001
+***    6.  STANDARD DEFAULTS ARE SET BY COPY MEMBER #PDSGENB        *** 00240001
+***        WHICH IS INCLUDED BY THE FOLLOWING COPY STATEMENT.       *** 00250001
+***        ELEMENTS IN #PDSGEN (THIS MEMBER) NEED TO BE EXAMINED    *** 00260001
+***        AND SET CAREFULLY; ELEMENTS IN #PDSGENB MAY NEED TO      *** 00270001
+***        BE SET IF YOU HAVE AN UNUSUAL ENVIRONMENT OR YOU         *** 00280001
+***        ARE HAVE UNUSUAL REQUIREMENTS FOR PDS.                   *** 00290001
+***                                                                 *** 00300001
+***        YOU SHOULD MODIFY #PDSGENB IF ANY OF THE FOLLOWING       *** 00310001
+***        ARE TRUE:                                                *** 00320001
+***        A.  UNUSUAL ENVIRONMENT: TCAM, ISPF VERSION 1 OR         *** 00330001
+***            EARLIER, MVS/370 AND MVS/XA MIXED MODE OPERATION     *** 00340001
+***            OR NON-STANDARD UNIT NAMES.                          *** 00350001
+***        B.  FUNCTION DEFAULTS: SETLOG, SETENV, SETML, AND        *** 00360001
+***            SETSEL INSTALLATION DEFAULTS NEED TO BE CHANGED.     *** 00370001
+***        C.  SUBCOMMAND DEFAULTS: YOU NEED TO CHANGE OUTPUT       *** 00380001
+***            DEFAULTS ON THE DSNAME, COPY, COMPRESS OR CONTROL    *** 00390001
+***            SUBCOMMANDS.                                         *** 00400001
+***        D.  PANEL OR MESSAGES CHANGE: PANEL MEMBER NAMES OR      *** 00410001
+***            MESSAGE FORMAT MUST BE MODIFIED.                     *** 00420001
+***                                                                 *** 00430001
+*********************************************************************** 00440001
+    COPY #PDSGENB     COPY PDSGEN BASE DEFAULTS               ABL MAY88 00450001
+         SPACE 2                                                        00460001
+*********************************************************************** 00470001
+***                                                                 *** 00480001
+*** SET THE LEVEL OF YOUR OPERATING SYSTEM WITH ANY OF NINE VALUES:     00490001
+***                                                                     00500001
+*&MVSLEV  SETC  'MVS038'   ***  FOR MVS 3.8                             00510001
+*&MVSLEV  SETC  'MVS12X'   ***  FOR MVS SP 1.2, 1.1 OR ANY SE SYSTEM    00520001
+*&MVSLEV  SETC  'MVS13X'   ***  FOR MVS SP 1.3                          00530001
+*&MVSLEV  SETC  'MVS220'   ***  FOR MVS/XA  2.2.0                       00540001
+*&MVSLEV  SETC  'MVS310'   ***  FOR MVS/ESA 3.1.0                       00550001
+*&MVSLEV  SETC  'MVS410'   ***  FOR MVS/ESA 4.1.0                       00560001
+*&MVSLEV  SETC  'MVS510'   ***  FOR MVS/ESA 5.1.0                       00570001
+*&MVSLEV  SETC  'MVS6XX'   ***  FOR OS/390                              00580001
+*&MVSLEV  SETC  'MVS704'   ***  FOR Z/OS 1.4                            00590041
+*&MVSLEV  SETC  'MVS709'   ***  FOR Z/OS 1.9                            00600041
+*&MVSLEV  SETC  'MVS710'   ***  FOR Z/OS 1.10       (EAV MACRO)         00610041
+*&MVSLEV  SETC  'MVS711'   ***  FOR Z/OS 1.11       (ISPF XSTATS)       00620035
+*&MVSLEV  SETC  'MVS713'   ***  FOR Z/OS 1.13                           00630036
+*&MVSLEV  SETC  'MVS721'   ***  FOR Z/OS 2.1                            00640043
+*&MVSLEV  SETC  'MVS722'   ***  FOR Z/OS 2.2                            00650055
+*&MVSLEV  SETC  'MVS723'   ***  FOR Z/OS 2.3        (8-CHAR TSO USERID) 00660052
+&MVSLEV   SETC  'MVS724'   ***  FOR Z/OS 2.4        (SEP 2019)          00670055
+*&MVSLEV  SETC  'MVS725'   ***  FOR Z/OS 2.5        (SEP 2021)          00680053
+*                                                                       00690001
+*NOTE ON SWA ABOVE THE 16M LINE.. THE PDS LISTA FUNCTION HAS BEEN       00700001
+*   MODIFIED TO USE THE DSABSIOT AND SJFCBPTR IN THE SIOT IN            00710001
+*   31 BIT MODE TO ACCESS THE SIOT AND JFCB ABOVE THE LINE IF THE       00720001
+*   MVS220 OPTION IS SELECTED.  THIS OPTION WILL MAKE PDS NON-DOWNWARD  00730001
+*   COMPATABLE WITH OLDER MVS SYSTEMS.  IF YOU ARE RUNNING              00740001
+*   WITHOUT SWA ABOVE THE LINE THEN THE MVS13X OPTION WILL WORK.        00750001
+*                                                              SS JUL88 00760001
+         SPACE 2                                                        00770001
+*********************************************************************** 00780001
+***                                                                 *** 00790001
+*** THE FOLLOWING STATEMENTS SET SUBCOMMAND NAMES.  NOTE THAT           00800001
+*** THESE SUBCOMMAND NAMES ARE CURRENTLY LISTED IN THE ORDER            00810001
+*** OF THE SUBCOMMANDS IN THE #PDSTBL COPY MEMBER:                      00820001
+***   A.  TO NULLIFY A SUBCOMMAND, CODE ITS SETC VALUE AS ''            00830001
+***   B.  TO RENAME A SUBCOMMAND, CHANGE ITS SETC VALUE TO A            00840001
+***       DIFFERENT VALUE (ONE TO EIGHT CHARACTERS).                    00850001
+***         1.  NOTE THAT DUE TO THE SUBCOMMAND NAME SCAN USED,         00860001
+***             ALIASES FOR OTHER SUBCOMMANDS MAY CHANGE.               00870001
+***         2.  FOR EXAMPLE, IF DSPRINT WERE RENAMED TO EXTRA, THE      00880001
+***             SUBCOMMAND "E " WOULD BECOME "EXTRA" INSTEAD OF         00890001
+***             "EDIT" DUE TO THE RELATIVE POSITIONS OF "DSPRINT"       00900001
+***             AND "EDIT" IN THE SUBCOMMAND SCAN TABLE -- THE FIRST    00910001
+***             MATCH FOR THE NUMBER OF CHARACTERS ENTERED IS USED.     00920001
+***         3.  TO AVOID THIS PROBLEM WHEN YOU RENAME ANY SUBCOMMANDS,  00930001
+***             EDIT MEMBERS #PDSTBL AND #DIATBL AFTER THIS MEMBER      00940001
+***             AND MOVE THE LINES REPRESENTING SUBCOMMANDS TO THEIR    00950001
+***             DESIRED NEW POSITIONS.                                  00960001
+***   C.  IF SUBCOMMANDS ARE NULLIFIED OR RENAMED, BE SURE TO MAKE      00970001
+***       CORRESPONDING CHANGES IN THE HELP MEMBER AND THE ISPF PANELS. 00980001
+***   D.  TO PREVENT THE USE OF ANY SUBCOMMAND ABBREVIATION, CODE       00990001
+***       ONE OF THE &NABX STATEMENTS TO ANY SUBSTRING DESIRED.  FOR    01000001
+***       EXAMPLE, TO PREVENT THE USE OF THE SUBCOMMANDS "E " OR "EN ", 01010001
+***       YOU COULD CODE:  &NAB1  SETC  'EN'                            01020001
+***                                                                     01030001
+&NAB1    SETC  ''                                                       01040001
+&NAB2    SETC  ''                                                       01050001
+&NAB3    SETC  ''                                                       01060001
+&NABE    SETC  'ABE'       ABE - "A BETTER EDITOR"                      01070001
+&NABE    SETC  ''          (COMMENT OUT THIS LINE IF YOU HAVE ABE)      01080001
+&NANA    SETC  'ANALYZE'   **UNDOCUMENTED -- ALIAS FOR COBANAL          01090007
+&NATT    SETC  'ATTRIB'                                                 01100001
+&NALI    SETC  'ALIAS'                                                  01110001
+&NAMB    SETC  'AMBLIST'   IBM SERVICE AID                              01120007
+&NBRO    SETC  'BROWSE'                                                 01130001
+&NBL5    SETC  'BLK3350'   **TSO BLK3350 COMMAND                        01140001
+&NBL8    SETC  'BLK3380'   **TSO BLK3380 COMMAND                        01150001
+&NBL9    SETC  'BLK3390'   **TSO BLK3390 COMMAND               SS SEP90 01160001
+&NBL4    SETC  'BLK9345'   **TSO BLK9345 COMMAND              DRK JUN06 01170001
+&NCHA    SETC  'CHANGE'                                                 01180001
+&NCOB    SETC  'COBANAL'   COBOL ANALYSIS (CBT 321)                     01190001
+&NCBN    SETC  'COMBINE'   **UNDOCUMENTED -- ALIAS FOR OFFLOAD          01200001
+&NCAR    SETC  'COMPARE'                                                01210001
+&NCDR    SETC  'COMPDIR'   **UNDOCUMENTED -- ALIAS FOR MATCH            01220039
+&NCMX    SETC  'COMPRESS'                                               01230001
+&NCND    SETC  'CONDEND'   **CONDEND (END ON WARNING/ERROR)             01240001
+&NCON    SETC  'CONTROL'                                                01250001
+&NCOP    SETC  'COPY'                                                   01260001
+&NCPK    SETC  'CPKMAP'    **COMPAKTOR MAP                              01270001
+&NDIS    SETC  'DISPLAY'                                                01280001
+&NDCF    SETC  'DCF'       **TSO SCRIPT COMMAND                         01290001
+&NDIR    SETC  'DIRENTRY'                                               01300001
+&NDEL    SETC  'DELETE'                                                 01310001
+&NDLN    SETC  'DLINK'     **DELINKI PROGRAM (CBT 090)                  01320001
+&NDSN    SETC  'DSNAME'    **DO NOT NULLIFY**                           01330001
+&NDSP    SETC  'DSPRINT'                                                01340001
+&NDSM    SETC  'DISASM'    **DISASM0 PROGRAM (CBT 217)                  01350001
+&NDSA    SETC  'DSAT'      **TSO DSAT COMMAND                           01360001
+&NDVO    SETC  'DVOL'      **TSO DVOL COMMAND                           01370001
+&NEDI    SETC  'EDIT'                                                   01380001
+&NEDR    SETC  'EDREC'     **NOT SUPPORTED FOR SPF 5668-009 OR 5665-268 01390001
+&NEND    SETC  'END'       **DO NOT NULLIFY**                           01400001
+&NEXE    SETC  'EXEC'                                                   01410001
+&NFIN    SETC  'FIND'                                                   01420001
+&NFIX    SETC  'FIXPDS'                                                 01430001
+&NFSE    SETC  'FSE'                                                    01440001
+&NKLE    SETC  'KLEAR'     **UNDOCUMENTED -- CLEAR SCREEN SUBCOMMAND    01450001
+&NHEL    SETC  'HELP'                                                   01460001
+&NHIS    SETC  'HISTORY'                                                01470001
+&NIFX    SETC  'IF'                                                     01480001
+&NVIE    SETC  'VIEW'      **ISPF VIEW                        DRK JUL02 01490001
+&NISP    SETC  'ISPF'                                                   01500001
+&NISM    SETC  'ISPMODE'   **NOT SUPPORTED FOR SPF 5668-009 OR 5665-268 01510001
+&NISX    SETC  'ISPXEQ'    **NOT SUPPORTED FOR SPF 5668-009 OR 5665-268 01520001
+&NLCS    SETC  'LCS'       PANVALET LCS INFO - HARTFORD GROUP MOD       01530045
+&NLIS    SETC  'LIST'                                                   01540001
+&NLMA    SETC  'LMA'       LOAD MODULE ANALYSIS - IBM DEBUG TOOL        01550001
+&NMAP    SETC  'MAP'                                                    01560001
+&NMAT    SETC  'MATCH'     **PDSMATCH PROGRAM                           01570013
+&NMEM    SETC  'MEMBERS'                                                01580001
+&NMML    SETC  'MEMLIST'   **NOT SUPPORTED FOR SPF 5668-009 OR 5665-268 01590001
+&NMXI    SETC  'MXIBAT'    **MXI PROGRAM (PARM=BATCH)                   01600001
+&NOFF    SETC  'OFFLOAD'   **OFFLOAD PROGRAM                            01610001
+&NOPT    SETC  'OPTIONS'                                                01620001
+&NOUT    SETC  'OUTCOPY'                                                01630001
+&NPAT    SETC  'PATTERN'                                                01640001
+&NPDS    SETC  'PDS86'     **UNDOCUMENTED -- ALIAS FOR CHANGE           01650001
+&NPRI    SETC  'PRINTOFF'                                               01660001
+&NPTS    SETC  'PTSEXP'    **GIMCPTS PROGRAM                            01670008
+&NREC    SETC  'RECALL'                                                 01680001
+&NRC2    SETC  'RC'        **ALTERNATE NAME FOR RECALL                  01690001
+&NREN    SETC  'RENAME'                                                 01700001
+&NREP    SETC  'REPLACE'                                                01710001
+&NRPR    SETC  'REPRO'                                                  01720001
+&NRES    SETC  'RESTORE'                                                01730001
+&NREV    SETC  'REVIEW'                                                 01740001
+&NRXX    SETC  'RX'        **PROGRAMMER CALCULATOR                      01750001
+&NQUI    SETC  'QUIT'                                                   01760001
+&NSEA    SETC  'SEARCH'    **UNDOCUMENTED -- ALIAS FOR SRCHFOR          01770001
+&NSEP    SETC  'SEPARATE'  **PDSLOAD PROGRAM                            01780006
+&NSMP    SETC  'SMPGEN'                                                 01790001
+&NSPF    SETC  'SPFEDIT'   **UNDOCUMENTED -- ALIAS FOR EDIT             01800001
+&NSRC    SETC  'SRCHFOR'   **ISRSUPC PROGRAM (PARM=SRCHCMP)             01810001
+&NSUB    SETC  'SUBMIT'                                                 01820001
+&NSUL    SETC  'SUBLIST'                                                01830001
+&NSCR    SETC  'SCRATCH'   **ALIAS FOR DELETE (NULLIFY IF NOT USED)     01840001
+&NTSO    SETC  'TSO'                                                    01850001
+&NTSE    SETC  'TSOEDIT'                                                01860001
+&NTSL    SETC  'TSOLIST'                                                01870001
+&NUSA    SETC  'USAGE'                                                  01880001
+&NUT1    SETC  'UT1'       **UNDOCUMENTED -- UTILITIES         SS NOV84 01890001
+&NUT2    SETC  'UT2'       **UNDOCUMENTED -- UTILITIES         SS NOV84 01900001
+&NVER    SETC  'VERIFY'                                                 01910001
+&NVPS    SETC  'VPSPRINT'                                               01920001
+&NVPE    SETC  'VPDSE'     **IEBPDSE PROGRAM                            01930017
+&NVTO    SETC  'VTOC'      **TSO VTOC COMMAND                           01940001
+&NXMI    SETC  'XMIT'      **TSO XMIT COMMAND                           01950001
+***                                                                 *** 01960001
+*** NOTE: THE FOLLOWING SUBCOMMANDS USE THE PRINTOFF INTERFACE AND      01970001
+***       THEY MAY BE MODIFIED FOR INSTALLATION USE.  BE SURE TO        01980001
+***       ALSO CHANGE THE CORRESPONDING &CXS ENTRY BELOW.               01990001
+&NXS1    SETC  ' '         ** AVAILABLE, NOT CURRENTLY USED             02000001
+&NXS2    SETC  'DPSPRINT'  ** A MEMOREX DSPRINT REPLACEMENT PRODUCT     02010001
+&NXS3    SETC  'PCLIST'    ** TEST THE CLIST INTERFACE                  02020001
+***                                                                     02030001
+         SPACE 2                                                        02040001
+*********************************************************************** 02050001
+***                                                                 *** 02060001
+*** THE FOLLOWING STATEMENTS SET SUBCOMMAND NAMES WHICH ARE TO          02070001
+*** BE IGNORED BY THE RECALL SUBCOMMAND.  CURRENTLY, UP TO NINE         02080001
+*** SUBCOMMAND NAMES CAN BE SPECIFIED.                                  02090001
+***                                                                     02100001
+&NOR1    SETC  '&NCHA'     ** CH  FOR CHANGE                            02110001
+&NOR2    SETC  '&NHEL'     ** HE  FOR HELP                              02120001
+&NOR3    SETC  '&NKLE'     ** KL  FOR KLEAR (OR K)                      02130001
+&NOR4    SETC  'YES  '     ** YES FOR YES/NO PROMPTING                  02140001
+&NOR5    SETC  'NO   '     ** NO  FOR YES/NO PROMPTING                  02150001
+&NOR6    SETC  '     '     ** --  FOR (AVAILABLE)                       02160001
+&NOR7    SETC  '     '     ** --  FOR (AVAILABLE)                       02170001
+&NOR8    SETC  '     '     ** --  FOR (AVAILABLE)                       02180001
+&NOR9    SETC  '     '     ** --  FOR (AVAILABLE)                       02190001
+         SPACE 2                                                        02200001
+*********************************************************************** 02210001
+***                                                                 *** 02220001
+*** THE FOLLOWING STATEMENTS SET THE NAMES OF SUBCOMMANDS WHICH ARE TO  02230001
+*** MONITORED FOR INCUSION IN THE ISPF LOG FILE.  CURRENTLY, UP TO NINE 02240001
+*** SUBCOMMAND NAMES CAN BE SPECIFIED.                                  02250001
+***                                                                     02260001
+&NLO1    SETC  '&NCHA'     ** CHANGE                                    02270001
+&NLO2    SETC  '&NSUB'     ** SUBMIT                                    02280001
+&NLO3    SETC  '&NCMX'     ** COMPRESS                                  02290001
+&NLO4    SETC  '&NFIX'     ** FIXPDS                                    02300001
+&NLO5    SETC  '&NREP'     ** REPLACE                                   02310001
+&NLO6    SETC  '&NDEL'     ** DELETE                                    02320001
+&NLO7    SETC  '&NREN'     ** RENAME                                    02330001
+&NLO8    SETC  '&NRPR'     ** REPRO                                     02340001
+&NLO9    SETC  '&NRES'     ** RESTORE                                   02350001
+&NLOA    SETC  '&NCOP'     ** COPY                                      02360002
+&NLOB    SETC  '&NXMI'     ** XMIT                                      02370002
+&NLOC    SETC  '&NALI'     ** ALIAS                                     02380002
+&NLOD    SETC  'LOAD'      ** LOAD                            DRK JUN12 02390020
+&NLOE    SETC  '&NOFF'     ** OFFLOAD                         DRK JUN12 02400019
+&NLOF    SETC  '&NATT'     ** ATTRIB                          DRK APR16 02410042
+         SPACE 2                                                        02420001
+*********************************************************************** 02430001
+***                                                                 *** 02440001
+*** NOTE: THE FOLLOWING OPTIONAL TSO COMMANDS ARE REFERENCED IN THE     02450001
+***       REMAINDER OF THIS MEMBER:                                     02460001
+***                                                                     02470001
+***    COMMAND NAME        SOURCE                                       02480001
+***    ------------        ------                                       02490001
+***    ABE                 ABE - "A BETTER EDITOR" FROM TOM SMITH       02500001
+***    COMPARE, COMPAREB   CBT MODS TAPE FILE 296; CBT FILE 300         02510001
+***    COMPAREC, COMPAREW  BRUCE LELAND                                 02520046
+***    SPFCOPY             IBM ISPF INSTALL; CBT FILE 300               02530001
+***    PDSFAST             SOFTWARE ENGINEERING OF AMERICA              02540001
+***    DSPRINT             IBM FDP                                      02550001
+***    DPSPRINT            MEMOREX                                      02560001
+***    VPSPRINT            LEVI, RAY AND SHOUP                          02570001
+***    RELEASE             CBT FILE 296; CBT FILE 300                   02580001
+***    FSE                 CBT FILE 207                                 02590001
+***    FSE                 APPLIED SOFTWARE, INC FSE+                   02600048
+***    HEL                 CBT FILE 296 - BILL GODFREY                  02610033
+***    PRINTOFF            CBT FILE 325 - WELLS FARGO VERSION           02620001
+***    PRINTOFF            CBT FILE 300; CBT FILE 205; CBT FILE 234,236 02630001
+***    REVIEW              CBT FILE 296; CBT FILE 300 - BILL GODFREY    02640033
+***    LIST                CBT FILE 300; IBM COMMAND PACKAGE            02650001
+***    LIST                APPLIED SOFTWARE, INC SUPERSET UTILITIES     02660048
+***    BLK3350, BLK3380    CBT FILE 296 - BRUCE LELAND                  02670033
+***    DSAT, DVOL          CBT FILE 296 - FLORIDA POWER & LIGHT COMPANY 02680033
+***    VTOC                CBT FILE 112 - R. L. MILLER                  02690033
+***    ZAP                 CBT FILE 300 - UCLA (INTERACTIVE ZAP PGM)    02700033
+***    DELINKI             CBT FILE 090 - DAVID W. NOON                 02710033
+***    DISASM              CBT FILE 217 - DICK THORTON                  02720033
+***    RESOURCE            CBT FILE 234 - DICK THORTON (DISASM - PDSE)  02730034
+***    MXI                 CBT FILE 410 - ROB SCOTT                     02740033
+***    OFFLOAD             CBT FILE 093 - DAVE COLE                     02750033
+***    PDSLOAD             CBT FILE 093 - BILL GODFREY                  02760033
+***    COBANAL             CBT FILE 321 - ROLAND SCHIRADIN              02770033
+***    PDSMATCH            CBT FILE 357 - BILL GODFREY                  02780040
+***                                                                     02790001
+         SPACE 2                                                        02800001
+*********************************************************************** 02810001
+***                                                                 *** 02820001
+***                                                                 *** 02830001
+***                                                                 *** 02840001
+*** THE FOLLOWING STATEMENTS SET THE NAMES OF ATTACHED TSO COMMANDS.    02850001
+***  EACH OF THESE &N... SYMBOLS IS ASSOCIATED WITH AN &C... SYMBOL     02860001
+***  WITH THE SAME LAST THREE CHARACTERS AS DEFINED ABOVE.              02870001
+***                                                                     02880001
+***                                                                     02890001
+*** NOTES:                                                              02900001
+***   A.  TO NULLIFY A SUBCOMMAND, DO NOT USE THE &C... SYMBOL;         02910001
+***       USE THE ASSOCIATED &N... SYMBOL ABOVE THIS.                   02920001
+***                                                                     02930001
+***   B.  TO USE A DIFFERENT TSO COMMAND NAME, CHANGE ITS SETC VALUE    02940001
+***       TO A DIFFERENT VALUE (ONE TO EIGHT CHARACTERS) AND ALSO       02950001
+***       MAKE CORRESPONDING CHANGES IN THE HELP MEMBER.                02960001
+***                                                                     02970001
+***   C.  ABE, COMPARE, DCF, DSPRINT, PRINTOFF, REVIEW, SUBMIT AND      02980001
+***       TSOLIST (AS WELL AS &NX1, &NX2 AND &NX3) CAN INVOKE A CLIST   02990001
+***       INSTEAD OF A TSO COMMAND BY CHANGING THE SETC VALUE TO A %    03000001
+***       FOLLOWED BY ONE TO SEVEN CHARACTERS; BE SURE TO MAKE          03010001
+***       CORRESPONDING CHANGES IN THE HELP MEMBER:                     03020001
+***                                                                     03030001
+***         1. COMPARE CLIST INPUT -                                    03040001
+***            'DSNAME1(MEMBER1)' 'DSNAME2(MEMBER2)'                    03050001
+***            FOLLOWED BY ANY ADDITIONAL DATA TYPED BY THE USER.       03060001
+***         2. OTHER CLIST INPUT -                                      03070001
+***            'DSNAME(MEMBER)'                                         03080001
+***            FOLLOWED BY ANY ADDITIONAL DATA TYPED BY THE USER.       03090001
+***                                                                     03100001
+         SPACE 2                                                        03110001
+*********************************************************************** 03120001
+***                                                                 *** 03130001
+*==> &CABE: ABE IS A SOPHISTICATED TEXT EDITOR WRITTEN IN PL/I.         03140001
+***   IT MAY BE OBTAINED FROM A NASPA VIP TAPE OR FROM TOM SMITH,       03150001
+***   KIMBERLY-CLARK, NEENAH, WISCONSON.  (414) 735-2174                03160001
+&CABE    SETC   'ABE'                                                   03170001
+*&CABE    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   03180001
+         SPACE 2                                                        03190001
+*********************************************************************** 03200001
+***                                                                 *** 03210001
+*==> &CCAR: THE COMPARE COMMAND CAN BE OBTAINED FROM THE                03220001
+***   CBT TAPE, FILE 296 (UPDATED IN 1988), OR FROM JIM                 03230001
+***   MARSHALL'S TSO MODIFICATIONS ON THE CBT TAPE, FILE 300;           03240001
+***   NOTE THAT A RELATED PROGRAM (COMPAREB) FROM THE SAME FILE         03250001
+***   MUST ALSO BE INSTALLED.                                           03260001
+&CCAR    SETC   'COMPARE$'                                              03270001
+***                                                                     03280001
+****** COMPAREC IS A COMMAND FROM BRUCE LELAND INVOKES THE              03290046
+***    ISPF SUPERC (OPTION =3.12) COMPARE PROGRAM.                      03300001
+***                                                                     03310001
+*&CCAR    SETC   'COMPAREC'                                             03320001
+***                                                                     03330001
+****** COMPAREW IS A COMMAND FROM BRUCE LELAND THAT INVOKES THE         03340046
+***    COMPAREX COMPARE PROGRAM.                                        03350047
+***                                                                     03360001
+*&CCAR    SETC   'COMPAREW'                                             03370001
+***                                                                     03380001
+***    COMPAREC AND COMPAREW ARE THE SAME COMMANDS AVAILABLE IN THE     03390001
+***    VENDOR PRODUCT STARTOOL.  STARTOOL DEVELOPER                     03400047
+***    BRUCE LELAND HAS GRACIOUSLY DONATED THE LOAD VERSION OF THESE    03410001
+***    COMMANDS FOR USE WITH FREE PDS.  THANKS BRUCE.                   03420001
+***                                                                     03430001
+***    COMPAREC AND COMPAREW ARE IN TSO TRANSMIT FORMAT IN MEMBER       03440001
+***    COMXMIT ON THE PDS DISTRIBUTION FILE.  TO USE THEM, YOU MUST     03450001
+***    FIRST RECEIVE MEMBER COMXMIT AND THEN COPY THE COMMANDS TO A     03460001
+***    STEPLIB OR LINKLIST DATASET.                                     03470001
+***                                                                     03480001
+***      RECEIVE INDS('AD.FILE182.PDS478(COMXMIT)')                     03490003
+***      PDS 'TRIDJK.COMPAR.LOAD' COPY : 'TSO.CMDLIB'                   03500001
+***                                                                     03510001
+*&CCAR    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   03520001
+         SPACE 2                                                        03530001
+*********************************************************************** 03540001
+***                                                                 *** 03550001
+*==> &CCMX: ONE OF THE FOLLOWING MAY BE USED AS A COMPRESS PROGRAM.     03560001
+***                                                                     03570001
+*****  NOTE:                                                            03580054
+***    A CHANGE IN Z/OS 1.13 TO IEBCOPY REMOVED ALTOGETHER THE          03590054
+***    THE APF AUTHORIZATION REQUIREMENT.                               03600054
+***                                                                     03610054
+****** IKJEFTSR IS IBM'S TSO SERVICE ROUTINE WHICH IS AVAILABLE IN      03620001
+***    TSO/E RELEASE 2.  WARNING: A PROBLEM WITH THE USE OF IKJEFTSR    03630001
+***    IS THAT ATTENTIONS CANNOT BE DEFERRED (ALSO TRUE FOR ISPF 3.1).  03640001
+***    *** DATA SETS CAN BE DESTROYED VERY EASILY IN A COMPRESS ***     03650001
+***    FOR MORE INFO ON COMPRESS AND ATTENTION, SEE PDS MESSAGE PDS980E 03660001
+&CCMX    SETC   'IKJEFTSR'  (DO NOT USE THE ATTENTION KEY WITH THIS)    03670001
+***                                                                     03680001
+****** SPFCOPY IS THE SPF AUTHORIZATION FRONT END FOR IEBCOPY           03690001
+***    WHICH IS AVAILABLE IN THE SPF INSTALLATION MATERIALS OR FROM     03700001
+***    JIM MARSHALL'S TSO MODIFICATIONS ON THE CBT TAPE, FILE 300.      03710001
+*&CCMX    SETC   'SPFCOPY'                                              03720001
+***                                                                     03730001
+****** PDSFAST IS THE IEBCOPY "REPLACEMENT" PROGRAM FROM SOFTWARE       03740001
+***    ENGINEERING OF AMERICA (AN "EXTRA FEATURE", EF-002, IS NOW       03750001
+***    PRE-INSTALLED IN PDSFAST TO ALLOW ITS USE BY A TSO COMMAND).     03760001
+*&CCMX    SETC   'PDSFAST'                                              03770001
+***                                                                     03780001
+****** IEBCOPY IS IBM'S PDS COPY UTILITY; AUTHORIZATION CODE MUST BE    03790001
+***    ENABLED IN PDS VIA ZAP NEAR LABEL COMPRZAP, HOWEVER.             03800001
+*&CCMX    SETC   'IEBCOPY'                                              03810001
+         SPACE 2                                                        03820001
+******** ************************************************************** 03830054
+***                                                                 *** 03840001
+*==> &CCOP: ONE OF THE FOLLOWING MAY BE USED AS A COPY PROGRAM.         03850001
+***                                                                 *** 03860054
+*****  NOTE:                                                            03870054
+***    A CHANGE IN Z/OS 1.13 TO IEBCOPY REMOVED ALTOGETHER THE          03880054
+***    THE APF AUTHORIZATION REQUIREMENT.                               03890054
+***                                                                 *** 03900054
+****** IKJEFTSR IS IBM'S TSO SERVICE ROUTINE WHICH IS AVAILABLE IN      03910001
+***    TSO/E RELEASE 2.  WARNING: A PROBLEM WITH THE USE OF IKJEFTSR    03920001
+***    IS THAT ATTENTIONS CANNOT BE DEFERRED (ALSO TRUE FOR ISPF 3.3).  03930001
+&CCOP    SETC   'IKJEFTSR'  (DO NOT USE THE ATTENTION KEY WITH THIS)    03940001
+***                                                                     03950001
+****** SPFCOPY IS THE SPF AUTHORIZATION FRONT END FOR IEBCOPY           03960001
+***    WHICH IS AVAILABLE IN THE SPF INSTALLATION MATERIALS OR FROM     03970001
+***    JIM MARSHALL'S TSO MODIFICATIONS ON THE CBT TAPE, FILE 300.      03980001
+*&CCOP    SETC   'SPFCOPY'                                              03990001
+***                                                                     04000001
+****** PDSFAST IS THE IEBCOPY "REPLACEMENT" PROGRAM FROM SOFTWARE       04010001
+***    ENGINEERING OF AMERICA (AN "EXTRA FEATURE", EF-002, IS NOW       04020001
+***    PRE-INSTALLED IN PDSFAST TO ALLOW ITS USE BY A TSO COMMAND).     04030001
+*&CCOP    SETC   'PDSFAST'                                              04040001
+***                                                                     04050001
+****** IEBCOPY IS IBM'S PDS COPY UTILITY; AUTHORIZATION CODE MUST BE    04060001
+***    ENABLED IN PDS VIA ZAP NEAR LABEL COPYRZAP, HOWEVER.             04070001
+*&CCOP    SETC   'IEBCOPY'                                              04080001
+         SPACE 2                                                        04090001
+*********************************************************************** 04100001
+***                                                                 *** 04110001
+*==> &COPYMOD: SETS THE COPYMOD OPTION -- IF COPYMOD IS ENABLED FOR     04120001
+***    A LOAD LIBRARY AND THE INPUT BLOCKSIZE IS GREATER THAN THE       04130001
+***    OUTPUT BLOCKSIZE, THE USUAL COPY STATEMENT WILL BE CONVERTED     04140001
+***    TO A COPYMOD STATEMENT (WITH MAXBLK EQUAL TO OUTPUT BLKSIZE).    04150001
+***    NOTE: COPYMOD IS NOT HANDLED DIRECTLY BY PDSFAST AT THIS TIME.   04160001
+&COPYMOD SETC   'YES'         *** ANY MVS/XA SYSTEM OR DFP 1.1 OR ABOVE 04170001
+*&COPYMOD SETC   'NO'         *** COPYMOD IS NOT AVAILABLE FOR IEBCOPY  04180001
+         SPACE 2                                                        04190001
+*********************************************************************** 04200001
+***                                                                 *** 04210001
+*==> &CDCF: THIS IS THE DCF SCRIPT PRODUCT AVAILABLE FROM IBM           04220001
+&CDCF    SETC   'SCRIPT'                                                04230001
+*&CDCF    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   04240001
+         SPACE 2                                                        04250001
+*********************************************************************** 04260001
+***                                                                 *** 04270001
+*==> &CDSP: DSPRINT IS THE DATA SET PRINT COMMAND FROM IBM; HOWEVER,    04280001
+***   DSPRINT COULD ACTUALLY BE AN ALIAS FOR ONE OF THE OTHER VTAM      04290001
+***   PRINTER PRODUCTS SUCH AS DPS OR VPS.                              04300001
+&CDSP    SETC   'DSPRINT'                                               04310001
+*&CDSP    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   04320001
+         SPACE 2                                                        04330001
+*********************************************************************** 04340001
+***                                                                 *** 04350001
+*==> &CFIX: FIXPDS INVOKES THE RELEASE COMMAND; RELEASE MAY BE OBTAINED 04360001
+***   FROM THE CBT TAPE, FILE 296 OR FILE 300.  NOTE:                   04370001
+***     1.  FIXPDS RELEASE       INVOKES:  RELEASE 'DSNAME'             04380001
+***     2.  FIXPDS RELEXTENT     INVOKES:  RELEASE 'DSNAME' EXT         04390001
+***     3.  FIXPDS RELSAVE(123)  INVOKES:  RELEASE 'DSNAME' SAV(123)    04400001
+&CFIX    SETC   'RELEASE'                                               04410001
+         SPACE 2                                                        04420001
+*********************************************************************** 04430001
+***                                                                 *** 04440001
+*==> &CF296: IF THE RELEASE PROGRAM WAS OBTAINED FROM THE CBT TAPE,     04450001
+***   FILE 296, PDS WILL ADD THE VOLUME(SERIAL) PARAMETER TO THE        04460001
+***   FORMATTED COMMAND TO ENSURE THAT THE PROPER DATA SET IS CHANGED.  04470001
+&CF296   SETC   'YES'         *** IF RELEASE IS FROM CBT 296            04480001
+*&CF296   SETC   'NO'         *** IF RELEASE IS FROM ANOTHER SOURCE     04490001
+         SPACE 2                                                        04500001
+*********************************************************************** 04510001
+***                                                                 *** 04520001
+*==> &CFSE: FSE IS A FULL-SCREEN EDIT COMMAND.  USE FSE FROM THE CBT    04530001
+***   TAPE, FILE 207 OR THE FSE+ PRODUCT FROM APPLIED SOFTWARE, INC.    04540048
+&CFSE    SETC   'FSE'                                                   04550001
+         SPACE 2                                                        04560001
+*********************************************************************** 04570001
+***                                                                 *** 04580001
+*==> &CHEL: EITHER OF THE FOLLOWING MAY BE USED FOR A HELP COMMAND.     04590001
+****** HELP IS THE STANDARD LINE MODE HELP COMMAND FROM IBM             04600001
+&CHEL    SETC   'HELP'                                                  04610001
+***                                                                     04620001
+****** HEL IS A FULL-SCREEN HELP COMMAND FROM THE CBT TAPE, FILE 296.   04630001
+*&CHEL   SETC   'HEL'      *** HEL MUST BE INSTALLED FOR PDS USE        04640001
+         SPACE 2                                                        04650001
+*********************************************************************** 04660001
+***                                                                 *** 04670001
+*==> &CPRI: THE PRINTOFF COMMAND IS AVAILABLE FROM SEVERAL MOD TAPES    04680001
+***   AND FROM ANY IBM IPO PACKAGE.                                     04690001
+&CPRI    SETC   'PRINTOFF'                                              04700001
+*&CPRI    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   04710001
+         SPACE 2                                                        04720001
+*********************************************************************** 04730001
+***                                                                 *** 04740001
+*==> &CREV: REVIEW IS A FULL-SCREEN BROWSE COMMAND WHICH IS AVAILABLE   04750001
+***   FROM THE CBT TAPE, FILE 296 (UPDATED IN 1985), OR FROM            04760001
+***   JIM MARSHALL'S TSO MODIFICATIONS ON THE CBT TAPE, FILE 300.       04770001
+&CREV    SETC   'REVIEW'                                                04780001
+*&CREV    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   04790001
+         SPACE 2                                                        04800001
+*********************************************************************** 04810001
+***                                                                 *** 04820001
+*==> &CSUB: THE SUBMIT COMMAND IS AVAILABLE ON MOST MVS SYSTEMS.        04830001
+&CSUB    SETC   'SUBMIT'                                                04840001
+*&CSUB    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   04850001
+         SPACE 2                                                        04860001
+*********************************************************************** 04870001
+***                                                                 *** 04880001
+*==> &CRXX: THE RX COMMAND (PROGRAMMER CALCULATOR) TO CALL              04890001
+&CRXX    SETC   'RX'                                                    04900001
+         SPACE 2                                                        04910001
+*********************************************************************** 04920001
+***                                                                 *** 04930001
+*==> &CTSL: THE TSO LIST COMMAND MAY BE OBTAINED FROM JIM MARSHALL'S    04940001
+***   TSO MODIFICATIONS ON THE CBT TAPE, FILE 300; A PRODUCT VERSION    04950001
+***   IS IN IBM'S TSO UTILITIES PACKAGE; AND A FULL-SCREEN LIST COMMAND 04960001
+***   IS AVAILABLE FROM APPLIED SOFTWARE, INC:                          04970048
+&CTSL    SETC   'LIST'                                                  04980001
+*&CTSL    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   04990001
+         SPACE 2                                                        05000001
+*********************************************************************** 05010001
+***                                                                 *** 05020001
+*==> &CTSO: IF YOUR INSTALLATION HAS TSO/E RELEASE 2, PDS CAN INVOKE    05030001
+***   TSOEXEC INSTEAD OF THE THE TSO COMMAND; THUS, INSTEAD OF TYPING   05040001
+***   TSO TSOEXEC AUTHPROG ..., YOU TYPE TSO AUTHPROG ...               05050001
+&CTSO    SETC   'TSOEXEC'     *** IF YOU HAVE TSO/E RELEASE 2 OR ABOVE  05060001
+*&CTSO    SETC   ' NOTSO/E'   *** IF YOU DO NOT HAVE TSO/E RELEASE 2    05070001
+***   NOTE: EVEN IF YOU HAVE TSO/E RELEASE 2, YOU MAY WISH TO USE       05080001
+***   THE ' NOTSO/E' STATEMENT AS THIS INTERFACE SEEMS TO WORK BETTER   05090001
+***   WITH COMMAND LIMITING (ACF2 AND PERHAPS OTHER SECURITY SYSTEMS).  05100001
+         SPACE 2                                                        05110001
+*********************************************************************** 05120001
+***                                                                 *** 05130001
+*==> &CTSE: THE TSO EDIT COMMAND IS AVAILABLE ON MOST MVS SYSTEMS.      05140001
+&CTSE    SETC   'EDIT'                                                  05150001
+         SPACE 2                                                        05160001
+*********************************************************************** 05170001
+***                                                                 *** 05180001
+*==> &CVPS: VPSPRINT IS A DATA SET PRINT COMMAND FROM LEVI, RAY & SHOUP 05190001
+&CVPS    SETC   'VPSPRINT'                                              05200001
+*&CVPS    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   05210001
+         SPACE 2                                                        05220001
+*********************************************************************** 05230001
+***                                                                 *** 05240001
+***   NOTE: THE FOLLOWING THREE ENTRIES ARE FOR INSTALLATION USE; THEY  05250001
+***         SHOULD BE MODIFIED IN CONJUNCTION WITH THE CORRESPONDING    05260001
+***         &NXS ENTRIES FROM ABOVE.                                    05270001
+***                                                                     05280001
+*==> &CXS1: THIS COMMAND IS AN ALIAS FOR THE PRINTOFF INTERFACE         05290001
+&CXS1    SETC   'COMMAND'     *** THE TSO COMMAND NAME                  05300001
+*&CXS1    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   05310001
+         SPACE 2                                                        05320001
+*==> &CXS2: THIS COMMAND IS AN ALIAS FOR THE PRINTOFF INTERFACE         05330001
+&CXS2    SETC   'DPSPRINT'    *** THE MEMOREX DPSPRINT TSO COMMAND      05340001
+*&CXS2    SETC   '%NAME567'   *** IF A CLIST IS TO BE INVOKED INSTEAD   05350001
+         SPACE 2                                                        05360001
+*==> &CXS3: THIS COMMAND IS AN ALIAS FOR THE PRINTOFF INTERFACE         05370001
+&CXS3    SETC   '%PCLIST1'    *** A PDS TEST CLIST                      05380001
+*&CXS3    SETC   'NAME5678'   *** IF A TSO COMMAND IS TO BE INVOKED     05390001
+         SPACE 2                                                        05400001
+*********************************************************************** 05410001
+***                                                                 *** 05420001
+*==> PDS HAS AN ISPMODE INTERFACE TO THE FOLLOWING TSO COMMANDS     *** 05430001
+*==> WHICH MAY BE OBTAINED FROM FILE 296 OF THE CBT TAPE:           *** 05440001
+***                                                                 *** 05450001
+&CBL5    SETC   'BLK3350'   *** THE TSO BLK3350 COMMAND                 05460001
+&CBL8    SETC   'BLK3380'   *** THE TSO BLK3380 COMMAND                 05470001
+&CBL9    SETC   'BLK3390'   *** THE TSO BLK3390 COMMAND        SS SEP90 05480001
+&CBL4    SETC   'BLK9345'   *** THE TSO BLK9345 COMMAND       DRK JUN06 05490001
+&CDSA    SETC   'DSAT'      *** THE TSO DSAT COMMAND                    05500001
+&CDVO    SETC   'DVOL'      *** THE TSO DVOL COMMAND                    05510001
+&CVTO    SETC   'VTOC'      *** THE TSO VTOC COMMAND                    05520001
+*********************************************************************** 05530001
+***                                                                 *** 05540001
+*==> PDS HAS AN INTERFACE TO ROB SCOTT'S MXI PROGRAM USING THE      *** 05550001
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 05560001
+***                                                                 *** 05570001
+&CMXI    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05580001
+         SPACE 2                                                        05590001
+*==> PDS HAS AN INTERFACE TO ISRSUPC (SRCHFOR) USING THE            *** 05600001
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 05610001
+***                                                                 *** 05620001
+&CSRC    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05630001
+         SPACE 2                                                        05640001
+*==> PDS HAS AN INTERFACE TO DISASM0 (CBT 234) USING THE            *** 05650001
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 05660001
+***                                                                 *** 05670001
+&CDSM    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05680001
+         SPACE 2                                                        05690001
+*==> PDS HAS AN INTERFACE TO DELINKI (CBT 090) USING THE            *** 05700001
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 05710001
+***                                                                 *** 05720001
+&CDLN    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05730001
+         SPACE 2                                                        05740001
+*==> PDS HAS AN INTERFACE TO TSO TRANSMIT USING THE                 *** 05750001
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 05760001
+***                                                                 *** 05770001
+&CXMI    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05780001
+         SPACE 2                                                        05790001
+*==> PDS HAS AN INTERFACE TO OFFLOAD USING THE                      *** 05800001
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 05810001
+***                                                                 *** 05820001
+&COFF    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05830001
+         SPACE 2                                                        05840001
+*==> PDS HAS AN INTERFACE TO THE IBM DEBUG TOOL LOAD MODULE         *** 05850001
+*==> ANALYSIS (LMA) USING THE TSO/E SERVICE FACILITY ROUTINE.       *** 05860001
+***                                                                 *** 05870001
+&CLMA    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05880001
+         SPACE 2                                                        05890001
+*==> PDS HAS AN INTERFACE TO THE INNOVATION DATA PROCESSING         *** 05900001
+*==> COMPAKTOR MAP USING THE TSO/E SERVICE FACILITY ROUTINE.        *** 05910001
+***                                                                 *** 05920001
+&CCPK    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05930001
+         SPACE 2                                                        05940001
+*==> PDS HAS AN INTERFACE TO THE COBOL ANALYSIS TOOL ON CBT 321     *** 05950005
+*==> USING THE TSO/E SERVICE FACILITY ROUTINE.                      *** 05960005
+***                                                                 *** 05970001
+&CCOB    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              05980001
+         SPACE 2                                                        05990001
+*==> PDS HAS AN INTERFACE TO PDSLOAD USING THE                      *** 06000005
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 06010005
+***                                                                 *** 06020005
+&CSEP    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              06030005
+         SPACE 2                                                        06040005
+*==> PDS HAS AN INTERFACE TO THE AMBLIST SERVICE AID USING THE      *** 06050007
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 06060007
+***                                                                 *** 06070007
+&CAMB    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              06080007
+         SPACE 2                                                        06090007
+*==> PDS HAS AN INTERFACE TO THE SMP SERVICE ROUTINE USING THE      *** 06100008
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 06110008
+***                                                                 *** 06120008
+&CPTS    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              06130008
+         SPACE 2                                                        06140008
+*==> PDS HAS AN INTERFACE TO THE PDSMATCH PROGRAM USING THE         *** 06150010
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 06160010
+***                                                                 *** 06170010
+&CMAT    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              06180010
+         SPACE 2                                                        06190010
+*==> PDS HAS AN INTERFACE TO THE IEBPDSE  PROGRAM USING THE         *** 06200017
+*==> TSO/E SERVICE FACILITY ROUTINE.                                *** 06210017
+***                                                                 *** 06220017
+&CVPE    SETC   'IKJEFTSR'  TSO/E SERVICE FACILITY ROUTINE              06230017
+         SPACE 2                                                        06240017
+*********************************************************************** 06250010
+*                                                              SS NOV85 06260001
+*  THE FOLLOWING COMMANDS ARE DIALOG ONLY COMMANDS             SS NOV85 06270001
+*                                                              SS NOV85 06280001
+&IVIE  SETC 'SHOW'    VIEW LOG FUNCTION                        SS AUG86 06290001
+&ILTA  SETC 'LISTA'   LIST ALLOC FUNCTION                      SS NOV85 06300001
+&ILAX  SETC 'LA'      LIST ALLOC FUNCTION ABBREVIATION         SS NOV85 06310001
+&ILTV  SETC 'LISTV'   LIST VOLUMES FUNCTION                    SS NOV85 06320001
+&ILVX  SETC 'LV'      LIST VOLUMES FUNCTION ABBREVIATION       SS NOV85 06330001
+&IMLX  SETC 'ML'      MEMLIST FUNCTION ABBREVIATION            SS AUG86 06340001
+&IGRP  SETC '*'       MEMLIST GROUP FUNCTION                   SS AUG86 06350001
+&IXSH  SETC 'X'       EXCLUDE SHORT FORM                      ABL JAN87 06360001
+&IXLO  SETC 'EXCLUDE' EXCLUDE LONG FORM                       ABL JAN87 06370001
+&ISTL  SETC 'SETLOG'  SETLOG PRIMARY COMMAND                  ABL FEB87 06380001
+&ISTM  SETC 'SETML'   SETML PRIMARY COMMAND                   ABL FEB87 06390001
+&ITOD  SETC 'TODAY'   SOURCE MEMLIST MODIFIED TODAY            SS AUG86 06400001
+&IFUN  SETC 'FUNCTION' FUNCTION STATUS DISPLAY SERVICE         SS AUG86 06410001
+&ISET  SETC 'SETDEF'  SET DEFAULT SERVICE                      SS AUG86 06420001
+&ISRT  SETC 'SORT'    SORT SERVICE                             SS AUG86 06430001
+&ILKD  SETC 'LKED'    LINK EDIT DATE  .. MEMLIST LINE CMD      SS AUG86 06440001
+&IFRE  SETC 'FREE'    FREE ALLOCATION .. LISTA LINE CMD        SS NOV85 06450001
+&IDCA  SETC 'DCAT'    DECONCAT        .. LISTA LINE CMD        SS NOV85 06460001
+&ISPC  SETC 'SPACE'   REFRESH SPACE   .. LISTV LINE CMD        SS NOV85 06470001
+&ISTA  SETC 'STAT'    REFRESH STATUS  .. LISTV LINE CMD        SS NOV85 06480001
+&IALL  SETC 'ALLOC'   ALLOC VOLUME    .. LISTV LINE CMD        SS NOV85 06490001
+&IALC  SETC 'ALOC'    ALLOC VOLUME    .. LISTV LINE CMD        SS NOV85 06500001
+&IALT  SETC 'ALTERNAT' SELECT ALTERNATE PANEL                  SS AUG86 06510001
+&INOR  SETC 'NORMAL'  SELECT NORMAL PANEL                      SS AUG86 06520001
+&IDUL  SETC 'DUAL'    SELECT DUAL LINE PANEL                   SS AUG86 06530001
+&ILOG  SETC 'LOG'     LOG TABLE LINE COMMAND                   SS NOV86 06540001
+&IACD  SETC 'ALTCMD'  RECALL ALTERNATE COMMAND                 SS JUL87 06550001
+&ISTC  SETC 'SETALT'  SET ALTERNATE RECALLABLE COMMAND         SS JUL87 06560001
+&ISTE  SETC 'SETENV'  SETENV PRIMARY COMMAND                   SS JUL87 06570001
+&ISTS  SETC 'SETSEL'  SETSEL PRIMARY COMMAND                   SS JUL87 06580001
+&ISTV  SETC 'SETV'    SETV   PRIMARY COMMAND                   SS JUL88 06590001
+&ISTF  SETC 'SETLF'   SETLF  PRIMARY COMMAND                   SS NOV88 06600001
+&ISTT  SETC 'SETTRAP' SETTRAP PRIMARY COMMAND                  SS NOV88 06610001
+&IKIL  SETC 'KILL'    KILL UNPROCESSED LINE COMMANDS           SS JUL87 06620001
+&IWEK  SETC 'WEEK'    MEMLIST ALL WEEK                         SS JUL87 06630001
+&ISEL  SETC 'SELECT'  SELECT (S) LINE COMMAND                  SS JUL87 06640001
+&IBLK  SETC '60'      BLANK OUT  LINE COMMAND IN HEX           SS JUL87 06650001
+&IEQU  SETC '7E40'    REPEAT (EQUAL SIGN) LINE CMD IN HEX      SS JUL87 06660001
+&IPMT  SETC 'P'       PROMPT AFTER CHANGE (LISTA)              SS JUL87 06670001
+&IZCO  SETC 'Z'       COMPRESS DATASET    (LISTA)              SS JUL87 06680001
+&IEDM  SETC 'EEE'     PROMPT FOR EDIT MACRO                    SS JUL87 06690001
+&ILTC  SETC 'LISTC'   LISTC COMMAND     *                      SS OCT88 06700001
+&ILCX  SETC 'LC'      LISTC COMMAND  SHORT                     SS OCT88 06710001
+&ILTF  SETC 'LISTFILE' LISTFILE COMMAND                        SS OCT88 06720001
+&ILFX  SETC 'LF'      LISTF COMMAND  SHORT                     SS OCT88 06730001
+&ILFV  SETC 'LFVT'    LISTV LINE COMMAND TO LISTF USING VTOC   SS OCT88 06740001
+&ITCT  SETC 'TCT'     TSO COMMAND TABLE COMMAND                SS OCT88 06750001
+&ICAX  SETC 'CAX'     ACTIVE CATALOG LIST COMMAND (CAXWA DATA) SS OCT88 06760001
+&IFLT  SETC 'FILTER'  DATASET FILTER TABLE COMMAND             SS OCT88 06770056
+&ICSE  SETC 'CSECTS'  LIST CSECT TABLE COMMAND                 SS OCT88 06780001
+&ITRP  SETC 'TRAP'    TRAP                                     SS NOV88 06790001
+&IEXP  SETC 'EXPAND'  FIXPDS EXPAND                            SS NOV88 06800001
+&IRLS  SETC 'RELEASE' FIXPDS RELEASE                           SS NOV88 06810001
+&IRLX  SETC 'RLSE'    FIXPDS RELEASE                           SS NOV88 06820001
+&ICAN  SETC 'CANCEL'  TABLE STATUS CANCEL PENDING LINE CMDS    SS NOV88 06830001
+&IINS  SETC 'INSERT'  INSERT BLANK LINES IN TCT                SS NOV88 06840001
+&IADD  SETC 'ADD'     ALL BLANK LINES TO BOTTOM OF TCT         SS NOV88 06850001
+&IEXC  SETC 'EXEC'    EXECUTE TCT LINE CMD                     SS NOV88 06860001
+&INEX  SETC 'NOEX'    DO NOT EXECUTE SELECTED TCT LINE CMD     SS NOV88 06870001
+&IVCM  SETC 'VIEW'    VIEW AND NOT EXECUTE TCT LINE CMD        SS NOV88 06880001
+&IUPD  SETC 'UPDATE'  VIEW AND UPDATE AND EXEC TCT LINE CMD    SS NOV88 06890001
+*                                                              SS NOV85 06900001
+*                                                              SS NOV85 06910001
+*********************************************************************** 06920001
+*    BLOCK LINE COMMANDS                                       SS JUL87 06930001
+&IEQQ  SETC '7E7E'    REPEAT (EQUAL SIGN) LINE CMD IN HEX      SS JUL87 06940001
+&IAAA  SETC 'AA'      ALTCMD                                   SS JUL87 06950001
+&IMAA  SETC 'AA'      ATTRIBUTE  (MEMLIST ONLY)                SS JUL87 06960001
+&IBBB  SETC 'BB'      BROWSE                                   SS JUL87 06970001
+&ICCC  SETC 'CC'      CHANGE                                   SS JUL87 06980001
+&IMDD  SETC 'DD'      DIRECTORY  (MEMLIST ONLY)                SS JUL87 06990001
+&IEEE  SETC 'EE'      EDIT                                     SS JUL87 07000001
+&ITEE  SETC 'EE'      EXEC (TCT)        *                      SS NOV88 07010001
+&ILHH  SETC 'HH'      HISTORY    (LOAD LIBS ONLY)             ABL NOV87 07020001
+&ILLL  SETC 'LL'      LOG                                      SS JUL87 07030001
+&IMLL  SETC 'LL'      LIST       (MEMLIST ONLY)                SS JUL87 07040001
+&IMMM  SETC 'MM'      MEMLIST                                  SS JUL87 07050001
+&ILMM  SETC 'MM'      MAP        (LOAD LIBS ONLY)              SS JUL87 07060001
+&ITNN  SETC 'NN'      NOEX (TCT)        *                      SS NOV88 07070001
+&IAPP  SETC 'PP'      PROMPT     (LISTA)                       SS JUL87 07080001
+&IMPP  SETC 'PP'      PRINT                                    SS JUL87 07090001
+&ISSS  SETC 'SS'      SELECT                                   SS JUL87 07100001
+&IUUU  SETC 'UU'      USAGE      (LISTA)                       SS JUL87 07110001
+&ITUU  SETC 'UU'      UPDATE (TCT)      *                      SS NOV88 07120001
+&IVVV  SETC 'VV'      VIEW                                    DRK JUL02 07130001
+&ITVV  SETC 'VV'      VIEW (TCT)        *                      SS NOV88 07140001
+&IMVV  SETC '  '      VERIFY     (MEMLIST ONLY)               DRK JUL10 07150023
+&IZZZ  SETC 'ZZ'      COMPRESS   (LISTA)                      ABL NOV87 07160001
+*                                                              SS NOV85 07170001
+*                                                              SS NOV85 07180001
+*                                                   ---------------     07190001
+*  THE PDS DIALOG TRAP SERVICE PROVIDES FOR TRAPPING TSO                07200001
+*  COMMAND OUTPUT AND PLACING IT IN THE SESSION VIEW LOG.               07210001
+*  THIS SERVICE CAN BE USED BY TCT AND FROM P86..UX PANELS.             07220001
+*  THIS SERVICE USES THE TSO/E SYSOUTTRAP SERVICE.  THIS                07230001
+*  SERVICE REQUIRES BOTH ISPF 2.3 AND TSO/E AND THE                     07240001
+*  INSTALLATION OF THE PDSTRAP CLIST.  IT IS RECOMMENDED THAT           07250001
+*  IF POSSIBLE TO USE THIS FEATURE.  IF ISPF 2.3 (OR HIGHER)            07260056
+*  IS NOT INSTALLED THIS FEATURE WILL BE IGNORED EVEN IF &TRAP          07270001
+*  IS SET TO YES.   IF THIS FEATURE IS NOT ACTIVE, OUTPUT FROM          07280001
+*  A TSO COMMAND REQUESTED WITH THE TRAP OPTION WILL OPERATE            07290001
+*  WITHOUT TRAPPING THE OUTPUT, THE OUTPUT WILL GO DIRECTLY TO          07300001
+*  THE USERS SCREEN IN THE NORMAL WAY.  THIS OPTION CAN BE SET          07310001
+*  BY THE INDIVIDUAL USER THROUGH THE PDS SETTRAP DIALOG COMMAND.       07320001
+*                                                                       07330001
+&TRAP    SETC   'YES'  USE TRAP SERVICE TO TRAP TSO COMMAND OUTPUT      07340001
+*&TRAP    SETC   'NO'  DO NOT USE TRAP SERVICE                          07350001
+*                                                                       07360001
+         SPACE 2                                                        07370001
+*********************************************************************** 07380001
+***                                                                 *** 07390001
+* THE FOLLOWING ARE OVERRIDES AS TAILORED FOR HITACHI:              *** 07400001
+*                                                                   *** 07410001
+&CHEL    SETC   'HEL'        *** HEL IS INSTALLED FOR PDS USE           07420001
+*                                                              SS NOV85 07430001
+*                                                              SS NOV85 07440001
+*********************************************************************** 07450001
+***                                                                 *** 07460001
+* NOTE: AFTER CHANGING THIS MEMBER, TAILORING OF THE STANDARD PDS   *** 07470001
+* INSTALLATION VARIABLES IS COMPLETE.  OTHER, MORE BASIC VARIABLES  *** 07480001
+* ARE IN MEMBER #PDSGENB.  YOU MAY WISH TO LOOK AT #PDSGENB AND     *** 07490001
+* MAKE CHANGES THERE AS WELL IF YOUR INSTALLATION HAS UNUSUAL       *** 07500001
+* REQUIREMENTS FOR PDS OR YOUR OPERATING ENVIRONMENT IS UNUSUAL.    *** 07510001
+*                                                                   *** 07520001
+* AS AN ALTERNATIVE YOU CAN LEAVE THIS MEMBER AS IS AND COPY        *** 07530001
+* YOUR CHANGES TO A USER VERION OF THIS TABLE #PDSGENU AND THEN     *** 07540001
+* UNCOMMENT THE FOLLOWING COPY STATEMENT                            *** 07550001
+*                                                                   *** 07560001
+    COPY #PDSGENU     COPY USER GEN SETTINGS                   SS APR88 07570051

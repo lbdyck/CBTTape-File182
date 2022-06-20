@@ -1,0 +1,114 @@
+         TITLE 'P D S  --  PDS RX COMMAND INTERFACE          09/28/88'  13763000
+*********************************************************************** 13764000
+***      RX INTERFACE                                               *** 13765000
+*********************************************************************** 13766000
+*                                                                       13767000
+         SPACE 1                                                        13768000
+RX       CSECT                                                          13769001
+         BASR  R5,0                        BASE REGISTER                13770000
+         USING *,R5                                                     13771000
+         MVC   DIRNAME,##SUBCAL            WHO TO CALL                  13772000
+         L     R1,ADDRCBUF                 POINT TO THE COMMAND BUFFER  13773000
+         SR    R15,R15                                                  13774000
+         IC    R15,1(,R1)                  LENGTH OF BUFFER             13775000
+         BCTR  R15,0                       MACHINE LENGTH OF BUFFER     13776000
+         MVC   MSGTEXT1(*-*),0(R1)         <<EXECUTED>>                 13777000
+         EX    R15,*-6                     MOVE IN THE COMMAND BUFFER   13778000
+         LA    R1,MSGTEXT1                 NEW COMMAND BUFFER           13779000
+         ST    R1,ADDRTEXT                 POINT TO THE COMMAND BUFFER  13780000
+         SPACE 2                                                        13781000
+*** IN A LINKLIST LIBRARY?                                              13782000
+         BLDL  0,BLDLLIST ----+            CHECK FOR A LOAD MODULE      13783001
+         LA    R1,X'100'      |            TTR=1 (FOR SEQUENTIAL)       13783101
+         ST    R1,DIRTTR      |            RESET TTR                    13783201
+         LTR   R15,R15    <---+            IN THE LINKLIST?             13784001
+         BZ    RX020                       YES, LINK TO IT              13785000
+         L     R15,CVTPTR(,R0)             NEED TO ALSO CHECK LPALIB    13786000
+         L     R15,CVTLPDIA-CVTMAP(R15)    POINT TO LINK PACK DIRECTORY 13787000
+         SPACE 2                                                        13788000
+*** MODULE NOT IN LINKLIST, TRY THE IN-STORAGE LPALIB DIRECTORY         13789000
+RX010    CLC   8(8,R15),DIRNAME            THIS MODULE NAME?            13790000
+         BE    RX020                       YES, LINK TO IT              13791000
+         CLI   8(R15),X'FF'                END OF DIRECTORY?            13792000
+         LA    R15,40(,R15)                                             13793000
+         BNE   RX010                       NO, BRANCH                   13794000
+         MVC   INSERT#1(8),##SUBCAL        YES, ISSUE AN ERROR MESSAGE  13795000
+         M$MSG L859$1                                                   13796000
+         B     NEWCMD                                                   13797000
+         SPACE 1                                                        13798000
+RX020    L     R1,ADDRTEXT                 CPPL START                   13799000
+*        M$ERRST (R1)                      DELETE * FOR OUTPUT          13800000
+         L     R14,ADDRECT                                              13801201
+         MVC   ECTPCMD-ECT(8,R14),ECTSCMD-ECT(R14)  PRIMARY   CMD NAME  13802000
+         MVC   ECTSCMD-ECT(8,R14),BLANKS            SECONDARY CMD NAME  13803000
+         LA    R1,ADDRTEXT                 CPPL START                   13804000
+         SPACE 2                                                        13805000
+         L     R3,0(,R1)             START OF ARGUMENT LIST             13806000
+         AH    R3,0(,R3)             END OF ARGUMENT LIST               13807000
+         MVC   0(15,R3),RX050        ADD PDS PARM FOR EXTERNAL CALL     13808000
+         LA    R15,WORKTBL           START OF PARAMETER LIST            13809000
+         ST    R15,10(,R3)           PASS ADDRESS OF RE-ENTRY LIST      13810000
+         MVC   0(12,R15),RX060       SAVE RE-ENTRY CODE                 13811000
+         LA    R0,RX070              START OF WRITE SUBROUTINE          13812000
+         ST    R0,12(,R15)           OPERAND OFFSET                     13813000
+         ST    R7,16(,R15)           SAVE WORK AREA ADDRESS             13814000
+         LA    R3,##SUBCAL           COMMAND PROCESSOR                  13815000
+         SPACE 2                                                        13816000
+         XC    PARMLIST(8),PARMLIST  INITIALIZE LINK LIST               13817000
+         LINK  EPLOC=((3)),SF=(E,PARMLIST)                              13818000
+         L     R14,ADDRECT                                              13819000
+         MVC   ECTSCMD-ECT(8,R14),ECTPCMD-ECT(R14)  SECONDARY CMD NAME  13820000
+         MVC   ECTPCMD-ECT(8,R14),PDSNAME           PRIMARY   CMD NAME  13821000
+         BR    R2                    RETURN TO CALLER                   13822000
+         DROP  R5                                                       13823000
+RX050    DC    C'  PDSCALL(XXXX)'    PDS CALLER IDENTIFIER              13824000
+         SPACE 1                                                        13825000
+RX060    ST    R1,20(,R15)         0 REENTER: SAVE PARAMETER ADDRESS    13826000
+         L     R15,12(,R15)        4 REENTER: GET ROUTINE ADDRESS       13827000
+         BAS   R1,0(,R15)          8 REENTER: LINK TO SUBROUTINE        13828000
+***      DS    A                  12 REENTER: A(ROUTINE)                13829000
+***      DS    A                  16 REENTER: A(WORK AREA)              13830000
+***      DS    A                  20 REENTER: A(MESSAGE)                13831000
+         SPACE 3                                                        13832000
+RX070    SAVE  (14,12)                                                  13833000
+         LR    R8,R15                BASE REGISTER ADDRESS              13834000
+         USING RX070,R8              BASE REGISTER NOTIFICATION         13835000
+         L     R7,4(,R1)             WORK AREA ADDRESS                  13836000
+         L     R1,8(,R1)             OUTPUT MESSAGE START               13837000
+         LM    R9,R12,BASES          RESTORE BASE REGISTERS             13838000
+         LA    R15,VALSAVE           SAVE AREA FOR THIS ROUTINE         13839000
+         ST    R13,4(,R15)                                              13840000
+         ST    R15,8(,R13)           CHAIN SAVE AREAS                   13841000
+         LR    R13,R15                                                  13842000
+         TM    SPFLAG0,SPFDON        DIALOG MODE               SS OCT88 13842101
+         BZ    RX079                 NO, NORMAL MODE           SS OCT88 13842201
+         SR    R15,R15               FOR INSERT                SS OCT88 13842301
+         ICM   R15,1,0(R1)           GET LENGTH                SS OCT88 13842401
+         BZ    RX079                 NO LENGTH, USE DEFAULT 80 SS OCT88 13842501
+         CH    R15,RX078             GREATER THEN MAX          SS OCT88 13842601
+         BNH   *+8                   NO, OK                    SS OCT88 13842701
+         LH    R15,RX078             YES, SET TO MAX           SS OCT88 13842801
+         BCTR  R15,0                 -1 FOR MVC                SS OCT88 13842901
+         EX    R15,RX077             EXECUTE MVC               SS OCT88 13843001
+         LA    R15,5(,R15)           COMPUTE BUFF LENGTH       SS OCT88 13843101
+         SLL   R15,16                CLEAR OUT OTHER BYTES     SS OCT88 13843201
+         ST    R15,WORKTBL+32        SET IN THE MESSAGE        SS OCT88 13843301
+         LA    R1,WORKTBL+32         MESSAGE ADDRESS           SS OCT88 13843401
+        M$PUTLIN (R1),ATTN=RX080     OUTPUT THIS MESSAGE       SS OCT88 13843501
+         SR    R15,R15               SUCCESSFUL OUTPUT         SS OCT88 13843601
+         B     RX090                 RETURN                    SS OCT88 13843701
+RX077    MVC   WORKTBL+32+4(0),1(R1) EX MOVE MESSAGE           SS OCT88 13843801
+RX078    DC    H'158'                MAX LENGTH                SS OCT88 13843901
+RX079    DS    0H                       *                      SS OCT88 13844001
+         MVC   MSGTEXT2+4(80),1(R1)                                     13844100
+         LA    R1,79+4               LENGTH                             13844200
+         SLL   R1,16                 CLEAR OUT OTHER BYTES              13845000
+         ST    R1,MSGTEXT2           SET IN THE MESSAGE                 13846000
+         LA    R1,MSGTEXT2           MESSAGE ADDRESS                    13847000
+        M$PUTLIN (R1),ATTN=RX080     OUTPUT THIS MESSAGE                13848000
+         SR    R15,R15               SUCCESSFUL OUTPUT                  13849000
+         B     RX090                 RETURN                             13850000
+RX080    LA    R15,4                 SET REGISTER R15                   13851000
+RX090    L     R13,4(,R13)           UNCHAIN SAVE AREAS                 13852000
+         ST    R15,16(R13)           SAVE RETURN CODE                   13853000
+         RETURN (14,12),T,RC=(15)    RETURN                             13854000

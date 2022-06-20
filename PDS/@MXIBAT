@@ -1,0 +1,323 @@
+         TITLE 'P D S  --  MXI BATCH INTERFACE               11/23/05'  00000216
+*********************************************************************** 00000316
+***      MXIBAT  SUBCOMMAND   ADDED BY JOHN KALINICH -- NOV., 2005  *** 00000416
+*********************************************************************** 00000516
+*                                                                       00050000
+MXIBAT   CSECT                                                          00070071
+         USING *,R8                                                     00080020
+         SPACE 1                                                        00120000
+*  FREE SYSIN AND SYSPRINT DATASETS                                     00120157
+         LA    R1,=CL8'SYSIN'           SYSIN DDNAME                    00120252
+         BAS   R2,MXI8580               FREE THIS DATA SET              00120352
+         LA    R1,=CL8'SYSPRINT'        SYSPRINT DDNAME                 00120452
+         BAS   R2,MXI8580               FREE THIS DATA SET              00120552
+*  ALLOCATE MXI //SYSIN FILE                                            00130023
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00140023
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00150023
+         USING S99RBP,R1                                                00160023
+         SPACE 1                                                        00170023
+         LA    R4,M99RB                                                 00180023
+         USING S99RB,R4                                                 00190023
+         ST    R4,S99RBPTR                                              00200023
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00210023
+         SPACE 1                                                        00220023
+         LA    R5,M99TUPL                                               00230023
+         USING S99TUPL,R5                                               00240023
+         MVI   S99RBLN,20                 LENGTH 20                     00250023
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00260023
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00270023
+         SPACE 1                                                        00280023
+         MVC   #CMXSYS3(11),MXIDDNIN       SYSIN DDNAME                 00290025
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00300023
+         USING S99TUNIT,R3                                              00310023
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00320023
+         MVC   S99TUPTR+4(40),MXISYSIN    ADD OTHER LIST ELEMENTS       00330023
+         SPACE 1                                                        00340023
+         DYNALLOC                                                       00350023
+         MVC   #CMXDDIN(8),=CL8'SYSIN'    MOVE IN THE DDNAME            00360052
+         SPACE 2                                                        00370023
+         DROP  R1,R3,R4,R5                                              00380023
+         LTR   R15,R15                    SUCCESSFUL?                   00390023
+         BNZ   MXIERROR                   NO, BRANCH                    00400023
+         SPACE 3                                                        00410023
+*  ALLOCATE MXI //SYSPRINT DATA SET                                     02120016
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140000
+         USING S99RBP,R1                                                02150000
+         SPACE 1                                                        02160000
+         LA    R4,M99RB                                                 02170000
+         USING S99RB,R4                                                 02180000
+         ST    R4,S99RBPTR                                              02190000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200000
+         SPACE 1                                                        02210000
+         LA    R5,M99TUPL                                               02220000
+         USING S99TUPL,R5                                               02230000
+         MVI   S99RBLN,20                 LENGTH 20                     02240000
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260000
+         SPACE 1                                                        02270000
+         MVC   #CMXSYS3(14),MXIDDNPR      SYSPRINT DDNAME               02280025
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290000
+         USING S99TUNIT,R3                                              02300000
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310000
+         MVC   S99TUPTR+4(40),MXISYSPR    ADD OTHER LIST ELEMENTS       02360016
+         SPACE 1                                                        02510000
+         DYNALLOC                                                       02520000
+         SPACE 2                                                        02530000
+         MVC   #CMXDDPR(8),=CL8'SYSPRINT' MOVE IN THE DDNAME            02540052
+         DROP  R1,R3,R4,R5                                              02550000
+         LTR   R15,R15                    SUCCESSFUL?                   02560000
+         BNZ   MXIERROR                   NO, BRANCH                    02570016
+         B     MXI6000                                                  02580024
+         SPACE 2                                                        08580000
+MXIERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590016
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    MXI8550                    NO, BRANCH                    08700058
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     MXI8550                                                  08780058
+         SPACE 3                                                        08790000
+MXI6000  DS    0H                                                       08800016
+* OPEN SYSIN DATA SET                                                   08810000
+         MVC   BAMDCB(MXIDL),MXIDCB           GET MODEL DCB             08820016
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDIN                       08830024
+         MVI   OPENLIST,X'80'                                           08840000
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN SYSIN               08850000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08860000
+         BO    MXI6010                         YES, BRANCH              08870016
+         LA    R1,MXI865E                      NO STATUS AVAILABLE      08880251
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08881039
+         B     MXI8550                         EXIT                     08890058
+         SPACE 3                                                        08900000
+*  OUTPUT SYSIN RECORDS                                                 08910000
+MXI6010  DS    0H                                                       08930018
+         MVC   MSGTEXT1(136),MSGBL132      CLEAR THE MESSAGE AREA       09240049
+         L     R2,ADDRCBUF                 COMMAND STRING               09240153
+         LH    R1,0(R2)                    TOTAL LENGTH                 09240253
+         LH    R3,2(R2)                    LENGTH OF COMMAND VERB       09240390
+         SR    R1,R3                       MINUS COMMAND VERB           09240490
+         S     R1,=F'4'                    MINUS LENGTH HALFWORDS       09240588
+         BZ    MXI6015                     NO OPERAND         DRK JUN09 09240689
+         BCTR  R1,0                        MACHINE LENGTH               09240753
+         LA    R2,4(R2)                    SKIP LENGTH HALFWORDS        09240853
+         AR    R2,R3                       PT AT MXI STATEMENT          09240953
+         MVC   MSGTEXT1+4(*-*),0(R2)       MXI STATEMENT                09241053
+         EX    R1,*-6                                                   09241153
+         SPACE 1                                                        09241286
+MXI6015  DS    0H                                             DRK JUN09 09241391
+         CLC   ##SUBCOM(4),=CL4'SVC'       SVC SUBCOMMAND?    DRK JUN09 09241486
+         BNE   MXI6020                     NO                 DRK JUN09 09241586
+         MVC   MSGTEXT1(4),=CL4'SVC'       YES                DRK JUN09 09241686
+         PUT   BAMDCB,MSGTEXT1             OUTPUT MXI STATEMENT       " 09241791
+         B     MXI6030                                        DRK JUN09 09241891
+MXI6020  DS    0H                                             DRK JUN09 09241986
+         PUT   BAMDCB,MSGTEXT1+4           OUTPUT MXI STATEMENT         09750029
+MXI6030  DS    0H                                             DRK JUN09 09760086
+         MVI   OPENLIST,X'80'                                           10560018
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE SYSIN                   10570000
+         LA    R1,BAMDCB                                                10580000
+         FREEPOOL (1)                                                   10590000
+         SPACE 2                                                        10590156
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10590273
+         STAX  MXINULL,USADDR=(R7),REPLACE=NO,IBUF=0,                  X10590656
+               OBUF=(MXI484W,MXI484WL),MF=(E,STAXPARM)                  10590774
+         LA    R1,MXIPARM                 PARM=BATCH                    10830022
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,MXIPGM               2 POINT TO CALLED PROGRAM       10920024
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950024
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,MXI7080                 RECOVERY ADDRESS              11040019
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),MXIEFTSR       INVOKE IKJEFTSR?              11400016
+         BNE   MXINLNK                    NO, BRANCH                    11410016
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+MXINLNK  BAS   R2,ATTACH                  MXI                           11440070
+         SPACE 3                                                        11490000
+MXI7080  LM    R2,R8,#SUBHOLD+88                                        11500016
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520073
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530073
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540073
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11540193
+         SPACE 1                                                        11540278
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 11540378
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 11540479
+         BNE   MXI8000                    NO                  DRK JAN07 11540578
+         MVC   INSERT#1(8),MXIPGM         YES, ERROR          DRK JAN07 11540678
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 11541078
+         B     MXI8550                                        DRK JAN07 11550078
+         SPACE 1                                                        11820000
+MXI8000  MVC   BAMDCB(MXIDL),MXIDCB         GET MODEL DCB               12310016
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),#CMXDDPR                       12320000
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN SYSPRINT               12340000
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    MXI8010                      YES, BRANCH                 12360016
+         LA    R1,MXI865E                   NO STATUS AVAILABLE         12370151
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     MXI8550                      EXIT                        12380016
+         SPACE 3                                                        12390000
+*  PROCESS SYSPRINT RECORDS                                             12400000
+MXI8010  GET   BAMDCB                     GET LIST RECORD               12420016
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(132),1(R1)      ADD THE MXI MESSAGE           12600020
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     MXI8010                                                  12650016
+         SPACE 3                                                        12660000
+MXI8500  DS    0H                                                       12881062
+         CLC   ##SUBCAL(8),MXIEFTSR       INVOKE IKJEFTSR?              12882062
+         BNE   MXI8540                    NO, BRANCH                    12883062
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JAN07 12885392
+         BL    MXI8540                    YES, VALID MXI                12886062
+         MVI   MTLEN+4,11                                               12887062
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA          DRK JAN06 12887167
+         SR    R15,R15                                                  12888062
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 12888182
+         CVD   R15,DOUBLE                                               12889162
+         MVC   INSERT#1(8),##SUBCOM                                     12889262
+         MVC   INSERT#2(4),=X'40202120'                                 12889362
+         ED    INSERT#2(4),DOUBLE+6                                     12889462
+         MVI   INSERT#2,C'='              RETURN CODE                   12889562
+         SPACE 1                                                        12889662
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12889794
+         BNE   MXI8530                    NO, SKIP MESSAGE              12889863
+         SPACE 1                                                        12889984
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 12890084
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 12890184
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 12890284
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 12890384
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 12890484
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 12890584
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 12890684
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 12890784
+         SPACE 1                                              DRK NOV07 12890884
+         SRL   R1,20                    USER ABEND            DRK NOV07 12890984
+         CVD   R1,DOUBLE                                      DRK NOV07 12891084
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 12891184
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 12891284
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 12891384
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 12891484
+         SPACE 1                                                        12891584
+MXI8530  DS    0H                                                       12891663
+         M$MSG L171$2                                                   12891762
+MXI8540  DS    0H                                                       12891862
+         MVI   OPENLIST,X'80'                                           12891962
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE SYSPRINT FILE.      12892062
+         LA    R1,BAMDCB                                                12892162
+         FREEPOOL (1)                                                   12892262
+         SPACE 2                                                        12892362
+MXI8550  M$ERRST MSGBLANK                                               12893016
+         LA    R1,#CMXDDPR                SYSPRINT DDNAME               12900000
+         BAS   R2,MXI8580                 FREE THIS DATA SET            12910016
+         LA    R1,#CMXDDIN                SYSIN DDNAME                  12911058
+         BAS   R2,MXI8580                 FREE THIS DATA SET            12912058
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+MXI8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940016
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),MXIFDDNA       ADD TEXT KEYS                 13140016
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,MXIUNALC                UNALLOC EVEN IF "PERM"        13160016
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13260000
+MXINULL  BR    R14                                                      13270056
+         SPACE 2                                                        13280056
+*  MXI CONSTANTS                                                        13460016
+         PRINT NOGEN                                                    13470000
+MXIDCB   DCB   DSORG=PS,DDNAME=MXI,MACRF=(GL,PM),EODAD=MXI8500          13480016
+MXIDL    EQU   *-MXIDCB                                                 13490016
+         PRINT NOGEN                                                    13550138
+MXI484W  DC    C'PDS484W MXI SHOULD NOT BE INTERRUPTED'                 13550356
+MXI484WL EQU   *-MXI484W                                                13550456
+MXI865E  M$TX  'PDS865E THE MXI OUTPUT CAN NOT BE OPENED'               13550651
+         PRINT GEN                                                      13551038
+MXIEFTSR DC    CL8'IKJEFTSR'                                            13710016
+MXIPGM   DC    CL8'&MXIPGM'                      PGM=MXI OR MXIG2       13720295
+MXIPARM  DC    H'05',C'BATCH'                    PARM=BATCH             13721022
+MXIDDNIN DC    X'000100010005',C'SYSIN'          SYSIN    DDNAME        13722052
+MXIDDNPR DC    X'000100010008',C'SYSPRINT'       SYSPRINT DDNAME        13722152
+MXIDDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13723024
+MXIFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730019
+MXINEW   DC    X'00040001000104'                 DISP=(NEW)             13780016
+MXIDEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790016
+MXICDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800016
+MXIPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810016
+MXIUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820022
+         SPACE 2                                                        13840000
+MXIPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850059
+MXIPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860059
+MXIPRTIN DC    X'000900010003',AL3(13300)        SPACE=(13300)          13870028
+MXISINSP DC    X'000900010003',AL3(3120)         SPACE=(3120)           13880016
+         SPACE 1                                                        13920000
+MXIPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          13930016
+MXIPRTLR DC    X'004200010002',AL2(133)          DCB=LRECL=133          13940020
+MXIPRTBL DC    X'003000010002',AL2(13300)        DCB=BLKSIZE=13300      13950028
+         SPACE 2                                                        13960000
+MXISINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13970016
+MXISINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980016
+MXISINBL DC    X'003000010002',AL2(3120)         DCB=BLKSIZE=3120       13990016
+         SPACE 2                                                        14000000
+MXISYSIN DC    A(MXIPRTFI,MXIPRTSE,MXISINSP)                            14020016
+         DC    A(MXISINRE,MXISINLR,MXISINBL)                            14030016
+         DC    A(MXINEW,MXIDEL,MXICDEL),X'80',AL3(MXIPERM)              14040016
+MXISYSPR DC    A(MXIPRTFI,MXIPRTSE,MXIPRTIN)                            14080016
+         DC    A(MXIPRTRE,MXIPRTLR,MXIPRTBL)                            14090016
+         DC    A(MXINEW,MXIDEL,MXICDEL),X'80',AL3(MXIPERM)              14100016
+         SPACE 2                                                        14370000

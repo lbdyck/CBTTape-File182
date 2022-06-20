@@ -1,0 +1,181 @@
+         TITLE 'P D S  --  FAMS INTERFACE                    09/13/10'  00010009
+*********************************************************************** 00020009
+***      FAMS  SUBROUTINE                                           *** 00030009
+*********************************************************************** 00040009
+*                                                                       00050009
+         SPACE 1                                                        00060009
+FAMS     DS    0H                                             DRK SEP10 00070008
+*--------------------------------------------------------------------*  00080000
+*        GET FAMS PARM AREA AND ZERO                                    00090010
+*--------------------------------------------------------------------*  00100000
+         USING *,R4                                                     00110000
+         L     R0,=A(FAMSLEN)         LENGTH OF PARM AREA               00120010
+         ICM   R0,B'1000',=AL1(28)    SUBPOOL 28                        00130000
+         GETMAIN R,LV=(0)             GETMAIN FAMS PARM AREA            00140010
+         ST    R1,FAMSADDR            FAMS PARM AREA                    00150010
+         LR    R14,R1                 COPY PARM AREA ADDRESS            00160010
+         L     R15,=A(FAMSLEN)        LENGTH OF PARM AREA               00170010
+         XR    R0,R0                  CLEAR                             00180000
+         XR    R1,R1                  CLEAR                             00190000
+         MVCL  R14,R0                 INIT TO ZEROS                     00200000
+*--------------------------------------------------------------------*  00210000
+*        INITIALIZE FAMS PARM AREA                                      00220010
+*--------------------------------------------------------------------*  00230000
+         L     R5,FAMSADDR            PT @ FAMS PARM AREA               00240010
+         USING IGWFAMS,R5             MAP FAMS PARM AREA                00250010
+         LA    R0,HARPN               HIGHEST ALLOC REL PAGE NUM        00260000
+         ST    R0,IGWPTP1+8                                             00270000
+         LA    R0,PAGSUSED            PAGES USED                        00280000
+         ST    R0,IGWPTP2+8                                             00290000
+         LA    R0,MEMCOUNT            MEMBER COUNT                      00300000
+         ST    R0,IGWPTP3+8                                             00310000
+         MVC   IGWFMH(FAMSHL),FAMSH   INITIALIZE FAMS HEADER            00320000
+         LA    R0,FAMSDSNL            PT @ DSNAME LENGTH                00330000
+         ST    R0,IGWFMH1                                               00340000
+         MVC   IGWFMH2(4),=X'80000000'                                  00351016
+         MVC   IGWFMH3(4),=F'2'       NUMBER OF PARAMETERS  -MEMCOUNT   00360017
+*        MVC   IGWFMH3(4),=F'3'       NUMBER OF PARAMETERS  +MEMCOUNT   00361017
+         LA    R0,FAMSLIST            PT @ LIST                         00370000
+         ST    R0,IGWFMH3+4                                             00380000
+         SPACE 1                                                        00390000
+         MVC   IGWFMO(FAMSOL),FAMSO   INITIALIZE FAMS OUTPUT            00400000
+         MVC   IGWPARM(FAMSPL),FAMSP  INITIALIZE FAMS OPTIONS           00410000
+         MVC   FAMSDSN(44),DSNAME     DSNAME                            00420002
+         LA    R0,IGWPTP1                                               00430000
+         ST    R0,FAMSLIST                                              00440000
+         LA    R0,IGWPTP2                                               00450000
+         ST    R0,FAMSLIST+4                                            00460000
+         LA    R0,IGWPTP3                                               00470000
+         ST    R0,FAMSLIST+8                                            00480000
+         SPACE 1                                                        00490000
+         L     R15,CVTPTR(,R0)        LOAD CVT POINTER                  00500006
+         L     R15,CVTDFA-CVT(,R15)   DATA FACILITIES AREA              00510000
+         CLC   2(2,R15),=X'3200'                                        00520000
+         BL    FAMSEXIT                                                 00530004
+         L     R15,DFADFVAD-DFA(,R15)  DFP VECTOR TABLE                 00540000
+         L     R15,DFVTFMS-DFVT(,R15)  FMS MAIN ENTRY PT                00550000
+         LTR   R15,R15                                                  00560000
+         BNZ   CALLFAMS                                                 00570000
+         B     FAMSEXIT                                                 00580004
+CALLFAMS DS    0H                                                       00590000
+         LA    R1,PARMLIST                                              00600006
+         LA    R14,IGWFMH                                               00610000
+         ST    R14,0(,R1)                                               00620000
+         LA    R14,IGWFMO                                               00630000
+         ST    R14,4(,R1)                                               00640000
+         BASSM R14,R15                IGWFAMS                           00650000
+         LTR   R15,R15                FAMS SUCCESSFUL?                  00660000
+         BNZ   FAMSEXIT               NO                                00670004
+         L     R2,IGWFMO+X'60'        HARPN                             00680000
+         L     R1,IGWFMO+X'64'        PAGSUSED                          00690000
+         DROP  R5                                                       00700000
+         SPACE 1                                                        00710007
+         CVD   R1,DOUBLE                                                00720000
+         MVC   WORKTBL(15),FAMSPIC                                      00730001
+         ED    WORKTBL(15),DOUBLE+2      PAGSUSED                       00740001
+         MH    R1,=H'100'             * 100 FOR PERCENT                 00750000
+         SR    R0,R0                  CLEAR EVEN FOR DIVIDE             00760000
+         DR    R0,R2                  PERCENT PAGES USED                00770000
+         CVD   R1,DOUBLE              PERCENT UTILIZATION               00780000
+         MVC   WORKTBL+15(15),FAMSPIC                                   00790008
+         ED    WORKTBL+15(15),DOUBLE+2   PCTUSED                        00800008
+         MVI   MTLEN,39                                                 00810011
+         MVC   INSERT#1(39),MSG184H3                                    00820008
+         M$MSG L184$1                                                   00830008
+         MVC   INSERT#1(39),BLANK128                                    00840008
+         MVC   INSERT#1+12(13),WORKTBL+2                                00850008
+         MVC   INSERT#1+26(13),WORKTBL+17                               00860008
+         M$MSG L184$1                                                   00870001
+         SPACE 1                                                        00880002
+FAMSEXIT DS    0H                                                       00890004
+         L     R1,FAMSADDR            FAMS PARM AREA                    00900010
+         L     R0,=A(FAMSLEN)         LENGTH OF PARM AREA               00910010
+         ICM   R0,B'1000',=AL1(28)    SUBPOOL 28                        00920000
+         FREEMAIN R,LV=(0),A=(1)      FREEMAIN FAMS PARM AREA           00930010
+         BR    R3                     RETURN                            00940000
+*-------------------------------------------------------------------*   00950000
+* CONSTANTS AND DSECTS                                                  00960010
+*-------------------------------------------------------------------*   00970000
+*                   1 2 3 4 5 6 7 8 9 0 1 2 3 4 5                       00980000
+*                     1 2 , 3 4 5 , 6 7 8 , 9 0 1                       00990000
+FAMSPIC  DC    XL15'4020206B2020206B2020206B202120'                     01000000
+MSG184H3 DC    CL39'PDSE SPACE:    USED PAGES     %UTILIZED'            01010005
+*                               1234567890123 1234567890123             01020005
+         DS    0D                                                       01030000
+FAMSH    DC    CL8'IGWFMH'                                              01040000
+         DC    F'136'                                                   01050000
+         DC    X'01000000'  VERSION                                     01060015
+         DC    X'00010068'  GETATTR                                     01070018
+         DC    X'00000400'                                              01080019
+FAMSHL   EQU   *-FAMSH                                                  01090000
+         DS    0D                                                       01100000
+FAMSO    DC    CL8'IGWFMO'                                              01110000
+         DC    F'1104'                                                  01120000
+         DC    X'01000000'  VERSION                                     01130015
+FAMSOL   EQU   *-FAMSO                                                  01140000
+         DS    0D                                                       01150000
+FAMSP    DC    CL8'HARPN'                                               01160000
+         DC    CL8'PAGSUSED'                                            01170000
+         DC    CL8'MEMCOUNT'                                            01180000
+         DC    H'44'                                                    01190000
+FAMSPL   EQU   *-FAMSP                                                  01200000
+         DROP  R4                                                       01210000
+         TITLE 'P D S  --  FILE ATTRIBUTE MANAGEMENT SERVICES PARMS  '  01220013
+IGWFAMS  DSECT                                                          01230000
+         DS    0D                                                       01240000
+IGWFMP   DC    72X'00'                                                  01250000
+         ORG   IGWFMP                                                   01260000
+IGWPTP1  DC    2F'0'                                                    01270000
+         DC    A(HARPN)                                                 01280000
+         DC    3F'0'                                                    01290000
+IGWPTP2  DC    2F'0'                                                    01300000
+         DC    A(PAGSUSED)                                              01310000
+         DC    3F'0'                                                    01320000
+IGWPTP3  DC    2F'0'                                                    01330000
+         DC    A(MEMCOUNT)                                              01340000
+         DC    3F'0'                                                    01350000
+         SPACE 1                                                        01360000
+         DS    0D                                                       01370000
+IGWFMH   DC    136X'00'                                                 01380000
+         ORG   IGWFMH                                                   01390000
+         DC    CL8'IGWFMH'                                              01400000
+         DC    F'136'                                                   01410000
+         DC    X'01000000'                                              01420000
+         DC    X'00010068'                                              01430000
+         DC    X'00000400'                                              01440000
+IGWFMH1  DC    A(FAMSDSNL)                                              01450000
+         ORG   IGWFMH+60                                                01460000
+IGWFMH2  DC    X'80000000'                                              01470000
+         ORG   IGWFMH+116                                               01480000
+IGWFMH3  DC    F'3'                                                     01490000
+         DC    A(FAMSLIST)                                              01500000
+         ORG   ,                                                        01510000
+         SPACE 1                                                        01520000
+         DS    0D                                                       01530000
+IGWFMO   DC    1104X'00'                                                01540000
+         ORG   IGWFMO                                                   01550000
+         DC    CL8'IGWFMO'                                              01560000
+         DC    F'1104'                                                  01570000
+         DC    X'01000000'                                              01580000
+         ORG   ,                                                        01590000
+         DS    0D                                                       01600000
+IGWPARM  DC    82X'00'                                                  01610000
+         ORG   IGWPARM                                                  01620000
+HARPN    DC    CL8'HARPN'                                               01630000
+PAGSUSED DC    CL8'PAGSUSED'                                            01640000
+MEMCOUNT DC    CL8'MEMCOUNT'                                            01650000
+FAMSDSNL DC    H'44'                                                    01660000
+FAMSDSN  DC    CL44' '                                                  01670000
+FAMSLIST DC    A(IGWPTP1)                                               01680000
+         DC    A(IGWPTP2)                                               01690000
+         DC    A(IGWPTP3)                                               01700000
+         ORG   ,                                                        01710000
+FAMSLEN  EQU   *-IGWFAMS                                                01720000
+*------  END   IGWFAMS                                                  01721010
+         SPACE 5                                                        01730010
+         TITLE 'P D S  --  DATA FACILITIES AREA                      '  01740010
+         IHADFA                                                         01750000
+         SPACE 5                                                        01760010
+         TITLE 'P D S  --  DATA FACILITIES VECTOR TABLE              '  01770010
+         IHADFVT                                                        01780000
+         SPACE 5                                                        01790010

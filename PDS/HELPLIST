@@ -1,0 +1,440 @@
+         TITLE '    H E L P L I S T   -   V E R S I O N   1 . 2   '     00010000
+************************************************************            00020000
+*                                                          *            00030000
+*              'HELPLIST' PROGRAM AT FPC                   *            00040000
+*                                                          *            00050000
+************************************************************            00060000
+R0       EQU   0                                                        00070000
+R1       EQU   1                                                        00080000
+R2       EQU   2                                                        00090000
+R3       EQU   3                                                        00100000
+R4       EQU   4                                                        00110000
+R5       EQU   5                                                        00120000
+R6       EQU   6                                                        00130000
+R7       EQU   7                                                        00140000
+R8       EQU   8                                                        00150000
+R9       EQU   9                                                        00160000
+R10      EQU   10                                                       00170000
+R11      EQU   11                                                       00180000
+R12      EQU   12                                                       00190000
+R13      EQU   13                                                       00200000
+R14      EQU   14                                                       00210000
+R15      EQU   15                                                       00220000
+         SPACE                                                          00230000
+*        PROGRAM. HELPLIST.                                             00240000
+*        AUTHOR. UNKNOWN - FROM TOM GEE.                                00250000
+*        MODIFIER. BILL GODFREY,  PLANNING RESEARCH CORPORATION.        00260000
+*        INSTALLATION. FEDERAL POWER COMMISSION.                        00270000
+*        DATE-UPDATED IN SOURCE LIBRARY. JANUARY 8 1974.                00280000
+*        REMARKS.                                                       00290000
+*            DATE ADDED TO HEADING.                                     00300000
+*            SUBCOMMAND NAMES PREFIXED WITH 'SUBCOMMAND - '.            00310000
+*            INDENTATION CHANGED. CHECK FOR )X SYNTAX ADDED.            00320000
+*            USER MACROS - EASYCOME,GEHEN,REGISTER                      00330000
+*                                                                       00340000
+*        MODIFIER. JERRY PITTENGER, PLANNING RESEARCH CORPORATION.      00350000
+*        INSTALLATION. OFFICE OF MANAGEMENT AND BUDGET (OMB).           00360000
+*        DATE-UPDATED IN SOURCE LIBRARY. AUGUST 17 1977.                00370000
+*        REMARKS:                                                       00380000
+*            DATE REMOVED FROM HEADING. MULTIPLE HEADING LINES.         00390000
+*            CHANGE FROM )O OR )X OR )F HIGHLIGHTED BETTER.             00400000
+*            ALLOW NO ALIAS TO PRINT BY USING BLDL AGAINST              00410000
+*            THE SYSUT1 LIBRARY/LIBRARIES DIRECTORY. INSERTED           00420000
+*            SUBCOMMANDS ON SEPARATE PAGES WITH THE SUBCOMMAND          00430000
+*            NAME IN THE HEADER BLOCK.                                  00440000
+         EJECT                                                          00450000
+*            CURRENT REGISTER USAGE:                                    00460000
+*                                                                       00470000
+*            R0 = SYSTEM PARM REG                                       00480000
+*            R1 = SYSTEM PARM REG                                       00490000
+*            R2 = PROGRAM PARM REG + WORK REG                           00500000
+*            R3 = WORK REG                                              00510000
+*            R4 = RECORD LENGTH                                         00520000
+*            R5 = BLOCKSIZE                                             00530000
+*            R6 = SPARE                                                 00540000
+*            R7 = SPARE                                                 00550000
+*            R8 = OFFSET INTO MEMBER DSECT                              00560000
+*            R9 = WORK REG                                              00570000
+*           R10 = ADDRESS OF 'LINE'                                     00580000
+*           R11 = I/O AREA BASE                                         00590000
+*           R12 = PROGRAM BASE                                          00600000
+*           R13 = SAVE AREA POINTER                                     00610000
+*           R14 = SYSTEM RETURN ADDR                                    00620000
+*           R15 = PROGRAM RETURN ADDR                                   00630000
+*                                                                       00640000
+*        NON-STANDARD MACROS USED: KOMMEN AND GEHEN                     00650000
+*                                                                       00660000
+*        UPDATED, 04DEC84, WILLIAM SMITH, SYNTEX (USA), INC.            00670000
+*                 PALO ALTO, CALIFORNIA  94304                          00680000
+*        REMARKS:                                                       00690000
+*            ELIMINATED USE OF ALL NON-STANDARD MACRO CALLS - ALL CODE  00700000
+*            IS NOW IN-LINE                                             00710000
+*                                                                       00720000
+*                                                                       00730000
+*        UPDATED, 23OCT85, BRUCE LELAND, HITACHI AMERICA LTD.,          00740000
+*                 SAN JOSE, CALIFORNIA  95131                           00750000
+*        REMARKS:                                                       00760000
+*            ADDED PROGRAM MESSAGES )M FORMATTING LOGIC                 00770000
+*                                                                       00780000
+*                                                                       00790000
+         EJECT                                                          00800000
+HELPLIST CSECT                                                          00810000
+         STM   14,12,12(13)                                             00820000
+         LR    12,15                                                    00830000
+         USING HELPLIST,12                                              00840000
+         LA    11,SAVEEM                                                00850000
+         ST    13,4(11)                                                 00860000
+         ST    11,8(13)                                                 00870000
+         LR    13,11                                                    00880000
+         L     2,0(,1)             REG 2 --> PARM                       00890000
+         MVI   LINE-1,C' '                                              00900000
+         MVC   LINE,LINE-1                                              00910000
+         LA    R10,LINE                POINT R10 TO 'LINE'              00920000
+         MVI   HEAD-1,C' '                                              00930000
+         OPEN  (IN,,HELP,,OUT,OUTPUT)                                   00940000
+         TM    IN+48,X'10'             OPEN OK?                         00950000
+         BO    PARMCHK                 YES....SYSIN SPECIFIED           00960000
+         BZ    OPENERR                 NO....CAN'T OPEN                 00970000
+PARMCHK  CLI   1(2),0              PARM?                                00980000
+         BE    NOPARM                                                   00990000
+         LH    3,0(,2)             R3  =  LENGTH OF PARM                01000000
+         CLI   1(2),9              PARM LENGTH GREATER THAN 9?          01010000
+         BNH   *+8                 NO - BRANCH                          01020000
+         LA    3,9                 YES - REDUCE TO 9                    01030000
+         BCTR  3,0                 LENGTH MINUS 1 FOR EX                01040000
+NOPARM   EQU   *                                                        01050000
+         LH    R0,HELP+62               BLOCKSIZE                       01060000
+         GETMAIN R,LV=(0)                                               01070000
+         LR    R11,R1                   SAVE POINTER TO I/O AREA        01080000
+CNTRL    EQU   *                                                        01090000
+         GET   IN,REC                   READ A CONTROL CARD             01100000
+         MVC   MEM1(8),REC              MOVE TO BLDL AREA               01110000
+         MVC   MEMNAME,REC              SAVE DESIRED MEMBER NAME        01120000
+         LA    R1,HELP                  POINT TO DCB FOR BLDL           01130000
+         LA    R0,LSTSTRT               POINT TO BLDL LIST              01140000
+         BLDL  (R1),(R0)                GO GET IT                       01150000
+         B     *+4(R15)                 TEST RETURN CODE                01160000
+         B     MOVE                     GOOD MEMBER                     01170000
+         B     BADONE                   ALIAS OR INVALID MEMBER         01180000
+         B     BLDLERR                  GO ISSUE ABEND..PERM I/O ERROR  01190000
+BADONE   EQU   *                                                        01200000
+         MVC   MEM1+8(6),=X'000000000000' ZERO OUT BLDL TTR FIELD       01210000
+         B     CNTRL                    GO GET THE NEXT MEMBER          01220000
+MOVE     TM    MEM1+13,X'80'            IS IT AN ALIAS???               01230000
+         BO    INDICATE                 ALIAS GO INDICATE SO            01240000
+         SR    R7,R7                    ZERO OUT R7                     01250000
+         SR    R6,R6                    ZERO OUT R6                     01260000
+         LA    R6,8                     LOAD A CONSTANT                 01270000
+         LA    R14,REC                  LOAD ADDRESS TO CHECK           01280000
+         LA    R6,0(R6,R14)             COMBINE THE TWO                 01290000
+COMPR    CLI   0(R6),X'40'              CHECK FOR A BLANK               01300000
+         BNE   COMPDONE                 IF NOT...FINISHED               01310000
+         CR    R6,R14                   FINISHED YET???                 01320000
+         BE    COMPDONE                 YES                             01330000
+         BCT   R6,COMPR                 DOWN 1 AND CHECK AGAIN          01340000
+COMPDONE EQU   *                        R6 ALREADY -1 FOR EXECUTE       01350000
+         SR    R6,R14                   LEAVE THE NUMBER OF CHARS       01360000
+         STC   R6,MEMLEN                SAVE MEMBER LENGTH FOR EXEC     01370000
+         LA    R7,8                     LOAD A CONSTANT                 01380000
+         LA    R6,1(R6)                 PUT R6 BACK UP                  01390000
+         SR    R7,R6                    GET NUMBER OF BLANKS            01400000
+         STC   R7,OFFSET                OFFSET FOR CENTERING ON HDR     01410000
+         SRL   R7,1                     DIVIDE BY 2                     01420000
+         STC   R7,MEMOFFST              SAVE FOR OFFSETTING             01430000
+         NI    OP,255-STILLSC           TELL EM NOT SUBCOMMAND ANYMORE  01440000
+         NI    OP,255-SCSAVED           SUBCOMMAND NOT SAVED ANY MORE   01450000
+         FIND  HELP,MEMNAME,D           FIND MEMBER                     01460000
+         B     *+4(R15)                 TEST RETURN CODE                01470000
+         B     *+12                     GOOD RETURN                     01480000
+         B     BADNAME                  INVALID NAME                    01490000
+         B     IOERROR                  I/O ERROR                       01500000
+RDSETUP  NI    OP,255-OPMSGS-OPCMDS     TURN OFF MESSAGES & CMDS        01510000
+         CLC   MEMNAME,=CL8'COMMANDS'   COMMANDS?                       01520000
+         BNE   *+8                      NO, ....                        01530000
+         OI    OP,OPCMDS                YES, INDICATE SUCH              01540000
+         TM    OP,ALIAS                 ALIAS ALREADY CAUSED TOF???     01550000
+         BO    READEM                   YES, NO HEADER                  01560000
+         ZAP   CTRLIN,=P'0'        FORCE HEADING                        01570000
+READEM   EQU   *                                                        01580000
+          NI    OP,255-ALIAS             TURN OFF ALIAS FLAG            01590000
+         READ  DECB,SF,HELP,(R11),'S'                                   01600000
+         CHECK DECB                                                     01610000
+         LH    R5,HELP+62               BLOCK SIZE                      01620000
+         L     R1,DECB+16               A(IOB)                          01630000
+         SH    R5,14(R1)                MINUS RESIDUAL CCW COUNT        01640000
+         BCTR  R5,0                     DOWN ONE                        01650000
+         LR    R3,R11                   REC START                       01660000
+         LA    R4,80                    REC LENGTH                      01670000
+         LA    R5,0(R3,R5)              REC END                         01680000
+PROCESS  TM    OP,OPCMDS                CMDS?                           01690000
+         BZ    PROCESSA                 NO, CONTINUE                    01700000
+         MVC   LINEPL(72),0(R3)         YES, COPY IN RECORD             01710000
+         B     LISTER                   GO LIST IT                      01720000
+PROCESSA CLC   0(2,R3),=C')F'           FUNCTION                        01730000
+         BE    MAJOR                                                    01740000
+         CLC   0(2,R3),=C')S'           SUBCOMMANDS                     01750000
+         BE    MAJOR                                                    01760000
+         CLC   0(2,R3),=C')X'           SYNTAX                          01770000
+         BE    MAJOR                                                    01780000
+         CLC   0(2,R3),=C')O'           OPERANDS                        01790000
+         BE    MAJOR                                                    01800000
+         CLC   0(2,R3),=C')M'           MESSAGES                        01810000
+         BE    MESSAGE                                                  01820000
+         CLI   0(R3),C'='               SUB COMMAND                     01830000
+         BNE   CHEKOP                   NO                              01840000
+         OI    OP,SUBCOMD               TELL EM SUBCOMD                 01850000
+         NI    OP,255-SCSAVED           TELL EM NEW SUBCOMMAND          01860000
+         NI    OP,255-OPMSGS            NO MORE MESSAGES                01870000
+         NI    OP,255-STILLSC           NOT CONTINUED SUBCMD            01880000
+         B     SUBCMD                   GO SEPARATE                     01890000
+CHEKOP   CLC   0(2,R3),=C'))'           YES - OPERAND?                  01900000
+         BE    GOTDUMB                  YES - BRANCH                    01910000
+         CLC   0(2,R3),=C'  '           NO, CHECK FOR LACK OF NEATNESS  01920000
+         BE    NOTDUMB                  VERY GOOD - BRANCH              01930000
+         MVC   LINEIND(72),0(R3)  SOME DUMMY DIDN'T LEAVE 1ST 2 BLANK   01940000
+         B     LISTER                                                   01950000
+GOTDUMB  MVC   MSGSAVE(8),2(R3)         SAVE OPERAND OR MESSAGE NAME    01960000
+         MVI   CC,C'0'                  DOUBLE SPACE                    01970000
+NOTDUMB  MVC   LINEIND(70),2(R3)        YES, SET LINE WITH INDENTION    01980000
+         B     LISTER                                                   01990000
+NORMAL   TM    OP,MAJ                   MAJOR SEPARATION???             02000000
+         BNO   LISTER1                  NO....LIST IT                   02010000
+         MVC   LINEMAJ(70),2(R3)        MOVE IN DATA                    02020000
+         MVC   3(3,R10),=C'***'          INSERT HIGHLIGHTER             02030000
+         MVC   18(3,R10),=C'***'         INSERT HIGHLIGHTER             02040000
+         NI    OP,255-MAJ               TURN OFF SWITCH                 02050000
+         B     LISTER                                                   02060000
+LISTER1  MVC   LINEPL(70),2(R3)                                         02070000
+LISTER   CP    CTRLIN,CTRMAXH           CURRENT:MAXIMUM HIGH THRESHOLD  02080000
+         BL    *+10                     LOW, BRANCH                     02090000
+         ZAP   CTRLIN,=P'0'             HIGH OR EQUAL, NEW PAGE         02100000
+         SPACE 1                                                        02110000
+         CP    CTRLIN,CTRMAXL           CURRENT:MAXIMUM LOW THRESHOLD   02120000
+         BL    LISTER4                  LOW, BRANCH                     02130000
+         CLI   CC,X'40'                 ANY CARRIAGE CONTROL?           02140000
+         BNE   LISTER2                  YES, NEXT PAGE                  02150000
+         CLC   LINESAVE(20),=CL20' '    LAST LINE BLANK OR CARRIAGE?    02160000
+         BNE   LISTER4                  NO, BRANCH                      02170000
+         CLC   LINEPL(20),=CL20' '      BLANKS?                         02180000
+         BE    LISTER4                  YES, BRANCH                     02190000
+LISTER2  ZAP   CTRLIN,=P'0'             YES, GO TO THE NEXT PAGE        02200000
+         SPACE 1                                                        02210000
+LISTER4  MVC   LINESAVE(20),LINEPL      SAVE FOR LAST LINE              02220000
+         TM    OP,CMDSEP                NEED COMMAND NAME???            02230000
+         BO    HEADALI                  YES...GO DO IT                  02240000
+         CP    CTRLIN,=P'0'                                             02250000
+         BE    HEADING1                 GO SEE IF STILL SUBCOMMAND      02260000
+REPORTD  AP    CTRLIN,=P'1'                                             02270000
+         CLI   LINE,C'0'           DOUBLE SPACING?                      02280000
+         BNE   *+10                NO - BRANCH AROUND AP                02290000
+         AP    CTRLIN,=P'1'                                             02300000
+         TM    OP,SUBCOMD                IS IT SUBCOMMANDS???           02310000
+         BNO   PUTIT                     NO....LIST ASIS                02320000
+         NI    OP,255-SUBCOMD            TURN OFF SWITCH                02330000
+         MVC   3(3,R10),=C'***'          INSERT HIGHLIGHTER             02340000
+PUTIT    PUT   OUT,LINE                                                 02350000
+         MVC   LINE,LINE-1         CLEAR LINE                           02360000
+BXLE     BXLE  R3,R4,PROCESS       SCAN ENTIRE BLOCK                    02370000
+         B     READEM                   READ ANOTHER BLOCK              02380000
+HEADING1 TM    OP,STILLSC               IS IT STILL SUBCOMMAND????      02390000
+         BO    SUBCMD                   YES.....GO DO IT THAT WAY       02400000
+HEADING  MVC   HEAD,HEAD-1              CLEAR IT                        02410000
+         NI    OP,255-STILLSC           NOT SUBCOMMAND ANYMORE          02420000
+         MVI   HEAD,C'1'                SET TO EJECT                    02430000
+         MVC   HEAD+2(L'TITLE),TITLE    TOP OF PAGE ID                  02440000
+         PUT   OUT,HEAD                 WRITE IT                        02450000
+HEADALI  AP    CTRLIN,=P'5'             1 EA. FOR HDR + HIGHLIGHTERS    02460000
+         NI    OP,255-CMDSEP            TURN OFF COMMAND PRINT SW       02470000
+* THE OTHERS ARE ALREADY TAKEN INTO ACCOUNT                             02480000
+         MVC   HEAD,HEAD-1              CLEAR LINE                      02490000
+         MVI   HEAD,C'0'                DOUBLE SPACE                    02500000
+         MVC   HEAD+35(10),=C'----------' COMMAND HIGHLIGHTER           02510000
+         PUT   OUT,HEAD                 PUT IT                          02520000
+         MVI   HEAD,C' '                SET TO SINGLE SPACE             02530000
+         MVC   HEAD+35(10),=C'          ' BLANK OUT HEADER              02540000
+         SR    R6,R6                    ZERO OUT R6                     02550000
+         IC    R6,MEMOFFST              GET THE OFFSET FOR MOVE         02560000
+         LA    R7,HEAD+36               PICK UP MOVE LOCATION           02570000
+         LA    R7,0(R7,R6)              LOAD R7 W/LOCATION + OFFSET     02580000
+         IC    R6,MEMLEN                PICK UP LENGTH TO MOVE          02590000
+MOVEMEM  MVC   0(0,R7),MEMNAME          EXECUTED BELOW                  02600000
+         EX    R6,*-6                   MOVE IN THE MEMBER NAME         02610000
+         PUT   OUT,HEAD                 PUT OUT CENTERED NAME           02620000
+         MVC   HEAD+35(10),=C'----------' COMMAND HIGHLIGHTER           02630000
+         PUT   OUT,HEAD                 PUT IT                          02640000
+         MVC   HEAD,HEAD-1              BLANK OUT HEAD                  02650000
+         MVI   HEAD,C'0'                SET TO DOUBLE SPACE             02660000
+         PUT   OUT,HEAD                 WRITE BLANK HEADS               02670000
+         B     REPORTD                                                  02680000
+MAJOR    NI    OP,255-OPMSGS            TURN OFF MESSAGES               02690000
+         MVI   CC,C'0'                  DOUBLE SPACE                    02700000
+         OI    OP,MAJ                   TURN ON SWITCH                  02710000
+         B     NORMAL                                                   02720000
+SUBCMD   TM    OP,STILLSC               IS IT STILL SUBCOMMAND???       02730000
+         BO    SUBCMD1                  YES, LONG MEMBER                02740000
+         CP    CTRLIN,=P'05'            ENOUGH ROOM FOR NEW ONE??       02750000
+         BL    ADD5                     YES, GO GETEM                   02760000
+SUBCMD1  MVC   HEAD,HEAD-1              CLEAR IT                        02770000
+NEWPG    ZAP   CTRLIN,=P'0'             REINITIALIZE LINE COUNT         02780000
+         MVI   HEAD,C'1'                SET TO EJECT                    02790000
+         MVC   HEAD+2(L'TITLE),TITLE    TOP OF PAGE ID                  02800000
+         PUT   OUT,HEAD                 WRITE IT                        02810000
+ADD5     AP    CTRLIN,=P'5'             1 EA. FOR HDR + HIGHLIGHTERS    02820000
+* THE OTHERS ARE ALREADY TAKEN INTO ACCOUNT                             02830000
+         MVC   HEAD,HEAD-1              CLEAR LINE                      02840000
+         MVI   HEAD,C'0'                DOUBLE SPACE                    02850000
+         MVC   HEAD+27(27),DASHES       COMMAND HIGHLIGHTER             02860000
+         TM    OP,OPMSGS                MESSAGES?                       02870000
+         BNO   *+10                     NO, BRANCH                      02880000
+         MVC   HEAD+27(35),DASHES       COMMAND HIGHLIGHTER             02890000
+         PUT   OUT,HEAD                 PUT IT                          02900000
+         MVC   HEAD,HEAD-1              CLEAR THE DASHES                02910000
+         MVI   HEAD,C' '                SET TO SINGLE SPACE             02920000
+         SR    R6,R6                    CLEAR IT                        02930000
+         MVI   HEAD+41,C'-'             PUT IN THE SEPARATOR            02940000
+         LA    R7,HEAD+28               PICK UP LOCATION                02950000
+         IC    R6,OFFSET                PICK UP THE OFFSET              02960000
+         LA    R7,0(R6,R7)              POINT R7 TO LOCATION + OFFSET   02970000
+         IC    R6,MEMLEN                PICK UP LENGTH TO MOVE          02980000
+MEMMVC   MVC   0(0,R7),MEMNAME          EXECUTED BELOW                  02990000
+         EX    R6,*-6                   MOVE IN MEMNAME                 03000000
+* PRESUPPOSES THAT SUBCOMMAND HAS AN '=' SIGN IN FRONT OF IT            03010000
+         TM    OP,SCSAVED               HAS SUBCOMMAND BEEN SAVED???    03020000
+         BNO   R3MOVE                   IF NOT GET OFF OF R3            03030000
+         MVC   HEAD+44(8),SCSAVE        HAS BEEN SAVED....GET IT        03040000
+         B     DONEMOVE                 GO AROUND R3 MOVE               03050000
+R3MOVE   MVC   HEAD+44(8),1(R3)         MOVE IN SUBCOMMAND NAME         03060000
+         MVC   SCSAVE(8),1(R3)          SAVE THE SUBCOMMAND NAME        03070000
+         OI    OP,SCSAVED               AND TURN ON THE FLAG            03080000
+DONEMOVE LA    R14,HEAD+44              SET UP FOR '=' CHECK            03090000
+         LA    R15,8                    LENGTH TO CHECK                 03100000
+SUBCX    CLI   0(R14),C'='              IS IT AN '=' SIGN               03110000
+         BE    SUBCX1                   YES....GO BLANK IT              03120000
+         LA    R14,1(R14)               BUMP TO NEXT CHAR               03130000
+         BCT   R15,SUBCX                GO CHECK FURTHER                03140000
+SUBCX1   MVC   0(9,R14),=C'         '   MOVE IN BLANKS                  03150000
+         TM    OP,OPMSGS                MESSAGES?                       03160000
+         BNO   *+10                     NO, BRANCH                      03170000
+         MVC   HEAD+52(8),MSGSAVE       ADD THE MESSAGE NUMBER          03180000
+         PUT   OUT,HEAD                 WRITE IT                        03190000
+         MVC   HEAD+27(27),DASHES       HIGHLIGHT IT                    03200000
+         TM    OP,OPMSGS                MESSAGES?                       03210000
+         BNO   *+10                     NO, BRANCH                      03220000
+         MVC   HEAD+27(35),DASHES       COMMAND HIGHLIGHTER             03230000
+         PUT   OUT,HEAD                 WRITE EM                        03240000
+         MVC   HEAD,HEAD-1              BLANK IT                        03250000
+         MVI   LINE,C'0'                SET FOR DOUBLE SPACE            03260000
+         OI    OP,STILLSC               SET SUBCOMMAND HEADER SWITCH    03270000
+         TM    OP,SUBCOMD               LONG MEMBER OR NEW SUBCOMMAND?  03280000
+         BNO   REPORTD                  LONG MEMBER...LINE PRESENT      03290000
+         NI    OP,255-SUBCOMD           TURN OFF THE SWITCH             03300000
+         B     BXLE                     GO GET SOME MORE                03310000
+MESSAGE  OI    OP,OPMSGS                TURN ON MESSAGES                03320000
+         MVI   CC,C'0'                  DOUBLE SPACE                    03330000
+         OI    OP,MAJ                   TURN ON SWITCH                  03340000
+         B     NORMAL                                                   03350000
+FINI     DS    0H                                                       03360000
+         CLOSE (OUT,,HELP,,IN)                                          03370000
+         L     13,4(13)                                                 03380000
+         LM    14,12,12(13)                                             03390000
+         SR    R15,R15                                                  03400000
+         BR    R14                                                      03410000
+         SPACE 2                                                        03420000
+BADNAME  DS    0H                                                       03430000
+         MVC   LINE+10(L'ENAME),ENAME   INVALID MEMBER NAME             03440000
+         B     MSGOUT                                                   03450000
+IOERROR  DS    0H                                                       03460000
+         MVC   LINE+10(L'EIO),EIO       I/O ERROR                       03470000
+MSGOUT   MVC   LINE+1(8),MEMNAME        PUT IN MEMBER NAME              03480000
+         MVI   CC,C'1'                  EJECT A PAGE                    03490000
+         PUT   OUT,LINE                 PRINT ERROR MSG                 03500000
+         MVC   LINE,LINE-1              CLEAR OUT LINE                  03510000
+         B     CNTRL                                                    03520000
+INDICATE EQU   *                        ALIAS PROCESSING                03530000
+         MVC   HEAD,HEAD-1              CLEAR LINE                      03540000
+         TM    OP,ALIAS                 BEEN HERE BEFORE???             03550000
+         BNO   INDIC1                   NO, FORCE HEADING               03560000
+         MVI   HEAD,C'0'                DOUBLE SPACE                    03570000
+         B     INDIC2                   NO HEADING                      03580000
+INDIC1   MVI   HEAD,C'1'                FORCE HEADING                   03590000
+         NI    OP,255-STILLSC           NOT SUBCMD ANYMORE              03600000
+         MVC   HEAD+2(L'TITLE),TITLE    INSTALLATION CODE               03610000
+         PUT   OUT,HEAD                                                 03620000
+         MVC   HEAD,HEAD-1                                              03630000
+         MVI   HEAD,C'0'                DOUBLE SPACE                    03640000
+         ZAP   CTRLIN,=P'0'             RESET LINE COUNT                03650000
+         AP    CTRLIN,=P'1'                                             03660000
+INDIC2   MVC   HEAD+27(27),DASHES       HIGHLITE                        03670000
+         PUT   OUT,HEAD                                                 03680000
+         MVC   HEAD,HEAD-1              CLEAR LINE                      03690000
+         MVI   HEAD,C' '                SINGLE SPACE                    03700000
+         MVC   HEAD+30(8),MEMNAME       MOVE IN MEMBER NAME             03710000
+         MVC   HEAD+38(12),=C' IS AN ALIAS'                             03720000
+         PUT   OUT,HEAD                                                 03730000
+         MVC   HEAD,HEAD-1              CLEAR LINE                      03740000
+         MVC   HEAD+27(27),DASHES       HIGHLITE                        03750000
+         PUT   OUT,HEAD                                                 03760000
+         MVC   HEAD,HEAD-1              CLEAR LINE                      03770000
+         MVI   HEAD,C' '                SPACE                           03780000
+         PUT   OUT,HEAD                                                 03790000
+         AP    CTRLIN,=P'5'             MAKE LINECT CORRECT             03800000
+         OI    OP,ALIAS                 SAY WE HAVE BEEN HERE           03810000
+         OI    OP,CMDSEP                PRINT COMMAND NAME ALSO         03820000
+         B     CNTRL                    GO GET NEXT MEMBER              03830000
+         EJECT                                                          03840000
+         DS    0D                                                       03850000
+MEMNAME  DC    CL8'0'                                                   03860000
+REC      DC    CL80'0'                                                  03870000
+         DC    C'0'                                                     03880000
+LINE     DS    0CL133                                                   03890000
+CC       DC    CL1'0'                                                   03900000
+         DC    CL132'0'                                                 03910000
+LINEMAJ  EQU   LINE+6                                                   03920000
+LINEPL   EQU   LINE+8                                                   03930000
+LINEIND  EQU   LINEPL                                                   03940000
+         DC    CL1'0'                                                   03950000
+HEAD     DC    CL133'0'                                                 03960000
+ENAME    DC    C'- INVALID AS SPECIFIED'                                03970000
+EIO      DC    C'- I/O ERROR OCCURRED WHILE LOCATING NAME'              03980000
+H9       DC    H'9'                                                     03990000
+DASHES   DC    35C'-'       SUBCOMMAND HIGHLIGHTER                      04000000
+MEMLEN   DC    B'0'                                                     04010000
+OFFSET   DC    B'0'                                                     04020000
+MEMOFFST DC    B'0'                                                     04030000
+OP       DC    B'0'                                                     04040000
+OPMSGS   EQU   B'10000000'  MESSAGES FORMATTING                         04050000
+OPCMDS   EQU   B'01000000'                                              04060000
+STILLSC  EQU   B'00100000'  SUBCOMMAND HEADER FLAG                      04070000
+SCSAVED  EQU   B'00010000'  SUBCOMMAND HAS BEEN SAVED FLAG              04080000
+ALIAS    EQU   B'00001000'  SPARE FLAG                                  04090000
+MAJ      EQU   B'00000100'  MAJOR SEPARATION                            04100000
+SUBCOMD  EQU   B'00000010'  SUBCOMMAND SEPARATION                       04110000
+CMDSEP   EQU   B'00000001'  PRINT COMMAND NAME FLAG                     04120000
+         SPACE                                                          04130000
+LINESAVE DC    CL20'LAST DATA LINE'                                     04140000
+MSGSAVE  DC    D'0'                  OPERAND AND MESSAGE SAVE AREA      04150000
+SCSAVE   DC    D'0'                  SUBCOMMAND SAVE AREA               04160000
+BLKADDR  DC    F'0'                                                     04170000
+CTRMAXL  DC    P'055'                LOW MAXIMUM THRESHOLD              04180000
+CTRMAXH  DC    P'059'                HIGH MAXIMUM THRESHOLD             04190000
+CTRLIN   DC    P'000'                                                   04200000
+         SPACE                                                          04210000
+         SPACE                                                          04220000
+         PRINT NOGEN                                                    04230000
+         LTORG                                                          04240000
+         SPACE                                                          04250000
+         DS    0D                                                       04260000
+LSTSTRT  DC    X'0001000E'   TELL BLDL MAX NUMBER AND LENGTH            04270000
+MEM1     DC    2F'0'                                                    04280000
+DUMMYFW  DC    F'0'                                                     04290000
+DUMMYHW  DC    H'0'                                                     04300000
+BLDLERR  ABEND 2222,DUMP     BLDL ERROR                                 04310000
+OPENERR  ABEND 1111,DUMP     CAN'T OPEN                                 04320000
+TITLE    DC    C'                        TSO COMMAND -- HELP REFERENCE' 04330000
+SAVEEM   DC    18F'0'        SAVE AREA                                  04340000
+IN       DCB   DSORG=PS,MACRF=GM,EODAD=FINI,DDNAME=SYSIN                04350000
+         SPACE                                                          04360000
+OUT      DCB DSORG=PS,MACRF=PM,RECFM=FA,BLKSIZE=133,DDNAME=SYSPRINT     04370000
+         SPACE                                                          04380000
+HELP     DCB   DSORG=PO,MACRF=R,EODAD=CNTRL,DDNAME=SYSUT1               04390000
+         END                                                            04400000

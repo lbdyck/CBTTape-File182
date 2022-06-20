@@ -1,0 +1,14 @@
+         MACRO M$EXIT  - TERMINATE A CSECT                              00010002
+&NAME    M$EXIT &LV=                                                    00030002
+         AIF   ('&LV' EQ '').A0                                         00040002
+&NAME    LR    R2,R13                         ADDR OF THIS SAVE AREA    00050002
+         L     R13,4(,R13)                                              00060002
+         AGO   .A1                                                      00070002
+.A0      ANOP                                                           00080002
+&NAME    L     R13,4(,R13)                                              00090002
+.A1      STM   R15,R1,16(R13)                 RETURN REGS 15, 0, 1      00100002
+         AIF   ('&LV' EQ '').A2 NOT DYNAMIC STORAGE                     00110002
+         FREEMAIN R,LV=&LV,A=(R2)                                       00120002
+.A2      ANOP                                                           00130002
+         RETURN (14,12),T                                               00140002
+         MEND                                                           00150002

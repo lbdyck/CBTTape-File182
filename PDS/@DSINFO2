@@ -1,0 +1,63 @@
+*                                                             DRK JUN16 00000705
+*        ISPF DSINFO CALL                                     DRK JUN16 00000805
+*                                                             DRK JUN16 00000905
+         TM    SPFLAG0,SPFDON         ISPMODE ACTIVE?                   00001200
+         BNO   DSI300C                NO, BRANCH                        00001300
+         LA    R14,DSINFO2            DSINFO                            00001401
+         ST    R14,PARMLIST           1ST PARM                          00001500
+         LA    R15,#USADSN                                              00001610
+         MVI   0(R15),C''''           START QUOTE                       00001700
+         LA    R15,1(R15)                                               00001800
+         MVC   0(44,R15),DSNAME       DSNAME                            00001900
+         AH    R15,DSNLEN                                               00002000
+         MVI   0(R15),C''''           END QUOTE                         00002100
+         LA    R15,#USADSN            DSN                               00002200
+         ST    R15,PARMLIST+4         2ND PARM                          00002300
+         OI    PARMLIST+4,X'80'       MARK END OF PARM LIST             00002400
+         LA    R1,PARMLIST            PT TO PARMLIST                    00002500
+         L     R15,ISPLINK                                              00002600
+         BASR  R14,R15                CALL ISPF                         00002700
+         LTR   R15,R15                NORMAL COMPLETION?                00002800
+         BNZ   DSI300C                NO                                00002900
+         SPACE 1                                                        00003000
+         LA    R14,VCOPY2             VCOPY                             00003101
+         ST    R14,PARMLIST           1ST PARM                          00003200
+         LA    R14,ZPDSE              GET PDSE VERSION, MAXGENS         00003301
+         MVC   DOUBLE(8),VARLEN2      MOVE LENGTH ARRAY                 00003401
+         LA    R15,DOUBLE             LENGTH OF VARIABLES               00003500
+         LA    R0,PDSEFORM            RETURN AREA                       00003610
+         LA    R1,ISPMOVE2            MOVE                              00003701
+         STM   R14,R1,PARMLIST+4      2ND-5TH PARMS                     00003800
+         OI    PARMLIST+16,X'80'      MARK END OF PARM LIST             00003900
+         LA    R1,PARMLIST            PT TO PARMLIST                    00004000
+         L     R15,ISPLINK                                              00004100
+         BASR  R14,R15                CALL ISPF                         00004200
+         LTR   R15,R15                NORMAL COMPLETION?                00004300
+         BNZ   DSI300C                NO                                00004400
+         MVI   MTLEN,39               YES                               00004500
+         MVC   INSERT#1(39),MSG192H1                                    00004603
+         M$MSG L192$1                                                   00004703
+         MVC   INSERT#1(39),BLANK128                                    00004800
+         MVC   INSERT#1+24(1),PDSEFORM      ZDSDSNV                     00004911
+         MVC   INSERT#1+29(10),PDSEFORM+10  ZDSNGEN                     00005012
+         M$MSG L192$1                                                   00005103
+         M$ERRST MSGBLANK             ONE BLANK LINE                    00005206
+         CLI   PDSEFORM,C'1'          PDSE V1?                DRK APR18 00005316
+         BE    DSI300C                YES, DONE               DRK APR18 00005416
+         CLC   PDSEFORM+10(10),ZGENS  V2 AND ZERO GENS?       DRK APR18 00005517
+         BE    DSI300C                YES, DONE               DRK APR18 00005616
+         M$MSG L198                   NO, GIVE WARNING        DRK APR18 00005716
+         M$ERRST MSGBLANK             ONE BLANK LINE          DRK APR18 00005816
+         B     DSI300C                SKIP CONSTANTS                    00005916
+         SPACE 1                                                        00006016
+VARLEN2  DC    F'10',F'10'            LENGTH OF VARS                    00006116
+ISPMOVE2 DC    CL4'MOVE'              ACTION                            00006216
+VCOPY2   DC    CL8'VCOPY'             SERVICE                           00006316
+ZPDSE    DC    C'(ZDSDSNV ZDSNGEN)'   VARIABLE NAMES                    00006416
+DSINFO2  DC    CL8'DSINFO'            SERVICE                           00006516
+L192$1   DC    C'192'                                                   00006616
+L198     DC    C'198'                                         DRK APR18 00006716
+ZGENS    DC    CL9' ',C'0'                                              00006816
+MSG192H1 DC    CL39'PDSE FORMAT:      VERSION       MAXGENS'            00006916
+*                                  1234567890    1234567890             00007016
+DSI300C  DS    0H                                                       00010000

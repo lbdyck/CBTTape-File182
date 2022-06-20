@@ -1,0 +1,833 @@
+*PROCESS SUPRWARN(303)                                        DRK JUL09 00010099
+SUBS     TITLE 'P D S  --  PDS SUBROUTINES                   09/28/88'  00020000
+         SPACE 2                                                        00030000
+         PRINT OFF                                                      00040000
+         COPY  #PDSGEN                                                  00050000
+         PRINT ON                                                       00060000
+         AIF   ('&CISP' EQ '').NOSPF                                    00070002
+         AGO   .NOSPFX                                                  00080003
+.NOSPF   ANOP                                                           00090002
+*&CISP    SETC  'NO SPF'                                                00100010
+&NBRO    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00110002
+&NEDI    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00120002
+&NVIE    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00130011
+&NISP    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00140011
+&NSPF    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00150011
+&NMML    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00160011
+&NISM    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00170011
+&NISX    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00180011
+&NEDR    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00190011
+&IMLX    SETC  ''          *** NULLIFY THE SPF SUBCOMMANDS -- NO SPF    00200011
+.NOSPFX  ANOP                                                           00210011
+         SPACE 2                                                        00220004
+*                                                                       00230000
+*  THIS MEMBER COPIES PDS SUBCOMMANDS CSECTS IN ALPHABETICAL ORDER      00240000
+*                                                                       00250000
+         SPACE 2                                                        00260000
+         COPY  @ALIAS                                                   00270000
+         SPACE 2                                                        00280000
+         COPY  @AMBLIST                                                 00290099
+         SPACE 2                                                        00300099
+         COPY  @ATTRIB                                                  00310000
+         SPACE 2                                                        00320000
+         COPY  @BROWSE                                                  00330000
+         SPACE 2                                                        00340000
+         COPY  @CLEAR                                                   00350000
+         SPACE 2                                                        00360000
+         COPY  @CHANGE                                                  00370000
+         SPACE 2                                                        00380000
+         COPY  @COBANAL                                                 00390099
+         SPACE 2                                                        00400099
+         COPY  @COMPARE                                                 00410000
+         SPACE 2                                                        00420000
+         COPY  @COMPRES                                                 00430000
+         SPACE 2                                                        00440000
+         COPY  @CONTROL                                                 00450000
+         SPACE 2                                                        00460000
+         COPY  @COPY                                                    00470000
+         SPACE 2                                                        00480000
+         COPY  @CPKMAP                                                  00490099
+         SPACE 2                                                        00500099
+         COPY  @DELETE                                                  00510000
+         SPACE 2                                                        00520000
+         COPY  @DELINK                                                  00530065
+         SPACE 2                                                        00540065
+         COPY  @DISASM                                                  00550064
+         SPACE 2                                                        00560000
+         COPY  @DISPLAY                                                 00570064
+         SPACE 2                                                        00580064
+         COPY  @DSNAME                                                  00590000
+         SPACE 2                                                        00600000
+         COPY  @EXEC                                                    00610000
+         SPACE 2                                                        00620000
+         COPY  @FIXPDS                                                  00630000
+         SPACE 2                                                        00640000
+         COPY  @HELP                                                    00650000
+         SPACE 2                                                        00660000
+         COPY  @HISTORY                                                 00670000
+         SPACE 2                                                        00680000
+         COPY  @IF                                                      00690000
+         SPACE 2                                                        00700000
+         COPY  @LCS                                                     00710071
+         SPACE 2                                                        00720071
+         COPY  @LIST                                                    00730071
+         SPACE 2                                                        00740000
+         COPY  @LMA                                                     00750096
+         SPACE 2                                                        00760096
+         COPY  @MAP                                                     00770000
+         SPACE 2                                                        00780062
+         COPY  @MATCH                                                   00790099
+         SPACE 2                                                        00800099
+         COPY  @MXIBAT                                                  00810062
+         SPACE 2                                                        00820062
+         COPY  @OFFLOAD                                                 00830081
+         SPACE 2                                                        00840079
+         COPY  @OUTCOPY                                                 00850000
+         SPACE 2                                                        00860000
+         COPY  @PRINTO                                                  00870000
+         SPACE 2                                                        00880000
+         COPY  @PTSEXP                                                  00890099
+         SPACE 2                                                        00900099
+         COPY  @RENAME                                                  00910000
+         SPACE 2                                                        00920000
+         COPY  @REPRO                                                   00930000
+         SPACE 2                                                        00940000
+         COPY  @RESTORE                                                 00950000
+         SPACE 2                                                        00960000
+         COPY  @SEPARAT                                                 00970099
+         SPACE 2                                                        00980099
+         COPY  @SMPGEN                                                  00990099
+         SPACE 2                                                        01000091
+         COPY  @SRCHFOR                                                 01010091
+         SPACE 2                                                        01020063
+         COPY  @SUBLIST                                                 01030000
+         SPACE 2                                                        01040000
+         COPY  @RX                                                      01050000
+         SPACE 2                                                        01060000
+         COPY  @TIME                                                    01070000
+         SPACE 2                                                        01080000
+         COPY  @TSO                                                     01090000
+         SPACE 2                                                        01100000
+         COPY  @TSOEDIT                                                 01110000
+         SPACE 2                                                        01120000
+         COPY  @USAGE                                                   01130000
+         SPACE 2                                                        01140000
+         COPY  @VERIFY                                                  01150000
+         SPACE 2                                                        01160000
+         COPY  @VPDSE                                                   01170099
+         SPACE 2                                                        01180099
+         COPY  @XMIT                                                    01190073
+         SPACE 2                                                        01200073
+PDSCOMM  CSECT                                                          01210094
+         TITLE 'P D S  --  PDS STANDARD MESSAGES             09/28/88'  01220000
+*                                                                       01230000
+*        SUBCOMMAND MESSAGE SUBROUTINES                                 01240000
+*                                                                       01250000
+         SPACE 3                                                        01260000
+NOMEMBER LA    R1,L853$1              MSG - (MEMBER) NOT FOUND          01270000
+         MVC   INSERT#1(8),DIRNAME                                      01280000
+         CLI   INSERT#1,C'*'          * MEMBER NAME?                    01290000
+         BNE   MSGNEW                 NO, BRANCH                        01300000
+         CLI   INSERT#1+1,X'40'       *BLANK MEMBER NAME?               01310000
+         BNE   MSGNEW                 NO, BRANCH                        01320000
+         LA    R1,L858                YES, USE PDS858 INSTEAD           01330000
+         B     MSGNEW                                                   01340000
+         SPACE 3                                                        01350000
+BADMEMB  LA    R1,L854$1              MSG - (MEMBER) IS AN INVALID NAME 01360000
+         MVC   INSERT#1(8),DIRNAME                                      01370000
+         B     MSGNEW                                                   01380000
+         SPACE 3                                                        01390000
+MEMEXIST LA    R1,L852$1              MSG - (MEMBER) EXISTS             01400000
+         MVC   INSERT#1(8),DIRNAME                                      01410000
+         B     MSGNEW                                                   01420000
+         SPACE 3                                                        01430000
+INVABBR  LA    R1,L930$1              MSG - (SUBCOM.) INVALID ABBREV.   01440000
+         MVC   INSERT#1(8),##SUBCOM                                     01450000
+         LA    R3,1(,R3)              ACTUAL SUBCOMMAND NAME LENGTH     01460000
+         STC   R3,MTLEN                                                 01470000
+         B     MSGNEW                                                   01480000
+         SPACE 3                                                        01490000
+IOERROR  LA    R1,L836                MSG - I/O ERROR IN DIRECTORY      01500000
+         CH    R15,=H'16'             RC > 16?                DRK AUG05 01510053
+         BNH   MSGNEWXX               NO, THEN PDS836 MESSAGE DRK AUG05 01520099
+IOERRORE DS    0H                                                       01530099
+         CVD   R15,DOUBLE             RETURN CODE             DRK AUG05 01540053
+         MVC   DOUBLE(4),=X'40212020' EDIT MASK               DRK AUG05 01550053
+         ED    DOUBLE(4),DOUBLE+6                             DRK AUG05 01560054
+         MVI   MTLEN,19                                       DRK AUG05 01570053
+         MVC   INSERT#1(20),=C'R15=NN, R0=NNNNNNNN '          DRK AUG05 01580053
+         MVC   INSERT#1+4(2),DOUBLE+2                         DRK AUG05 01590053
+         ST    R0,FULLWORD            REASON CODE             DRK SEP05 01600057
+         UNPK  INSERT#1+11(9),FULLWORD(5) CONVERT TO HEX      DRK SEP05 01610057
+         TR    INSERT#1+11(8),TRTABLE   CONVERT TO PRINTABLE  DRK SEP05 01620057
+         MVI   INSERT#1+11+8,X'40'                            DRK SEP05 01630057
+         M$MSG L856$1                 STOW MESSAGE            DRK AUG05 01640053
+         NI    FLAGSAA,FF-FMEM#MEM    TURN OFF ANY MEMBER GROUP         01650053
+         MVC   PMEMCURR(4),PMEMMAX    TERMINATE ANY MEMBER LIST         01660053
+         B     NEWCMD                                         DRK AUG05 01670053
+         SPACE 3                                                        01680000
+FULLDIR  LA    R1,L855                MSG - DIRECTORY IS FULL           01690000
+         SPACE 2                                                        01700000
+MSGNEWXX NI    FLAGSAA,FF-FMEM#MEM    TURN OFF ANY MEMBER GROUP         01710000
+         MVC   PMEMCURR(4),PMEMMAX    TERMINATE ANY MEMBER LIST         01720000
+         SPACE 2                                                        01730000
+MSGNEW   M$MSG (R1)                   OUTPUT THE MESSAGE REFERENCED     01740000
+         B     NEWCMD                 GET A NEW SUBCOMMAND              01750000
+         TITLE 'P D S  --  PDS CONSTANTS                     09/28/88'  01760000
+BLANKS   DC    0F'0',8X'40'                                             01770000
+         SPACE 2                                                        01780000
+FF       EQU   X'FF'        IMMEDIATE FLAG MASK (FOR NI INSTRUCTIONS)   01790000
+         SPACE 2                                                        01800000
+*** FOLLOWING ARE FOR LIST / REPLACE / FIND                             01810000
+MSGBLKU  DC    C' 1,234,567 BLOCKS UPDATED'                             01820000
+         ORG   MSGBLKU                                                  01830000
+         DC    X'40206B2020206B202120'   EDIT PATTERN                   01840000
+         ORG   ,                                                        01850000
+         SPACE 1                                                        01860000
+MSGDUMP  DC    C' 1,234,567   LENGTH 12,345   TTR 123456 '              01870000
+         ORG   MSGDUMP                                                  01880000
+         DC    X'40206B2020206B202120'   EDIT PATTERN                   01890000
+         ORG   MSGDUMP+19                                               01900000
+MSGDUMPL DC    X'4020206B202120'         EDIT PATTERN                   01910000
+MSGDUMPT EQU   MSGDUMP+33,6              TTR OUTPUT                     01920000
+         ORG   ,                                                        01930000
+MSGLDUMP DC    C'123456  CSECT 12345678  LENGTH 123456  '               01940000
+*              C'1234567890123456789012345678901234567890               01950000
+MSGBLK   DC    C' 1,234,567 BLOCKS IN THIS MEMBER  '                    01960000
+         ORG   MSGBLK                                                   01970000
+         DC    X'40206B2020206B202120'   EDIT PATTERN                   01980000
+         ORG   ,                                                        01990000
+MSGBLKL  EQU   MSGBLK+11,6               " LINES"                       02000000
+MSGBLKS  EQU   MSGBLK+26,7               "DATA SET"                     02010000
+LISTL000 DC    C'00000000'                                              02020000
+LISTLBLO DC    C'BLOCK'                                                 02030000
+LISTLDUM DC    C'DUMP '                                                 02040000
+LISTLENT DC    C' ENTRY'                                                02050000
+LISTLLIN DC    C' LINES'                                                02060000
+LISTLDAT DC    C'DATA SET'                                              02070000
+***                                                                     02080000
+         SPACE 3                                                        02090000
+         PRINT NOGEN                                                    02100000
+SAMDCB   DCB   DSORG=PO,DEVD=DA,DDNAME=X,MACRF=(R,W),EXLST=EXLST        02110000
+LSAMDCB  EQU   *-SAMDCB                                                 02120000
+DIRDCB   DCB   DSORG=PS,RECFM=FB,LRECL=256,BLKSIZE=256,DDNAME=X,       X02130000
+               MACRF=(W),KEYLEN=8,DEVD=DA,NCP=50                        02140000
+LDIRDCB  EQU   *-DIRDCB                                                 02150000
+EXLST    DC    X'85',VL3(OPENEXIT)                                      02160000
+         PRINT GEN                                                      02170000
+         SPACE 2                                                        02180000
+#RESFREP EQU     X'01'            RESTORE: REPEAT                       02190000
+#RESFDIS EQU     X'02'            RESTORE: DISPLAY                      02200000
+#RESFPRO EQU     X'04'            RESTORE: PROMPT                       02210000
+DATEMASK DC    X'402120612020612020'                                    02220000
+         SPACE 2                                                        02230000
+SYSHELP  DC    CL8'SYSHELP'               FOR DDNAME FREE IN HELP       02240000
+         AIF ('&CISP' EQ 'ISPF' OR '&CISP' EQ 'ISPFV2').FORISPF         02250000
+ISPPANEL DC    CL33'PANEL(ISP@PRIM)              OPT('                  02260000
+         AGO   .FORBOTH                                                 02270000
+.FORISPF ANOP                                                           02280000
+ISPPANEL DC    CL33'PANEL(ISR@PRIM) NEWAPPL(ISR) OPT('                  02290000
+.FORBOTH ANOP                                                           02300000
+ISPFPGM  EQU   12,8                       DISPLACEMENT TO PROGRAM NAME  02310000
+ISPFPARM EQU   32,8                       DISPLACEMENT TO PARM PASSED   02320000
+         SPACE 3                                                        02330000
+ISUBS    DC    33F'0'           INITIAL PDL AREA                        02340000
+         ORG   *-20                                                     02350000
+ZERO     DC    F'0'                                                     02360000
+         DC    XL4'FFFFFF'      INITIALIZE #MAXLEN                      02370000
+         DC    3F'9999999'      INITIALIZE #MAXFIND, #MAXIN, #MAXOUT    02380000
+LISUBS   EQU   *-ISUBS          INITIALIZATION LENGTH                   02390000
+         SPACE 2                                                        02400000
+KEYDATA  DC    XL8'FFFFFFFFFFFFFFFF',XL2'000E',XL8'FFFFFFFFFFFFFFFF'    02410000
+         EJECT                                                          02420000
+UNITTBL  DC    CL9'D????    '                                           02430000
+         DC    CL9'D????    '                                           02440000
+         DC    CL9'D????    '                                           02450000
+         DC    CL9'D????    '                                           02460000
+         DC    CL1'&DB9345 ',CL8'&UN9345  '                   DRK NOV99 02470001
+         DC    CL9'D????    '                                           02480000
+         DC    CL1'&DB23051',CL8'&UN23051 '                             02490000
+         DC    CL1'&DB23052',CL8'&UN23052 '                             02500000
+         DC    CL1'&DB2314 ',CL8'&UN2314  '                             02510000
+         DC    CL1'&DB3330 ',CL8'&UN3330  '                             02520000
+         DC    CL1'&DB3340 ',CL8'&UN3340  '                             02530000
+         DC    CL1'&DB3350 ',CL8'&UN3350  '                             02540000
+         DC    CL1'&DB3375 ',CL8'&UN3375  '                             02550000
+         DC    CL1'&DB33301',CL8'&UN33301 '                             02560000
+         DC    CL1'&DB3380 ',CL8'&UN3380  '                             02570000
+         DC    CL1'&DB3390 ',CL8'&UN3390  '                             02580000
+         DC    CL9'M????    '                                           02590000
+         SPACE 3                                                        02600000
+STAELIST ESTAE *-*,PARAM=*-*,MF=L                                       02610000
+         ORG   STAELIST+4                                               02620000
+         SPACE 3                                                        02630000
+***BITS FOR DIRATTR+0:                                                  02640000
+ATTRRENT EQU   X'80'          REENTRANT                                 02650000
+ATTRREUS EQU   X'40'          REUSABLE                                  02660000
+ATTROVLY EQU   X'20'          OVERLAY STRUCTURE                         02670000
+ATTRTEST EQU   X'10'          TEST SYMBOLS ARE AVAILABLE                02680000
+ATTRLOAD EQU   X'08'          ONLY LOADABLE                             02690000
+ATTRSCTR EQU   X'04'          SCATTER LOADED                            02700000
+ATTREXEC EQU   X'02'          EXECUTABLE                                02710000
+ATTR1TXT EQU   X'01'          ONE TEXT RECORD ONLY AND NO RLD ITEMS     02720000
+         SPACE 1                                                        02730000
+***BITS FOR DIRATTR+1:                                                  02740000
+ATTRNODC EQU   X'80'          NOT DOWNWARD-COMPATIBLE                   02750030
+ATTRZORG EQU   X'40'          FIRST TEXT BLOCK HAS A ZERO ORIGIN        02760000
+ATTREP0  EQU   X'20'          ENTRY POINT IS AT OFFSET ZERO             02770000
+ATTRNRLD EQU   X'10'          NO RLD ITEMS                              02780000
+ATTRNE   EQU   X'08'          CANNOT BE REPROCESSED BY LINKAGE-EDITOR   02790000
+ATTRSYMS EQU   X'04'          CONTAINS TEST SYMBOLS                     02800000
+ATTRFLEV EQU   X'02'          CREATED BY F LEVEL LINKAGE-EDITOR         02810000
+ATTRREFR EQU   X'01'          REFRESHABLE                               02820000
+         SPACE 3                                                        02830000
+$ATTL    DC    CL8'&NATT '                                              02840000
+$ALI     DC    CL8'&NALI '                                              02850000
+$AMB     DC    CL8'&NAMB '                                    DRK SEP09 02860099
+$BRO     DC    CL8'&NBRO '                                              02870000
+$COB     DC    CL8'&NCOB '                                    DRK NOV07 02880099
+$ANA     DC    CL8'&NANA '                                    DRK NOV07 02890099
+$COP     DC    CL8'&NCOP '                                     GP APR06 02900099
+$DEL     DC    CL8'&NDEL '                                     GP SEP05 02910056
+$DIR     DC    CL8'&NDIR '                                              02920000
+$DIS     DC    CL8'&NDIS '                                     GP SEP05 02930055
+$DSN     DC    CL8'&NDSN '                                              02940000
+$EDI     DC    CL8'&NEDI '                                              02950000
+$EDR     DC    CL8'&NEDR '                                     SS JUL87 02960000
+$FIX     DC    CL8'&NFIX '                                              02970000
+$HIS     DC    CL8'&NHIS '                                     GP FEB20 02980099
+$IFX     DC    CL8'&NIFX '                                              02990000
+$ISM     DC    CL8'&NISM '                                              03000000
+$ISP     DC    CL8'&NISP '                                              03010000
+$ISX     DC    CL8'&NISX '                                     SS JUL87 03020000
+$VIE     DC    CL8'&NVIE '                                    DRK JUL01 03030011
+*$LCS    DC    CL8'&NLCS '                                    THG MAR06 03040099
+$LIS     DC    CL8'&NLIS '                                              03050072
+$LMA     DC    CL8'&NLMA '                                    DRK SEP06 03060097
+$MAP     DC    CL8'&NMAP '                                              03070000
+$MEM     DC    CL8'&NMEM '                                              03080000
+$MML     DC    CL8'&NMML '                                              03090000
+$ML      DC    CL8'&IMLX '                                              03100000
+$OFF     DC    CL8'&NOFF '                                    DRK MAY06 03110084
+$CBN     DC    CL8'&NCBN '                                    DRK MAY06 03120085
+$PAT     DC    CL8'&NPAT '                                     GP SEP05 03130055
+$REP     DC    CL8'&NREP '                                    DRK FEB12 03140099
+$RPR     DC    CL8'&NRPR '                                     GP APR06 03150099
+$REV     DC    CL8'&NREV '                                    DRK FEB05 03160033
+$SPF     DC    CL8'&NSPF '                                              03170000
+$SMP     DC    CL8'&NSMP '                                    DRK JUN06 03180092
+$SRC     DC    CL8'&NSRC '                                    DRK APR06 03190077
+$SEA     DC    CL8'&NSEA '                                    DRK APR06 03200078
+$SEP     DC    CL8'&NSEP '                                    DRK MAY09 03210099
+$SUB     DC    CL8'&NSUB '                                              03220000
+$SUL     DC    CL8'&NSUL '                                    DRK MAY16 03230099
+$USA     DC    CL8'&NUSA '                                              03240000
+$XMI     DC    CL8'&NXMI '                                    DRK APR06 03250074
+#EXE     DC    CL8'&CEXE '                                              03260000
+PTW      EQU   32        SUBCOMMAND TABLE WIDTH                         03270000
+         SPACE 3                                                        03280000
+         PRINT NOGEN                                                    03290000
+MSGBLANK M$TX  '  '                                                     03300000
+MSGBL132 M$TX  '                                                       X03310000
+                                                                       X03320000
+                                    '  -- 132 BYTES                     03330000
+BLANK128 EQU   MSGBL132+4,128                                           03340000
+         SPACE 2                                                        03350000
+** PROMPTING MESSAGES                                                   03360000
+PDS300A  M$TX  'PDS300A ENTER OPTION -- DSN=...                        X03370000
+                                                                      ' 03380000
+*BYTE COUNT:   ' 234567 10 234567 20 234567 30 234567 40 234567 50 2345 03390000
+*DS300A  M$TX  'PDS300A ENTER OPTION -- DSN=123456789012345678901234567 03400000
+*              89012345678901234,VOL=SER=123456  MEM=12345678:12345678' 03410000
+*BYTE COUNT:   67 60 234567 70 234567 80 234567 90 23456 100 23456 110' 03420000
+*                                                                       03430000
+*FOR DIALOG:   '- DSN=12345678901234567890123456789012345678901234,VOL= 03440000
+*              SER=123456  MEM=12345678'                                03450000
+*                                                                       03460000
+PDS381A  M$TX  'PDS381A REENTER THE DATA SET NAME, VOLUME AND DISPOSITIX03470000
+               ON'                                                      03480000
+         SPACE 2                                                        03490000
+** YES/NO PROMPTS                                                       03500000
+PDS390A  M$TX  'PDS390A SHOULD THIS MEMBER BE RESTORED (Y/N) ?'         03510000
+PDS391A  M$TX  'PDS391A SHOULD THESE MEMBERS BE RENAMED (Y/N) ?'        03520000
+PDS392A  M$TX  'PDS392A SHOULD THIS DATA SET BE MODIFIED (Y/N) ?'       03530000
+PDS393A  M$TX  'PDS393A SHOULD THIS MEMBER BE DELETED (Y/N) ?'          03540000
+PDS394A  M$TX  'PDS394A SHOULD ALL OF THESE MEMBERS BE DELETED (Y/N) ?' 03550000
+PDS395A  M$TX  'PDS395A SHOULD THESE MEMBERS BE SUBMITTED (Y/N) ?'      03560000
+PDS396A  M$TX  'PDS396A SHOULD REPRO CONTINUE (Y/N) ?'                  03570000
+         TITLE 'P D S  --  PDS LITERALS                      09/28/88'  03580000
+         LTORG                                                          03590000
+         TITLE 'P D S  --  PDS MESSAGE LABELS/MESSAGE CSECT  09/28/88'  03600099
+L000     DS    0H                                                       03610099
+L001     DC    C'001'                                                   03620099
+L002$1   DC    C'002'                                                   03630099
+L005     DC    C'005'                                                   03640099
+L006$1   DC    C'006'                                         DRK JUL16 03650099
+L010     DC    C'010'                                                   03660099
+L020$2   DC    C'020'                                                   03670099
+L021     DC    C'021'                                                   03680099
+L022     DC    C'022'                                                   03690099
+L023     DC    C'023'                                                   03700099
+L024     DC    C'024'                                                   03710099
+L025$1   DC    C'025'                                                   03720099
+L026$1   DC    C'026'                                                   03730099
+L030$1   DC    C'030'                                                   03740099
+L031$1   DC    C'031'                                                   03750099
+L032     DC    C'032'                                                   03760099
+L033     DC    C'033'                                                   03770099
+L034     DC    C'034'                                                   03780099
+L035$2   DC    C'035'                                                   03790099
+L036$1   DC    C'036'                                                   03800099
+L040$1   DC    C'040'                                                   03810099
+L046$1   DC    C'046'                                         DRK NOV06 03820099
+L050$2   DC    C'050'                                                   03830099
+L051$2   DC    C'051'                                                   03840099
+L060     DC    C'060'                                                   03850099
+L061     DC    C'061'                                                   03860099
+L062     DC    C'062'                                                   03870099
+L064$2   DC    C'064'                                                   03880099
+L065$1   DC    C'065'                                                   03890099
+L066$1   DC    C'066'                                                   03900099
+L069$1   DC    C'069'                                         DRK MAR11 03910099
+L070     DC    C'070'                                         DRK NOV03 03920099
+L080     DC    C'080'                                                   03930099
+L081     DC    C'081'                                                   03940099
+L090$2   DC    C'090'                                                   03950099
+L091$1   DC    C'091'                                                   03960099
+L092$1   DC    C'092'                                                   03970099
+L096     DC    C'096'                                         DRK DEC04 03980099
+L097$1   DC    C'097'                                         DRK JUN10 03990099
+L100$1   DC    C'100'                                                   04000099
+L101$1   DC    C'101'                                                   04010099
+L102$1   DC    C'102'                                                   04020099
+L103$2   DC    C'103'                                                   04030099
+L104$2   DC    C'104'                                                   04040099
+L106     DC    C'106'                                         DRK NOV01 04050099
+L107$1   DC    C'107'                                         DRK SEP02 04060099
+L108$1   DC    C'108'                                         DRK FEB09 04070099
+L109$1   DC    C'109'                                         DRK DEC06 04080099
+L110$1   DC    C'110'                                                   04090099
+L111$1   DC    C'111'                                                   04100099
+L112$1   DC    C'112'                                                   04110099
+L113$1   DC    C'113'                                                   04120099
+L114$1   DC    C'114'                                                   04130099
+L115$1   DC    C'115'                                                   04140099
+L116     DC    C'116'                                                   04150099
+L117$2   DC    C'117'                                                   04160099
+L118$2   DC    C'118'                                                   04170099
+L119$2   DC    C'119'                                                   04180099
+L120$2   DC    C'120'                                                   04190099
+L121$1   DC    C'121'                                         DRK NOV13 04200099
+L140$2   DC    C'140'                                                   04210099
+L141$1   DC    C'141'                                                   04220099
+L142$1   DC    C'142'                                                   04230099
+L143$2   DC    C'143'                                                   04240099
+L144$1   DC    C'144'                                                   04250099
+L145$1   DC    C'145'                                                   04260099
+L160$1   DC    C'160'                                                   04270099
+L161$1   DC    C'161'                                                   04280099
+L162$1   DC    C'162'                                                   04290099
+L163$1   DC    C'163'                                                   04300099
+L164$1   DC    C'164'                                                   04310099
+L165$1   DC    C'165'                                                   04320099
+L171$2   DC    C'171'                                                   04330099
+L180$1   DC    C'180'                                                   04340099
+L181$1   DC    C'181'                                                   04350099
+L182$1   DC    C'182'                                                   04360099
+L183$1   DC    C'183'                                                   04370099
+L184$1   DC    C'184'                                                   04380099
+L185$1   DC    C'185'                                                   04390099
+L186$1   DC    C'186'                                                   04400099
+L190$1   DC    C'190'                                                   04410099
+L191$1   DC    C'191'                                         DRK NOV02 04420099
+L193$1   DC    C'193'                                                   04430099
+L194$2   DC    C'194'                                                   04440099
+L200$1   DC    C'200'                                                   04450099
+L210$1   DC    C'210'                                                   04460099
+L220$1   DC    C'220'                                                   04470099
+L230$1   DC    C'230'                                                   04480099
+L231$1   DC    C'231'                                         DRK SEP09 04490099
+L232$1   DC    C'232'                                                   04500099
+L245     DC    C'245'                                                   04510099
+L246     DC    C'246'                                         DRK NOV06 04520099
+L247     DC    C'247'                                         DRK FEB17 04530099
+L250$1   DC    C'250'                                                   04540099
+L260$1   DC    C'260'                                                   04550099
+L262$1   DC    C'262'                                                   04560099
+L273$1   DC    C'273'                                                   04570099
+L276     DC    C'276'                                         DRK NOV06 04580099
+L280$2   DC    C'280'                                         DRK APR05 04590099
+L281$1   DC    C'281'                                         DRK APR05 04600099
+L282$1   DC    C'282'                                         DRK APR05 04610099
+L283$2   DC    C'283'                                         DRK APR05 04620099
+L284$2   DC    C'284'                                         DRK APR05 04630099
+L285$2   DC    C'285'                                         DRK MAY05 04640099
+L286$2   DC    C'286'                                         DRK MAY05 04650099
+L287$2   DC    C'287'                                         DRK MAY05 04660099
+L288$2   DC    C'288'                                         DRK MAY05 04670099
+L289$2   DC    C'289'                                         DRK OCT06 04680099
+L290$1   DC    C'290'                                         DRK NOV06 04690099
+L291$2   DC    C'291'                                         DRK JAN09 04700099
+L292$1   DC    C'292'                                         DRK APR10 04710099
+L400     DC    C'400'                                                   04720099
+L441$1   DC    C'441'                                                   04730099
+L442$1   DC    C'442'                                                   04740099
+L443     DC    C'443'                                                   04750099
+L444     DC    C'444'                                                   04760099
+L451     DC    C'451'                                                   04770099
+L460     DC    C'460'                                                   04780099
+L471$2   DC    C'471'                                         DRK MAR16 04790099
+L480     DC    C'480'                                                   04800099
+L482     DC    C'482'                                                   04810099
+L484     DC    C'484'                                                   04820099
+L500     DC    C'500'                                                   04830099
+L502     DC    C'502'                                                   04840099
+L503     DC    C'503'                                                   04850099
+L510     DC    C'510'                                                   04860099
+L521     DC    C'521'                                         DRK MAY09 04870099
+L522     DC    C'522'                                         DRK AUG09 04880099
+L530     DC    C'530'                                                   04890099
+L531$1   DC    C'531'                                         DRK JAN06 04900099
+L532     DC    C'532'                                                   04910099
+L533     DC    C'533'                                         DRK APR06 04920099
+L534     DC    C'534'                                         DRK MAY10 04930099
+L535     DC    C'535'                                         DRK FEB11 04940099
+L700     DC    C'700'                                                   04950099
+L701     DC    C'701'                                                   04960099
+L702     DC    C'702'                                                   04970099
+L703     DC    C'703'                                                   04980099
+L704$1   DC    C'704'                                                   04990099
+L705$1   DC    C'705'                                                   05000099
+L706$1   DC    C'706'                                         DRK FEB21 05010099
+L707     DC    C'707'                                         DRK MAY08 05020099
+L710     DC    C'710'                                                   05030099
+L711     DC    C'711'                                                   05040099
+L712     DC    C'712'                                                   05050099
+L713     DC    C'713'                                                   05060099
+L720     DC    C'720'                                                   05070099
+L721     DC    C'721'                                                   05080099
+L722     DC    C'722'                                                   05090099
+L723     DC    C'723'                                                   05100099
+L724     DC    C'724'                                                   05110099
+L726     DC    C'726'                                                   05120099
+L730     DC    C'730'                                         DRK JAN08 05130099
+L731     DC    C'731'                                                   05140099
+L732     DC    C'732'                                                   05150099
+L733     DC    C'733'                                                   05160099
+L734     DC    C'734'                                         DRK MAY13 05170099
+L735     DC    C'735'                                         DRK MAY13 05180099
+L740     DC    C'740'                                                   05190099
+L750     DC    C'750'                                                   05200099
+L751     DC    C'751'                                                   05210099
+L752     DC    C'752'                                                   05220099
+L770     DC    C'770'                                                   05230099
+L772     DC    C'772'                                                   05240099
+L773     DC    C'773'                                                   05250099
+L774     DC    C'774'                                                   05260099
+L780$1   DC    C'780'                                                   05270099
+L781$1   DC    C'781'                                                   05280099
+L800     DC    C'800'                                                   05290099
+L801     DC    C'801'                                                   05300099
+L802$1   DC    C'802'                                                   05310099
+L804     DC    C'804'                                                   05320099
+L805     DC    C'805'                                                   05330099
+L806$1   DC    C'806'                                                   05340099
+L811$1   DC    C'811'                                                   05350099
+L812$1   DC    C'812'                                                   05360099
+L813$1   DC    C'813'                                                   05370099
+L814$1   DC    C'814'                                                   05380099
+L820$2   DC    C'820'                                                   05390099
+L821$1   DC    C'821'                                                   05400099
+L822$1   DC    C'822'                                                   05410099
+L823$1   DC    C'823'                                                   05420099
+L824     DC    C'824'                                                   05430099
+L825     DC    C'825'                                                   05440099
+L826     DC    C'826'                                                   05450099
+L827$2   DC    C'827'                                                   05460099
+L830     DC    C'830'                                                   05470099
+L831     DC    C'831'                                                   05480099
+L832     DC    C'832'                                                   05490099
+L833     DC    C'833'                                                   05500099
+L835$1   DC    C'835'                                                   05510099
+L836     DC    C'836'                                                   05520099
+L844$1   DC    C'844'                                         DRK MAY06 05530099
+L851$1   DC    C'851'                                                   05540099
+L852$1   DC    C'852'                                                   05550099
+L853$1   DC    C'853'                                                   05560099
+L854$1   DC    C'854'                                                   05570099
+L855     DC    C'855'                                                   05580099
+L856$1   DC    C'856'                                         DRK AUG05 05590099
+L858     DC    C'858'                                                   05600099
+L859$1   DC    C'859'                                                   05610099
+L860     DC    C'860'                                                   05620099
+L861$1   DC    C'861'                                                   05630099
+L864$1   DC    C'864'                                                   05640099
+L865     DC    C'865'                                                   05650099
+L870     DC    C'870'                                                   05660099
+L871     DC    C'871'                                                   05670099
+L872     DC    C'872'                                                   05680099
+L873     DC    C'873'                                                   05690099
+L874     DC    C'874'                                                   05700099
+L875     DC    C'875'                                                   05710099
+L880$1   DC    C'880'                                                   05720099
+L881     DC    C'881'                                                   05730099
+L882     DC    C'882'                                                   05740099
+L883     DC    C'883'                                                   05750099
+L884$1   DC    C'884'                                                   05760099
+L885$1   DC    C'885'                                                   05770099
+L900     DC    C'900'                                                   05780099
+L910$1   DC    C'910'                                                   05790099
+L930$1   DC    C'930'                                                   05800099
+L932     DC    C'932'                                         DRK JAN08 05810099
+L973     DC    C'973'                                                   05820099
+L980     DC    C'980'                                                   05830099
+L982     DC    C'982'                                                   05840099
+L991$1   DC    C'991'                                                   05850099
+L996$1   DC    C'996'                                         DRK SEP05 05860099
+L998$1   DC    C'998'                                                   05870099
+         DC    X'FF'             LIST TERMINATOR                        05880099
+         TITLE 'P D S  --  TRANSLATE TABLES                  09/28/88'  05890000
+TRTABLE  EQU   *-X'F0'                                                  05900000
+HEXTBL   DC    C'0123456789ABCDEF'                                      05910000
+         SPACE 2                                                        05920000
+***  TRANSLATE AND TEST TABLE TO FIND INVALID MEMBER NAMES              05930000
+         AGO   .TRTMEM                                                  05940099
+TRTMEM   DC    256X'00'           ASSUME ALL VALID TO SKIP              05950099
+.TRTMEM  ANOP                                                           05960099
+TRTMEM   DC    256X'FF'           ASSUME ALL INVALID FIRST              05970000
+         ORG   TRTMEM+C'#'                                              05980000
+         DC    1X'00'             # IS OK                               05990000
+         ORG   TRTMEM+C'$'                                              06000000
+         DC    1X'00'             $ IS OK                               06010000
+         ORG   TRTMEM+C'@'                                              06020000
+         DC    1X'00'             @ IS OK                               06030000
+         ORG   TRTMEM+C'{'                      PK63443       DRK JAN12 06040099
+         DC    1X'00'             { IS OK       PK63443       DRK JAN12 06050099
+         ORG   TRTMEM+C'A'                                              06060000
+         DC    9X'00'             ABCDEFGHI  ARE OK                     06070000
+         ORG   TRTMEM+C'J'                                              06080000
+         DC    9X'00'             JKLMNOPQR  ARE OK                     06090000
+         ORG   TRTMEM+C'S'                                              06100000
+         DC    8X'00'             STUVWXYZ  ARE OK                      06110000
+         ORG   TRTMEM+C'0'                                              06120000
+         DC    10X'00'            0123456789  ARE OK                    06130000
+         ORG   ,                                                        06140000
+         SPACE 3                                                        06150000
+***  TRANSLATE TABLE TO CONVERT UNPRINTABLES TO PERIODS                 06160000
+TRLINE   DC    256C'.'            ASSUME ALL UNPRINTABLE FIRST          06170000
+         ORG   TRLINE+C' '                                              06180000
+         DC    1X'40'             BLANK IS OK                           06190000
+         ORG   TRLINE+C'¢'                                              06200000
+         DC    C'¢.<(+|&&'        ¢.<(+|&  ARE OK                       06210000
+         ORG   TRLINE+C'!'                                              06220000
+         DC    C'!$*);^-/'        !$*);^-/  ARE OK                      06230000
+         ORG   TRLINE+C'¦'                                              06240000
+         DC    C'¦,%_>?'          ¦,%_>?  ARE OK                        06250000
+         ORG   TRLINE+C'`'                                              06260000
+         DC    C'`:#@''="'        `:#@'="  ARE OK                       06270000
+         ORG   TRLINE+X'81'       LOWER-CASE ABCDEFGHI                  06280000
+         DC    X'818283848586878889'                                    06290000
+         ORG   TRLINE+X'91'       LOWER-CASE JKLMONPQR                  06300000
+         DC    X'919293949596979899'                                    06310000
+         ORG   TRLINE+X'A1'       LOWER-CASE ~STUVWXYZ                  06320000
+         DC    X'A1A2A3A4A5A6A7A8A9'                                    06330000
+         ORG   TRLINE+X'AD'                                   DRK JUN05 06340050
+         DC    X'AD'              [ IS OK                     DRK JUN05 06350050
+         ORG   TRLINE+X'BD'                                   DRK JUN05 06360050
+         DC    X'BD'              ] IS OK                     DRK JUN05 06370050
+         ORG   TRLINE+C'{'                                              06380000
+         DC    C'{ABCDEFGHI'      {ABCDEFGHI  ARE OK                    06390000
+         ORG   TRLINE+C'}'                                              06400000
+         DC    C'}JKLMNOPQR'      }JKLMNOPQR  ARE OK                    06410000
+         ORG   TRLINE+C'\'                                              06420000
+         DC    C'\'               \ IS OK                               06430000
+         ORG   TRLINE+C'S'                                              06440000
+         DC    C'STUVWXYZ'        STUVWXYZ  ARE OK                      06450000
+         ORG   TRLINE+C'0'                                              06460000
+         DC    C'0123456789'      0123456789  ARE OK                    06470000
+         ORG   ,                                                        06480000
+         SPACE 3                                                        06490000
+         COPY  @GLOBAL                                                  06500000
+         SPACE 3                                                        06510000
+         COPY  @PDSMODS                                       DRK DEC02 06520026
+         SPACE 3                                                        06530026
+         COPY  @GEO                                           DRK DEC04 06540031
+         SPACE 3                                                        06550031
+         COPY  @LMAPFX                                        DRK SEP06 06560096
+         SPACE 3                                                        06570096
+         COPY  @LMAPGM                                        DRK SEP06 06580096
+         SPACE 3                                                        06590096
+         COPY  @TRANS                                         DRK APR09 06600099
+         SPACE 3                                                        06610099
+&PDSPRT  SETC  'ON'                                                     06620000
+         TITLE 'P D S  --  PDS DYNAMIC AREA                          '  06630099
+         COPY  #MDSECT                                                  06640000
+         TITLE 'P D S  --  PDS ESD, IDR DSECTS               09/28/88'  06650000
+*                                                                       06660000
+*        ESD TABLE FORMAT                                               06670000
+*                                                                       06680000
+ESDENTRY DSECT                                                          06690000
+ESDLINK  DS    F                                                        06700000
+ESDNAME  DS    CL8            NAME OF EXTERNAL SYMBOL                   06710000
+ESDTYPE  DS    X              ESD TYPE                                  06720000
+CODESD   EQU   X'00'          EXTERNAL DEFINITION                       06730099
+CODEER   EQU   X'02'          EXTERNAL REFERENCE ($UNRESOLVED)          06740099
+CODELR   EQU   X'03'          LABEL REFERENCE                           06750000
+CODEPC   EQU   X'04'          PRIVATE CODE DEFINITION                   06760000
+CODECM   EQU   X'05'          COMMON BLOCK                              06770000
+CODEPR   EQU   X'06'          PSEUDO REGISTER                           06780000
+CODENL   EQU   X'07'          NULL                                      06790000
+CODEWK   EQU   X'0A'          WEAK EXTERNAL ($UNRESOLVED WEAK)          06800000
+CODESEG  EQU   X'14'          OVERLAY SEGMENT TABLE                     06810000
+CODEENTB EQU   CODESEG        OVERLAY ENTRY TABLE                       06820000
+ESDADDR  DS    XL3            RELATIVE OFFSET                           06830000
+ESDSEG#  DS    X              SEGMENT NUMBER                            06840000
+ESDXAFLG EQU   ESDSEG#        FLAGS FOR OS/390 AND Z/OS                 06850029
+RMODE64  EQU   X'20'          RMODE=64                        DRK NOV04 06860029
+RMODEANY EQU   X'04'          RMODE=ANY                                 06870029
+AMODE31  EQU   X'02'          AMODE=31                                  06880000
+AMODE64  EQU   X'10'          AMODE=64                        DRK OCT02 06890024
+AMODE24  EQU   X'01'          AMODE=24                                  06900024
+RSECT    EQU   X'08'          READ-ONLY SECTION                GP APR18 06910099
+ESDLEN   DS    XL3            LENGTH OF SD ENTRY                        06920000
+LENESD1  EQU   *-ESDNAME      LENGTH OF ESD DATA                        06930000
+ESDID    DS    XL2            RELATIVE ESD ID #                         06940000
+ESDIDIN  DS    XL2            ESD IS IN THIS PHYSICAL RECORD            06950000
+ESDCSECT DS    XL4            LIST ONLY -- POINTER TO CSECT ENTRY       06960000
+ESDMAIN  DS    XL4            LIST ONLY -- ENTRY POINT OF CSECT ENTRY   06970000
+LENESD2  EQU   *-ESDNAME      LENGTH OF ESD DATA                        06980000
+LENESD   EQU   *-ESDENTRY     LENGTH OF ENTRY                           06990000
+         SPACE 3                                                        07000000
+*                                                                       07010000
+*        IDR TABLE FORMAT                                               07020000
+*                                                                       07030000
+IDRENTRY DSECT                                                          07040000
+IDRLINK  DS    A                                                        07050000
+IDRSTART DS    0X                                                       07060000
+IDRESDID DS    XL2                                                      07070000
+IDRTYPE  DS    X                                                        07080000
+IDRZAP   EQU   X'01'                                                    07090000
+IDRLKED  EQU   X'02'                                                    07100000
+IDRTRAN  EQU   X'04'                                                    07110000
+IDRUSER  EQU   X'08'                                                    07120000
+IDRDATE  DS    XL3                                                      07130000
+IDRLDATA DS    X                                                        07140000
+IDRUPREF DS    XL6            USER RECORD PREFIX                        07150000
+IDRZDATA DS    0CL8                                                     07160000
+IDRTDATA DS    0CL30                                                    07170000
+IDRDATA  DS    CL40                                                     07180000
+LENIDR1  EQU   *-IDRSTART                                               07190000
+LENIDR   EQU   *-IDRENTRY                                               07200000
+         SPACE 1                                                        07210099
+SYMDEL   DSECT ,           Z/XDC DELETE SYMBOLS               DRK DEC09 07220099
+         SPACE 1                                                        07230099
+         TITLE 'P D S  --  SVC 99 PARAMETER LIST             09/28/88'  07240099
+         IEFZB4D0                                                       07250000
+         SPACE 5                                                        07260099
+         TITLE 'P D S  --  THE COMMAND SCAN PARAMETER LIST           '  07270099
+         IKJCSPL                                                        07280000
+         SPACE 5                                                        07290099
+         TITLE 'P D S  --  THE COMMAND SCAN OUTPUT AREA              '  07300099
+         IKJCSOA                                                        07310000
+         SPACE 5                                                        07320000
+         TITLE 'P D S  --  THE I/O SERVICE ROUTINE PARAMETER LIST    '  07330099
+         IKJIOPL                                                        07340000
+         SPACE 5                                                        07350099
+**       TITLE 'P D S  --  THE GETLINE PARAMETER BLOCK       09/28/88'  07360099
+**       IKJGTPB                                                        07370000
+         SPACE 5                                                        07380099
+         TITLE 'P D S  --  THE USER PROFILE TABLE                    '  07390099
+         IKJUPT                                                         07400000
+         SPACE 5                                                        07410099
+         TITLE 'P D S  --  TSO/E PROTECTED STEP CONTROL BLOCK        '  07420099
+         IKJPSCB                                                        07430000
+         SPACE 5                                                        07440099
+         TITLE 'P D S  --  ENVIRONMENT CONTROL TABLE                 '  07450099
+         IKJECT                                                         07460000
+         SPACE 5                                                        07470099
+         TITLE 'P D S  --  THE COMMAND PROCESSOR PARAMETER LIST      '  07480099
+         IKJCPPL                                                        07490000
+         SPACE 5                                                        07500099
+         TITLE 'P D S  --  JOB FILE CONTROL BLOCK                    '  07510099
+         IEFJFCBN                                                       07520000
+         SPACE 5                                                        07530099
+         PRINT   GEN                                                    07540099
+         TITLE 'P D S  --  DATA CONTROL BLOCK                        '  07550099
+         DCBD  DSORG=PO                                                 07560000
+         SPACE 5                                                        07570099
+         TITLE 'P D S  --  COMMUNICATIONS VECTOR TABLE               '  07580099
+         CVT   DSECT=YES                                                07590000
+         SPACE 5                                                        07600099
+         TITLE 'P D S  --  SMF CONTROL TABLE                         '  07610099
+         IEESMCA                                              DRK NOV06 07620099
+         SPACE 5                                                        07630099
+         TITLE 'P D S  --  DATA SET ASSOCIATION BLOCK                '  07640099
+         IHADSAB                                                        07650000
+         SPACE 5                                                        07660099
+         TITLE 'P D S  --  TASK CONTROL BLOCK                        '  07670099
+         IKJTCB ,                                              SS JUL88 07680000
+         SPACE 5                                                        07690099
+         TITLE 'P D S  --  TASK INPUT/OUTPUT TABLE                   '  07700099
+TIOT     DSECT                                                 SS JUL88 07710000
+         IEFTIOT1                                              SS JUL88 07720000
+         SPACE 5                                                        07730099
+         TITLE 'P D S  --  JOB/STEP CONTROL BLOCK                    '  07740099
+         IEZJSCB                                               SS JUL88 07750000
+         SPACE 5                                               SS JUL88 07760000
+         TITLE 'P D S  --  STEP INPUT/OUTPUT TABLE                   '  07770099
+SIOT     DSECT                                                 SS JUL88 07780000
+         IEFASIOT                                                       07790000
+         SPACE 5                                                        07800099
+         IHAPSA                                               DRK MAY08 07810099
+         SPACE 5                                                        07820099
+         AIF   ('&MVSLEV' LT 'MVS510').NODEAR                 DRK JAN08 07830099
+         TITLE 'P D S  --  SYSTEM MANAGED DIRECTORY ENTRY            '  07840099
+         IGWSMDE                                               GP JAN08 07850099
+         SPACE 5                                                        07860099
+         TITLE 'P D S  --  PROGRAM MANAGEMENT ATTRIBUTE RECORD       '  07870099
+         IEWPMAR                                               GP JAN08 07880099
+.NODEAR  ANOP  ,                                              DRK JAN08 07890099
+         SPACE 5                                                        07900000
+         TITLE 'P D S  --  COMMON SYSTEM DATA AREA                   '  07910099
+         IHACSD                                               DRK NOV09 07920099
+         SPACE 5                                                        07930099
+         TITLE 'P D S  --  EXTENDED COMMUNICATIONS VECTOR TABLE      '  07940099
+         IHAECVT                                              DRK NOV09 07950099
+         SPACE 5                                                        07960099
+         TITLE 'P D S  --  SYSTEM HOST ID MAPPING                    '  07970099
+         IOSDSHID                                             DRK NOV09 07980099
+         SPACE 5                                                        07990099
+         TITLE 'P D S  --  INITIALIZATION PARAMETER AREA             '  08000099
+         IHAIPA                                               DRK NOV09 08010099
+         SPACE 5                                                        08020099
+         TITLE 'P D S  --  RACF CVT                                  '  08030099
+         ICHPRCVT                                             DRK NOV09 08040099
+         SPACE 5                                                        08050099
+         TITLE 'P D S  --  RSM CONTROL AND ENUMERATION AREA          '  08060099
+         IARRCE                                               DRK NOV09 08070099
+         SPACE 5                                                        08080099
+         TITLE 'P D S  --  SYSTEM RESOURCES MANAGER CONTROL TABLE    '  08090099
+         IRARMCT                                              DRK NOV09 08100099
+         SPACE 5                                                        08110099
+         TITLE 'P D S  --  RESOURCES MANAGER USER CONTROL BLOCK      '  08120099
+         IRAOUCB                                              DRK FEB10 08130099
+         SPACE 5                                                        08140099
+         TITLE 'P D S  --  ADDRESS SPACE CONTROL BLOCK TABLE         '  08150099
+         IHAASCB LIST=YES                                     DRK FEB10 08160099
+         SPACE 5                                                        08170099
+         TITLE 'P D S  --  ADDRESS SPACE VECTOR TABLE                '  08180099
+         IHAASVT                                              DRK FEB10 08190099
+         SPACE 5                                                        08200099
+         TITLE 'P D S  --  TSO/E VECTOR TABLE                        '  08210099
+         IKJTSVT                                              DRK JUL17 08220099
+         SPACE 5                                                        08230099
+         AIF   (D'TSVTUMXL).Z23B                                        08240099
+TSVTUMXL EQU   TSVT+X'06',1                                   DRK JUL17 08250099
+PSCBUID8 EQU   PSCB+X'54',8                                   DRK JUL17 08260099
+PSCBU8L  EQU   PSCB+X'20',1                                   DRK JUL17 08270099
+         AIF   (D'UPTPREF8).Z23B                              DRK SEP17 08280099
+UPTPREF8 EQU    UPT+X'21',8                                   DRK JUL17 08290099
+UPTPRF8L EQU    UPT+X'29',1                                   DRK JUL17 08300099
+.Z23B    ANOP                                                 DRK JUL17 08310099
+SYMNODEL DSECT ,           Z/XDC DELETE SYMBOLS               DRK DEC09 08320099
+         END                                                            08330000

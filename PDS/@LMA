@@ -1,0 +1,752 @@
+         TITLE 'P D S  --  LOAD MODULE ANALYZER INTERFACE     9/20/06'  00000299
+*********************************************************************** 00000316
+***      LMA     SUBCOMMAND   ADDED BY JOHN KALINICH -- SEP., 2006  *** 00000499
+*********************************************************************** 00000516
+*                                                                       00050000
+LMA      CSECT                                                          00070099
+         USING *,R8                                                     00080020
+         LA    R1,L530          ASSUME A NON-PARTITIONED DATA SET       00080199
+         TM    DSORG,DS1DSGPO   CORRECT?                                00080299
+         BZ    MSGNEW           YES, BRANCH                             00080399
+         LA    R1,L701          ASSUME NOT A LOAD LIBRARY               00080499
+         TM    FLAGSCC,RECFMU   CORRECT?                                00081099
+         BZ    MSGNEW           YES, BRANCH                             00090099
+         SPACE 1                                                        00120000
+*  FREE EQAIN, EQAPRINT, EQALIB, EQASYSPF, AND EQAPGMNM  DATASETS       00120199
+         LA    R1,EQAIN                 EQAIN DDNAME                    00120299
+         BAS   R2,LMA8580               FREE THIS DATA SET              00120399
+         LA    R1,EQAPRINT              EQAPRINT DDNAME                 00120499
+         BAS   R2,LMA8580               FREE THIS DATA SET              00120599
+         LA    R1,EQALIB                EQALIB DDNAME                   00120699
+         BAS   R2,LMA8580               FREE THIS DATA SET              00120799
+         LA    R1,EQASYSPF              EQASYSPF DDNAME                 00120899
+         BAS   R2,LMA8580               FREE THIS DATA SET              00120999
+         LA    R1,EQAPGMNM              EQAPGMNM DDNAME                 00121099
+         BAS   R2,LMA8580               FREE THIS DATA SET              00121199
+*  ALLOCATE LMA //EQALIB DATA SET                                       00121299
+         XC    M99RBPTR(40),M99RBPTR    CLEAR THE WORK AREA             00121399
+         LA    R1,M99RBPTR              DYNAMIC ALLOCATION              00121499
+         USING S99RBP,R1                                                00121599
+         SPACE 1                                                        00121699
+         LA    R4,M99RB                                                 00121799
+         USING S99RB,R4                                                 00121899
+         ST    R4,S99RBPTR                                              00121999
+         OI    S99RBPTR,S99RBPND        MARK END OF LIST                00122099
+         SPACE 1                                                        00122199
+         LA    R5,M99TUPL                                               00122299
+         USING S99TUPL,R5                                               00122399
+         MVI   S99RBLN,20               LENGTH 20                       00122499
+         MVI   S99VERB,S99VRBAL         ALLOCATE                        00122599
+         ST    R5,S99TXTPP              POINT TO TEXT POINTERS          00122699
+         LA    R3,WORKTBL                        START OF TEXT          00122799
+         SPACE 1                                                        00122899
+         MVC   0(L'LMADDNLI+6,R3),LMADDNLI       SPECIFY DDNAME TEXT    00122999
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123099
+         LA    R3,L'LMADDNLI+6(,R3)              START OF NEXT TEXT     00123199
+         SPACE 1                                                        00123299
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123399
+         MVC   0(L'LMADSNAM,R3),LMADSNAM         SPECIFY DSNAME TEXT    00123499
+         MVC   6(44,R3),DSNAME                   MOVE IN DSNAME TEXT    00123599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00123699
+         LA    R3,L'LMADSNAM+44(,R3)             START OF NEXT TEXT     00123799
+         SPACE 1                                                        00123899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00123999
+         MVC   0(L'LMAALLOC,R3),LMAALLOC         SPECIFY DISP TEXT      00124099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124199
+         LA    R3,L'LMAALLOC(,R3)                START OF NEXT TEXT     00124299
+         SPACE 1                                                        00124399
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124499
+         MVC   0(L'LMANORM,R3),LMANORM           SPECIFY NORMAL TEXT    00124599
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00124699
+         LA    R3,L'LMANORM(,R3)                 START OF NEXT TEXT     00124799
+         SPACE 1                                                        00124899
+         LA    R5,4(,R5)                         NEXT POINTER ELEMENT   00124999
+         MVC   0(L'LMAANORM,R3),LMAANORM         SPECIFY ABNORMAL TEXT  00125099
+         ST    R3,S99TUPTR                       POINT TO TEXT UNIT     00125199
+         OI    S99TUPTR,X'80'                    MARK END OF LIST       00125299
+         SPACE 1                                                        00125399
+         DYNALLOC                                                       00125499
+         SPACE 2                                                        00125599
+         DROP  R1,R4,R5                                                 00125699
+         LTR   R15,R15                       SUCCESSFUL?                00125799
+         BNZ   LMAERROR                      NO, BRANCH                 00125899
+         SPACE 2                                                        00125999
+*  ALLOCATE LMA //EQAPRINT DATA SET                                     00126099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00126199
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00126299
+         USING S99RBP,R1                                                00126399
+         SPACE 1                                                        00126499
+         LA    R4,M99RB                                                 00126599
+         USING S99RB,R4                                                 00126699
+         ST    R4,S99RBPTR                                              00126799
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00126899
+         SPACE 1                                                        00126999
+         LA    R5,M99TUPL                                               00127099
+         USING S99TUPL,R5                                               00127199
+         MVI   S99RBLN,20                 LENGTH 20                     00127299
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00127399
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00127499
+         SPACE 1                                                        00127599
+         MVC   #CMXSYS3(14),LMADDNPR      SYSPRINT DDNAME               00127699
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00127799
+         USING S99TUNIT,R3                                              00127899
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00127999
+         MVC   S99TUPTR+4(40),LMASYSPR    ADD OTHER LIST ELEMENTS       00128099
+         SPACE 1                                                        00128199
+         DYNALLOC                                                       00128299
+         SPACE 2                                                        00128399
+         MVC   #CMXDDPR(8),=CL8'SYSPRINT' MOVE IN THE DDNAME            00128499
+         DROP  R1,R3,R4,R5                                              00128599
+         LTR   R15,R15                    SUCCESSFUL?                   00128699
+         BNZ   LMAERROR                   NO, BRANCH                    00128799
+         SPACE 3                                                        00128899
+*  ALLOCATE LMA //EQAIN FILE                                            00134099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           00140023
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            00150023
+         USING S99RBP,R1                                                00160023
+         SPACE 1                                                        00170023
+         LA    R4,M99RB                                                 00180023
+         USING S99RB,R4                                                 00190023
+         ST    R4,S99RBPTR                                              00200023
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              00210023
+         SPACE 1                                                        00220023
+         LA    R5,M99TUPL                                               00230023
+         USING S99TUPL,R5                                               00240023
+         MVI   S99RBLN,20                 LENGTH 20                     00250023
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      00260023
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        00270023
+         SPACE 1                                                        00280023
+         MVC   #CMXSYS3(11),LMADDNIN      EQAIN DDNAME                  00290099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            00300023
+         USING S99TUNIT,R3                                              00310023
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     00320023
+         MVC   S99TUPTR+4(40),LMAEQAIN    ADD OTHER LIST ELEMENTS       00330099
+         SPACE 1                                                        00340023
+         DYNALLOC                                                       00350023
+         SPACE 2                                                        00370023
+         DROP  R1,R3,R4,R5                                              00380023
+         LTR   R15,R15                    SUCCESSFUL?                   00390023
+         BNZ   LMAERROR                   NO, BRANCH                    00400099
+         SPACE 3                                                        00410023
+*  ALLOCATE LMA //EQASYSPF DATA SET                                     02120099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02130099
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02140099
+         USING S99RBP,R1                                                02150099
+         SPACE 1                                                        02160099
+         LA    R4,M99RB                                                 02170099
+         USING S99RB,R4                                                 02180099
+         ST    R4,S99RBPTR                                              02190099
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02200099
+         SPACE 1                                                        02210099
+         LA    R5,M99TUPL                                               02220099
+         USING S99TUPL,R5                                               02230099
+         MVI   S99RBLN,20                 LENGTH 20                     02240099
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02250099
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02260099
+         SPACE 1                                                        02270099
+         MVC   #CMXSYS3(14),LMADDNPF      EQASYSPF DDNAME               02280099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02290099
+         USING S99TUNIT,R3                                              02300099
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02310099
+         MVC   S99TUPTR+4(40),LMAEQAIN    ADD OTHER LIST ELEMENTS       02320099
+         SPACE 1                                                        02330099
+         DYNALLOC                                                       02340099
+         SPACE 2                                                        02350099
+         DROP  R1,R3,R4,R5                                              02360099
+         LTR   R15,R15                    SUCCESSFUL?                   02370099
+         BNZ   LMAERROR                   NO, BRANCH                    02380099
+         SPACE 3                                                        02390099
+*  ALLOCATE LMA //EQAPGMNM DATA SET                                     02400099
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           02410099
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            02420099
+         USING S99RBP,R1                                                02430099
+         SPACE 1                                                        02440099
+         LA    R4,M99RB                                                 02450099
+         USING S99RB,R4                                                 02460099
+         ST    R4,S99RBPTR                                              02470099
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              02480099
+         SPACE 1                                                        02490099
+         LA    R5,M99TUPL                                               02500099
+         USING S99TUPL,R5                                               02510099
+         MVI   S99RBLN,20                 LENGTH 20                     02520099
+         MVI   S99VERB,S99VRBAL           ALLOCATE                      02530099
+         ST    R5,S99TXTPP                POINT TO TEXT POINTERS        02540099
+         SPACE 1                                                        02550099
+         MVC   #CMXSYS3(14),LMADDNNM      EQASYSNM DDNAME               02560099
+         LA    R3,#CMXSYS3                FIRST TEXT POINTER            02570099
+         USING S99TUNIT,R3                                              02580099
+         ST    R3,S99TUPTR                POINT TO FIRST TEXT UNITS     02590099
+         MVC   S99TUPTR+4(40),LMAEQAIN    ADD OTHER LIST ELEMENTS       02600099
+         SPACE 1                                                        02610099
+         DYNALLOC                                                       02620099
+         SPACE 2                                                        02630099
+         DROP  R1,R3,R4,R5                                              02640099
+         LTR   R15,R15                    SUCCESSFUL?                   02650099
+         BNZ   LMAERROR                   NO, BRANCH                    02660099
+         B     LMA2000                                                  02661099
+         SPACE 3                                                        02670099
+LMAERROR ST    R15,DAIRRC                 SAVE RETURN CODE              08590099
+         LA    R14,M99RB                  POINTER TO SVC 99 BLOCK       08600000
+         LA    R15,DAIRRC                 POINTER TO RETURN CODE        08610000
+         LA    R0,ADDRFF02                POINTER TO A(IKJEFF02)        08620000
+         LA    R1,=AL2(DFSVC99)           POINTER TO INVOCATION TYPE    08630000
+         L     R2,ADDRCPPL                POINTER TO THE CPPL           08640000
+         STM   R14,R2,DFDAPLP             INITIALIZE DFDAPLP, DFDRCP,   08650000
+*                                           DFJEFF02, DFIDP AND DFCPPLP 08660000
+         SPACE 1                                                        08670000
+         LINK  EP=IKJEFF18,MF=(E,DFPARMS)                               08680000
+         LTR   R15,R15                    PROBLEM WITH IKJEFF18?        08690000
+         BZ    LMA8550                    NO, BRANCH                    08700099
+         SPACE 1                                                        08710000
+         CVD   R15,DOUBLE                                               08720000
+         MVI   MTLEN,4                                                  08730000
+         MVC   INSERT#1(4),=X'40202120'                                 08740000
+         ED    INSERT#1(4),DOUBLE+6                                     08750000
+         MVI   INSERT#1,C'='                                            08760000
+         M$MSG L835$1                                                   08770000
+         B     LMA8550                                                  08780099
+         SPACE 3                                                        08790000
+LMA2000  DS    0H                                                       08790199
+*  OPEN EQASYSPF DATA SET                                               08790299
+         MVC   BAMDCB(LMADL),LMADCB           GET MODEL DCB             08790399
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),EQASYSPF                       08790499
+         MVI   OPENLIST,X'80'                                           08790599
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN EQASYSPF            08790699
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08790799
+         BO    LMA2010                         YES, BRANCH              08790899
+         LA    R1,LMA865E                      NO STATUS AVAILABLE      08790999
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08791099
+         B     LMA8550                         EXIT                     08791199
+         SPACE 3                                                        08791299
+LMA2010  DS    0H                                                       08791399
+         MVC   MSGTEXT1(136),MSGBL132   CLEAR THE MESSAGE AREA          08791499
+         L     R2,=V(LMAPFX)       LMA PROGRAM PREFIX CSECT             08791799
+LMA2020  MVC   MSGTEXT1+4(80),0(R2)  DESCRIPTION                        08791899
+         LA    R2,80(,R2)          NEXT ENTRY                           08791999
+         PUT   BAMDCB,MSGTEXT1+4   OUTPUT PREFIX STATEMENT              08792199
+         CLI   0(R2),X'FF'         END OF TABLE?                        08792299
+         BNE   LMA2020             NO, BRANCH                           08792399
+         MVI   OPENLIST,X'80'      YES, CLOSE                           08792699
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE EQASYSPF                08792799
+         LA    R1,BAMDCB                                                08792899
+         FREEPOOL (1)                                                   08792999
+         SPACE 2                                                        08793099
+*  OPEN EQAPGMNM DATA SET                                               08793199
+         MVC   BAMDCB(LMADL),LMADCB           GET MODEL DCB             08793299
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),EQAPGMNM                       08793399
+         MVI   OPENLIST,X'80'                                           08793499
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN EQAPGMNM            08793599
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08793699
+         BO    LMA2030                         YES, BRANCH              08793799
+         LA    R1,LMA865E                      NO STATUS AVAILABLE      08793899
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08793999
+         B     LMA8550                         EXIT                     08794099
+         SPACE 3                                                        08794199
+LMA2030  DS    0H                                                       08794299
+         MVC   MSGTEXT1(136),MSGBL132   CLEAR THE MESSAGE AREA          08794399
+         L     R2,=V(LMAPGM)       LMA PROGRAM NUMBER CSECT             08794499
+LMA2040  MVC   MSGTEXT1+4(80),0(R2)  DESCRIPTION                        08794599
+         LA    R2,80(,R2)          NEXT ENTRY                           08794699
+         PUT   BAMDCB,MSGTEXT1+4   OUTPUT PROGRAM STATEMENT             08794799
+         CLI   0(R2),X'FF'         END OF TABLE?                        08794899
+         BNE   LMA2040             NO, BRANCH                           08794999
+         MVI   OPENLIST,X'80'      YES, CLOSE                           08795199
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE EQAPGMNM                08795299
+         LA    R1,BAMDCB                                                08795399
+         FREEPOOL (1)                                                   08795499
+         SPACE 2                                                        08795599
+LMA2100  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      08796299
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       08796399
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      08796499
+         BO    LMA2200               YES, BRANCH                        08796599
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08796699
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08796799
+         BO    LMA2110               YES, BRANCH                        08796899
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08796999
+         BO    LMA2200               YES, BRANCH                        08797099
+LMA2110  TM    #LMAALI,#LMAASS2      ASSOCIATES TOO?                    08797199
+         BO    LMA2200               YES, BRANCH                        08797299
+         SPACE 1                                                        08797399
+LMA2120  DS    0H                                                       08797499
+         TM    #LMAALI,#LMAASS2+2    ALIAS/NOALIAS SPECIFIED?           08797599
+         BM    LMA2130               YES                                08797699
+*        OI    #LMAALI,&LMAALI       USE THE DEFAULT                    08797799
+         OI    #LMAALI,2             USE THE DEFAULT                    08797899
+         TM    #LMAALI,#LMAASS2      ASSOCIATES TOO?                    08797999
+         BO    LMA2200               YES                                08798099
+         SPACE 3                                                        08798199
+LMA2130  DS    0H                                                       08798299
+         OI    #LMAALI,#LMAONE       ONLY A SINGLE MEMBER/DATA SET      08798399
+         LA    R4,DDNAMEH            HOLD FOR THIS SUBCOMMAND           08798499
+         MVC   0(8,R4),DIRNAME                                          08798599
+         ST    R4,#MEMPTR                                               08798699
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             08798799
+         B     LMA2900                                                  08798899
+LMA2200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        08798999
+         TM    #LMAALI,#LMAASS2+2    ALIAS/NOALIAS SPECIFIED?           08799099
+         BM    *+8                   YES                                08799199
+*        OI    #LMAALI,&LMAALI       NO, USE THE DEFAULT                08799299
+         OI    #LMAALI,2             NO, USE THE DEFAULT                08799399
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         08799499
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    08799599
+         LA    R5,256/2              256 MEMBERS INITIALLY              08799699
+         SPACE 1                                                        08799799
+LMA2210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            08799899
+         LR    R3,R5                                                    08799999
+         LR    R0,R5                                                    08800099
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              08800199
+         ICM   R0,B'1000',SUBPOOLT                                      08800299
+         GETMAIN R,LV=(0)                                               08800399
+         LR    R4,R1                 NEW TABLE ADDRESS                  08800499
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              08800599
+         BNZ   LMA2220               YES, BRANCH                        08800699
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             08800799
+         B     LMA2500                                                  08800899
+         SPACE 1                                                        08800999
+LMA2220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   08801099
+         LR    R14,R4                NEW TABLE START ADDRESS            08801199
+         LR    R15,R5                                                   08801299
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           08801399
+         LR    R2,R15                START OF NEW PART                  08801499
+         LR    R1,R15                                                   08801599
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             08801699
+         L     R1,#MEMPTR                                               08801799
+         LR    R0,R2                 LENGTH TO FREE                     08801899
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    08801999
+         FREEMAIN R,LV=(0),A=(1)                                        08802099
+         ST    R4,#MEMPTR            START OF NEW TABLE                 08802199
+         AR    R4,R2                 WHERE TO ADD MEMBERS               08802299
+         SPACE 3                                                        08802399
+LMA2300  TM    #LMAALI,#LMAASSP      ASSOCIATES PHASE?                  08802499
+         BO    LMA2320               YES, BRANCH                        08802599
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      08802699
+         BO    LMA2320               YES, BRANCH                        08802799
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              08802899
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08802999
+         BNO   LMA2500               NO, BRANCH                         08803099
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08803199
+         BO    LMA2605               YES, BRANCH                        08803299
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08803399
+         BNO   LMA2605               NO, BRANCH                         08803499
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               08803599
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   08803699
+         BNO   LMA2605               NO, END OF LIST                    08803799
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              08803899
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       08803999
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               08804099
+         ST    R1,PMEMCURR                                              08804199
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         08804299
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  08804399
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              08804499
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      08804599
+         BO    LMA2319               YES, BRANCH                        08804699
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               08804799
+         MVC   DIRNAME,MEMBER1       MOVE TO BLDLLIST                   08804899
+         SPACE 2                                                        08804999
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           08805099
+         B     *+4(R15)                PROCESS RETURN CODE              08805199
+         B     LMA2315                   00 - SUCCESSFUL                08805299
+         B     LMA2310                   04 - MEMBER NOT FOUND          08805399
+         B     IOERROR                   08 - I/O ERROR                 08805499
+         SPACE 1                                                        08805599
+LMA2310  MVC   INSERT#1(8),DIRNAME                                      08805699
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           08805799
+         B     LMA2300                                                  08805899
+         SPACE 1                                                        08805999
+LMA2315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  08806099
+         B     LMA2500                                                  08806199
+         SPACE 1                                                        08806299
+LMA2319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               08806399
+         SPACE 1                                                        08806499
+LMA2320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           08806599
+         B     LMA2600               END OF MEMBERS -- BRANCH           08806699
+         SPACE 1                                                        08806799
+         TM    #LMAALI,#LMAASSP      ASSOCIATES PHASE?                  08806899
+         BO    LMA2400               YES, BRANCH                        08806999
+         SPACE 1                                                        08807099
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 08807199
+         B     LMA2600                 00 - SIMULATE DIRECTORY END      08807299
+         B     LMA2300                 04 - MEMBER FAILED FILTERING     08807399
+         B     LMA2500                 08 - MEMBER PASSED FILTERING     08807499
+         SPACE 3                                                        08807599
+LMA2400  L     R1,#MEMPTR            START OF MEMBER LIST               08807699
+         B     LMA2410+4             SKIP FIRST ADD                     08807799
+LMA2410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   08807899
+         CR    R1,R4                 END OF TABLE?                      08807999
+         BNL   LMA2300               YES, IGNORE THIS ENTRY             08808099
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      08808199
+         BNE   LMA2410               NO, BRANCH                         08808299
+         SPACE 3                                                        08808399
+LMA2500  L     R1,#MEMPTR            START OF MEMBER LIST               08808499
+         B     LMA2510+4             SKIP FIRST ADD                     08808599
+LMA2510  LA    R1,16(,R1)            NEXT TABLE ENTRY                   08808699
+         CR    R1,R4                 END OF TABLE?                      08808799
+         BNL   LMA2580               YES, ADD THIS ENTRY                08808899
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       08808999
+         BE    LMA2300               YES, IGNORE THIS ENTRY             08809099
+         B     LMA2510               NO, CONTINUE SEARCHING             08809199
+         SPACE 2                                                        08809299
+LMA2580  MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   08809399
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               08809499
+         S     R3,=F'1'              ANY MORE FIT?                      08809599
+         BNP   LMA2210               NO, BRANCH                         08809699
+         B     LMA2300               YES, GET NEXT MEMBER               08809799
+         SPACE 3                                                        08809899
+LMA2600  TM    #LMAALI,#LMAASSP      ASSOCIATED MEMBERS?                08809999
+         BO    LMA2605               YES, BRANCH                        08810099
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         08810199
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      08810299
+         BO    LMA2605               YES, BRANCH                        08810399
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       08810499
+         BO    LMA2300               YES, BRANCH                        08810599
+         SPACE 1                                                        08810699
+LMA2605  TM    #LMAALI,#LMAASSP      ASSOCIATES PHASE STARTED?          08810799
+         BO    LMA2700               YES, BRANCH                        08810899
+         TM    #LMAALI,#LMAASS2      ASSOCIATE MEMBERS TOO?             08810999
+         BNO   LMA2700               NO, BRANCH                         08811099
+         OI    #LMAALI,#LMAASSP      YES, ASSOCIATES PHASE STARTED      08811199
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   08811299
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    08811399
+         B     LMA2300               DO ANY ASSOCIATED MEMBERS          08811499
+         SPACE 3                                                        08811599
+LMA2700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   08811699
+         SPACE 3                                                        08811799
+LMA2900  DS    0H                                                       08811899
+         ST    R4,#MEMLAST           SAVE LAST MEMBER POINTER           08811999
+*  OPEN EQAIN DATA SET                                                  08812099
+         MVC   BAMDCB(LMADL),LMADCB           GET MODEL DCB             08812199
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),EQAIN                          08812299
+         MVI   OPENLIST,X'80'                                           08812399
+         OPEN  (BAMDCB,OUTPUT),MF=(E,OPENLIST) OPEN EQAIN               08812499
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10'    SUCCESSFUL OPEN?         08812599
+         BO    LMA2910                         YES, BRANCH              08812699
+         LA    R1,LMA865E                      NO STATUS AVAILABLE      08812799
+         M$ERRST (R1)                          OUTPUT THE MESSAGE       08812899
+         B     LMA8550                         EXIT                     08812999
+         SPACE 3                                                        08813099
+LMA2910  DS    0H                                                       08813199
+         TM    FLAGSHH,FMEMALLM         ALL MEMBERS?                    08818199
+         BNO   LMA4010                  NO                              08818299
+         B     LMA4540                  YES                             08818399
+LMA4010  DS    0H                                                       08819099
+         L     R3,#MEMPTR                 FIRST MEMBER POINTER          08819199
+         L     R4,#MEMLAST                LAST MEMBER POINTER           08819299
+         MVC   MSGTEXT1(136),MSGBL132     CLEAR THE MESSAGE AREA        08819399
+         SPACE 1                                                        08819499
+LMA4530  CR    R3,R4                      END OF MEMBER TABLE?          08819599
+         BNL   LMA4540                    YES                           08819699
+         LA    R5,MSGTEXT1+4                                            08819799
+         MVC   0(14,R5),LMASEL            SELECT MEMBER=                08819899
+         LA    R5,14(,R5)                                               08819999
+         MVC   0(8,R5),0(R3)              MEMBER NAME                   08820099
+         PUT   BAMDCB,MSGTEXT1+4          OUTPUT SELECT STATEMENT       08820199
+         LA    R3,16(,R3)                 NEXT MEMBER POSITION          08820299
+         B     LMA4530                                                  08820399
+         SPACE 1                                                        08821099
+LMA4540  DS    0H                                                       08830099
+         MVI   OPENLIST,X'80'                                           10560018
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE EQAIN                   10570099
+         LA    R1,BAMDCB                                                10580000
+         FREEPOOL (1)                                                   10590000
+         SPACE 2                                                        10590169
+LMA4550  DS    0H                                                       10590299
+         MVC   #LMAPARM+2(60),BLANK128  CLEAR PARM AREA                 10590399
+         LA    R5,#LMAPARM+2            PT AT PARM VALUE FIELD          10590499
+         CLI   #LMALOUD,1               LOUD?                           10590799
+         BNE   LMA4560                  NO, BRANCH                      10590899
+         MVC   0(4,R5),LOUD                                             10590999
+         LA    R5,4(,R5)                                                10591099
+         MVI   0(R5),C','                                               10591199
+         LA    R5,1(,R5)                                                10591299
+LMA4560  DS    0H                                                       10591399
+         CLI   #LMASHOW,1               SHOWLIB?                        10591499
+         BNE   LMA4570                  NO, BRANCH                      10591599
+         MVC   0(7,R5),SHOWLIB                                          10591899
+         LA    R5,7(,R5)                                                10591999
+         MVI   0(R5),C','                                               10592099
+         LA    R5,1(,R5)                                                10592199
+LMA4570  DS    0H                                                       10592299
+         CLI   #LMAOSVS,1               OSVSONLY?                       10592399
+         BNE   LMA4580                  NO, BRANCH                      10592499
+         MVC   0(8,R5),OSVSONLY                                         10592799
+         LA    R5,8(,R5)                                                10592899
+         MVI   0(R5),C','                                               10592999
+         LA    R5,1(,R5)                                                10593099
+LMA4580  DS    0H                                                       10593199
+         CLI   #LMAFPRS,1               CKVOLFPRS?                      10593299
+         BNE   LMA4582                  NO, BRANCH                      10593399
+         MVC   0(9,R5),CKVOLFPR                                         10593699
+         LA    R5,9(,R5)                                                10593799
+         MVI   0(R5),C','                                               10593899
+         LA    R5,1(,R5)                                                10593999
+LMA4582  DS    0H                                                       10594199
+         CLI   #LMAINFO,1               LEINFO?                         10594299
+         BNE   LMA4584                  NO, BRANCH                      10594399
+         MVC   0(6,R5),LEINFO                                           10594499
+         LA    R5,6(,R5)                                                10594599
+         MVI   0(R5),C','                                               10594699
+         LA    R5,1(,R5)                                                10594799
+LMA4584  DS    0H                                                       10594999
+         CLI   #LMASCAN,1               LESCAN?                         10595099
+         BNE   LMA4586                  NO, BRANCH                      10595199
+         MVC   0(6,R5),LESCAN                                           10595299
+         LA    R5,6(,R5)                                                10595399
+         MVI   0(R5),C','                                               10595499
+         LA    R5,1(,R5)                                                10595599
+LMA4586  DS    0H                                                       10595799
+         CLI   #LMALD,1                 LISTLD?                         10595899
+         BNE   LMA4590                  NO, BRANCH                      10595999
+         MVC   0(6,R5),LISTLD                                           10596099
+         LA    R5,6(,R5)                                                10596199
+         MVI   0(R5),C','                                               10596299
+         LA    R5,1(,R5)                                                10596399
+LMA4590  DS    0H                                                       10596699
+         CLI   #LMADATE,C' '            DATEFMT?                        10596799
+         BE    LMA4600                  NO, BRANCH                      10596899
+         MVC   0(8,R5),DATEFMT                                          10596999
+         LA    R5,8(,R5)                                                10597099
+         MVC   0(8,R5),#LMADATE                                         10597199
+         LA    R5,8(,R5)                                                10597299
+         MVI   0(R5),C','                                               10597399
+         LA    R5,1(,R5)                                                10597499
+LMA4600  DS    0H                                                       10597599
+         CLI   #LMASORT,C' '            SORTBY?                         10597699
+         BE    LMA4620                  NO, BRANCH                      10597799
+         MVC   0(7,R5),SORTBY                                           10597899
+         LA    R5,7(,R5)                                                10597999
+         LH    R15,#LMASRTL             SORTBY VALUE LENGTH             10598099
+         BCTR  R15,0                                                    10598199
+         MVC   0(*-*,R5),#LMASORT       <<EXECUTED>>                    10598299
+         EX    R15,*-6                  MOVE SEARCH STRING              10598399
+         LA    R5,1(R15,R5)                                             10598499
+         MVI   0(R5),C','                                               10598599
+         LA    R5,1(,R5)                                                10598699
+         SPACE 1                                                        10598799
+LMA4620  DS    0H                                                       10598899
+         LA    R15,#LMAPARM+2           START OF PARM                   10598999
+         SR    R5,R15                   PARM LENGTH                     10599099
+         BZ    LMA4630                  ZERO                            10599199
+         BCTR  R5,0                     NO, SHIFT OUT COMMA             10599299
+LMA4630  DS    0H                                                       10599399
+         STCM  R5,B'0011',#LMAPARM                                      10599499
+         SPACE 2                                                        10599599
+         OI    ##ADRPA#,$A                DEFER ALL ATTENTIONS          10599699
+         STAX  LMANULL,USADDR=(R7),REPLACE=NO,IBUF=0,                  X10600099
+               OBUF=(LMA484W,LMA484WL),MF=(E,STAXPARM)                  10610099
+         LA    R1,#LMAPARM                PARM=VALUE                    10830099
+         ST    R1,#CMXLIST                                              10840000
+         OI    #CMXLIST,X'80'             MARK END OF LIST              10870022
+         XC    #SUBHOLD(28+20),#SUBHOLD                                 10900000
+         LA    R14,#SUBHOLD+28          1 POINT TO FLAGS                10910024
+         LA    R15,LMAPROG              2 POINT TO CALLED PROGRAM       10920099
+         LA    R0,#SUBHOLD+28+4         3 POINT TO PROGRAM NAME LENGTH  10930024
+         LA    R1,#SUBHOLD+28+8         4 POINT TO RETURN CODE          10940024
+         LA    R2,#SUBHOLD+28+12        5 POINT TO REASON CODE          10950024
+         LA    R3,#SUBHOLD+28+16        6 POINT TO ABEND CODE           10960024
+         LA    R4,#CMXLIST              7 POINT TO PARAMETER LIST       10970024
+         STM   R14,R4,#SUBHOLD            UPDATE IKJEFTSR PARM LIST     10980000
+         OI    #SUBHOLD+24,X'80'          INDICATE THE END OF THE LIST  10990000
+         MVI   #SUBHOLD+28+3,X'02'        A PROGRAM IS BEING INVOKED    11000000
+         MVI   #SUBHOLD+28+4+3,8          PROGRAM NAME LENGTH IS 8      11010000
+         SPACE 2                                                        11020000
+         L     R2,RECOVER                                               11030000
+         LA    R1,LMA7080                 RECOVERY ADDRESS              11040099
+         ST    R1,RECOVER                                               11050000
+         STM   R2,R8,#SUBHOLD+88          SAVE REGISTERS                11060019
+         SPACE 1                                                        11070000
+         LA    R3,##SUBCAL                WHO TO ATTACH                 11380000
+         LA    R1,#CMXLIST                PARAMETERS TO PASS            11390000
+         CLC   ##SUBCAL(8),LMAEFTSR       INVOKE IKJEFTSR?              11400099
+         BNE   LMANLNK                    NO, BRANCH                    11410099
+         LA    R1,#SUBHOLD                POINT TO THE PARAMETER LIST   11420000
+         SPACE 2                                                        11430000
+LMANLNK  BAS   R2,ATTACH                  EQALMA                        11440099
+         SPACE 3                                                        11490000
+LMA7080  LM    R2,R8,#SUBHOLD+88                                        11500099
+         ST    R2,RECOVER                 RESET RECOVERY ADDRESS        11510019
+         STAX  ,                                                        11520099
+         NI    ##ADRPA#,FF-$A             ALLOW ATTENTIONS AGAIN        11530099
+         MVI   ATTNECB,0                  CLEAR THE ATTENTION ECB       11540099
+         MVC   SUBSECB+3(1),#SUBHOLD+28+11  COPY FINAL RETURN CODE      11550099
+         SPACE 1                                                        11820000
+         L     R2,#SUBHOLD+28+12          LOAD REASON CODE    DRK JAN07 11820199
+         C     R2,=F'40'                  PROGRAM NOT FOUND?  DRK JAN07 11820299
+         BNE   LMA8000                    NO                  DRK JAN07 11820399
+         MVC   INSERT#1(8),LMAPROG        YES, ERROR          DRK JAN07 11820499
+         M$MSG L859$1                     NOT FOUND MESSAGE   DRK JAN07 11820599
+         B     LMA8550                                        DRK JAN07 11820699
+         SPACE 1                                                        11830099
+LMA8000  MVC   BAMDCB(LMADL),LMADCB         GET MODEL DCB               12310099
+         MVC   DCBDDNAM-IHADCB+BAMDCB(8),EQAPRINT                       12320099
+         MVI   OPENLIST,X'80'                                           12330000
+         OPEN  (BAMDCB),MF=(E,OPENLIST)     OPEN EQAPRINT               12340099
+         TM    DCBOFLGS-IHADCB+BAMDCB,X'10' SUCCESSFUL OPEN?            12350000
+         BO    LMA8010                      YES, BRANCH                 12360099
+         LA    R1,LMA865E                   NO STATUS AVAILABLE         12370199
+         M$ERRST (R1)                       OUTPUT THE MESSAGE          12370239
+         B     LMA8550                      EXIT                        12380099
+         SPACE 3                                                        12390000
+*  PROCESS EQAPRINT RECORDS                                             12400099
+LMA8010  GET   BAMDCB                     GET LIST RECORD               12420099
+         MVC   MSGTEXT1(136),MSGBL132     BLANK THE MESSAGE LINE        12560019
+         MVC   MSGTEXT1+4(132),1(R1)      ADD THE LMA MESSAGE           12600099
+         M$ERRST MSGTEXT1                 OUTPUT THE MESSAGE            12640000
+         B     LMA8010                                                  12650099
+         SPACE 3                                                        12660000
+LMA8500  DS    0H                                                       12660199
+         CLC   ##SUBCAL(8),LMAEFTSR       INVOKE IKJEFTSR?              12660299
+         BNE   LMA8540                    NO, BRANCH                    12660399
+         CLI   #SUBHOLD+28+11,1           RC:1                DRK JAN07 12660699
+         BL    LMA8540                    YES, VALID LMA                12660899
+         MVI   MTLEN+4,11                                               12660985
+         MVC   INSERT#2(11),MSGBL132      CLEAR AREA                    12661099
+         SR    R15,R15                                                  12661185
+         ICM   R15,B'0001',#SUBHOLD+28+11                     DRK JAN07 12661399
+         CVD   R15,DOUBLE                                               12661485
+         MVC   INSERT#1(8),##SUBCOM                                     12661585
+         MVC   INSERT#2(4),=X'40202120'                                 12661685
+         ED    INSERT#2(4),DOUBLE+6                                     12661785
+         MVI   INSERT#2,C'='              RETURN CODE                   12661885
+         SPACE 1                                                        12661985
+         CLI   SUBSECB+3,X'0C'            IKJEFTSR RC=12 (PGM ABEND)?   12662099
+         BNE   LMA8530                    NO, SKIP MESSAGE              12662199
+         SPACE 1                                                        12662299
+         L     R0,#SUBHOLD+28+16        ABEND CODE            DRK NOV07 12662399
+         SRDL  R0,12                    SHIFT USER ABEND TO R1DRK NOV07 12662499
+         ST    R0,FULLWORD              SYSTEM ABEND CODE     DRK NOV07 12662599
+         MVC   INSERT#2+4(7),=C' ABEND='                      DRK NOV07 12662699
+         UNPK  INSERT#2+11(5),FULLWORD+2(3)                   DRK NOV07 12662799
+         TR    INSERT#2+11(4),TRTABLE                         DRK NOV07 12662899
+         MVI   INSERT#2+11,C'S'         S000                  DRK NOV07 12662999
+         MVI   INSERT#2+11+4,X'40'                            DRK NOV07 12663099
+         SPACE 1                                              DRK NOV07 12663199
+         SRL   R1,20                    USER ABEND            DRK NOV07 12663299
+         CVD   R1,DOUBLE                                      DRK NOV07 12663399
+         UNPK  DOUBLE(5),DOUBLE+5(3)                          DRK NOV07 12663499
+         OI    DOUBLE+4,X'F0'           MAKE PRINTABLE        DRK NOV07 12663599
+         MVI   INSERT#2+11+5,C'U'       U0000                 DRK NOV07 12663699
+         MVC   INSERT#2+11+6(4),DOUBLE+1 GET USER ABEND       DRK NOV07 12663799
+         SPACE 1                                                        12663899
+LMA8530  DS    0H                                                       12664099
+         M$MSG L171$2                                                   12670085
+LMA8540  DS    0H                                                       12830099
+         MVI   OPENLIST,X'80'                                           12840000
+         CLOSE (BAMDCB),MF=(E,OPENLIST)   CLOSE THE EQAPRINT FILE       12850099
+         LA    R1,BAMDCB                                                12860000
+         FREEPOOL (1)                                                   12870000
+         SPACE 2                                                        12880000
+LMA8550  M$ERRST MSGBLANK                                               12890099
+         LA    R1,EQAIN                 EQAIN DDNAME                    12890199
+         BAS   R2,LMA8580               FREE THIS DATA SET              12890299
+         LA    R1,EQAPRINT              EQAPRINT DDNAME                 12890399
+         BAS   R2,LMA8580               FREE THIS DATA SET              12890499
+         LA    R1,EQALIB                EQALIB DDNAME                   12891099
+         BAS   R2,LMA8580               FREE THIS DATA SET              12900099
+         LA    R1,EQASYSPF              EQASYSPF DDNAME                 12900199
+         BAS   R2,LMA8580               FREE THIS DATA SET              12900299
+         LA    R1,EQAPGMNM              EQAPGMNM DDNAME                 12901099
+         BAS   R2,LMA8580               FREE THIS DATA SET              12910099
+         B     NEWSTAX                                                  12920000
+         SPACE 1                                                        12930000
+LMA8580  CLI   0(R1),X'41'                ANY DDNAME ALLOCATED?         12940099
+         BLR   R2                         NO, RETURN                    12950000
+         MVC   #CMXSYS3+6(8),0(R1)        DDNAME TO FREE                12960000
+         XC    M99RBPTR(40),M99RBPTR      CLEAR THE WORK AREA           12970000
+         LA    R1,M99RBPTR                DYNAMIC ALLOCATION            12980000
+         USING S99RBP,R1                                                12990000
+         SPACE 1                                                        13000000
+         LA    R4,M99RB                                                 13010000
+         USING S99RB,R4                                                 13020000
+         ST    R4,S99RBPTR                                              13030000
+         OI    S99RBPTR,S99RBPND          MARK END OF LIST              13040000
+         SPACE 1                                                        13050000
+         LA    R5,M99TUPL                                               13060000
+         USING S99TUPL,R5                                               13070000
+         MVI   S99RBLN,20                 LENGTH 20                     13080000
+         MVI   S99VERB,S99VRBUN           UNALLOCATE                    13090000
+         ST    R5,S99TXTPP                POINT TO TEXT POINTER         13100000
+         SPACE 1                                                        13110000
+         LA    R3,#CMXSYS3                TEXT POINTER                  13120000
+         USING S99TUNIT,R3                                              13130000
+         MVC   S99TUKEY(6),LMAFDDNA       ADD TEXT KEYS                 13140099
+         ST    R3,S99TUPTR                POINT TO TEXT UNIT            13150000
+         LA    R0,LMAUNALC                UNALLOC EVEN IF "PERM"        13160099
+         ST    R0,S99TUPTR+4              ADD THIS ELEMENT TOO          13170000
+         OI    S99TUPTR+4,X'80'           MARK END OF THE TEXT LIST     13180000
+         SPACE 1                                                        13190000
+         DYNALLOC                                                       13200000
+         BR    R2                                                       13210000
+         SPACE 1                                                        13220000
+         DROP  R1,R3,R4,R5                                              13230000
+         SPACE 2                                                        13240000
+         B     RESTART0                                                 13250000
+         SPACE 2                                                        13251069
+LMANULL BR    R14                                                       13252099
+         SPACE 2                                                        13260000
+*  EQALMA CONSTANTS                                                     13460099
+         PRINT NOGEN                                                    13470000
+LMADCB   DCB   DSORG=PS,DDNAME=LMA,MACRF=(GL,PM),EODAD=LMA8500          13480099
+LMADL    EQU   *-LMADCB                                                 13490099
+         PRINT NOGEN                                                    13550138
+LMA484W  DC    C'PDS484W LMA SHOULD NOT BE INTERRUPTED'                 13550399
+LMA484WL EQU   *-LMA484W                                                13550499
+LMA865E  M$TX  'PDS865E THE LMA OUTPUT CAN NOT BE OPENED'               13550599
+         PRINT GEN                                                      13551038
+LMAEFTSR DC    CL8'IKJEFTSR'                                            13710099
+LMAPROG  DC    CL8'EQALMA'                       DEBUG TOOL LMA         13720099
+LMASEL   DC    CL14'SELECT MEMBER='                                     13720399
+EQAIN    DC    CL8'EQAIN'                                               13721399
+EQAPRINT DC    CL8'EQAPRINT'                                            13721499
+EQALIB   DC    CL8'EQALIB'                                              13721599
+EQASYSPF DC    CL8'EQASYSPF'                                            13721699
+EQAPGMNM DC    CL8'EQAPGMNM'                                            13721799
+LOUD     DC    CL4'LOUD'                                                13721899
+SHOWLIB  DC    CL7'SHOWLIB'                                             13721999
+SORTBY   DC    CL7'SORTBY='                                             13722099
+OSVSONLY DC    CL8'OSVSONLY'                                            13722199
+LEINFO   DC    CL6'LEINFO'                                              13722299
+LESCAN   DC    CL6'LESCAN'                                              13722399
+LISTLD   DC    CL6'LISTLD'                                              13722499
+DATEFMT  DC    CL8'DATEFMT='                                            13722599
+CKVOLFPR DC    CL9'CKVOLFPRS'                                           13722699
+LMADDNIN DC    X'000100010005',C'EQAIN'          EQAIN    DDNAME        13722799
+LMADDNPR DC    X'000100010008',C'EQAPRINT'       EQAPRINT DDNAME        13722899
+LMADDNLI DC    X'000100010006',C'EQALIB'         EQALIB   DDNAME        13722999
+LMADDNPF DC    X'000100010008',C'EQASYSPF'       EQASYSPF DDNAME        13723099
+LMADDNNM DC    X'000100010008',C'EQAPGMNM'       EQAPGMNM DDNAME        13723199
+LMADSNAM DC    X'00020001002C'                   DSNAME                 13723299
+LMAALLOC DC    X'00040001000108'                 DISP=SHR               13723399
+LMANORM  DC    X'00050001000108'                 DISP=(,KEEP)           13723499
+LMAANORM DC    X'00060001000108'                 DISP=(,,KEEP)          13723599
+LMADDNAM DC    X'0055000100084040404040404040'   RETURN DDNAME          13724099
+LMAFDDNA DC    X'000100010008'                   FOR FREE DDNAME        13730099
+LMANEW   DC    X'00040001000104'                 DISP=(NEW)             13780099
+LMADEL   DC    X'00050001000104'                 DISP=(,DELETE)         13790099
+LMACDEL  DC    X'00060001000104'                 DISP=(,,DELETE)        13800099
+LMAPERM  DC    X'00520000'                       PERMANENT ALLOCATION   13810099
+LMAUNALC DC    X'00070000'                       UNALLOCATE PERMANENT   13820099
+         SPACE 2                                                        13840000
+LMAPRTFI DC    X'000A00010003',AL3(050)          SPACE=(,NNN)           13850099
+LMAPRTSE DC    X'000B00010003',AL3(050)          SPACE=(,(,NNN))        13860099
+LMAPRTIN DC    X'000900010003',AL3(27930)        SPACE=(27930)          13870099
+LMASINSP DC    X'000900010003',AL3(6480)         SPACE=(6480)           13880099
+         SPACE 1                                                        13920000
+LMAPRTRE DC    X'004900010001',XL1'94'           DCB=RECFM=FBA          13930099
+LMAPRTLR DC    X'004200010002',AL2(133)          DCB=LRECL=133          13940099
+LMAPRTBL DC    X'003000010002',AL2(27930)        DCB=BLKSIZE=27930      13950099
+         SPACE 2                                                        13960000
+LMASINRE DC    X'004900010001',XL1'90'           DCB=RECFM=FB           13970099
+LMASINLR DC    X'004200010002',AL2(80)           DCB=LRECL=80           13980099
+LMASINBL DC    X'003000010002',AL2(6480)         DCB=BLKSIZE=6480       13990099
+         SPACE 2                                                        14000000
+LMAEQAIN DC    A(LMAPRTFI,LMAPRTSE,LMASINSP)                            14020099
+         DC    A(LMASINRE,LMASINLR,LMASINBL)                            14030099
+         DC    A(LMANEW,LMADEL,LMACDEL),X'80',AL3(LMAPERM)              14040099
+LMASYSPR DC    A(LMAPRTFI,LMAPRTSE,LMAPRTIN)                            14080099
+         DC    A(LMAPRTRE,LMAPRTLR,LMAPRTBL)                            14090099
+         DC    A(LMANEW,LMADEL,LMACDEL),X'80',AL3(LMAPERM)              14100099
+         SPACE 2                                                        14102099
+#LMAASSP EQU   X'80'            LMA: ASSOCIATES PHASE                   14110099
+#LMAONE  EQU   X'10'            LMA: A SINGLE MEMBER                    14120099
+#LMAASS2 EQU   X'01'            LMA: ANALYZE ASSOCIATES TOO             14130099
+         SPACE 2                                                        14138499

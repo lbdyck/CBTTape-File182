@@ -1,0 +1,1026 @@
+         TITLE 'P D S  --  PDS USAGE                         09/28/88'  14332000
+*********************************************************************** 14333000
+***      USAGE SUBCOMMAND                                           *** 14334000
+*********************************************************************** 14335000
+*                                                                       14336000
+         SPACE 1                                                        14337000
+USAGE    CSECT                                                          14338040
+         USING *,R8                                                     14339000
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK SEP10 14339172
+         BO    US010                  YES                     DRK SEP10 14339272
+*** REOPEN THE DATA SET TO ENSURE DS1LSTAR IS CORRECT                   14340000
+         OI    FLAGSJJ,FNOREAD         CALL EXCP FOR OPEN ONLY          14341000
+         MVC   STARTTR(3),DS1LSTAR     SET BEYOND END OF DATA SET       14342000
+         L     R15,=V(EXCP)                                             14343000
+         BASR  R14,R15                                                  14344000
+         NI    FLAGSJJ,FF-FNOREAD      CALL IS COMPLETED                14345000
+         SPACE 2                                                        14346000
+US010    DS    0H                                                       14346172
+         L     R15,=A(DSNAMES)                                          14347000
+         BASR  R2,R15                   FORMAT THE ALLOCATION STATUS    14348000
+         SPACE 1                                                        14349000
+         MVI   INSERT#2+20,0           ASSUME NO DATA MOVER             14349100
+         CLI   DS1DSNAM+70,X'FF'       ANY ASM2 IDENTIFIER?             14349600
+         BNE   *+8                     NO, BRANCH                       14349700
+         MVI   INSERT#2+20,C'A'        YES, ASSUME ASM2                 14349800
+         CLI   DS1DSNAM+104,0          ANY FDR/ABR FLAGS?               14349900
+         BZ    *+8                     NO, BRANCH                       14350000
+         MVI   INSERT#2+20,C'F'        YES, ASSUME FDR/ABR              14350100
+         TM    DS1DSNAM+103,X'F0'      ANY DMS/OS IDENTIFIER?           14350200
+         BNO   *+8                     NO, BRANCH                       14350300
+         MVI   INSERT#2+20,C'D'        YES, ASSUME DMS/OS               14350400
+*                                                                       14350500
+         MVC   INSERT#1(66),MSG180H                                     14350600
+         MVI   MTLEN,56                                                 14351000
+         CLI   INSERT#2+20,0           ANY DATA MOVER?                  14352000
+         BE    *+8                     NO, BRANCH                       14353000
+         MVI   MTLEN,66                YES, USE 66 CHARACTERS           14354000
+*                                                                       14354100
+         CLI   INSERT#2+20,C'D'        DMS/OS                           14354200
+         BNE   *+10                    NO, BRANCH                       14354300
+         MVC   INSERT#1+47(19),MSG180D YES, USE DMS/OS                  14354400
+         CLI   INSERT#2+20,C'F'        FDR/ABR?                         14354600
+         BNE   *+10                    NO, BRANCH                       14354700
+         MVC   INSERT#1+47(19),MSG180F YES, USE FDR/ABR                 14354800
+*                                                                       14355000
+         M$MSG L180$1                                                   14355100
+         MVC   INSERT#1(66),BLANK128                                    14356000
+         SR    R15,R15                                                  14357000
+         MVC   INSERT#1+10(7),USAL000                                   14358000
+         ICM   R15,B'0111',DS1CREDT    DATA SET CREATION DATE NULL?     14359000
+         BZ    US070                   YES, BRANCH                      14360000
+         ST    R15,MSGTEXT1            SAVE FOR LATER                   14361000
+         SRL   R15,16                  YEAR ONLY                        14362000
+         MH    R15,=H'1000'            SHIFT FOR THE ADDITION           14363000
+         AH    R15,MSGTEXT1+2          RESET DAYS                       14364000
+         CVD   R15,MSGTEXT1            STORE AS 00000000 00YYDDDF       14365000
+         LA    R1,MSGTEXT1+5           POINT TO YYDDDF                  14366000
+         LA    R15,MSGTEXT1            WHERE RESULT GOES                14367000
+         BAS   R14,CONVDATE            CONVERT TO MM/DD/YY              14368000
+         MVC   INSERT#1+08(9),USAL4020                                  14369000
+         ED    INSERT#1+08(9),MSGTEXT1                                  14370000
+         AIF   ('&ISODT'  NE 'YES').NOISOU1                   DRK NOV01 14370114
+         SPACE 1                                                        14370214
+         MVC   DOUBLE(8),INSERT#1+08+1   MM/DD/YY             DRK NOV01 14370314
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 14370414
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 14370514
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 14370614
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 14370714
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 14370814
+         MVC   INSERT#1+08+1(8),DOUBLE   YY/MM/DD             DRK NOV01 14370914
+         SPACE 1                                                        14371014
+.NOISOU1 ANOP                                                 DRK NOV01 14371114
+         SPACE 1                                                        14371200
+US070    SR    R15,R15                                                  14372000
+         MVC   INSERT#1+19(7),USAL000                                   14373000
+         ICM   R15,B'0111',DS1EXPDT    DATA SET EXPIRATION DATE NULL?   14374000
+         BZ    US080                   YES, BRANCH                      14375000
+         ST    R15,MSGTEXT1            SAVE FOR LATER                   14376000
+         SRL   R15,16                  YEAR ONLY                        14377000
+         MH    R15,=H'1000'            SHIFT FOR THE ADDITION           14378000
+         AH    R15,MSGTEXT1+2          RESET DAYS                       14379000
+         CVD   R15,MSGTEXT1            STORE AS 00000000 00YYDDDF       14380000
+         LA    R1,MSGTEXT1+5           POINT TO YYDDDF                  14381000
+         LA    R15,MSGTEXT1            WHERE RESULT GOES                14382000
+         BAS   R14,CONVDATE            CONVERT TO MM/DD/YY              14383000
+         MVC   INSERT#1+17(9),USAL4020                                  14384000
+         ED    INSERT#1+17(9),MSGTEXT1                                  14385000
+         AIF   ('&ISODT'  NE 'YES').NOISOU2                   DRK NOV01 14385114
+         SPACE 1                                                        14385214
+         MVC   DOUBLE(8),INSERT#1+17+1   MM/DD/YY             DRK NOV01 14385314
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 14385414
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 14385514
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 14385614
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 14385714
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 14385814
+         MVC   INSERT#1+17+1(8),DOUBLE   YY/MM/DD             DRK NOV01 14385914
+         SPACE 1                                                        14386014
+.NOISOU2 ANOP                                                 DRK NOV01 14386114
+         SPACE 1                                                        14386200
+US080    SR    R15,R15                                                  14387000
+         MVC   INSERT#1+29(7),USAL000                                   14388000
+         ICM   R15,B'0111',DS1REFD     LAST OPEN DATE NULL?             14389000
+         BZ    US090                   YES, BRANCH                      14390000
+         ST    R15,MSGTEXT1            SAVE FOR LATER                   14391000
+         SRL   R15,16                  YEAR ONLY                        14392000
+         MH    R15,=H'1000'            SHIFT FOR THE ADDITION           14393000
+         AH    R15,MSGTEXT1+2          RESET DAYS                       14394000
+         CVD   R15,MSGTEXT1            STORE AS 00000000 00YYDDDF       14395000
+         LA    R1,MSGTEXT1+5           POINT TO YYDDDF                  14396000
+         LA    R15,MSGTEXT1            WHERE RESULT GOES                14397000
+         BAS   R14,CONVDATE            CONVERT TO MM/DD/YY              14398000
+         MVC   INSERT#1+27(9),USAL4020                                  14399000
+         ED    INSERT#1+27(9),MSGTEXT1                                  14400000
+         AIF   ('&ISODT'  NE 'YES').NOISOU3                   DRK NOV01 14400114
+         SPACE 1                                                        14400214
+         MVC   DOUBLE(8),INSERT#1+27+1   MM/DD/YY             DRK NOV01 14400314
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 14400414
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 14400514
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 14400614
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 14400714
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 14400814
+         MVC   INSERT#1+27+1(8),DOUBLE   YY/MM/DD             DRK NOV01 14400914
+         SPACE 1                                                        14401014
+.NOISOU3 ANOP                                                 DRK NOV01 14401114
+         SPACE 1                                                        14401200
+US090    MVC   INSERT#1+38(3),USALYES  ASSUME UPDATED                   14402000
+         TM    DS1DSIND,DS1DSCHA       CORRECT?                         14403000
+         BO    *+10                    YES, BRANCH                      14404000
+         MVC   INSERT#1+38(3),USALNO   NO, RESET THE DATA               14405000
+         SPACE 1                                                        14406000
+         MVC   INSERT#1+47(4),=C'NONE' ASSUME NO SECURITY               14407000
+         TM    DS1DSIND,X'40'+X'10'+X'04'  CORRECT?                     14408000
+         BZ    US100                   YES, BRANCH                      14409000
+         MVC   INSERT#1+47(4),USALRACF ASSUME RACF DEFINED              14410000
+         TM    DS1DSIND,X'40'          CORRECT?                         14411000
+         BO    US100                   YES, BRANCH                      14412000
+         MVC   INSERT#1+47(4),USALREAD ASSUME READ PROTECTED            14413000
+         TM    DS1DSIND,X'10'+X'04'    CORRECT?                         14414000
+         BM    US100                   YES, BRANCH                      14415000
+         MVC   INSERT#1+47(5),USALWRIT   MUST BE WRITE PROTECTED        14416000
+         SPACE 1                                                        14417000
+US100    MVC   INSERT#1+57(8),DS1SYSCD USERID IF ANY                    14418000
+         CLI   INSERT#2+20,0           ANY DATA MOVER?                  14418100
+         BE    US118                   NO, BRANCH                       14418200
+         CLI   INSERT#2+20,C'F'        FDR/ABR DATA MOVER?              14418300
+         BE    US108                   YES, BRANCH                      14418400
+         SR    R15,R15                                                  14418500
+         MVI   INSERT#1+38,X'40'                                        14418600
+         MVC   INSERT#1+39(7),USAL000                                   14418700
+         CLI   INSERT#2+20,C'D'        DMS/OS                 DRK OCT04 14418826
+         BNE   US101                   NO, BRANCH             DRK OCT04 14418927
+         ICM   R15,B'0111',DS1SYSCD+8  LAST CHANGE DATE NULL? DRK OCT04 14419028
+         BZ    US104                   YES, BRANCH            DRK OCT04 14419126
+         B     US102                                          DRK OCT04 14419227
+US101    DS    0H                                             DRK OCT04 14419327
+         ICM   R15,B'0111',DS1DSSN+3   LAST CHANGE DATE NULL?           14419428
+         BZ    US104                   YES, BRANCH                      14419526
+US102    DS    0H                                             DRK OCT04 14419627
+         ST    R15,MSGTEXT1            SAVE FOR LATER                   14419726
+         SRL   R15,16                  YEAR ONLY                        14419826
+         MH    R15,=H'1000'            SHIFT FOR THE ADDITION           14419926
+         AH    R15,MSGTEXT1+2          RESET DAYS                       14420026
+         CVD   R15,MSGTEXT1            STORE AS 00000000 00YYDDDF       14420126
+         LA    R1,MSGTEXT1+5           POINT TO YYDDDF                  14420226
+         LA    R15,MSGTEXT1            WHERE RESULT GOES                14420326
+         BAS   R14,CONVDATE            CONVERT TO MM/DD/YY              14420426
+         MVC   INSERT#1+37(9),USAL4020                                  14420526
+         ED    INSERT#1+37(9),MSGTEXT1                                  14420626
+         AIF   ('&ISODT'  NE 'YES').NOISOU4                   DRK NOV01 14420726
+         SPACE 1                                                        14420826
+         MVC   DOUBLE(8),INSERT#1+37+1   MM/DD/YY             DRK NOV01 14420926
+         ICM   R0,B'1100',DOUBLE+6       YY OF MM/DD/YY       DRK NOV01 14421026
+         MVC   DOUBLE+6(2),DOUBLE+3      DD TO ../../DD       DRK NOV01 14421126
+         MVC   DOUBLE+3(2),DOUBLE        MM TO ../MM/DD       DRK NOV01 14421226
+         STCM  R0,B'1100',DOUBLE         YY TO YY/MM/DD       DRK NOV01 14421326
+         OI    DOUBLE+3,X'F0'            LEADIN BLANK IN MM   DRK NOV01 14421426
+         MVC   INSERT#1+37+1(8),DOUBLE   YY/MM/DD             DRK NOV01 14421526
+         SPACE 1                                                        14421626
+.NOISOU4 ANOP                                                 DRK NOV01 14421726
+         SPACE 1                                                    ABL 14421826
+US104    CLI   INSERT#2+20,C'A'        ASM2 DATA MOVER?                 14421926
+         BE    US118                   YES, BRANCH                      14422026
+         MVC   INSERT#1+47(8),DS1SYSCD   DMS/OS LAST USER               14422126
+*                                                             DRK OCT04 14422227
+*        MVC   INSERT#1+56(5),DS1SYSCD+8 DMS/OS FIRST OPENER PART 1     14422326
+*        MVC   INSERT#1+61(3),DS1DSSN    DMS/OS FIRST OPENER PART 2     14422426
+         B     US118                                                    14422526
+         SPACE 1                                                    ABL 14422626
+US108    DS    0H                        FDR/ABR DATA                   14422726
+         MVC   INSERT#1+47(19),BLANK128                                 14422826
+         SR    R1,R1                                                    14422926
+         IC    R1,DS1DSNAM+103           CURRENT BACKUP                 14423026
+         CVD   R1,DOUBLE                                                14423126
+         MVC   INSERT#1+48(4),=X'40202120'                              14423226
+         ED    INSERT#1+48(4),DOUBLE+6                                  14423326
+         TM    DS1DSNAM+104,X'01'        CURRENT BACKUP EXISTS?         14423426
+         BO    *+10                      YES, BRANCH                    14423526
+         MVC   INSERT#1+48(4),=C'NONE'   NO, CHANGE TO NONE             14423626
+         MVC   INSERT#1+54(3),USALYES    ASSUME OLD BACKUP EXISTS       14423726
+         TM    DS1DSNAM+104,X'02'        OLD BACKUP EXISTS?             14423826
+         BO    *+10                      YES, BRANCH                    14423926
+         MVC   INSERT#1+54(3),USALNO     NO, CHANGE TO NO               14424026
+         SPACE 1                                                    ABL 14424126
+         TM    DS1DSNAM+104,X'10'        ARCHIVE REQUESTED?             14424226
+         BNO   *+10                      NO, BRANCH                     14424326
+         MVC   INSERT#1+59(6),USALARCH   YES, NOTE IT                   14424426
+         TM    DS1DSNAM+104,X'40'        ALWAYS REQUESTED?              14424526
+         BNO   *+10                      NO, BRANCH                     14424626
+         MVC   INSERT#1+59(6),USALALWA   YES, NOTE IT                   14424726
+         TM    DS1DSNAM+104,X'80'        NOARCH REQUESTED?              14424826
+         BNO   *+10                      NO, BRANCH                     14424926
+         MVC   INSERT#1+59(6),USALNOAR   YES, NOTE IT                   14425026
+         TM    DS1DSNAM+104,X'C0'        NOABR REQUESTED?               14425126
+         BNO   *+10                      NO, BRANCH                     14425226
+         MVC   INSERT#1+59(6),USALNOAB   YES, NOTE IT                   14425326
+         SPACE 1                                                    ABL 14425426
+US118    DS    0H                                                       14425526
+         M$MSG L180$1                                                   14425626
+         M$ERRST MSGBLANK                                               14425726
+         SPACE 2                                                        14425826
+         L     R1,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS                 14425926
+         LH    R14,NUMEXT               NUMBER OF EXTENTS               14426026
+         SR    R0,R0                                                    14426126
+         SR    R15,R15                                                  14426226
+*                                                                       14426326
+         ICM   R15,3,32+14(R1) <----+   NUMBER OF TRACKS IN EXTENT      14426426
+         AR    R0,R15               |   ADD NUMBER OF TRACKS            14426526
+         LA    R1,16(,R1)           |   NEXT EXTENT                     14426626
+         BCT   R14,*-4-2-4  --------+   BRANCH FOR ALL EXTENTS          14426726
+*                                                                       14426826
+         ST    R0,DSNTOTAL              SAVE TOTAL D.S. SIZE IN TRACKS  14426926
+         SR    R1,R1                                                    14427026
+         ICM   R1,3,DS1LSTAR            GET TT OF LAST TRACK            14427126
+         CLC   DS1LSTAR(3),ZERO         ANY ALLOCATION?                 14427226
+         BE    *+8                      NO, BRANCH                      14427326
+         LA    R1,1(,R1)                JUMP FOR COMPUTATION            14427426
+         SR    R0,R1                                                    14427526
+         ST    R0,DSNEMPTY              TOTAL FREE SPACE                14428026
+         SPACE 2                                                        14437000
+         MVC   INSERT#1(120),BLANK128                                   14438000
+         MVI   MTLEN,120                                                14439000
+         L     R4,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS                 14440000
+         LH    R3,NUMEXT               NUMBER OF EXTENTS                14441000
+         LA    R2,INSERT#1-2           POSITION FOR FIRST DATA          14442000
+         SPACE 1                                                        14443000
+US120    LH    R1,32+14(,R4)           TRACKS IN THIS EXTENT            14444000
+         N     R1,=XL4'0000FFFF'       MASK OFF SIGN BITS               14444100
+         CVD   R1,DOUBLE                                                14445000
+         MVC   MSGTEXT1(6),=X'402020202120'                             14446000
+         ED    MSGTEXT1(6),DOUBLE+5                                     14447000
+         LA    R1,MSGTEXT1-1                                            14448000
+         LA    R5,6                                                     14449000
+         SPACE 1                                                        14450000
+US130    LA    R1,1(,R1)               SCAN                             14451000
+         BCTR  R5,0                        FOR                          14452000
+         CLI   0(R1),X'40'                    FIRST                     14453000
+         BE    US130                               NON-BLANK            14454000
+         SPACE 1                                                        14455000
+         MVI   0(R2),C','                                               14456000
+         MVC   2(*-*,R2),0(R1)        <<EXECUTED>>                      14457000
+         EX    R5,*-6                 MOVE IN THE LENGTH TEXT           14458000
+         LA    R2,2+1(R2,R5)          POSITION FOR NEXT COMMA           14459000
+         LA    R4,16(,R4)             NEXT EXTENT START                 14460000
+         BCT   R3,US120               DO ALL EXTENTS                    14461000
+         SPACE 1                                                        14462000
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK AUG05 14462129
+         BNO   US135                  NO                      DRK AUG05 14462229
+         MVC   INSERT#1(3),=C'N/A'    YES, MARK N/A           DRK AUG05 14462329
+US135    DS    0H                                             DRK AUG05 14462429
+         M$MSG L181$1                                                   14463000
+         M$ERRST MSGBLANK                                               14464000
+         SPACE 2                                                        14465000
+US200    MVI   MTLEN,42                                                 14466000
+         MVC   INSERT#1(42),MSG182H                                     14467000
+         M$MSG L182$1                                                   14468000
+         MVC   INSERT#1(42),MSG182E                                     14469000
+         SPACE 2                                                        14470000
+         L     R1,DSNTOTAL            TOTAL DATA SET TRACKS             14471000
+         CVD   R1,DOUBLE                                                14472000
+         ED    INSERT#1+9(8),DOUBLE+4                         DRK MAY98 14473001
+         SPACE 1                                                        14474000
+         L     R1,DSNTOTAL            TOTAL DATA SET TRACKS             14475000
+         S     R1,DSNEMPTY            TOTAL DATA SET USED TRACKS        14476000
+         CVD   R1,DOUBLE                                                14477000
+         ED    INSERT#1+17(8),DOUBLE+4                        DRK MAY98 14478001
+         SPACE 1                                                        14479000
+         L     R1,DSNEMPTY            TOTAL DATA SET FREE TRACKS        14480000
+         CVD   R1,DOUBLE                                                14481000
+         ED    INSERT#1+25(8),DOUBLE+4                        DRK MAY98 14482001
+         SPACE 1                                                        14483000
+         LH    R1,NUMEXT              TOTAL DATA SET EXTENTS            14484000
+         CVD   R1,DOUBLE                                                14485000
+         ED    INSERT#1+38(4),DOUBLE+6                                  14486000
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK AUG05 14486131
+         BNO   US210                  NO                      DRK AUG05 14486231
+         MVC   INSERT#1+09(8),=C'     N/A'  YES, MARK N/A     DRK AUG05 14486331
+         MVC   INSERT#1+17(8),=C'     N/A'                    DRK AUG05 14486431
+         MVC   INSERT#1+25(8),=C'     N/A'                    DRK AUG05 14486531
+         SR    R1,R1                                          DRK AUG05 14486632
+         IC    R1,DS1NOEPV                                    DRK AUG05 14486733
+         CVD   R1,DOUBLE                                      DRK AUG05 14486832
+         MVC   INSERT#1+38(4),=X'40202120'                    DRK AUG05 14486934
+         ED    INSERT#1+38(4),DOUBLE+6                        DRK AUG05 14487032
+         SPACE 1                                                        14487200
+US210    DS    0H                                                       14487329
+         M$MSG L182$1                                                   14488000
+         M$ERRST MSGBLANK                                               14489000
+         SPACE 2                                                        14490000
+         TM    DSORG,DS1DSGPO         DSORG=PO?                         14491000
+         BNO   US250                  NO, BRANCH                        14492022
+         MVI   STARTTR+2,X'01'        TTR=000001 (START OF DIRECTORY)   14493000
+         SPACE 1                                                        14494000
+         BAS   R14,READDIR            SCAN THROUGH THE DIRECTORY        14495000
+         SPACE 1                                                        14496000
+         MVI   MTLEN,64                                                 14497000
+         MVC   INSERT#1(64),MSG183H                                     14498000
+         M$MSG L183$1                                                   14499000
+         MVC   INSERT#1(64),MSG183E                                     14500000
+         SPACE 1                                                        14501000
+         L     R1,TOTBLOCK            TOTAL DIRECTORY BLOCKS            14502000
+         CVD   R1,DOUBLE                                                14503000
+         ED    INSERT#1+09(8),DOUBLE+4                                  14504000
+         SPACE 1                                                        14505000
+         L     R1,TOTUSED             TOTAL USED DIRECTORY BLOCKS       14506000
+         CVD   R1,DOUBLE                                                14507000
+         ED    INSERT#1+17(8),DOUBLE+4                                  14508000
+         SPACE 1                                                        14509000
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK MAR07 14509159
+         BO    US215                  YES                     DRK MAR07 14509259
+         L     R1,TOTBLOCK            TOTAL DIRECTORY BLOCKS            14510000
+         S     R1,TOTUSED             TOTAL FREE DIRECTORY BLOCKS       14511000
+         CVD   R1,DOUBLE                                                14512000
+         ED    INSERT#1+25(8),DOUBLE+4                                  14513000
+         B     US218                                          DRK MAR07 14513159
+US215    DS    0H                                             DRK MAR07 14513259
+         MVC   INSERT#1+25(8),BLANKS                          DRK MAR07 14513359
+         MVC   INSERT#1+25+5(3),=C'N/A' MARK N/A              DRK MAR07 14513459
+US218    DS    0H                                             DRK MAR07 14513559
+         SPACE 1                                                        14514000
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK FEB07 14514155
+         BO    US220                  YES                     DRK FEB07 14514255
+         L     R1,TOTTRKS             TOTAL TRACKS FOR DIRECTORY BLOCKS 14515000
+         CVD   R1,DOUBLE                                                14516000
+         ED    INSERT#1+34(8),DOUBLE+4                                  14517000
+         B     US230                                          DRK FEB07 14517157
+         SPACE 1                                                        14518000
+US220    DS    0H                                             DRK FEB07 14518155
+         MVC   INSERT#1+34(8),BLANKS                          DRK FEB07 14518256
+         MVC   INSERT#1+34+5(3),=C'N/A' MARK N/A              DRK MAR07 14518358
+US230    DS    0H                                             DRK FEB07 14518457
+         L     R1,TOTMEMR             TOTAL REAL ENTRIES                14519000
+         A     R1,TOTMEMA             TOTAL ALIAS ENTRIES               14520000
+         CVD   R1,DOUBLE                                                14521000
+         ED    INSERT#1+43(8),DOUBLE+4                                  14522000
+         SPACE 1                                                        14523000
+         L     R1,TOTMEMA             TOTAL ALIAS ENTRIES               14524000
+         CVD   R1,DOUBLE                                                14525000
+         ED    INSERT#1+52(8),DOUBLE+4                                  14526000
+         SPACE 1                                                        14527000
+         M$MSG L183$1                                                   14527217
+         M$ERRST MSGBLANK                                               14527317
+         SPACE 2                                                        14528017
+US250    DS    0H                                                       14528122
+         AIF   ('&MVSLEV' LE 'MVS041').NOCSI                  DRK NOV02 14528219
+         TM    DS1SMSFG,DS1SMSDS    SMS MANAGED?              DRK NOV02 14528319
+         BNO   US300                NO, DONE                  DRK NOV02 14528423
+         LA    R2,FIRST4K           BASE FOR SECOND4K         DRK NOV02 14528519
+         LA    R1,CSIRSN-@4K(,R2)   -> REASON AREA            DRK NOV02 14528639
+         ST    R1,PARMLIST+0        SAVE ADDRESS IN PARM      DRK NOV02 14528719
+         LA    R1,CSIFIELD-@4K(,R2) -> SELECT CRITERIA        DRK NOV02 14528839
+         ST    R1,PARMLIST+4        SAVE ADDRESS IN PARM      DRK NOV02 14528919
+         LA    R1,CSIWORK-@4K(,R2)  -> WORK AREA              DRK NOV02 14529039
+         ST    R1,PARMLIST+8        SAVE ADDRESS IN PARM      DRK NOV02 14529119
+         OI    PARMLIST+8,X'80'     TURN ON LAST PARM BIT     DRK NOV02 14529219
+         SPACE 1                                              DRK NOV02 14529319
+         MVI   CSIFIELD-@4K(R2),C' ' BLANK CSIFIELD           DRK NOV02 14529421
+         MVC   CSIFIELD-@4K+1(177,R2),CSIFIELD-@4K(R2)        DRK NOV02 14529521
+         L     R1,=F'1024'          LENGTH FOR CSIWORK (1K)   DRK NOV02 14529619
+         ST    R1,CAIUSRLN-@4K(R2)  SAVE LEN IN 1ST WORD      DRK NOV02 14529719
+         L     R1,=F'3'             SET 3 ENTRIES             DRK NOV02 14529819
+         STCM  R1,B'0011',CSINUMEN-@4K(R2) NUMBER OF ENTRIES  DRK NOV02 14529919
+         MVC   CSIFLDNM-@4K(24,R2),CSIFLD1 FIELD NAMES        DRK NOV02 14530019
+         MVI   CSISTYPS-@4K(R2),C'A'       NON-VSAM ONLY      DRK NOV02 14530124
+         MVI   CSIS1CAT-@4K(R2),C'Y'       SEARCH 1 CATALOG   DRK NOV02 14530224
+         MVC   CSIFILTK-@4K(44,R2),DSNAME  MOVE DSNAME        DRK NOV02 14530324
+         SPACE 1                                              DRK NOV02 14530419
+         LA    R1,PARMLIST          POINT TO PARMS FOR CSI    DRK NOV02 14530519
+         LINK  EP=IGGCSI00          CSI:ST.LOUIS              DRK NOV02 14530625
+         LTR   R15,R15              SUCCESSFUL?               DRK NOV02 14530719
+         BNZ   US300                NO, DONE                  DRK NOV02 14530823
+         SPACE 1                                              DRK NOV02 14530919
+         MVI   MTLEN,46             LENGTH OF MESSAGE         DRK NOV02 14531023
+         MVC   INSERT#1(46),MSG191H HEADER                    DRK NOV02 14531123
+         M$MSG L191$1                                         DRK NOV02 14531219
+         MVC   INSERT#1(46),MSG191S SMS DATA                  DRK NOV02 14531323
+         LA    R3,CSIEFLAG-@4K(,R2) POINT TO ENTRY            DRK NOV02 14531439
+         SR    R1,R1                CLEAR REG                 DRK NOV02 14531519
+         LA    R3,46+4+2*3(,R3)     START OF 1ST VL FIELD     DRK NOV02 14531639
+         ICM   R1,B'0011',0(R3)     LENGTH OF STORCLAS        DRK NOV02 14531719
+         BZ    USNOSTOR                                       DRK NOV02 14531819
+         BCTR  R1,0                 MACHINE STRING LENGTH     DRK NOV02 14531919
+         MVC   INSERT#1+00(*-*),2(R3) MOVE STORCLAS           DRK NOV02 14532019
+         EX    R1,*-6               <<EXECUTED>>              DRK NOV02 14532119
+         LA    R1,1(,R1)            ACTUAL LENGTH             DRK NOV02 14532239
+USNOSTOR DS    0H                                             DRK NOV02 14532319
+         LA    R3,2(R3,R1)          START OF 2ND VL FIELD     DRK NOV02 14532419
+         ICM   R1,B'0011',0(R3)     LENGTH OF MGMTCLAS        DRK NOV02 14532519
+         BZ    USNOMGMT                                       DRK NOV02 14532619
+         BCTR  R1,0                 MACHINE STRING LENGTH     DRK NOV02 14532719
+         MVC   INSERT#1+15(*-*),2(R3) MOVE MGMTCLAS           DRK NOV02 14532819
+         EX    R1,*-6               <<EXECUTED>>              DRK NOV02 14532919
+         LA    R1,1(,R1)            ACTUAL LENGTH             DRK NOV02 14533039
+USNOMGMT DS    0H                                             DRK NOV02 14533119
+         LA    R3,2(R3,R1)          START OF 3RD VL FIELD     DRK NOV02 14533219
+         ICM   R1,B'0011',0(R3)     LENGTH OF DATACLAS        DRK NOV02 14533319
+         BZ    USNODATA                                       DRK NOV02 14533419
+         BCTR  R1,0                 MACHINE STRING LENGTH     DRK NOV02 14533519
+         MVC   INSERT#1+27(*-*),2(R3) MOVE DATACLAS           DRK NOV02 14533619
+         EX    R1,*-6               <<EXECUTED>>              DRK NOV02 14533719
+USNODATA DS    0H                                             DRK NOV02 14533819
+         TM    DS1DSORG,DS1DSGPO           PDS DATASET?       DRK NOV02 14533919
+         BNO   *+4+6                       NO                 DRK NOV02 14534019
+         MVC   INSERT#1+39(8),=CL8'PDS'                       DRK NOV02 14534119
+         TM    DS1SMSFG,DS1PDSE            PDSE DATASET?      DRK NOV02 14534219
+         BNO   *+4+6                       NO                 DRK NOV02 14534319
+         MVC   INSERT#1+39(8),=CL8'LIBRARY'                   DRK NOV02 14534419
+         M$MSG L191$1                                         DRK NOV02 14534519
+         M$ERRST MSGBLANK                                     DRK NOV02 14534619
+         SPACE 2                                              DRK NOV02 14534722
+         B     US300                                          DRK NOV02 14534819
+CSIFLD1  DC    CL8'STORCLAS'                                  DRK NOV02 14534919
+CSIFLD2  DC    CL8'MGMTCLAS'                                  DRK NOV02 14535019
+CSIFLD3  DC    CL8'DATACLAS'                                  DRK NOV02 14535119
+.NOCSI   ANOP                                                 DRK NOV02 14535219
+         SPACE 1                                                        14535319
+US300    DS    0H                                                       14535460
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK SEP10 14535568
+         BNO   US300C                 NO, CONTINUE            DRK SEP10 14535668
+         L     R4,=A(FAMS)            FAMS SUBROUTINE         DRK SEP10 14535770
+         BASR  R3,R4                  CALL SUBROUTINE         DRK SEP10 14535868
+         B     US300C                                         DRK SEP10 14535968
+*                                                                       14536068
+*        ISPF DSINFO CALL REPLACE BY FAMS CALL                DRK SEP10 14536168
+*                                                                       14536268
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?           DRK AUG05 14536330
+         BNO   US300C                 NO, CONTINUE            DRK FEB07 14536443
+         TM    SPFLAG0,SPFDON         ISPMODE ACTIVE?         DRK FEB07 14536544
+         BNO   US300C                 NO, BRANCH              DRK FEB07 14536661
+         LA    R14,DSINFO             DSINFO                  DRK FEB07 14536750
+         ST    R14,PARMLIST           1ST PARM                DRK FEB07 14536850
+         LA    R15,#USADSN                                    DRK FEB07 14536950
+         MVI   0(R15),C''''           START QUOTE             DRK FEB07 14537050
+         LA    R15,1(R15)                                     DRK FEB07 14537150
+         MVC   0(44,R15),DSNAME       DSNAME                  DRK FEB07 14537251
+         AH    R15,DSNLEN                                     DRK FEB07 14537350
+         MVI   0(R15),C''''           END QUOTE               DRK FEB07 14537450
+         LA    R15,#USADSN            DSN                     DRK FEB07 14537550
+         ST    R15,PARMLIST+4         2ND PARM                DRK FEB07 14537650
+         OI    PARMLIST+4,X'80'       MARK END OF PARM LIST   DRK FEB07 14537750
+         LA    R1,PARMLIST            PT TO PARMLIST          DRK FEB07 14537850
+         L     R15,ISPLINK                                    DRK FEB07 14537950
+         BASR  R14,R15                CALL ISPF               DRK FEB07 14538050
+         LTR   R15,R15                NORMAL COMPLETION?      DRK FEB07 14538150
+         BNZ   US300C                 NO                      DRK FEB07 14538261
+         SPACE 1                                                        14538350
+         LA    R14,VCOPY              VCOPY                   DRK FEB07 14538450
+         ST    R14,PARMLIST           1ST PARM                DRK FEB07 14538550
+         LA    R14,ZPAGE              GET PAGES USED, PCT     DRK FEB07 14538650
+         MVC   DOUBLE(8),VARLEN       MOVE LENGTH ARRAY       DRK OCT07 14538865
+         LA    R15,DOUBLE             LENGTH OF VARIABLES     DRK OCT07 14538965
+         LA    R0,PAGEUSED            RETURN AREA             DRK FEB07 14539050
+         LA    R1,ISPMOVE             MOVE                    DRK FEB07 14539150
+         STM   R14,R1,PARMLIST+4      2ND-5TH PARMS           DRK FEB07 14539250
+         OI    PARMLIST+16,X'80'      MARK END OF PARM LIST   DRK FEB07 14539350
+         LA    R1,PARMLIST            PT TO PARMLIST          DRK FEB07 14539450
+         L     R15,ISPLINK                                    DRK FEB07 14539550
+         BASR  R14,R15                CALL ISPF               DRK FEB07 14539650
+         LTR   R15,R15                NORMAL COMPLETION?      DRK FEB07 14539750
+         BNZ   US300C                 NO                      DRK FEB07 14539861
+         MVI   MTLEN,39               YES                     DRK FEB07 14539950
+         MVC   INSERT#1(39),MSG184H2                          DRK FEB07 14540050
+         M$MSG L184$1                                         DRK FEB07 14540150
+         MVC   INSERT#1(39),BLANK128                          DRK FEB07 14540250
+         MVC   INSERT#1+12(13),PAGEUSED     ZDSPAGU           DRK FEB07 14540350
+         MVC   INSERT#1+36(3),PAGEUSED+23   ZDSPERU           DRK FEB07 14540453
+         M$MSG L184$1                                         DRK FEB07 14540553
+         B     US300C                 SKIP EXTENT MESSAGES    DRK FEB07 14540661
+VARLEN   DC    F'13',F'13'            LENGTH OF VARS          DRK FEB07 14540753
+ISPMOVE  DC    CL4'MOVE'              ACTION                  DRK FEB07 14540853
+VCOPY    DC    CL8'VCOPY'             SERVICE                 DRK FEB07 14540953
+ZPAGE    DC    C'(ZDSPAGU ZDSPERU)'   VARIABLE NAMES          DRK FEB07 14541053
+DSINFO   DC    CL8'DSINFO'            SERVICE                 DRK FEB07 14541153
+         SPACE 1                                                        14541250
+US300C   DS    0H                                                       14541350
+         TM    FLAGSHH,FOPTIONS       ANY OPTION?                       14541462
+         BNO   NEWCMD                 NO, BRANCH                        14541562
+         TM    DS1SMSFG,DS1PDSE       PDSE DATASET?                     14541661
+         BO    US500                  YES                               14541761
+         MVI   MTLEN,70                                                 14541850
+         MVC   INSERT#1(70),MSG184H                                     14541950
+         M$MSG L184$1                                                   14542050
+         MVC   INSERT#1(70),MSG184U                                     14542150
+         M$MSG L184$1                                                   14542250
+         MVC   INSERT#1(70),BLANK128                                    14542350
+         L     R2,DCBDEBAD-IHADCB+INDCB GET DEB ADDRESS                 14542450
+         LH    R3,NUMEXT                                                14542550
+         SR    R4,R4                  EXTENT NUMBER                     14542650
+         SR    R5,R5                  BEGINNING TT OF TTR               14542700
+         SPACE 1                                                        14543000
+US310    CVD   R4,DOUBLE              EXTENT                            14544000
+         A     R4,=F'1'                                                 14545000
+         MVC   INSERT#1+2(4),=X'40202120'                               14546000
+         ED    INSERT#1+2(4),DOUBLE+6                                   14547000
+         L     R1,32(,R2)             UCB ADDRESS                       14548005
+         AIF   ('&MVSLEV' GE 'MVS510').MVS51A                 DRK MAY98 14548300
+         MVI   INSERT#1+8,C'0'        ZERO FILL               DRK JUN98 14548409
+         MVC   INSERT#1+9(3),13(R1)                                     14548509
+         AGO   .MVS51AX                                       DRK MAY98 14548600
+.MVS51A  ANOP                                                 DRK MAY98 14548700
+         LA    R1,0(,R1)              CLEAR HIGH-ORDER BYTE   DRK MAY98 14548839
+         ST    R1,UCBADDR                                     DRK MAY98 14548908
+         UCBDEVN UCBPTR=UCBADDR,DEVN=INSERT#1+8  4-DIGIT DEVN DRK MAY98 14549103
+         CLI   INSERT#1+8,C' '        3DIGIT UCB NAME?        DRK JUN98 14549210
+         BNE   *+8                    NO                      DRK JUN98 14549310
+         MVI   INSERT#1+8,C'0'        YES, THEN ZERO FILL     DRK JUN98 14549410
+.MVS51AX ANOP                                                 DRK MAY98 14549500
+         LH    R6,32+14(,R2)          TRACKS IN THIS EXTENT             14550000
+         N     R6,=XL4'0000FFFF'      MASK OFF SIGN BITS                14550100
+         LR    R0,R5                                                    14551000
+         AR    R5,R6                  START OF NEXT EXTENT              14552000
+         LA    R15,2                  LOOPS                             14553000
+         LA    R14,INSERT#1+16                                          14554000
+         SPACE 1                                                        14555000
+US320    SRDL  R0,4                   TT OF TTR                         14556000
+         SRL   R1,28                  LOW REGISTER POSITION             14557000
+         MVI   2(R14),C'.'                                              14558000
+         IC    R1,HEXTBL(R1)                                            14559000
+         STC   R1,1(,R14)                                               14560000
+         SRDL  R0,4                                                     14561000
+         SRL   R1,28                                                    14562000
+         IC    R1,HEXTBL(R1)                                            14563000
+         STC   R1,0(,R14)                                               14564000
+         SH    R14,=H'3'                                                14565000
+         BCT   R15,US320                                                14566000
+         SPACE 1                                                        14567000
+         CLI   INSERT#1+24,C'.'       SECOND TTR VALUE?                 14568000
+         BE    US330                  YES, BRANCH                       14569000
+         LA    R14,INSERT#1+22                                          14570000
+         LA    R15,2                                                    14571000
+         LTR   R0,R5                  ANY DATA?                         14572000
+         BZ    US320                  NO, BRANCH                        14573000
+         BCTR  R0,0                   YES, REDUCE BY ONE                14574000
+         B     US320                                                    14575000
+         SPACE 1                                                        14576000
+US330    MVI   INSERT#1+18,X'40'      CLEAR FIRST EXTRA PERIOD          14577000
+         MVI   INSERT#1+24,X'40'      CLEAR SECOND EXTRA PERIOD         14578000
+         CVD   R6,DOUBLE              TRACKS                            14579000
+         MVC   INSERT#1+26(6),=X'402020202120'                          14580000
+         ED    INSERT#1+26(6),DOUBLE+5                                  14581000
+         SPACE 2                                                        14582000
+         ICM   R0,B'1111',38(R2)      FIRST DEVICE CC.CC.HH.HH          14583000
+         LA    R15,4                  LOOPS                             14584000
+         LA    R14,INSERT#1+43                                          14585000
+         SPACE 1                                                        14586000
+US420    SRDL  R0,4                   TT OF TTR                         14587000
+         SRL   R1,28                  LOW REGISTER POSITION             14588000
+         MVI   2(R14),C'.'                                              14589000
+         IC    R1,HEXTBL(R1)                                            14590000
+         STC   R1,1(,R14)                                               14591000
+         SRDL  R0,4                                                     14592000
+         SRL   R1,28                                                    14593000
+         IC    R1,HEXTBL(R1)                                            14594000
+         STC   R1,0(,R14)                                               14595000
+         SH    R14,=H'3'                                                14596000
+         BCT   R15,US420                                                14597000
+         SPACE 1                                                        14598000
+         CLI   INSERT#1+57,C'.'       SECOND TTR VALUE?                 14599000
+         BE    US430                  YES, BRANCH                       14600000
+         LA    R14,INSERT#1+55                                          14601000
+         ICM   R0,B'1111',42(R2)      SECOND CC.CC.HH.HH FIGURE         14602000
+         LA    R15,4                                                    14603000
+         B     US420                                                    14604000
+         SPACE 1                                                        14605000
+US430    MVI   INSERT#1+45,X'40'                                        14606000
+         MVI   INSERT#1+57,X'40'                                        14607000
+         MVC   INSERT#1+59(3),=C'CYL' ASSUME CYLINDER BOUNDARY          14608000
+         CLC   40(2,R2),ZERO          FIRST HH.HH=0?                    14609000
+         BE    *+10                   YES, BRANCH                       14610000
+         MVC   INSERT#1+59(3),USALTRK NO, TRACK BOUNDARY                14611000
+         LH    R1,44(,R2)                                               14612000
+         LA    R1,1(,R1)                                                14613000
+         CH    R1,DEVTTRKS            END HH.HH=MAX/DEVICE              14614000
+         BE    *+10                   YES, BRANCH                       14615000
+         MVC   INSERT#1+59(3),USALTRK NO, TRACK BOUNDARY                14616000
+         SPACE 1                                                        14617000
+         M$MSG L184$1                                                   14618000
+         LA    R2,16(,R2)             NEXT EXTENT                       14619000
+         BCT   R3,US310               DO ALL EXTENTS                    14620000
+         SPACE 2                                                        14621000
+         M$ERRST MSGBLANK                                               14622000
+         B     US500                                                    14623000
+         SPACE 3                                                        14624000
+MSG180H  DC    CL66'DATA SET: CREATED  EXPIRES  LAST USE  UPDATED  SECUX14625000
+               RITY  ASM2ID'                                            14626000
+MSG180D  DC    CL19'LASTUSE  FIRSTUSE  '                                14626100
+MSG180F  DC    CL19'BACK#  OLD  ABRFLAG'                                14626200
+MSG182H  DC    CL42'TRACKS: ALLOCATED    USED    FREE  EXTENTS'         14627000
+MSG182E  DC    CL42'                                          '         14628001
+         ORG   MSG182E+9                                                14629001
+         DC    X'4020202020202120'                            DRK MAY98 14630001
+         ORG   MSG182E+17                                               14631001
+         DC    X'4020202020202120'                            DRK MAY98 14632001
+         ORG   MSG182E+25                                               14633001
+         DC    X'4020202020202120'                            DRK MAY98 14634001
+         ORG   MSG182E+38                                               14635000
+         DC    X'40202120'                                              14636000
+         ORG   ,                                                        14637000
+MSG183H  DC    CL64'DIRECTORY: BLOCKS    USED    FREE   TRACKS  MEMBERSX14638000
+                 ALIASES'                                               14639000
+MSG183E  DC    CL64'                                            '       14640000
+         ORG   MSG183E+09                                               14641000
+         DC    X'4020202020202120'                                      14642000
+         ORG   MSG183E+17                                               14643000
+         DC    X'4020202020202120'                                      14644000
+         ORG   MSG183E+25                                               14645000
+         DC    X'4020202020202120'                                      14646000
+         ORG   MSG183E+34                                               14647000
+         DC    X'4020202020202120'                                      14648000
+         ORG   MSG183E+43                                               14649000
+         DC    X'4020202020202120'                                      14650000
+         ORG   MSG183E+52                                               14651000
+         DC    X'4020202020202120'                                      14652000
+         ORG   ,                                                        14653000
+MSG184H  DC    CL70'EXTENT  UCB  LO TT-HI TT  TRACKS     LOW CCHH-HIGH X14654000
+               CCHH    BOUNDARY '                                       14655000
+MSG184U  DC    CL70'------  ---- ----- -----  ------  ----------- -----X14656000
+               ------  -------- '                                       14657000
+MSG191H  DC    CL46'STORAGE CLASS  MGMT CLASS  DATA CLASS  DSNTYPE'     14657115
+MSG191S  DC    CL46'                                              '     14657323
+         SPACE 1                                                        14657442
+MSG184H2 DC    CL39'PDSE SPACE:    USED PAGES     %UTILIZED'  DRK FEB07 14657549
+*                               1234567890123 1234567890123   DRK FEB07 14657642
+         SPACE 1                                                        14659016
+USAL000  DC    C'0/00/00'                                               14659116
+USAL4020 DC    X'402021612020612020'                                    14659216
+USALYES  DC    C'YES'                                                   14660000
+USALNO   DC    C'NO '                                                   14661000
+USALARCH DC    C'ARCHIV'                                                14661100
+USALALWA DC    C'ALWAYS'                                                14661200
+USALNOAR DC    C'NOARCH'                                                14661300
+USALNOAB DC    C'NOABR '                                                14661400
+USALTRK  DC    C'TRK'                                                   14662000
+USALRACF DC    C'RACF'                                                  14663000
+USALREAD DC    C'READ'                                                  14664000
+USALWRIT DC    C'WRITE'                                                 14665000
+         SPACE 3                                                        14666000
+OBTAIN   CAMLST SEARCH,0,0,0                                            14667000
+         ORG   OBTAIN+4                                                 14668000
+         SPACE 3                                                        14669000
+LOCATE   CAMLST NAME,0,,0                                               14670000
+         ORG   LOCATE+4                                                 14671000
+         PRINT GEN                                                      14672000
+*                                      .                                14672100
+US500    BASR  R8,0                     OUTPUT ADDITIONAL DSCB DATA     14672200
+         USING *,R8                                                     14672300
+         M$ERRST MSGBLANK                                               14672400
+*                                      .                                14672500
+         MVI   MTLEN,70                                                 14672600
+         MVC   INSERT#1(70),MSG185T                                     14672700
+         M$MSG L185$1                                                   14672800
+*                                      .                                14672900
+         MVC   INSERT#1(70),MSG185H1                                    14673000
+         M$MSG L185$1                                                   14673100
+*                                      .                                14673200
+         MVC   INSERT#1(70),IECSDSL1+00  IN CHARACTER MODE              14673600
+         MVC   INSERT#1(44),DSNAME       OVERLAY DSNAME IN POSITION     14673700
+         TR    INSERT#1(70),TRLINE       TRANSLATE TO PRINTABLE         14673800
+         M$MSG L185$1                                                   14673900
+*                                      .                                14674000
+         MVC   INSERT#1(70),IECSDSL1+00  IN CHARACTER MODE              14675300
+         MVC   INSERT#1(44),DSNAME       OVERLAY DSNAME IN POSITION     14675400
+         TR    INSERT#1(70),TOPLINE      CONVERT 11, 12,... TO F1       14675500
+         M$MSG L185$1                                                   14675600
+*                                      .                                14678000
+         MVC   INSERT#1(70),IECSDSL1+00  IN CHARACTER MODE              14678100
+         MVC   INSERT#1(44),DSNAME       OVERLAY DSNAME IN POSITION     14678200
+         TR    INSERT#1(70),BOTLINE      CONVERT 13, 23,... TO F3       14679100
+         M$MSG L185$1                                                   14679200
+*                                      .                                14690000
+         M$ERRST MSGBLANK                                               14690100
+*                                      .                                14690200
+         MVC   INSERT#1(70),MSG185H2                                    14690600
+         M$MSG L185$1                                                   14690700
+*                                      .                                14690800
+         MVC   INSERT#1(70),IECSDSL1+70  IN CHARACTER MODE              14690900
+         TR    INSERT#1(70),TRLINE       TRANSLATE TO PRINTABLE         14691000
+         M$MSG L185$1                                                   14691100
+*                                      .                                14691200
+         MVC   INSERT#1(70),IECSDSL1+70  IN CHARACTER MODE              14691300
+         TR    INSERT#1(70),TOPLINE      CONVERT 11, 12,... TO F1       14692000
+         M$MSG L185$1                                                   14693000
+*                                      .                                14694000
+         MVC   INSERT#1(70),IECSDSL1+70  IN CHARACTER MODE              14695000
+         TR    INSERT#1(70),BOTLINE      CONVERT 13, 23,... TO F3       14696000
+         M$MSG L185$1                                                   14697000
+*                                      .                                14698000
+         M$ERRST MSGBLANK                                               14751000
+         M$ERRST MSGBLANK               OUTPUT ADDITIONAL DIR DATA      14751300
+         MVC   INSERT#1(100),BLANK128   CLEAR THE HEADER LINE           14751900
+         MVC   INSERT#1(40),MSG185H     HEADER INFORMATION              14752000
+         M$MSG L186$1                                                   14752100
+         MVC   INSERT#1(40),MSG185U     UNDERLINE INFORMATION           14752200
+         SPACE 2                                                        14752300
+         SR    R2,R2                    OFFSET IN THE DIRECTORY         14752400
+         LA    R3,USAHDR                START OF HEADER NAMES           14752500
+         BAS   R4,USAFMT10              OUTPUT FIRST MESSAGE            14752600
+         SPACE 1                                                        14752700
+         MVC   INSERT#1+13(44),DSNAME   ADD THE DATA SET NAME           14752800
+         BAS   R4,USAFMT                (00)                            14752900
+         LA    R2,44(,R2)               POSITION PAST DSNAME            14753000
+         SPACE 1                                                        14753100
+         LA    R0,1                     1 INPUT BYTES                   14753200
+         BAS   R4,USAHEX                CONVERT TO HEX                  14753300
+         BAS   R4,USAFMT                (2C)                            14753400
+         LA    R2,1(,R2)                POSITION PAST DS1FMTID          14753500
+         SPACE 1                                                        14753600
+         MVC   INSERT#1+13(6),DS1DSSN   ADD THE VOLUME NAME             14753700
+         NC    INSERT#1+13(6),USALCCCC  MASK OUT FOLLOWING BITS         14753800
+         CLC   INSERT#1+13(6),USALCCCC  SAME?                           14753900
+         MVC   INSERT#1+13(6),DS1DSSN                                   14754000
+         BE    US550                    YES, BRANCH                     14754100
+         LA    R0,6                     6 INPUT BYTES                   14754200
+         BAS   R4,USAHEX                CONVERT TO HEX                  14754300
+US550    BAS   R4,USAFMT                                                14754500
+         LA    R2,6(,R2)                POSITION PAST VOLUME            14754600
+         SPACE 1                                                        14754700
+         LH    R0,DS1DSNAM(R2)                                          14754800
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14754900
+         BAS   R4,USAFMT                                                14755000
+         LA    R2,2(,R2)                SKIP DS1VOLSQ                   14755100
+         SPACE 1                                                        14755200
+         LA    R0,3                     3 INPUT BYTES                   14755300
+         BAS   R4,USAHEX                CONVERT TO HEX                  14755400
+         BAS   R4,USAFMT                                                14755500
+         LA    R2,3(,R2)                POSITION PAST DS1CREDT          14755600
+         SPACE 1                                                        14755700
+         LA    R0,3                     3 INPUT BYTES                   14755800
+         BAS   R4,USAHEX                CONVERT TO HEX                  14755900
+         BAS   R4,USAFMT                                                14756000
+         LA    R2,3(,R2)                POSITION PAST DS1EXPDT          14756100
+         SPACE 1                                                        14756200
+         SR    R0,R0                                                    14756300
+         IC    R0,DS1DSNAM(R2)                                          14756400
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14756500
+         BAS   R4,USAFMT                                                14756600
+         LA    R2,1(,R2)                SKIP DS1NOEPV                   14756700
+         SPACE 1                                                        14756800
+         SR    R0,R0                                                    14756900
+         IC    R0,DS1DSNAM(R2)                                          14757000
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14757100
+         BAS   R4,USAFMT                                                14757200
+         LA    R2,1(,R2)                SKIP DS1NOBDB                   14757300
+         SPACE 1                                                        14757400
+         LA    R0,1                     1 INPUT BYTES                   14757500
+         BAS   R4,USAHEX                CONVERT TO HEX                  14757600
+         BAS   R4,USAFMT                                                14757700
+         LA    R2,1(,R2)                POSITION PAST DS1FLAG1DRK SEP99 14757813
+         SPACE 1                                                        14757900
+         MVC   INSERT#1+13(13),DS1SYSCD ADD THE SYSTEM CODE             14758000
+         NC    INSERT#1+13(13),USALCCCC MASK OUT FOLLOWING BITS         14758100
+         CLC   INSERT#1+13(13),USALCCCC SAME?                           14758200
+         MVC   INSERT#1+13(13),DS1SYSCD                                 14758300
+         BE    US560                    YES, BRANCH                     14758400
+         MVC   INSERT#1+13(50),BLANK128 CLEAR THE DESCRIPTION           14758500
+         LA    R0,13                    13 INPUT BYTES                  14758600
+         BAS   R4,USAHEX                CONVERT TO HEX                  14758700
+US560    BAS   R4,USAFMT                                                14758800
+         LA    R2,13(,R2)               POSITION PAST SYSTEM CODE       14758900
+         SPACE 1                                                        14759000
+         LA    R0,3                     3 INPUT BYTES                   14759100
+         BAS   R4,USAHEX                CONVERT TO HEX                  14759200
+         BAS   R4,USAFMT                                                14759300
+         LA    R2,3(,R2)                POSITION PAST DS1REFD           14759400
+         SPACE 1                                                        14759500
+         LA    R0,1                     1 INPUT BYTES         DRK SEP99 14759613
+         BAS   R4,USAHEX                CONVERT TO HEX        DRK SEP99 14759713
+         BAS   R4,USAFMT                                      DRK SEP99 14759813
+         LA    R2,1(,R2)                POSITION PAST DS1SMSFGDRK SEP99 14759913
+         SPACE 1                                              DRK SEP99 14760013
+         LA    R0,3                     3 INPUT BYTES         DRK SEP99 14760113
+         BAS   R4,USAHEX                CONVERT TO HEX        DRK SEP99 14760213
+         BAS   R4,USAFMT                                      DRK SEP99 14760313
+         LA    R2,3(,R2)                POSITION PAST DS1SCEXTDRK SEP99 14760413
+         SPACE 1                                                        14760513
+         LA    R0,2                     2 INPUT BYTES                   14760613
+         BAS   R4,USAHEX                CONVERT TO HEX                  14760713
+         BAS   R4,USAFMT                                                14760813
+         LA    R2,2(,R2)                POSITION PAST DS1DSORG          14760913
+         SPACE 1                                                        14761013
+         LA    R0,1                     1 INPUT BYTES                   14761113
+         BAS   R4,USAHEX                CONVERT TO HEX                  14761213
+         BAS   R4,USAFMT                                                14761313
+         LA    R2,1(,R2)                POSITION PAST DS1RECFM          14761413
+         SPACE 1                                                        14761513
+         LA    R0,1                     1 INPUT BYTES                   14761613
+         BAS   R4,USAHEX                CONVERT TO HEX                  14761713
+         BAS   R4,USAFMT                                                14761813
+         LA    R2,1(,R2)                POSITION PAST DS1OPTCD          14761913
+         SPACE 1                                                        14762013
+         LH    R0,DS1DSNAM(R2)                                          14762113
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14762213
+         BAS   R4,USAFMT                                                14762313
+         LA    R2,2(,R2)                SKIP DS1BLKL                    14762413
+         SPACE 1                                                        14762513
+         LH    R0,DS1DSNAM(R2)                                          14762613
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14762713
+         BAS   R4,USAFMT                                                14762813
+         LA    R2,2(,R2)                SKIP DS1LRECL                   14762913
+         SPACE 1                                                        14763013
+         SR    R0,R0                                                    14763113
+         IC    R0,DS1DSNAM(R2)                                          14763213
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14763313
+         BAS   R4,USAFMT                                                14763413
+         LA    R2,1(,R2)                SKIP DS1KEYL                    14763513
+         SPACE 1                                                        14763613
+         LH    R0,DS1DSNAM(R2)                                          14763713
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14763813
+         BAS   R4,USAFMT                                                14763913
+         LA    R2,2(,R2)                SKIP DS1RKP                     14764013
+         SPACE 1                                                        14764113
+         LA    R0,1                     1 INPUT BYTES                   14764213
+         BAS   R4,USAHEX                CONVERT TO HEX                  14764313
+         BAS   R4,USAFMT                                                14764413
+         LA    R2,1(,R2)                POSITION PAST DS1DSIND          14764513
+         SPACE 1                                                        14764613
+         LA    R0,4                     4 INPUT BYTES                   14764713
+         BAS   R4,USAHEX                CONVERT TO HEX                  14764813
+         BAS   R4,USAFMT                                                14764913
+         LA    R2,4(,R2)                POSITION PAST DS1SCALO          14765013
+         SPACE 1                                                        14765113
+         LA    R0,3                     3 INPUT BYTES                   14765213
+         BAS   R4,USAHEX                CONVERT TO HEX                  14765313
+         BAS   R4,USAFMT                                                14765413
+         LA    R2,3(,R2)                POSITION PAST DS1LSTAR          14765513
+         SPACE 1                                                        14765613
+         SR    R0,R0                                                    14765713
+         ICM   R0,B'0011',DS1TRBAL                                      14765813
+         BAS   R4,USADEC                CONVERT TO DECIMAL              14765913
+         BAS   R4,USAFMT                                                14766013
+         LA    R2,2(,R2)                SKIP DS1TRBAL                   14766113
+         SPACE 1                                                        14766213
+         AIF   ('&MVSLEV' GE 'MVS7XX').MVSZOSA                DRK FEB06 14766338
+         LA    R0,2                     2 INPUT BYTES                   14766738
+         BAS   R4,USAHEX                CONVERT TO HEX                  14766838
+         BAS   R4,USAFMT                                                14766938
+         LA    R2,2(,R2)                POSITION PAST RESERVED          14767038
+         SPACE 1                                                        14767138
+         AGO   .MVSZOSB                                       DRK FEB06 14767238
+.MVSZOSA ANOP                                                 DRK FEB06 14767338
+         LA    R0,1                     1 INPUT BYTE          DRK FEB06 14767437
+         BAS   R4,USAHEX                CONVERT TO HEX        DRK FEB06 14767537
+         BAS   R4,USAFMT                                      DRK FEB06 14767637
+         LA    R2,1(,R2)                POSITION PAST RESERVEDDRK FEB06 14767737
+         SPACE 1                                              DRK FEB06 14767837
+         LA    R0,1                     1 INPUT BYTE          DRK FEB06 14767937
+         BAS   R4,USAHEX                CONVERT TO HEX        DRK FEB06 14768037
+         BAS   R4,USAFMT                                      DRK FEB06 14768137
+         LA    R2,1(,R2)                POSITION PAST DS1TTTHIDRK FEB06 14768237
+.MVSZOSB ANOP                                                 DRK FEB06 14768338
+         SPACE 1                                              DRK FEB06 14768437
+         LA    R1,DS1DSNAM(R2)          POINT TO DATA                   14768537
+         LA    R15,INSERT#1+15          START OF OUTPUT DATA            14768637
+         LA    R0,10                    10 INPUT BYTES                  14768737
+         BAS   R4,USAHEX10              CONVERT TO HEX                  14768837
+         MVC   INSERT#1+13(4),INSERT#1+15            FIRST FOUR         14768937
+         MVI   INSERT#1+13+4,C'.'                    POINT              14769037
+         MVC   INSERT#1+13+4+1(8),INSERT#1+13+4+1+1  NEXT EIGHT         14769137
+         MVI   INSERT#1+13+4+1+8,C'.'                POINT              14769237
+         BAS   R4,USAFMT                                                14769337
+         LA    R2,10(,R2)               POSITION PAST DS1EXT1           14769437
+         SPACE 1                                                        14769537
+         LA    R1,DS1DSNAM(R2)          POINT TO DATA                   14769637
+         LA    R15,INSERT#1+15          START OF OUTPUT DATA            14769737
+         LA    R0,10                    10 INPUT BYTES                  14769837
+         BAS   R4,USAHEX10              CONVERT TO HEX                  14769937
+         MVC   INSERT#1+13(4),INSERT#1+15            FIRST FOUR         14770037
+         MVI   INSERT#1+13+4,C'.'                    POINT              14770137
+         MVC   INSERT#1+13+4+1(8),INSERT#1+13+4+1+1  NEXT EIGHT         14770237
+         MVI   INSERT#1+13+4+1+8,C'.'                POINT              14770337
+         BAS   R4,USAFMT                                                14770437
+         LA    R2,10(,R2)               POSITION PAST DS1EXT2           14770537
+         SPACE 1                                                        14770637
+         LA    R1,DS1DSNAM(R2)          POINT TO DATA                   14770737
+         LA    R15,INSERT#1+15          START OF OUTPUT DATA            14770837
+         LA    R0,10                    10 INPUT BYTES                  14770937
+         BAS   R4,USAHEX10              CONVERT TO HEX                  14771037
+         MVC   INSERT#1+13(4),INSERT#1+15            FIRST FOUR         14771137
+         MVI   INSERT#1+13+4,C'.'                    POINT              14771237
+         MVC   INSERT#1+13+4+1(8),INSERT#1+13+4+1+1  NEXT EIGHT         14771337
+         MVI   INSERT#1+13+4+1+8,C'.'                POINT              14771437
+         BAS   R4,USAFMT                                                14771537
+         LA    R2,10(,R2)               POSITION PAST DS1EXT3           14771637
+         SPACE 1                                                        14771737
+         LA    R0,5                     5 INPUT BYTES                   14771837
+         BAS   R4,USAHEX                CONVERT TO HEX                  14771937
+         BAS   R4,USAFMT                                                14772037
+         LA    R2,5(,R2)                POSITION PAST DS1EXT3           14772137
+         M$ERRST MSGBLANK                                               14772237
+         B     NEWCMD                                                   14772337
+         SPACE 1                                                        14772437
+USADEC   C     R0,USADEC99                                              14772537
+         BH    USADEC10                                                 14772637
+         CVD   R0,DOUBLE                                                14772737
+         MVC   INSERT#1+100+8(8),BLANK128                               14772837
+         MVC   INSERT#1+100(8),USA2020                                  14772937
+         ED    INSERT#1+100(7),DOUBLE+5                                 14773037
+         LA    R1,INSERT#1+100-1                                        14773137
+         LA    R1,1(,R1)                                                14773237
+         CLI   0(R1),X'40'                                              14773337
+         BE    *-8                                                      14773437
+         MVC   INSERT#1+13(8),0(R1)                                     14773537
+         BR    R4                                                       14773637
+USADEC10 LR    R1,R0                                                    14773737
+         LA    R1,1023(,R1)                                             14773837
+         SRL   R1,10                    THE NEXT HIGHER K VALUE         14773937
+         CVD   R1,DOUBLE                                                14774037
+         MVC   INSERT#1+100+8(8),BLANK128                               14774137
+         MVC   INSERT#1+100(7),USA2020                                  14774237
+         MVI   INSERT#1+100+7,C'K'                                      14774337
+         ED    INSERT#1+100(7),DOUBLE+5                                 14774437
+         LA    R1,INSERT#1+100-1                                        14774537
+         LA    R1,1(,R1)                                                14774637
+         CLI   0(R1),X'40'                                              14774737
+         BE    *-8                                                      14774837
+         MVC   INSERT#1+13(8),0(R1)                                     14774937
+         BR    R4                                                       14775037
+USADEC99 DC    F'99999'                                                 14775137
+         SPACE 3                                                        14775237
+USAHEX   LA    R1,DS1DSNAM(R2)          POINT TO DATA                   14775337
+         LA    R15,INSERT#1+13          START OF OUTPUT DATA            14775437
+         SPACE 1                                                        14775537
+USAHEX10 UNPK  0(3,R15),0(2,R1)         UNPACK TO HEXADECIMAL           14775637
+         TR    0(2,R15),TRTABLE         CONVERT TO PRINTABLE            14775737
+         MVI   2(R15),X'40'             BLANK GARBAGE BYTE              14775837
+         LA    R15,2(,R15)              NEXT OUTPUT DIGIT               14775937
+         LA    R1,1(,R1)                NEXT INPUT DIGIT                14776037
+         BCT   R0,USAHEX10              FORMAT ALL INPUT DIGITS         14776137
+         BR    R4                                                       14776237
+         SPACE 3                                                        14776337
+USAFMT   STC   R2,DOUBLE                SAVE OFFSET IN STORAGE          14776437
+         UNPK  INSERT#1(3),DOUBLE(2)    UNPACK TO HEXADECIMAL           14776537
+         TR    INSERT#1(2),TRTABLE      CONVERT TO PRINTABLE OFFSET     14776637
+         MVI   INSERT#1+2,X'40'         CLEAR GARBAGE BYTE              14776737
+         SPACE 1                                                        14776837
+USAFMT10 TR    INSERT#1(70),TRLINE      CONVERT TO PRINTABLE CHARACTERS 14776937
+         M$MSG L186$1                   OUTPUT                          14777037
+         SPACE 1                                                        14777137
+USAFMT20 MVC   INSERT#1(100),BLANK128   BLANK THE OUTPUT AREA           14777237
+         MVC   INSERT#1+04(08),0(R3)    ADD THE PDS... NAME             14777337
+         MVC   INSERT#1+26(44),8(R3)    ADD THE DESCRIPTION             14777437
+         LR    R6,R3                    THIS TEXT                       14777537
+         LA    R3,52(,R3)               NEXT TEXT                       14777637
+         BR    R4                                                       14777737
+         SPACE 3                                                        14777837
+         B     NEWCMD                                                   14778037
+*                                      .                                14780000
+TOPLINE  DC    CL32'00000000000000001111111111111111'                   14790000
+         DC    CL32'22222222222222223333333333333333'                   14800000
+         DC    CL32'44444444444444445555555555555555'                   14810000
+         DC    CL32'66666666666666667777777777777777'                   14820000
+         DC    CL32'88888888888888889999999999999999'                   14830000
+         DC    CL32'AAAAAAAAAAAAAAAABBBBBBBBBBBBBBBB'                   14840000
+         DC    CL32'CCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDD'                   14850000
+         DC    CL32'EEEEEEEEEEEEEEEEFFFFFFFFFFFFFFFF'                   14860000
+*                                      .                                14870000
+BOTLINE  DC    16CL16'0123456789ABCDEF'                                 14880000
+*                                      .                                14890000
+USA2020  DC    X'4020206B2021204B'      EDIT MASK                       14891000
+MSG185T  DC    CL70'FORMAT 1 DSCB: '                                    14900000
+*                                      .                                14910000
+MSG185H1 DC    CL70'0   4   8   C  10  14  18  1C  20  24  28  2C  30  X15120000
+               34  38  3C  40  44 '                                     15140000
+MSG185H2 DC    CL70' 48  4C  50  54  58  5C  60  64  68  6C  70  74  78X15170100
+                 7C  80  84  88   '                                     15170200
+MSG185H  DC    CL40'LOC NAME     VALUE        DESCRIPTION'              15180000
+MSG185U  DC    CL40'--- ----     -----        -----------'              15190000
+USALCCCC DC    X'C0C0C0C0C0C0C0C0C0C0C0C0C0'                            15191000
+*IRHDR   DC CL52'1234567890123456789012345678901234567890123456789012'  15200071
+USAHDR   DC CL52'DS1DSNAM                                            '  15210071
+         DC CL52'DS1FMTIDFORMAT IDENTIFIER                           '  15220071
+         DC CL52'DS1DSSN DATA SET SERIAL NUMBER                      '  15221071
+         DC CL52'DS1VOLSQVOLUME SEQUENCE NUMBER                      '  15222071
+         DC CL52'DS1CREDTCREATION DATE                               '  15223071
+         DC CL52'DS1EXPDTEXPIRATION DATE                             '  15224071
+         DC CL52'DS1NOEPVNUMBER OF EXTENTS ON VOLUME                 '  15225071
+         DC CL52'DS1NOBDBNUMBER OF BYTES USED IN LAST DIRECTORY BLOCK'  15226071
+*        DC CL52'        RESERVED (ONE BYTE)                         '  15226171
+         DC CL52'DS1FLAG1FLAG 1                                      '  15227071
+         DC CL52'DS1SYSCDSYSTEM CODE                                 '  15228071
+         DC CL52'DS1REFD DATE LAST REFERENCED                        '  15229071
+*        DC CL52'        RESERVED (FOUR BYTES)                       '  15229171
+         DC CL52'DS1SMSFGSYSTEM MANAGED STORAGE INDICATORS           '  15229271
+         DC CL52'DS1SCEXTSECONDARY SPACE EXTENSION                   '  15229371
+         DC CL52'DS1DSORGDATA SET ORGANIZATION                       '  15230071
+         DC CL52'DS1RECFMRECORD FORMAT                               '  15240071
+         DC CL52'DS1OPTCDOPTION CODE                                 '  15250071
+         DC CL52'DS1BLKL BLOCK LENGTH                                '  15260071
+         DC CL52'DS1LRECLLOGICAL RECORD LENGTH                       '  15261071
+         DC CL52'DS1KEYL KEY LENGTH                                  '  15270071
+         DC CL52'DS1RKP  RELATIVE KEY POSITION                       '  15280071
+         DC CL52'DS1DSINDDATA SET INDICATORS                         '  15290071
+         DC CL52'DS1SCALOSECONDARY ALLOCATION                        '  15300071
+         DC CL52'DS1LSTARTTR OF LAST USED TRACK AND BLOCK ON TRACK   '  15310071
+         DC CL52'DS1TRBALBYTES REMAINING ON LAST TRACK USED          '  15320071
+         AIF   ('&MVSLEV' GE 'MVS7XX').MVSZOSC                DRK FEB06 15320138
+         DC CL52'        RESERVED (TWO BYTES)                        '  15330071
+         AGO   .MVSZOSD                                       DRK FEB06 15330138
+.MVSZOSC ANOP                                                 DRK FEB06 15330238
+         DC CL52'        RESERVED (ONE BYTE)                         '  15331071
+         DC CL52'DS1TTTHIHIGH ORDER BYTE OF TRACK NUMBER IN DS1LSTAR '  15332071
+.MVSZOSD ANOP                                                 DRK FEB06 15333038
+         DC CL52'DS1EXT1            FIRST EXTENT DESCRIPTION         '  15340071
+         DC CL52'DS1EXT2            SECOND EXTENT DESCRIPTION        '  15350071
+         DC CL52'DS1EXT3            THIRD EXTENT DESCRIPTION         '  15360071
+         DC CL52'DS1PTRDSCCHHR OF ANY ASSOCIATED FORMAT 2 OR 3 DSCB  '  15370071
+         COPY  @FAMS                                          DRK SEP10 15380071

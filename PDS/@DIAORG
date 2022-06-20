@@ -1,0 +1,126 @@
+*           BASE SUBROUTINE ENTRY INFORMATION                           00010000
+*                                                                       00020000
+*-LABEL-- --REG 1-- --REG 15- --REG 14- --REG 0- ---- COMMENTS -------- 00030000
+*ISPSXEQ                      RTN ADDR           ISPLINK SERVICE        00040000
+*ISPSXEQ0                                        ISPLINK SERV RC=0 OK   00050000
+*ISPSXEQ8                                        ISPLINK SERV RC=8 OK   00060000
+*ISPVDEF  VER LEN   VAR ADDR  NAME ADDR          VDEFINE                00070000
+*ISPVDEFX TBL ADDR                               VDEFINE FROM TABLE     00080000
+*ISPFIRST                                        SCAN VZCMD FOR NON-BLK 00090000
+*ISPCKBLK           STR ADDR  SCAN LEN           SCAN FOR NON-BLANK     00100000
+*ISPSHCMD                                        POSITION AFTER PERIOD  00110000
+*ISPCLI   CHAR      STR ADDR  SCAN LEN           FIND CHAR              00120000
+*ISPCLIB  CHAR      STR ADDR  SCAN LEN           FIND CHR BACK FROM END 00130000
+*ISPSETST INDEX     PAN ADDR  FLAG ADDR          SET AND RETURN STATUS  00140000
+*ISPCTLSM                                        CONTROL DISPLAY SM     00150000
+*REFSAVE                                         SAVE TCT COUNTS        00160000
+*REFCHECK                                        CHECK TCT COUNTS       00170000
+*DEVNLIST           UCBNAME                      SEARCH EDT DEVNLIST    00171001
+*                   ADDR                                                00172001
+*ISPVGETP           LIST ADDR                    VGET FROM PROFILE      00180000
+*ISPVGETS           LIST ADDR                    VGET FROM SHARED POOL  00181000
+*ISPVPUTP           LIST ADDR                    VPUT FROM PROFILE      00182000
+*ISPVPUTS           LIST ADDR                    VPUT FROM SHARED POOL  00183000
+*ISPTBCRE                                        (RE)CREATE CUR TBL     00190000
+*ISPTBOPN           KEY ADDR            LST ADDR CREATE TABLE FOR CUR   00200000
+*ISPTSORT                               SPFTSORA SORT CUR TBL           00210000
+*ISPTBT#S                                        TERM VIEW TBL          00220000
+*ISPTBT#M                                        TERM MEML TBL          00230000
+*ISPTBEND                                        TERM CUR TBL           00240000
+*-LABEL-- --REG 1-- --REG 15- --REG 14- --REG 0- ---- COMMENTS -------- 00241000
+*ISPCTLND                                        CONTROL NONDISP ENTER  00250000
+*ISPCTLNDE                                       CONTROL NONDISP END    00260000
+*ISPDSPSV                                        CONTROL DISPLAY SAVE   00270000
+*ISPDSPRS                                        CONTROL DISPLAY RESTOR 00280000
+*ISPCERT                                         CONTROL ERRORS RETURN  00290000
+*ISPCERC                                         CONTROL ERRORS CANCEL  00300000
+*ISPADD1                                         INIT EMPTY VIEW TABLE  00310000
+*ISPLOGBT                                        SET TO BOTTOM OF LOG   00320000
+*ISPADDLN                                        ADD FROM PDS BUFFER    00330000
+*ISPADD79  BUFF ADD                              ADD TO LOG FROM R1     00340000
+*ISPADDCO                                        ADD TO LOG SPFLINE     00350000
+*ISPMEMSC                               VAR ADDR TBSCAN FOR EQ VALUE    00360000
+*ISPNXLN                                         FIND NEXT OPT IN TBL   00370000
+*MEMLSAVE                                        SAVE MEML LINE         00380000
+*MEMLSET                                         SET MEML LINE FOR UPD  00390000
+*ISPBLDL                                         BLDL ON CUR MEM & DCB  00400000
+*-LABEL-- --REG 1-- --REG 15- --REG 14- --REG 0- ---- COMMENTS -------- 00410000
+*ISPBLDL1 DCB ADDR                               BLDL CUR MEM R1=DCB    00420000
+*ISPTBADD                                        ADD TO CUR TBL         00430000
+*ISPTBAD2           NAME ADR                     ADD TO NAMED TBL       00440000
+*ISPTBMOD                                        MOD CUR LINE IN TBL    00450000
+*ISPTBMD2           NAME ADR                     MOD CUR LINE NAMED TBL 00460000
+*ISPTBPUT                                        ADD OR REP CUR LINE    00470000
+*ISPTBPT2           NAME ADR                     ADD OR REP TO NAMED TB 00480000
+*ISPQUERY                                        SET TBL STATUS         00490000
+*ISPTOP                                          POSITION TBL TO TOP    00500000
+*ISPBOTM                                         POSITION TBL TO BOTTOM 00510005
+*ISPGET                                          GET LINE WITH KEY      00520000
+*ISPOSTN                                         POSITION TB TO SPFTTOP 00530000
+*ISPSKIP           SKIP VAL                      TBSKIP                 00540000
+*ISPDEL1                                         DELETE CUR LINE        00550000
+*ISPDEL  -- SPFFIXED = DEL COUNT, SPFFIXE2 = SKIP VALUE --              00560000
+*ISPLMSGS                                        INSERT MSG IN LINE     00570000
+*ISPDECCV VALUE                                  CONVERT TO PRINTABLE   00580000
+*ISPHEXCV HEX VAL                                CONVERT TO PRINTABLE   00590000
+*ISPBINCV VALUE                                  HEX INPUT IN SPFHEXCV  00600000
+*-LABEL-- --REG 1-- --REG 15- --REG 14- --REG 0- ---- COMMENTS -------- 00601000
+*ISPMVTBL           RTN ADDR  HDR ADDR  PAN IX   LOCATE MOVE ROUTINE    00610000
+*ISPFDSAB DSAB ADR            DDN ADDR           LOCATE DSAB ADDR       00611000
+*ISPDSORG IN ADDR                       MNEMONIC DSORG VAL TO MNEMONIC  00630004
+*ISPLSPAC                     RC        UCB ADDR LSPACE SVC 78          00640000
+*ISPDEVTC TYP ADDR            TBL ADDR  TRKS/CYL DEVTYPE INFO           00650000
+*ISPFMT4  VOL ADDR                               GET F4 DSCB TO SPFDSCB 00660000
+*ISPDSCB  VOL ADDR            DSN ADDR           GET F1 DSCB TO SPFDSCB 00670000
+*ISPDSCBC VOL ADDR            CCH ADDR           GET DSCB BY CCHHR      00671000
+*ISPDEVNM TYP ADDR  NM ADDR             CLEAN TY GET DEVTYPE MNEMONIC   00680004
+*ISPUNALC DDN ADDR                      REQ 2/4  UNALLOC/DECON          00700000
+*ISPDYNA            RC                           ALLOC M99RBPTR         00710000
+*                                                                       00720000
+*           MED LEVEL SUB ENTRY INFO                                    00721000
+*                                                                       00722000
+*-LABEL-- --REG 1-- --REG 15- --REG 14- --REG 0- ---- COMMENTS -------- 00723000
+*ISPVERG   TEXT               TBL ADDR           FIND VERB IN CMD TBL   00730000
+*ISPVER1   TEXT      LENG     TBL ADDR           FIND VERB IN CMD TBL   00740000
+*ISPPANDI                                        DISPLAY PANEL HIER     00750000
+*ISPSETVI                                        INIT DIALOG VERS       00770000
+*MEMLISTI                                        MEMLIST LINE BUILD     00780000
+*ISPFNDI                                         FIND SUPPORT SUB       00790000
+*ISPVSPAI                                        LSPACE FORMATTER       00800000
+*ISPSINGI MSG/0     PANEL ADDR                   DISPLAY A PANEL        00810000
+*ISPSLCTI                                        ISPEXEC SELECT         00820000
+*ISPSUBI                                 RTN-ADR INTERFACE TO MED LV    00830000
+*                                                                       00840000
+*           LOW LEVEL SUB ENTRY INFO                                    00850000
+*                                                                       00860000
+*ISPPARSI PARSE TB  TEXT       LEN VAL           PARSE ROUTINE          00861000
+*ISPSORTI                                INDEX   INITIAL SORT           00870000
+*ISPSUBIL           RTN-ADR                      INTERFACE TO LOW LV    00880000
+*ISPSUBL0                                RTN-ADR INTERFACE TO LOW LV    00890000
+*                                                                       00891000
+*               MIXED SUB ENTRY INFO                                    00892000
+*                                                                       00893000
+*ISPLOGCD                                        LOG A COMMAND          00900000
+*ISPSTKI  PANEL IX                               STACK/SWAP PANEL TBL   00910000
+*ISPUSTKM                                        TERMINATE MEMLIST TBL  00920000
+*                                                                       00930000
+*               COPY MEMBERS  (FUNCTIONS AND SUBROUTINES)               00940000
+*                                                                       00950000
+*@DIATBL        COMMAND TABLES                                          00960000
+*@DIAPANL       PANEL PROCESSORS                                        00970000
+*@DIAPART       PARSE, VERB, CMD PROCS                                  00980006
+*@DIACLN        CLEANUP                                                 00990000
+*@DIAFUN        FUNC STATUS, VIEW, MISC, CHANGE, RECALL                 01000000
+*@DIAINIT       INITIALIATION, SETV                                     01010000
+*@DIASEL        ISPF SELECT AND SYSOUT TRAP                             01020000
+*@DIAFIND       FIND AND SORT                                           01030000
+*@DIAOUT        OUTPUT SUBS                                             01040000
+*@DIASTAK       STACK SERV + PAN TABLES                                 01050000
+*@DIAMEML       MEMLIST SERVICES                                        01060000
+*@DIALALV       LISTA AND LISTV                                         01070000
+*@DIALSTC       LISTC/LISTF                                             01080000
+*@DIATCT        TSO COMMAND TABLE FUNCTIONS                             01090000
+*@DIACAX        ACTIVE CATALOG DISPLAY FUNCTION                         01100000
+*@DIALINE       GENERAL LINE COMMANDS                                   01110002
+*@DIALINZ       SPECIAL LINE COMMANDS EXTENSION                         01111002
+*@DIAWRK        WORK DSECT                                              01120000

@@ -1,0 +1,242 @@
+         TITLE 'P D S  --  PDS OUTCOPY                       09/28/88'  11274000
+*********************************************************************** 11275000
+***      OUTCOPY SUBCOMMAND    ADDED BY BRUCE LELAND -- JULY, 1983  *** 11276001
+*********************************************************************** 11277000
+*                                                                       11278000
+         SPACE 1                                                        11279000
+OUTCOPY  CSECT                                                          11280002
+         USING *,R8                                                     11281000
+         LA    R1,L530                       ASSUME NON-PARTITIONED     11282000
+         TM    DSORG,DS1DSGPO                CORRECT?                   11283000
+         BZ    MSGNEW                        YES, BRANCH                11284000
+         TM    #OUT,1                        CLOSE FORCED?              11285000
+         BO    OUT84                         YES, BRANCH                11286000
+         TM    DCBOFLGS-IHADCB+QAMDCB,X'10'  OUTPUT ALREADY OPEN?       11287000
+         BO    OUT10                         YES, BRANCH                11288000
+         AIF ('&CISP' EQ 'NO SPF').NSPF250                              11289000
+         TM    FLAGSEE,FBKGRND               BACKGROUND MODE?           11290000
+         BO    OUT04                         YES, BRANCH                11291000
+         TM    FLAGSFF,FSPFOPT6+FSPFERR+FSPFCALL+FSPFDIAL  CHANGE SPF?  11292000
+         BNZ   OUT04                                       NO, BRANCH   11293000
+         TM    FLAGSEE,FNOTTERM              FROM A CLIST SOURCE?       11294000
+         BO    OUT04                         YES, BRANCH                11295000
+         BAS   R2,SPFRECUR                   INVOKE PDS AS A DIALOG     11296000
+         SPACE 1                                                        11297000
+.NSPF250 ANOP                                                           11298000
+OUT04    MVC   QAMDCB(LQSAMDCB),QSAMDCB      CONSTRUCT A DCB            11299000
+         MVI   OPENLIST,X'80'                END OF LIST                11300000
+         OPEN  (QAMDCB,(OUTPUT)),MF=(E,OPENLIST)                        11301000
+         MVC   INSERT#1(8),OTEXTOUT          OUTCOPY                    11302000
+         LA    R1,L780$1                     ASSUME OPEN ERROR          11303000
+         TM    DCBOFLGS-IHADCB+QAMDCB,X'10'  OUTPUT OPEN?               11304000
+         BNO   MSGNEWXX                      NO, ERROR                  11305000
+         CLI   #OUT,1                        CORRECT DCB ATTRIBUTES?    11306000
+         BNE   OUT84                         NO, BRANCH                 11307000
+         SPACE 2                                                        11308000
+OUT10    MVI   #OUT,X'40'                                               11309000
+         LA    R15,FIRST4K                                              11310000
+         LA    R15,SAVEOUT-FIRST4K(,R15)     SAVE TEXT AREA             11311000
+         CLI   #OUTOPTN,1                    ANY TEXT?                  11312000
+         BNE   *+10                          NO, BRANCH                 11313000
+         MVC   0(40,R15),MSGLINE             YES, SAVE THE DEFAULT TEXT 11314000
+         CLI   #OUTOPTN,2                    NOTEXT?                    11315000
+         BNE   *+8                           NO, BRANCH                 11316000
+         MVI   0(R15),0                      YES, RESET DEFAULT TEXT    11317000
+         MVC   MSGLINE(40),0(R15)            SET THE TEXT OPERAND       11318000
+         B     OUT14                                                    11319000
+         SPACE 1                                                        11320000
+OUT12    CLI   #OUTOPTN,1                    ANY TEXT?                  11321000
+         BE    OUT14                         YES, BRANCH                11322000
+         MVI   MSGLINE,0                     NO, RESET THE TEXT         11323000
+         SPACE 1                                                        11324000
+OUT14    TM    FLAGSEE,FOUTASS               ALIASES ALSO DESIRED?      11325000
+         BNO   *+8                           NO, BRANCH                 11326000
+         MVI   STARTTR+2,X'01'               YES, SET THE START TTR     11327000
+         L     R2,RECOVER                    PREVIOUS RECOVERY ADDRESS  11328000
+         LA    R1,OUT80                      RESUME ADDRESS             11329000
+         ST    R1,RECOVER                    IN-LINE RECOVERY           11330000
+         STM   R2,R8,#OUTREGS                SAVE REGISTERS             11331000
+         TM    FLAGSFF,FCHANGE               CHANGED DATA SET?          11332000
+         BNZ   OUT50                         NO, BRANCH                 11333000
+         OI    FLAGSFF,FCHANGE               YES, GOT A COPY STATEMENT  11334000
+         TM    FLAGSFF,FIEBUPDT              IEBUPDTE FORMAT?           11335000
+         BO    OUT50                         YES, BRANCH                11336000
+         MVC   #OUT,OUTCOPYS                 " COPY OUTPUT=OUTDD,IN..." 11337000
+         SR    R1,R1                         MACHINE LENGTH             11338000
+         LA    R3,DSNAME-2                                              11339000
+         AH    R3,DSNLEN                                                11340000
+         LA    R0,8                          MAX LOOPS +1               11341000
+         CH    R0,DSNLEN                     MIN (8, NAME LENGTH)       11342000
+         BH    *+8                                                      11343000
+         LH    R0,DSNLEN                                                11344000
+OUT30    S     R0,=F'1'                      ONE CHARACTER?             11345000
+         BZ    OUT40                         YES, BRANCH                11346000
+         CLI   0(R3),C'.'                    PERIOD?                    11347000
+         BE    OUT40                         YES, BRANCH                11348000
+         LA    R1,1(,R1)                     MACHINE LENGTH             11349000
+         BCT   R3,OUT30                      BACK UP ONE BYTE           11350000
+         SPACE 1                                                        11351000
+OUT40    MVC   #OUT+33(*-*),1(R3)            <<EXECUTED>>               11352000
+         EX    R1,*-6                        MOVE LOW-LEVEL QUALIFIER   11353000
+         PUT   QAMDCB,#OUT                   OUTPUT THIS LINE           11354000
+         LA    R3,OUTMEMBS                   START OF DUPLICATE LIST    11355000
+         TM    FLAGSFF,FNOECHO               OUTPUT TO THE TERMINAL?    11356000
+         BNZ   OUT42                         NO, BRANCH                 11357000
+         MVC   MSGTEXT1+4(80),#OUT           OUTPUT LINE                11358000
+         LA    R0,84                                                    11359000
+         SLL   R0,16                                                    11360000
+         ST    R0,MSGTEXT1                                              11361000
+         M$ERRST MSGTEXT1                                               11362000
+         SPACE 1                                                        11363000
+OUT42    ICM   R3,B'0111',1(R3)              NEXT DUPLICATE STRUCTURE   11364000
+         BZ    OUT50                         END, BRANCH                11365000
+         MVI   6(R3),0                       CLEAR THE                  11366000
+         MVI   7(R3),1                                CURRENT COUNT     11367000
+         B     OUT42                         LOOP FOR ALL STRUCTURES    11368000
+         SPACE 1                                                        11369000
+OUT50    LA    R4,OUTMEMBS                   ROOT OF DUP STRUCTURES     11370000
+OUT54    LR    R3,R4                                                    11371000
+         ICM   R4,B'0111',1(R4)              NEXT LIST ENTRY?           11372000
+         BNZ   OUT60                         YES, BRANCH                11373000
+         LA    R5,256                        256 -1 MEMBERS             11374000
+         LR    R0,R5                                                    11375000
+         SLL   R0,3                          ELEMENT WIDTH IS 8         11376000
+         MVI   OUTMEMBS,22                   SUBPOOL IS 22              11377000
+         ICM   R0,B'1000',OUTMEMBS           GET THE SUBPOOL            11378000
+         GETMAIN R,LV=(0)                                               11379000
+         LR    R4,R1                                                    11380000
+         STCM  R4,B'0111',1(R3)              CHAIN TO LAST STRUCTURE    11381006
+         XC    0(8,R4),0(R4)                 NULL LINK POINTERS         11382000
+         STH   R5,4(,R4)                     MAXIMUM ELEMENTS/STRUCTURE 11383000
+         MVI   7(R4),1                       ONE ITEM CURRENTLY         11384000
+         B     OUT70                                                    11385000
+         SPACE 2                                                        11386000
+OUT60    LH    R5,6(R4)                      NUMBER OF ELEMENTS         11387000
+         LR    R1,R4                                                    11388000
+OUT64    S     R5,=F'1'                      ANY MORE ITEMS?            11389000
+         BZ    OUT70                         NO, BRANCH                 11390000
+         LA    R1,8(,R1)                     NEXT ELEMENT               11391000
+         CLC   0(8,R1),DIRNAME               THIS ELEMENT?              11392000
+         BNE   OUT64                         NO, BRANCH                 11393000
+         B     OUT74                         YES, IGNORE DUPLICATE      11394000
+         SPACE 1                                                        11395000
+OUT70    CLC   6(2,R4),4(R4)                 CURRENT:MAXIMUM            11396000
+         BE    OUT54                         EQUAL - GET NEXT STRUCTURE 11397000
+         MVC   8(8,R1),DIRNAME               ADD THIS ITEM              11398000
+         LH    R5,6(R4)                      ADD                        11399000
+         LA    R5,1(,R5)                        1 TO                    11400000
+         STH   R5,6(R4)                             NUMBER OF ELEMENTS  11401000
+         MVC   #OUT,OUTSEL                   "          S M=12345678  " 11402000
+         MVC   #OUT+14(8),DIRNAME            MEMBER NAME                11403000
+         LA    R1,#OUT+14                    POINT TO EQUALS            11404000
+         SPACE 1                                                        11405000
+         LA    R1,1(,R1)                     FIND                       11406000
+         CLI   0(R1),X'40'                       NEXT                   11407000
+         BNE   *-8                                   BLANK              11408000
+         SPACE 1                                                        11409000
+         CLI   MSGLINE,0                     ANY TEXT?                  11410000
+         BE    OUT71                         NO, BRANCH                 11411000
+         MVC   #OUT+24(40),MSGLINE           YES, ADD THE TEXT          11412000
+         B     OUT73                                                    11413000
+         SPACE 1                                                        11414000
+OUT71    TM    FLAGSFF,FIEBUPDT              IEBUPDTE FORMAT?           11415000
+         BNO   OUT72                         NO, BRANCH                 11416000
+         MVC   #OUT(13),OUTSELUP             ADD "./  ADD  NAME"        11417000
+         TM    DIRFLAG,X'0F'                 SPF STATISTICS?            11418005
+         BO    OUT73                         YES, BRANCH                11419000
+         TM    DIRFLAG,X'14'                 EXT SPF STATISTICS?  AUG09 11419105
+         BO    OUT73                         YES, BRANCH      DRK AUG09 11419205
+         TM    FLAGSCC,RECFMU                LOAD MODULE?               11420000
+         BO    OUT73                         YES, BRANCH                11421000
+         SPACE 1                                                        11422000
+         CLC   ZERO,DIRUSER                  ZERO?                      11423000
+         BE    OUT73                         YES, NO SSI                11424000
+         CLC   =F'-1',DIRUSER                FFFFFFFF?                  11425000
+         BE    OUT73                         YES, NO SSI                11426000
+         SPACE 1                                                        11427000
+         MVC   0(5,R1),OUTSSI                ADD ,SSI=                  11428000
+         UNPK  5(9,R1),DIRUSER(5)                                       11429000
+         TR    5(8,R1),TRTABLE                                          11430000
+         MVI   5+8(R1),X'40'                                            11431000
+         B     OUT73                                                    11432000
+         SPACE 1                                                        11433000
+OUT72    MVI   1(R1),C','                    ADD BLANK AND COMMA        11434000
+         MVC   2(8,R1),DIRNAME               MEMBER NAME AGAIN          11435000
+         SPACE 1                                                        11436000
+         LA    R1,1(,R1)                     FIND                       11437000
+         CLI   0(R1),X'40'                       NEXT                   11438000
+         BNE   *-8                                   BLANK              11439000
+         SPACE 1                                                        11440000
+         MVI   0(R1),C')'                    ADD ONE PARENTHESIS        11441000
+         MVI   1(R1),C')'                    ADD SECOND PARENTHESIS     11442000
+OUT73    PUT   QAMDCB,#OUT                   OUTPUT THIS LINE           11443000
+         TM    FLAGSFF,FNOECHO               OUTPUT TO THE TERMINAL?    11444000
+         BNZ   OUT74                         NO, BRANCH                 11445000
+         MVC   MSGTEXT1+4(80),#OUT           OUTPUT LINE                11446000
+         LA    R0,84                                                    11447000
+         SLL   R0,16                                                    11448000
+         ST    R0,MSGTEXT1                                              11449000
+         M$ERRST MSGTEXT1                                               11450000
+         SPACE 1                                                        11451000
+OUT74    TM    FLAGSEE,FOUTASS               ASSOCIATE MEMBERS DESIRED? 11452000
+         BNO   OUT76                         NO, BRANCH                 11453000
+         BAS   R14,READDIR                   GET NEXT DIRECTORY MEMBER  11454000
+         B     OUT76                         LAST MEMBER PROCESSED      11455000
+         SPACE 1                                                        11456000
+         CLC   DIRTTR,MEMTTR                 TTR MATCH?                 11457000
+         BNE   OUT74                         NO, BRANCH                 11458000
+         MVC   DIRNAME(8),MEMNAME            SUBSTITUTE THE MEMBER NAME 11459000
+         B     OUT50                         ADD ALIAS TO THE OUTPUT    11460000
+         SPACE 2                                                        11461000
+OUT76    ST    R2,RECOVER                    RESET THE RECOVERY ADDRESS 11462000
+         B     NEWCMD                        TERMINATE                  11463000
+         SPACE 3                                                        11464000
+OUT80    LM    R2,R8,#OUTREGS                RESET REGISTERS            11465000
+         ST    R2,RECOVER                    RESTORE RECOVERY ADDRESS   11466000
+         SPACE 1                                                        11467000
+OUT84    MVI   OPENLIST,X'80'                END OF LIST                11468000
+         CLOSE (QAMDCB),MF=(E,OPENLIST)      CLOSE OUT DATA SET         11469000
+         NI    FLAGSFF,FF-FCHANGE            NEED A COPY STATEMENT      11470000
+         LA    R1,L781$1                     OUT DCB IS NOT FB, 80      11471000
+         MVC   INSERT#1(8),OTEXTOUT          OUTCOPY                    11472000
+         CLI   #OUT,0                        ERROR CLOSE?               11473000
+         BE    MSGNEWXX                      YES, OUTPUT A MESSAGE      11474000
+         LA    R1,L080                       DATA SET IS NOW CLOSED     11475000
+         B     MSGNEWXX                      NOW CLOSED                 11476000
+         SPACE 4                                                        11477000
+         USING IHADCB,R1                                                11478000
+OUT90    CLC   DCBDSORG(2),ZERO              ANY DSORG?                 11479000
+         BNE   *+8                           YES, BRANCH                11480000
+         OI    DCBDSORG,DS1DSGPS             NO, USE DSORG=PS           11481000
+         TM    DCBDSORG,DS1DSGPS             DSORG=PS?                  11482000
+         BNOR  R14                           NO, ERROR                  11483000
+         CLI   DCBRECFM,0                    ANY RECFM?                 11484000
+         BNE   *+8                           YES, BRANCH                11485000
+         MVI   DCBRECFM,DCBRECF+DCBRECBR     NO, USE RECFM=FB           11486000
+         TM    DCBRECFM,DCBRECF              RECFM=F.?                  11487000
+         BNOR  R14                           NO, ERROR                  11488000
+         LA    R0,80                         DEFAULT LRECL              11489000
+         CLC   DCBLRECL(2),ZERO              ANY LRECL?                 11490000
+         BNE   *+8                           YES, BRANCH                11491000
+         STH   R0,DCBLRECL                   NO, USE LRECL=80           11492000
+         CH    R0,DCBLRECL                   LRECL=80?                  11493000
+         BNER  R14                           NO, ERROR                  11494000
+         LA    R0,3120                       DEFAULT BLKSIZE            11495000
+         CLC   DCBBLKSI(2),ZERO              ANY BLKSIZE?               11496000
+         BNE   *+8                           YES, BRANCH                11497000
+         STH   R0,DCBBLKSI                   NO, USE BLKSIZE=3120       11498000
+         MVI   #OUT,1                        ALL ATTRIBUTES ARE CORRECT 11499000
+         BR    R14                                                      11500000
+         DROP  R1                                                       11501000
+         SPACE 2                                                        11502000
+         PRINT NOGEN                                                    11503000
+QSAMDCB  DCB   DSORG=PS,DDNAME=PDSOUT,MACRF=(PM),EXLST=OUT99            11504000
+LQSAMDCB EQU   *-QSAMDCB                                                11505000
+         PRINT GEN                                                      11506000
+         SPACE 2                                                        11507000
+OUT99    DC    0F'0',X'85',AL3(OUT90)        OPEN EXIT ONLY             11508000
+OUTCOPYS DC    CL80'          COPY OUTDD=OUTPUT,INDD=1'                 11509000
+OUTSEL   DC    CL80'          S M=12345678            '                 11510000
+OUTSELUP DC    CL13'./  ADD  NAME'                                      11511000
+OUTSSI   DC    C',SSI='                                                 11512000
+OTEXTOUT DC    CL8'OUTCOPY'                                             11513000

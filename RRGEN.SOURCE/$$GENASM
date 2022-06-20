@@ -1,0 +1,58 @@
+//RRGENASM JOB (RCPAC),'SPENCER, AL'                                    00000101
+//RRGEN    PROC  MEMBER=MISSING,                                        00001700
+//             INSTLIB='SSO.RRGEN.SOURCE'                               00001800
+//* INVOKE HIGH LEVEL ASSEMBLER                                         00002000
+//ASM      EXEC  PGM=ASMA90,REGION=32M,                                 00002100
+//             PARM=(NORLD,TERM,OBJ,                                    00002200
+//             'XREF(SHORT,UNREFS),SIZE(MAX,ABOVE)',                    00002300
+//             'SYSPARM(RCPAC)')                                        00002400
+//SYSUT1   DD  UNIT=VIO,SPACE=(4096,(120,1200),,,ROUND),DCB=BUFNO=1     00002700
+//SYSLIN   DD  UNIT=VIO,SPACE=(TRK,(5,5)),DISP=(NEW,PASS),              00002801
+//             DCB=BLKSIZE=3120                                         00002900
+//SYSPRINT DD  SYSOUT=*                                                 00003000
+//SYSTERM  DD  SYSOUT=*                                                 00003100
+//SYSIN    DD  DISP=SHARE,DSN=&INSTLIB.(&MEMBER)                        00003200
+//SYSLIB   DD  DSN=SYS1.MODGEN,DISP=SHARE                               00003300
+//         DD  DSN=SYS1.MACLIB,DISP=SHARE                               00003400
+//         DD  DSN=&INSTLIB,DISP=SHARE                                  00003500
+//LKED     EXEC  PGM=IEWL,REGION=32M,                                   00007800
+//             COND=(0,LT,ASM),                                         00007900
+//             PARM='MAP,NCAL'                                          00008000
+//SYSPRINT DD  SYSOUT=*                                                 00008100
+//SYSLIN   DD  DSN=*.ASM.SYSLIN,DISP=(OLD,DELETE)                       00008201
+//SYSLMOD  DD  DISP=SHARE,DSN=SSO.RRGEN.LOAD(&MEMBER)                   00008301
+//SYSUT1   DD  UNIT=VIO,SPACE=(1024,(120,120),,,ROUND),                 00008400
+//             DCB=BUFNO=1                                              00008500
+//         PEND                                                         00008600
+//RRGEN    EXEC  RRGEN,MEMBER=RRGEN                                     00008700
+//*  RRGEN VERSION TO CALL 31-BIT PROGRAMS                              00008805
+//RRGEN31  EXEC  RRGEN,MEMBER=RRGEN31                                   00008905
+//RRBINARY EXEC  RRGEN,MEMBER=RRBINARY                                  00009001
+//RRDCART  EXEC  RRGEN,MEMBER=RRDCART                                   00009101
+//RRDINP1  EXEC  RRGEN,MEMBER=RRDINP1                                   00009201
+//RRDINP2  EXEC  RRGEN,MEMBER=RRDINP2                                   00009301
+//RRDINP3  EXEC  RRGEN,MEMBER=RRDINP3                                   00009401
+//RREOJMOT EXEC  RRGEN,MEMBER=RREOJMOT                                  00009501
+//RRGENSRT EXEC  RRGEN,MEMBER=RRGENSRT                                  00009601
+//RRINP1DI EXEC  RRGEN,MEMBER=RRINP1DI                                  00010001
+//RRINP1DK EXEC  RRGEN,MEMBER=RRINP1DK                                  00020001
+//RRINP1IS EXEC  RRGEN,MEMBER=RRINP1IS                                  00030001
+//RRINP2DI EXEC  RRGEN,MEMBER=RRINP2DI                                  00040001
+//RRINP2DK EXEC  RRGEN,MEMBER=RRINP2DK                                  00050001
+//RRINP2IS EXEC  RRGEN,MEMBER=RRINP2IS                                  00060001
+//RRINP3DI EXEC  RRGEN,MEMBER=RRINP3DI                                  00070001
+//RRINP3DK EXEC  RRGEN,MEMBER=RRINP3DK                                  00080001
+//RRINP3IS EXEC  RRGEN,MEMBER=RRINP3IS                                  00090001
+//RRIN1ISR EXEC  RRGEN,MEMBER=RRIN1ISR                                  00100001
+//RRIN2ISR EXEC  RRGEN,MEMBER=RRIN2ISR                                  00110001
+//RRIN3ISR EXEC  RRGEN,MEMBER=RRIN3ISR                                  00120001
+//RROT1ISM EXEC  RRGEN,MEMBER=RROT1ISM                                  00130001
+//RROT2ISM EXEC  RRGEN,MEMBER=RROT2ISM                                  00140001
+//RROT3ISM EXEC  RRGEN,MEMBER=RROT3ISM                                  00150001
+//RROUT1DA EXEC  RRGEN,MEMBER=RROUT1DA                                  00160001
+//RROUT1MD EXEC  RRGEN,MEMBER=RROUT1MD                                  00170001
+//RROUT2DA EXEC  RRGEN,MEMBER=RROUT2DA                                  00180001
+//RROUT2MD EXEC  RRGEN,MEMBER=RROUT2MD                                  00190001
+//RROUT3DA EXEC  RRGEN,MEMBER=RROUT3DA                                  00200001
+//RROUT3MD EXEC  RRGEN,MEMBER=RROUT3MD                                  00210001
+//RRPRTMOT EXEC  RRGEN,MEMBER=RRPRTMOT                                  00220001

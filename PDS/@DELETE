@@ -1,0 +1,378 @@
+         TITLE 'P D S  --  PDS DELETE, MEMBERS               09/28/88'  04947000
+*********************************************************************** 04948000
+***      DELETE SUBCOMMAND  MODIFIED BY BRUCE LELAND -- OCT., 1983  *** 04949008
+***                                                                 *** 04950000
+***      MEMBERS SUBCOMMAND MODIFIED BY BRUCE LELAND -- JUNE, 1985  *** 04951008
+***                                                                 *** 04951101
+***      SUBMIT  SUBCOMMAND                                         *** 04951208
+*********************************************************************** 04952000
+*                                                                       04953000
+         SPACE 1                                                        04954000
+DELETE   CSECT                                                          04955004
+         USING *,R8                                                     04956000
+         CLC   ##SUBCOM(8),$MEM          MEMBERS SUBCOMMAND?            04957000
+         BNE   *+8                       NO, BRANCH                     04958000
+         OI    #MEMFLAG,X'80'            YES, SET A FLAG                04959000
+         CLC   ##SUBCOM(8),$SUB          SUBMIT SUBCOMMAND?             04960000
+         BNE   DELE001                   NO, BRANCH                     04961000
+         MVC   WORKTBL(120),MSGLINE      SAVE THE OPERAND     DRK SEP02 04962001
+         CLI   ##SUBCAL,C'%'             IMPLIED CLIST?                 04963000
+         BE    DELE998                   YES, BRANCH                    04964000
+         TM    DSORG,DS1DSGPO            PARTITIONED?                   04965000
+         BNO   DELE998                   NO, BRANCH                     04966000
+         OI    #MEMFLAG,X'40'            YES, SET A SUBMIT FLAG         04967000
+         SPACE 1                                                        04968000
+DELE001  LA    R1,L530                   ASSUME PARTITIONED             04969000
+         TM    DSORG,DS1DSGPO            CORRECT?                       04970000
+         BNO   MSGNEW                    NO, BRANCH                     04971000
+         SPACE 2                                                        04972000
+DELE002  TM    FLAGSII,FSINGLE+FMEMBERS  IF OR FIND THEN(DEL/MEM/SUB)?  04973000
+         BZ    DELE010                   NO, BRANCH                     04974000
+         TM    #MEMFLAG,X'80'            MEMBERS?                       04975000
+         BO    NEWCMD                    YES, DONE                      04976001
+         TM    #MEMFLAG,X'40'            SUBMIT?                        04977000
+         BO    DELE008                   YES, BRANCH                    04978001
+         MVC   IODIR1+4+00(8),CURDIR     RESET READ ADDRESS             04979001
+         MVI   IODIR1+4+08,X'08'         RESET KEY LENGTH               04980001
+         MVC   IODIR1+4+09(2),=H'256'    RESET DATA LENGTH              04981001
+         MVI   IODIR1+4+11,0             RESET SECTOR ADDRESS TO ZERO   04982001
+         MVI   IOECB,X'7F'               LAST READ WAS OK               04983000
+DELE008  LA    R4,DIRNAME                DUMMY ARRAY ENTRY              04984001
+         ST    R4,#MEMPTR                                               04985000
+         LA    R4,16(,R4)                POSITION FOR ONE ENTRY         04986000
+         TM    #MEMFLAG,X'40'            SUBMIT?                        04986101
+         BO    DELE998                   YES, BRANCH                    04986201
+         B     DELE100                   PROMPT BY DEFAULT              04987000
+         SPACE 1                                                        04988000
+DELE010  MVC   MEMNAME(12),DIRNAME   ENSURE MEMBER NAME IS PRESENT      04989000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE FLAGSAA                       04990000
+         TM    FLAGSAA,FMEM#MEM      MEMBER GROUP?                      04991000
+         BO    DELE200               YES, BRANCH                        04992000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               04993000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      04994000
+         BO    DELE020               YES, BRANCH                        04995000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       04996000
+         BO    DELE200               YES, BRANCH                        04997000
+         SPACE 1                                                        04998000
+DELE020  OI    #DELFLAG,#DELONE      ONLY A SINGLE MEMBER               04999000
+         TM    #DELFLAG,#DELASS2     DELETE ASSOCIATES TOO?             05000000
+         BO    DELE200               YES, BRANCH                        05001000
+         SPACE 1                                                        05002000
+         LA    R4,DIRNAME            DUMMY ARRAY ENTRY                  05003000
+         ST    R4,#MEMPTR                                               05004000
+         LA    R4,16(,R4)            POSITION FOR ONE ENTRY             05005000
+         SPACE 1                                                        05006000
+         TM    #MEMFLAG,X'80'+X'40'  MEMBER/SUBMIT SUBCOMMAND?          05007000
+         BZ    DELE090               NO, BRANCH                         05008000
+         TM    FLAGSHH,FMEMSTAR      ASTERISK NOTATION?                 05009000
+         BNO   DELE080               NO, BRANCH                         05010000
+         MVC   INSERT#1(8),MEMBER1                                      05011000
+         M$MSG L002$1                WHO IS BEING PROCESSED             05012000
+DELE080  TM    #MEMFLAG,X'40'        SUBMIT SUBCOMMAND?                 05013000
+         BO    DELE998               YES, BRANCH                        05014000
+         B     NEWCMD                NO, MUST BE MEMBERS, QUIT          05015001
+         SPACE 2                                                        05016000
+DELE090  TM    FLAGSHH,FMEMSTAR      ASTERISK NOTATION?                 05017000
+         BO    DELE110               YES, NO PROMPTING                  05018000
+         TM    FLAGSHH,FOPTIONS      ANY MEMBER NAME?                   05019000
+         BO    DELE110               YES, NO PROMPTING                  05020000
+         SPACE 2                                                        05021000
+DELE100  LA    R1,PDS393A            DELETE SINGLE MEMBER               05022000
+         BAS   R2,YESNO              PROMPT FOR YES OR NO               05023000
+         B     NEWCMD                NO -- DONE                         05024000
+         SPACE 1                                                        05025000
+DELE110  MVC   DSNMEMQ(8),DIRNAME    MEMBER NAME                        05026000
+         BAS   R2,ENQMTEST           MEMBER IN USE?                     05027000
+         B     NEWCMD                YES, IGNORE THE COMMAND            05028000
+         B     DELE900               NO, DELETE IT                      05029000
+         SPACE 3                                                        05030000
+DELE200  OI    FLAGSII,FDIRGRP       SIMULATE MEMBER GROUP INPUT        05031000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUPS NOW         05032000
+         OI    FLAGSBB,FLINESET      LINE NOW IN PROGRESS               05033000
+         LA    R1,80                 ASSUME AN ACTIVE MODE              05034000
+         TM    SPFLAG0,SPFDON        ISPMODE ACTIVE?                    05035000
+         BO    DELE202               YES, BRANCH                        05036000
+         TM    CONTOPTN,1            ANY LOG RECORDING?                 05037000
+         BO    DELE202               YES, BRANCH                        05038000
+*        GTSIZE ,                    TERMINAL SIZE             SS MAY89 05039001
+         GTSIZE                                                         05039101
+         CH    R1,=H'120'            120 OR LESS BYTES?                 05040000
+         BL    *+8                   YES, BRANCH                        05041000
+         LH    R1,=H'120'            NO, USE 120 BYTES                  05042000
+DELE202  SH    R1,=H'7'              LESS SEVEN FOR PREFIX              05043000
+         ST    R1,LINESIZE           CHARACTERS/LINE                    05044000
+         MVC   MSGLINE+4(L'MSGDELET),MSGDELET                           05045000
+         LA    R6,MSGLINE+4+L'MSGDELET                                  05046000
+         MVC   FULLWORD(3),L162$1    MEMBERS TO BE DELETED              05047000
+         NI    FLAGSBB,FF-FLINESET   NO LINE IN PROGRESS                05048000
+         MVI   SUBPOOLT,21           SUBPOOL 21 DATA                    05049000
+         LA    R5,256/2              256 MEMBERS INITIALLY              05050000
+         TM    #MEMFLAG,X'80'+X'40'  MEMBER/SUBMIT SUBCOMMAND?          05051000
+         BZ    DELE210               NO, BRANCH                         05052000
+         MVC   MSGLINE+4(L'MSGMEMBS),MSGMEMBS                           05053000
+         LA    R6,MSGLINE+4+L'MSGMEMBS                                  05054000
+         MVC   FULLWORD(3),L165$1    MEMBERS ARE:                       05055000
+         SPACE 1                                                        05056000
+DELE210  SLL   R5,1                  MEMBERS*2 FOR EACH LOOP            05057000
+         LR    R3,R5                                                    05058000
+         LR    R0,R5                                                    05059000
+         SLL   R0,4                  TABLE SIZE=MEMBERS*16              05060000
+         ICM   R0,B'1000',SUBPOOLT                                      05061000
+         GETMAIN R,LV=(0)                                               05062000
+         LR    R4,R1                 NEW TABLE ADDRESS                  05063000
+         ICM   R0,B'1111',#MEMPTR    ANY PREVIOUS MEMBERS?              05064000
+         BNZ   DELE220               YES, BRANCH                        05065000
+         ST    R4,#MEMPTR            INITIALIZE MEMBER BASE             05066000
+         B     DELE500                                                  05067000
+         SPACE 1                                                        05068000
+DELE220  SRL   R3,1                  SECOND HALF OF TABLE (# MEMBERS)   05069000
+         LR    R14,R4                NEW TABLE START ADDRESS            05070000
+         LR    R15,R5                                                   05071000
+         SLL   R15,3                 OLD TABLE SIZE=MEMBERS*8           05072000
+         LR    R2,R15                START OF NEW PART                  05073000
+         LR    R1,R15                                                   05074000
+         MVCL  R14,R0                PRESERVE THE OLD TABLE             05075000
+         L     R1,#MEMPTR                                               05076000
+         LR    R0,R2                 LENGTH TO FREE                     05077000
+         ICM   R0,B'1000',SUBPOOLT   SUBPOOL TO FREE                    05078000
+         FREEMAIN R,LV=(0),A=(1)                                        05079000
+         ST    R4,#MEMPTR            START OF NEW TABLE                 05080000
+         AR    R4,R2                 WHERE TO ADD MEMBERS               05081000
+         SPACE 3                                                        05082000
+DELE300  TM    #DELFLAG,#DELASSP     ASSOCIATES PHASE?                  05083000
+         BO    DELE320               YES, BRANCH                        05084103
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      05085000
+         BO    DELE320               YES, BRANCH                        05086103
+         TM    #DELSAVE,FF-FMEM#MEM  MEMBER ALREADY ADDED?              05087000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               05088000
+         BNO   DELE500               NO, BRANCH                         05089000
+         L     R1,PMEMCURR           CURRENT LIST ELEMENT               05090000
+         TM    0(R1),X'80'           ANOTHER ELEMENT?                   05091000
+         BNO   DELE605               NO, END OF LIST                    05092000
+         MVC   FLAGSAA(1),4(R1)      NEXT DESCRIPTOR FLAGS              05093000
+         MVC   LMEMBER1+1(19),5(R1)  LEN1, MEMBER1, LEN2, MEMBER2       05094000
+         L     R1,0(,R1)             NEXT ELEMENT POINTER               05095000
+         ST    R1,PMEMCURR                                              05096000
+         MVC   #DELSAVE(1),FLAGSAA   SAVE THE MEMBER DESCRIPTOR         05097000
+         MVC   MEMNAME(8),MEMBER1    FIRST MEMBER NAME                  05098000
+         NI    FLAGSAA,FF-FMEM#MEM   TURN OFF MEMBER GROUP              05099000
+         TM    #DELSAVE,FMEM#MEM     MEMBER GROUP?                      05100000
+         BO    DELE319               YES, BRANCH                        05101000
+         MVI   #DELSAVE,FF-FMEM#MEM  MARK MEMBER AS ADDED               05102000
+         MVC   DIRNAME,MEMBER1         FIRST PART OF DSNAME2            05103000
+         SPACE 2                                                        05104000
+         BLDL  INDCB,BLDLLIST          LOCATE DIRECTORY ENTRY           05105000
+         B     *+4(R15)                PROCESS RETURN CODE              05106000
+         B     DELE315                   00 - SUCCESSFUL                05107000
+         B     DELE310                   04 - MEMBER NOT FOUND          05108000
+         B     IOERROR                   08 - I/O ERROR                 05109000
+         SPACE 1                                                        05110000
+DELE310  MVC   INSERT#1(8),DIRNAME                                      05111000
+         M$MSG L853$1                MSG - (MEMBER) NOT FOUND           05112000
+         B     DELE300                                                  05113000
+         SPACE 1                                                        05114000
+DELE315  MVC   MEMNAME(12),DIRNAME   FIRST MEMBER NAME                  05115000
+         B     DELE500                                                  05116000
+         SPACE 1                                                        05117000
+DELE319  MVI   STARTTR+2,X'01'       REREAD THE DIRECTORY               05118000
+         SPACE 1                                                        05119000
+DELE320  BAS   R14,READDIR           GET NEXT DIRECTORY BLOCK           05120000
+         B     DELE600               END OF MEMBERS -- BRANCH           05121000
+         SPACE 1                                                        05122000
+         TM    #DELFLAG,#DELASSP     ASSOCIATES PHASE?                  05123000
+         BO    DELE400               YES, BRANCH                        05124000
+         SPACE 1                                                        05125000
+         BAS   R2,MFILTER            CHECK MEMBER NAMES                 05126000
+         B     DELE600                 00 - SIMULATE DIRECTORY END      05127000
+         B     DELE300                 04 - MEMBER FAILED FILTERING     05128000
+         B     DELE500                 08 - MEMBER PASSED FILTERING     05129000
+         SPACE 3                                                        05130000
+DELE400  L     R1,#MEMPTR            START OF MEMBER LIST               05131000
+         B     DELE410+4             SKIP FIRST ADD                     05132000
+DELE410  LA    R1,16(,R1)            NEXT TABLE ENTRY                   05133000
+         CR    R1,R4                 END OF TABLE?                      05134000
+         BNL   DELE300               YES, IGNORE THIS ENTRY             05135000
+         CLC   8(3,R1),MEMTTR        MATCHING TTR?                      05136000
+         BNE   DELE410               NO, BRANCH                         05137000
+         SPACE 3                                                        05138000
+         L     R1,#MEMPTR            START OF MEMBER LIST               05139000
+         B     DELE430+4             SKIP FIRST ADD                     05140000
+DELE430  LA    R1,16(,R1)            NEXT TABLE ENTRY                   05141000
+         CR    R1,R4                 END OF TABLE?                      05142000
+         BNL   DELE500               YES, ADD THIS ENTRY                05143000
+         CLC   0(8,R1),MEMNAME       FIND MYSELF?                       05144000
+         BE    DELE300               YES, IGNORE THIS ENTRY             05145000
+         B     DELE430               NO, CONTINUE SEARCHING             05146000
+         SPACE 3                                                        05147000
+DELE500  TM    #MEMFLAG,X'80'+X'40'  MEMBER/SUBMIT SUBCOMMAND?          05148000
+         BNZ   DELE505               YES, BRANCH                        05149000
+         MVC   DSNMEMQ(8),MEMNAME                                       05150000
+         BAS   R2,ENQMTEST           MEMBER IN USE?                     05151000
+         OI    #DELFLAG,#DELENQ      YES, MARK TO EXIT LATER            05152000
+         SPACE 1                                                        05153000
+DELE505  L     R1,#MEMCNTM                                              05154000
+         LA    R1,1(,R1)                                                05155000
+         ST    R1,#MEMCNTM           ONE MORE MEMBER IN THIS GROUP      05156000
+         LA    R2,MEMNAME+7                                             05157000
+         TM    FLAGSBB,FLINESET      LINE IN PROGRESS?                  05158000
+         BO    DELE510               YES, BRANCH                        05159000
+         OI    FLAGSBB,FLINESET      LINE NOW IN PROGRESS               05160000
+DELE510  CLI   0(R2),X'40'           SCAN                               05161000
+         BNE   *+8                       FOR LAST                       05162000
+         BCT   R2,DELE510                        NON-BLANK              05163000
+         LA    R0,MEMNAME                                               05164000
+         SR    R2,R0                                                    05165000
+         BNM   *+6                                                      05166000
+         SR    R2,R2                                                    05167000
+         LA    R15,2(R6,R2)                                             05168000
+         LA    R1,MSGLINE                                               05169000
+         SR    R15,R1                                                   05170000
+         C     R15,LINESIZE          FIT ON THIS OUTPUT LINE?           05171000
+         BNH   DELE520               YES, BRANCH                        05172000
+         LA    R1,MSGLINE+4                                             05173000
+         SR    R6,R1                                                    05174000
+         STC   R6,MTLEN                                                 05175000
+         MVC   INSERT#1(127),MSGLINE+4                                  05176000
+         LA    R1,FULLWORD                                              05177000
+         M$MSG (R1)                                                     05178000
+         MVI   MTLEN,8                                                  05179000
+         MVI   FULLWORD+2,C'9'       MESSAGE L169             DRK MAY08 05180007
+         LA    R6,MSGLINE+3          INDENT FOR BLANKS                  05181000
+         SPACE 1                                                        05182000
+DELE520  MVI   0(R6),X'40'                                              05183000
+         MVC   1(8,R6),MEMNAME                                          05184000
+         TR    1(8,R6),TRLINE        MAKE PRINTABLE                     05185000
+         LA    R1,2(R2,R6)                                              05186000
+         MVI   0(R1),C','            ADD A COMMA                        05187000
+         LA    R6,3(R2,R6)                                              05188000
+         MVC   0(16,R4),MEMNAME      ADD TO THE TABLE                   05189000
+         LA    R4,16(,R4)            NEXT MEMBER POSITION               05190000
+         S     R3,=F'1'              ANY MORE FIT?                      05191000
+         BNP   DELE210               NO, BRANCH                         05192000
+         TM    #DELFLAG,#DELONE      A SINGLE MEMBER?                   05193000
+         BNO   DELE300               NO, BRANCH                         05194000
+         SPACE 3                                                        05195000
+DELE600  TM    #DELFLAG,#DELASSP     ASSOCIATED MEMBERS?                05196000
+         BO    DELE605               YES, BRANCH                        05197000
+         MVI   #DELSAVE,FF-FMEM#MEM  ELEMENT HAS NOW BEEN ADDED         05198000
+         TM    SPFLAG2,SPFLNCD       LINE COMMAND?                      05199000
+         BO    DELE605               YES, BRANCH                        05200000
+         TM    PMEMMIN,X'80'         MEMBER LIST?                       05201000
+         BO    DELE300               YES, BRANCH                        05202000
+         SPACE 1                                                        05203000
+DELE605  TM    FLAGSBB,FLINESET      ANY MEMBERS FOUND?                 05204000
+         BNO   DELE610               NO, BRANCH                         05205000
+         LA    R1,MSGLINE+5                                             05206000
+         SR    R6,R1                                                    05207000
+         STC   R6,MTLEN                                                 05208000
+         MVC   INSERT#1(127),MSGLINE+4                                  05209000
+         LA    R1,FULLWORD                                              05210000
+         M$MSG (R1)                                                     05211000
+         MVI   MTLEN,8                                                  05212000
+         M$ERRST MSGBLANK                                               05213000
+         SPACE 1                                                        05214000
+DELE610  TM    #DELFLAG,#DELASSP     ASSOCIATES PHASE STARTED?          05215000
+         BO    DELE700               YES, BRANCH                        05216000
+         TM    #DELFLAG,#DELASS2     DELETE ASSOCIATE MEMBERS TOO?      05217000
+         BNO   DELE700               NO, BRANCH                         05218000
+         OI    #DELFLAG,#DELASSP     YES, ASSOCIATES PHASE STARTED      05219000
+         NI    #DELFLAG,FF-#DELONE   WANT ALL ASSOCIATED MEMBERS        05220000
+         NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   05221000
+         NI    FLAGSBB,FF-FLINESET   NEW OUTPUT LINE                    05222000
+         MVC   MSGLINE+4(L'MSGDELAS),MSGDELAS                           05223000
+         LA    R6,MSGLINE+4+L'MSGDELAS                                  05224000
+         MVC   FULLWORD(3),L163$1    MEMBERS TO BE DELETED              05225000
+         MVI   STARTTR+2,X'01'       TTR=000001 (START OF DIRECTORY)    05226000
+         B     DELE300               DO ANY ASSOCIATED MEMBERS          05227000
+         SPACE 3                                                        05228000
+DELE700  NI    FLAGSII,FF-FDIRGRP    NORMAL INPUT NOW                   05229000
+         TM    #DELFLAG,#DELENQ      ANY MEMBERS IN USE?                05230000
+         BO    NEWCMD                YES, BRANCH                        05231000
+         SPACE 1                                                        05232000
+         TM    #MEMFLAG,X'80'        MEMBERS SUBCOMMAND?                05233000
+         BO    DELE810               YES, BRANCH                        05234000
+         SPACE 1                                                        05235000
+         LA    R1,PDS395A            SUBMIT PROMPT MESSAGE              05236000
+         TM    #MEMFLAG,X'40'        SUBMIT SUBCOMMAND?                 05237000
+         BO    *+8                   YES, BRANCH                        05238000
+         LA    R1,PDS394A            DELETE PROMPT MESSAGE              05239000
+         BAS   R2,YESNO              PROMPT FOR YES OR NO               05240000
+         B     NEWCMD                NO, QUIT                           05241000
+         B     DELE900               YES, BRANCH                        05242000
+         SPACE 2                                                        05243000
+DELE800  MVI   #MEMCNTM+3,1          SET COUNT TO 1                     05244000
+         CLI   #MEMCNTK,2            NOCOUNT KEYWORD?                   05245001
+         BE    NEWCMD                YES, BRANCH                        05246001
+         M$ERRST MSGBLANK                                               05247000
+         SPACE 1                                                        05248000
+DELE810  CLI   #MEMCNTK,2            NOCOUNT KEYWORD?                   05249001
+         BE    NEWCMD                YES, BRANCH                        05250001
+         L     R1,#MEMCNTM           COUNT OF MEMBERS                   05251000
+         CVD   R1,DOUBLE                                                05252000
+         MVC   INSERT#2(16),MEMEDIT  EDIT PICTURE                       05253000
+         ED    INSERT#2(9),DOUBLE+4                                     05254000
+         LA    R1,INSERT#2                                              05255000
+         LA    R1,1(,R1)                                                05256000
+         CLI   0(R1),X'40'                                              05257000
+         BE    *-8                                                      05258000
+         MVC   INSERT#1(8),0(R1)     COUNT OF MEMBERS                   05259000
+         M$MSG L193$1                MEMBER COUNT MESSAGE               05260000
+         B     NEWCMD                NO OPEN -- QUIT                    05261000
+         SPACE 2                                                        05262000
+DELE900  TM    #MEMFLAG,X'40'        SUBMIT SUBCOMMAND?                 05263000
+         BO    DELE998               YES, BRANCH                        05264000
+         BAS   R2,OPENSTOW           OPEN STOW DCB; ENQUEUE             05265000
+         B     NEWCMD                NO OPEN -- QUIT                    05266000
+         SPACE 1                                                        05267000
+         AGO   .TESTORD              ***TEST MODIFY DELETE ORDER        05268000
+         L     R3,#MEMPTR            START OF MEMBER LIST               05269000
+         B     DELE910+4             SKIP FIRST ADD                     05270000
+DELE910  LA    R3,16(,R3)                                               05271000
+         CR    R3,R4                                                    05272000
+         BNL   DELE980                                                  05273000
+.TESTORD ANOP                                                           05274000
+         LR    R3,R4                 END OF MEMBER LIST                 05275000
+         LA    R6,16                 DECREMENT AMOUNT                   05276000
+DELE910  SR    R3,R6                                                    05277000
+         CLM   R3,B'0111',#MEMPTR+1                                     05278000
+         BL    DELE980                                                  05279000
+         STOW  STOWDCB,0(R3),D       ISSUE STOW WITH DELETE OPTION      05280000
+         SPACE 1                                                        05281000
+         CH    R15,=H'12'              RC > 12                DRK AUG05 05281103
+         BH    IOERROR                 YES, ERROR CONDITION   DRK AUG05 05281203
+         B     *+4(R15)              PROCESS RETURN CODE                05282000
+         B     DELE940                 00 - SUCCESSFUL                  05283000
+         EX    0,*                     04 - SHOULD NOT OCCUR            05284000
+         B     DELE960                 08 - MEMBER NOT FOUND            05285000
+         EX    0,*                     12 - SHOULD NOT OCCUR  DRK JUN03 05286002
+*        B     IOERROR                 16 - I/O ERROR IN DIRECTORY      05286103
+         SPACE 1                                                        05287000
+DELE940  MVC   INSERT#1(8),0(R3)                                        05288000
+         M$MSG L040$1                                                   05289000
+         B     DELE910                                                  05290000
+         SPACE 1                                                        05291000
+DELE960  MVC   INSERT#1(8),0(R3)                                        05292000
+         M$MSG L853$1                                                   05293000
+         B     DELE910                                                  05294000
+         SPACE 1                                                        05295000
+DELE980  BAS   R2,SHUTSTOW            CLOSE FOR: IF * THEN(DELETE)      05296000
+         B     NEWCMD                                                   05297000
+         SPACE 1                                                        05298000
+DELE998  L     R1,=V($PRI)            PRINTOFF                          05299000
+         MVC   ##ADRCMD(12),8(R1)     CONTINUE WITH PRINTOFF            05300000
+         L     R8,##ADRCMD            SUBCOMMAND ROUTINE START          05301000
+         LA    R2,NEWCMD              SUBCOMMAND TERMINATION ADDRESS    05302000
+         BR    R8                     LINK TO THE SUBCOMMAND            05303000
+         SPACE 2                                                        05304000
+#DELASSP EQU     X'80'            DELETE: ASSOCIATES PHASE OF DELETE    05305000
+#DELONE  EQU     X'10'            DELETE: DELETE A SINGLE MEMBER        05306000
+#DELENQ  EQU     X'08'            DELETE: A DELETE MEMBER IS "IN USE"   05307000
+#DELASS2 EQU     X'01'            DELETE: DELETE ASSOCIATES TOO         05308000
+#MEMBLKE EQU     X'08'            BLKSIZE TOO LARGE                     05309000
+#MEMDIVE EQU     X'04'            BLKSIZE/LRECL NOT INTEGRAL            05310000
+#MEMLRLE EQU     X'02'            LRECL TOO LARGE                       05311000
+#MEMLRL0 EQU     X'01'            LRECL NEGATIVE OR ZERO                05312000
+MSGDELET DC    C'MEMBERS TO BE DELETED ARE:'                            05313000
+MSGMEMBS DC    C'MEMBERS ARE:'                                          05314000
+MSGDELAS DC    C'ASSOCIATED MEMBERS TO BE DELETED ARE:'                 05315000
+MEMEDIT  DC    X'40202020206B20212040404040404040'                      05316000

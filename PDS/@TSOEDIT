@@ -1,0 +1,156 @@
+         TITLE 'P D S  --  PDS TSOEDIT AND FSE               09/28/88'  14176000
+*********************************************************************** 14177000
+***      TSOEDIT AND FSE SUBCOMMANDS                                *** 14178000
+*********************************************************************** 14179000
+*                                                                       14180000
+         SPACE 1                                                        14181000
+TSOEDIT  CSECT                                                          14182001
+         USING *,R8                                                     14183000
+         MVC   DSNMEMQ(8),DIRNAME       MEMBER NAME TO CHECK            14184000
+         BAS   R2,ENQMTEST              MEMBER IN USE?                  14185000
+         NOP   0(,R0)                   IF YES, OUTPUT A WARNING ONLY   14186000
+         CLI   #EDITOLD,X'01'           "NEW" SPECIFIED?                14187000
+         BNE   TSOED5                   NO, BRANCH                      14188000
+         TM    DSORG,DS1DSGPO           NON-PARTITIONED DATA SET?       14189000
+         BZ    TSOED5                   YES, BRANCH                     14190000
+         BLDL  INDCB,BLDLLIST           INSURE IT DOES NOT EXIST        14191000
+         SPACE 1                                                        14192000
+         B     *+4(R15)                 PROCESS RETURN CODE             14193000
+         B     MEMEXIST                   00 - MEMBER IS NOT NEW        14194000
+         B     TSOED5                     04 - MEMBER DOES NOT EXIST    14195000
+         B     IOERROR                    08 - I/O ERROR IN DIRECTORY   14196000
+         SPACE 1                                                        14197000
+TSOED5   MVC   MSGTEXT2+4(8),##SUBCOM   MOVE IN "EDIT" OR "FSE"         14198000
+         MVI   MSGTEXT2+12,C''''        ADD A QUOTE                     14199000
+         MVC   MSGTEXT2+13(44),DSNAME   ADD THE DATA SET NAME           14200000
+         LH    R15,DSNLEN               DSNAME ACTUAL LENGTH            14201000
+         LA    R3,MSGTEXT2+12(R15)      POINTER TO CURRENT BYTE         14202000
+         MVI   1(R3),C'('               MEMBER NAME PAREN               14203000
+         SR    R5,R5                    LENGTH OF LAST QUALIFIER        14204000
+         LR    R14,R3                   BACKWARD SCAN POINTER           14205000
+         SPACE 1                                                        14206000
+TSOED6   BCTR  R14,0                    SCAN                            14207000
+         LA    R5,1(,R5)                    TO                          14208000
+         CLI   0(R14),C'.'                    PREVIOUS                  14209000
+         BNE   TSOED6                                 PERIOD            14210000
+         MVC   MSGTEXT1+4(9),1(R14)                                     14211000
+         TM    DSORG,DS1DSGPO           NON-PARTITIONED DATA SET?       14212000
+         BZ    TSOED8                   YES, BRANCH                     14213000
+         MVC   2(8,R3),DIRNAME          MEMBER NAME                     14214000
+         LA    R3,2+8(,R3)              END OF MEMBER +1                14215000
+         LA    R1,8                     MAXIMUM MACHINE LENGTH+1        14216000
+         SPACE 1                                                        14217000
+TSOED7   BCTR  R3,0                     SCAN                            14218000
+         CLI   0(R3),X'40'                  BACKWARDS                   14219000
+         BNE   *+8                                   FOR FIRST          14220000
+         BCT   R1,TSOED7                                      NON-BLANK 14221000
+         SPACE 1                                                        14222000
+         BCTR  R1,0                     MACHINE LENGTH                  14223000
+         TRT   DIRNAME(*-*),TRTMEM      <<EXECUTED>>                    14224000
+         EX    R1,*-6                   VALID MEMBER NAME?              14225000
+         BNZ   BADMEMB                  NO, ERROR                       14226000
+         CLI   DIRNAME,C'0'             VALID FIRST CHARACTER?          14227000
+         BNL   BADMEMB                  NO, BRANCH                      14228000
+         LA    R3,1(,R3)                POINT TO TERMINATOR             14229000
+         MVI   0(R3),C')'               ADD A CLOSING PARENTHESIS       14230000
+         SPACE 1                                                        14231000
+TSOED8   MVI   1(R3),C''''              ADD A QUOTE                     14232000
+         MVI   2(R3),X'40'              ADD A BLANK                     14233000
+         LA    R3,3(,R3)                                                14234000
+         CLI   #EDITNON,1               NONUM CODED?                    14235000
+         BNE   TSOED9                   NO, BRANCH                      14236000
+         SPACE 2                                                        14237000
+         MVC   0(6,R3),TSOELNON         YES                             14238000
+         LA    R3,6(,R3)                                                14239000
+TSOED9   CLI   #EDITOLD,1               "NEW" SPECIFIED?                14240000
+         BNE   TSOED10                  NO, BRANCH                      14241000
+         MVC   0(4,R3),TSOELNEW         YES                             14242000
+         LA    R3,4(,R3)                                                14243000
+TSOED10  CLI   #EDITASI,1               ASIS CODED?                     14244000
+         BNE   TSOED11                  NO, BRANCH                      14245000
+         MVC   0(5,R3),TSOELASI         YES                             14246000
+         LA    R3,5(,R3)                                                14247000
+TSOED11  ICM   R15,B'1111',#EDITTYP     ANY DATA TYPE CODED?            14248000
+         BZ    TSOED13                  NO, BRANCH                      14249000
+         MH    R15,=H'7'                INDEX  =  OPTIONUM * 7          14250000
+         LA    R15,EDITTYPE-7(R15)      POINT TO THE PROPER OPTION      14251000
+         B     TSOED20                  DONE WITH FORMATTING            14252000
+         SPACE 1                                                        14253000
+TSOED13  BCTR  R5,0                     MACHINE QUALIFIER LENGTH        14254000
+         LA    R15,EDITTYPE-7                                           14255000
+TSOED15  LA    R15,7(,R15)              TABLE WIDTH IS 7                14256000
+         CLC   PLIF,0(R15)              END OF DESCRIPTIVE QUALIFIERS?  14257000
+         BE    TSOED17                  YES, USE "DATA" OR "GOFORT"     14258000
+         CLC   0(*-*,R15),MSGTEXT1+4    <<EXECUTED>>                    14259000
+         EX    R5,*-6                   THIS QUALIFIER?                 14260000
+         BNE   TSOED15                  NO, TRY THE NEXT ONE            14261000
+         B     TSOED20                  YES, USE THIS QUALIFIER         14262000
+         SPACE 1                                                        14263000
+TSOED17  LA    R15,EDITTYPE             NOT FOUND, ASSUME "DATA"        14264000
+         CLC   TSOELFOR,MSGTEXT1+4      FORT QUALIFIER?                 14265000
+         BNE   TSOED20                                                  14266000
+         LA    R15,GOFORT               YES, USE "GOFORT" (EDIT RULES)  14267000
+         SPACE 1                                                        14268000
+TSOED20  MVC   0(7,R3),0(R15)           MOVE IN DATA TYPE               14269000
+         LA    R1,MSGTEXT2                                              14270000
+         ST    R1,ADDRTEXT              COMMAND ADDRESS                 14271000
+         LA    R3,7(,R3)                                                14272000
+         SR    R3,R1                    COMMAND LENGTH                  14273000
+         SLL   R3,16                                                    14274000
+         ST    R3,MSGTEXT2              SAVE LENGTH OF STRING           14275000
+*        M$ERRST MSGTEXT2               DELETE * TO OUTPUT THE COMMAND  14276000
+         MVI   MSGTEXT2+3,8             OPERAND OFFSET                  14277000
+***TEST  BAS   R2,CLOSEIT               NEED TO CLOSE BEFORE THE EDIT   14278000
+***TEST  MVI   VOLALLOC,X'40'           READ THE DSCB AGAIN             14279000
+***TEST  LA    R0,RESTART2              ABEND RECOVERY ADDRESS          14280000
+***TEST  ST    R0,RECOVER                                               14281000
+         SPACE 1                                                        14282000
+         L     R4,ADDRECT                                               14283000
+         MVC   ECTPCMD-ECT(8,R4),##SUBCAL      COMMAND IS EDIT OR FSE   14284000
+         NI    ECTSWS-ECT(R4),FF-ECTNOPD       WE ALWAYS HAVE OPERANDS  14285000
+         LA    R1,ADDRTEXT                     THE CPPL FOR EDIT/FSE    14286000
+         LA    R3,##SUBCAL                     TSO EDIT/FSE COMMAND     14287000
+         BAS   R2,ATTACH2                      GO ATTACH IT             14288000
+         B     NEWCMD ***TEST                                           14289000
+         MVI   VOLALLOC,X'40'           READ THE DSCB AGAIN             14290000
+         SPACE 1                                                        14291000
+         MVI   ##ADRCM#,EDITOR          NO REPEATED WARNING MESSAGE     14292000
+         L     R1,PSATOLD-PSA(,R0)      --> CURRENT TCB                 14293004
+         L     R1,X'00C'(,R1)           --> TIOT                        14294000
+         LA    R1,24(,R1)               TIOENTRY                        14295000
+TSOED97  CLI   0(R1),0                  END OF TIOT?                    14296000
+         BE    RESTART0                 YES, REALLOCATE AND OPEN AGAIN  14297000
+         CLC   4(8,R1),DDNAME           THIS DDNAME?                    14298000
+         BE    RESTART2                 YES, JUST OPEN AGAIN            14299000
+         SR    R15,R15                                                  14300000
+         IC    R15,0(,R1)                                               14301000
+         LA    R1,0(R15,R1)                                             14302000
+         B     TSOED97                                                  14303000
+TSOELNON DC    C'NONUM '                                                14304000
+TSOELNEW DC    C'NEW '                                                  14305000
+TSOELASI DC    C'ASIS '                                                 14306000
+TSOELFOR DC    C'FORT('                                                 14307000
+         SPACE 2                                                        14308000
+**  THE FOLLOWING ORDERED TABLE MUST CORRESPOND WITH "PCLTYPE"          14309000
+**                                                                      14310000
+**     DATA SET TYPE VS. EDIT DATA TYPE RULES ARE FROM "HELP EDIT S"    14311000
+**                                                                      14312000
+EDITTYPE DC    CL7'DATA'                                                14313000
+** INSERT INSTALLATION-ADDED EDIT DATA TYPES HERE AND IN "PCLTYPE"      14314000
+         DC    CL7'LIST'      ADDED LOCALLY AS A VALID DATA SET TYPE    14315000
+         DC    CL7'VSBASIC'   NEW VS BASIC                              14316000
+         DC    CL7'BASIC'                                               14317000
+         DC    CL7'IPLI'                                                14318000
+         DC    CL7'TEXT'                                                14319000
+         DC    CL7'COBOL'                                               14320000
+         DC    CL7'ASM'                                                 14321000
+         DC    CL7'CLIST'                                               14322000
+         DC    CL7'CNTL'                                                14323000
+         DC    CL7'PLI'                                                 14324000
+* END OF VALID DATA SET TYPES                                           14325000
+PLIF     DC    CL7'PLIF'                                                14326000
+         DC    CL7'FORTE'    *                                          14327000
+         DC    CL7'FORTG'    *                                          14328000
+         DC    CL7'FORTGI'   *  -- DATA TYPE .FORT                      14329000
+         DC    CL7'FORTH'    *        (DEFAULT EDIT TYPE IS GOFORT)     14330000
+GOFORT   DC    CL7'GOFORT'   *                                          14331000
