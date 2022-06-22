@@ -50,8 +50,8 @@ an appropriate suffix in lower case
 Manual (using ZIGI):
 1. ZIGI now performs the Git Add, Commit, and Push to the GitHub
 repository.
-</details>
 ```
+</details>
 
 ### CBT File Information
 
