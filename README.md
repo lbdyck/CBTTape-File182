@@ -1,3 +1,6 @@
+### CBT File Mirror Information
+<details closed><summary>Click to Expand (or Close)</summary>
+
 ```
 This CBTTAPE File was converted from the CBTTAPE distribution format
 so that it could be mirrored for access using GitHub. This is a partially
@@ -47,8 +50,12 @@ an appropriate suffix in lower case
 Manual (using ZIGI):
 1. ZIGI now performs the Git Add, Commit, and Push to the GitHub
 repository.
+</details>
+```
 
+### CBT File Information
 
+```
 --------------------------------------------------------------------------------
 //***FILE 182 is the TSO "PDS" command processor and ISPF dialog    *   FILE 182
 //*           program package.  There are possibly 1000 separate    *   FILE 182
