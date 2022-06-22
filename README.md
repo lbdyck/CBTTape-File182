@@ -15,6 +15,10 @@ Because of this process, any installation documentation or automation
 provided with the file may not work as provided and may require some
 adjustments.
 
+**Note:** If you performed a git clone from OMVS without using ZIGI then
+you can use the zginstall.rex to 'upload' the files to z/OS, creating
+the z/OS datasets. See zginstall.readme for more information on it.
+
 The CBTTAPE file is distributed as a ZIP file that contains, typically,
 an XMIT file. This XMIT file must then be received using TSO RECEIVE to
 create a PDS that contains the contents of the CBTTAPE file. Some of the
