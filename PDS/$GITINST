@@ -1,0 +1,13 @@
+GITHub Installation (https://github.com/lbdyck/CBTTape-File182)
+
+o  Study these files first: $$$$$$$$, $$$$READ, $$$DOC, and $$$INST
+o  Copy PDS@PRIM and all files that begin with "P86" to a panel library
+o  Copy PDSM86 to a message library
+o  Copy all files that begin with "#" and "@" to a source library
+o  Run job PDSJCLHL on z/OS to assemble/linkedit PDS86 to a load library
+o  Copy UTILXMIT.LOAD to a load library
+o  Update the ISPF Primary Option Menu (ISR@PRIM)
+
+   P  PDS           Invoke the PDS command processor
+   . . .
+   P,'PANEL(PDS@PRIM) SCRNAME(PDS)'

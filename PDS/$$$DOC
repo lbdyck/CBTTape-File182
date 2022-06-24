@@ -68,6 +68,7 @@ Note: The following members are in this data set
   $FILE182 -- Renamed to @FILE182 (CBT standard)
   $LOGWIDE -- Notes on "Output Log" when using the LOGWIDE option
   $DEAV    -- Notes on DEAV and DSLIST outputs
+  $GITINST -- Notes on installation from GITHUB repository
   $MAINRTN -- Synopsis of PDSMAIN processing routines
   $OY07766 -- APAR to protect the integrity of the DSCB of PDS's
   $OA60639 -- APAR to provide the copy of PDSE Member Generations
